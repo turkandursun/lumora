@@ -1,0 +1,1576 @@
+{
+  "@@locale": "en",
+  "loginTitle": "Welcome back",
+  "@loginTitle": {
+    "description": "Short warm heading shown at the top of the login form."
+  },
+  "loginTagline": "Discover Yourself  •  Grow  •  Shine",
+  "@loginTagline": {
+    "description": "Brand tagline shown under the Lumora logo."
+  },
+  "loginEmailHint": "Email",
+  "@loginEmailHint": {
+    "description": "Placeholder text for the email input field on the login screen."
+  },
+  "loginPasswordHint": "Password",
+  "@loginPasswordHint": {
+    "description": "Placeholder text for the password input field on the login screen."
+  },
+  "loginButtonLabel": "Log In",
+  "@loginButtonLabel": {
+    "description": "Label for the primary login button."
+  },
+  "loginSignUpPrompt": "Don't have an account?",
+  "@loginSignUpPrompt": {
+    "description": "Text shown just before the sign up link on the login screen."
+  },
+  "loginSignUpAction": "Sign Up",
+  "@loginSignUpAction": {
+    "description": "Tappable sign up link label."
+  },
+  "loginEmailValidationEmpty": "Enter your email to continue",
+  "@loginEmailValidationEmpty": {
+    "description": "Validation message when the email field is left empty."
+  },
+  "loginEmailValidationInvalid": "That email looks off",
+  "@loginEmailValidationInvalid": {
+    "description": "Validation message when the email field doesn't look like a valid address."
+  },
+  "loginPasswordValidationEmpty": "Enter your password to continue",
+  "@loginPasswordValidationEmpty": {
+    "description": "Validation message when the password field is left empty."
+  },
+  "loginErrorInvalidCredentials": "That email or password doesn't look quite right — want to try again?",
+  "@loginErrorInvalidCredentials": {
+    "description": "Warm error message shown when Supabase rejects the email/password combination."
+  },
+  "loginErrorEmailNotConfirmed": "Almost there — please confirm your email before logging in.",
+  "@loginErrorEmailNotConfirmed": {
+    "description": "Warm error message shown when the account's email hasn't been confirmed yet."
+  },
+  "loginErrorGeneric": "Something went wrong, let's try again?",
+  "@loginErrorGeneric": {
+    "description": "Fallback warm error message for any other sign-in failure."
+  },
+  "authOrDivider": "or",
+  "@authOrDivider": {
+    "description": "Short divider label between the email/password form and the Google sign-in button on the login and sign up screens."
+  },
+  "authContinueWithGoogle": "Continue with Google",
+  "@authContinueWithGoogle": {
+    "description": "Label for the outlined Google sign-in button shown on both the login and sign up screens."
+  },
+  "signupTitle": "Create your account",
+  "@signupTitle": {
+    "description": "Short warm heading shown at the top of the sign up form."
+  },
+  "signupTagline": "Begin your journey",
+  "@signupTagline": {
+    "description": "Brand tagline shown under the Lumora logo on the sign up screen."
+  },
+  "signupNameHint": "Name (optional)",
+  "@signupNameHint": {
+    "description": "Placeholder text for the optional name input field on the sign up screen."
+  },
+  "signupConfirmPasswordHint": "Confirm password",
+  "@signupConfirmPasswordHint": {
+    "description": "Placeholder text for the confirm password input field on the sign up screen."
+  },
+  "signupPasswordHelper": "Use at least 8 characters",
+  "@signupPasswordHelper": {
+    "description": "Gentle, always-visible helper text under the password field showing the minimum length."
+  },
+  "signupButtonLabel": "Create Account",
+  "@signupButtonLabel": {
+    "description": "Label for the primary sign up button."
+  },
+  "signupLoginPrompt": "Already have an account?",
+  "@signupLoginPrompt": {
+    "description": "Text shown just before the log in link on the sign up screen."
+  },
+  "signupPasswordValidationTooShort": "Let's make that at least 8 characters",
+  "@signupPasswordValidationTooShort": {
+    "description": "Warm validation message when the password is shorter than the minimum length."
+  },
+  "signupConfirmPasswordValidationEmpty": "Type your password once more to confirm",
+  "@signupConfirmPasswordValidationEmpty": {
+    "description": "Validation message when the confirm password field is left empty."
+  },
+  "signupConfirmPasswordValidationMismatch": "These passwords don't quite match yet",
+  "@signupConfirmPasswordValidationMismatch": {
+    "description": "Warm validation message when password and confirm password fields differ."
+  },
+  "signupErrorEmailAlreadyInUse": "Looks like that email already has a home here — want to log in instead?",
+  "@signupErrorEmailAlreadyInUse": {
+    "description": "Warm error message shown when Supabase reports the email is already registered."
+  },
+  "onboardingSkip": "Skip",
+  "@onboardingSkip": {
+    "description": "Link that lets the user skip straight past onboarding."
+  },
+  "onboardingNext": "Next",
+  "@onboardingNext": {
+    "description": "Button label to advance to the next onboarding page."
+  },
+  "onboardingGetStarted": "Get Started",
+  "@onboardingGetStarted": {
+    "description": "Final call-to-action button label on the last onboarding page."
+  },
+  "onboardingWelcomeEyebrow": "LUMORA",
+  "@onboardingWelcomeEyebrow": {
+    "description": "Wordmark shown above the welcome heading on the first onboarding page."
+  },
+  "onboardingWelcomeTitle": "Hello, we're glad you're here",
+  "@onboardingWelcomeTitle": {
+    "description": "Warm heading on the first onboarding page, introducing the app."
+  },
+  "onboardingWelcomeBody": "Lumora is a gentle space to pause, breathe, and get to know yourself a little better — one quiet moment at a time.",
+  "@onboardingWelcomeBody": {
+    "description": "Warm welcome copy on the first onboarding page, framing the app as a soft invitation."
+  },
+  "onboardingJournalingTitle": "Let your thoughts unfold",
+  "@onboardingJournalingTitle": {
+    "description": "Heading on the journaling onboarding page."
+  },
+  "onboardingJournalingBody": "Open the app and just write — no rules, no right words. Jot down your day, name how you're feeling, and watch your own story take shape, page by page.",
+  "@onboardingJournalingBody": {
+    "description": "Story-like copy describing free-form journaling and mood tracking on the journaling onboarding page."
+  },
+  "onboardingCompanionTitle": "A gentle companion, always listening",
+  "@onboardingCompanionTitle": {
+    "description": "Heading on the AI companion onboarding page."
+  },
+  "onboardingCompanionBody": "As you write, Lumora gently notices the patterns in your days and feelings — quiet reflections to help you understand yourself, never a substitute for the people who truly care for you.",
+  "@onboardingCompanionBody": {
+    "description": "Warm copy introducing the AI companion/insight feature without sounding clinical or overpromising."
+  },
+  "onboardingPrivacyTitle": "Truly, only yours",
+  "@onboardingPrivacyTitle": {
+    "description": "Heading on the privacy onboarding page."
+  },
+  "onboardingPrivacyBody": "Every word you write is encrypted and kept private — this space belongs entirely to you.",
+  "@onboardingPrivacyBody": {
+    "description": "Reassuring copy about encryption and privacy on the final onboarding page."
+  },
+  "shellTabHome": "Home",
+  "@shellTabHome": {
+    "description": "Bottom navigation label for the home tab."
+  },
+  "shellTabStats": "Statistics",
+  "@shellTabStats": {
+    "description": "Bottom navigation label for the statistics tab; not built yet, routes to the shared coming-soon screen."
+  },
+  "shellTabAi": "AI",
+  "@shellTabAi": {
+    "description": "Bottom navigation label for the AI tab, which opens Luma's chat sheet."
+  },
+  "shellTabQuickAdd": "Quick add",
+  "@shellTabQuickAdd": {
+    "description": "Accessibility label for the raised center quick-add button in the bottom navigation bar."
+  },
+  "shellTabProfile": "Profile",
+  "@shellTabProfile": {
+    "description": "Bottom navigation label for the profile tab."
+  },
+  "comingSoonTitle": "Coming soon",
+  "@comingSoonTitle": {
+    "description": "Placeholder heading shown on tabs that haven't been built yet."
+  },
+  "comingSoonBody": "We're still shaping this space for you.",
+  "@comingSoonBody": {
+    "description": "Placeholder body copy shown under the coming-soon heading."
+  },
+  "homeGreetingMorning": "Good morning, {name}",
+  "@homeGreetingMorning": {
+    "description": "Time-of-day greeting shown before noon, including the user's first name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ada"
+      }
+    }
+  },
+  "homeGreetingMorningNoName": "Good morning",
+  "@homeGreetingMorningNoName": {
+    "description": "Time-of-day greeting shown before noon when the user has no name set."
+  },
+  "homeGreetingAfternoon": "Good afternoon, {name}",
+  "@homeGreetingAfternoon": {
+    "description": "Time-of-day greeting shown from noon until evening, including the user's first name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ada"
+      }
+    }
+  },
+  "homeGreetingAfternoonNoName": "Good afternoon",
+  "@homeGreetingAfternoonNoName": {
+    "description": "Time-of-day greeting shown from noon until evening when the user has no name set."
+  },
+  "homeGreetingEvening": "Good evening, {name}",
+  "@homeGreetingEvening": {
+    "description": "Time-of-day greeting shown in the evening, including the user's first name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Ada"
+      }
+    }
+  },
+  "homeGreetingEveningNoName": "Good evening",
+  "@homeGreetingEveningNoName": {
+    "description": "Time-of-day greeting shown in the evening when the user has no name set."
+  },
+  "homeNotificationBellLabel": "Notifications",
+  "@homeNotificationBellLabel": {
+    "description": "Accessibility label for the notification bell icon in the home header."
+  },
+  "homeQuoteCardTitle": "Today's Motivational Quote",
+  "@homeQuoteCardTitle": {
+    "description": "Small heading above the home screen's rotating quote carousel."
+  },
+  "homeQuoteFavorite": "Add to favorites",
+  "@homeQuoteFavorite": {
+    "description": "Accessibility label for the heart icon on a quote card when it is not yet favorited."
+  },
+  "homeQuoteUnfavorite": "Remove from favorites",
+  "@homeQuoteUnfavorite": {
+    "description": "Accessibility label for the heart icon on a quote card when it is already favorited."
+  },
+  "quoteOfTheDay1": "Every small step you take today is still a step forward.",
+  "@quoteOfTheDay1": {
+    "description": "First quote in the home screen's local motivational quote deck."
+  },
+  "quoteOfTheDay2": "You don't have to have it all figured out to be proud of how far you've come.",
+  "@quoteOfTheDay2": {
+    "description": "Second quote in the home screen's local motivational quote deck."
+  },
+  "quoteOfTheDay3": "Be as gentle with yourself as you would be with someone you love.",
+  "@quoteOfTheDay3": {
+    "description": "Third quote in the home screen's local motivational quote deck."
+  },
+  "quoteOfTheDay4": "Today doesn't have to be perfect to be meaningful.",
+  "@quoteOfTheDay4": {
+    "description": "Fourth quote in the home screen's local motivational quote deck."
+  },
+  "quoteOfTheDay5": "Your feelings are valid, even the quiet ones.",
+  "@quoteOfTheDay5": {
+    "description": "Fifth quote in the home screen's local motivational quote deck."
+  },
+  "quoteOfTheDay6": "Growth is rarely loud — most of it happens in small, unnoticed moments.",
+  "@quoteOfTheDay6": {
+    "description": "Sixth quote in the home screen's local motivational quote deck."
+  },
+  "homeStatStreakLabel": "Daily Streak",
+  "@homeStatStreakLabel": {
+    "description": "Label for the streak tile in the home screen's stats row."
+  },
+  "homeStatStreakSubtext": "You're doing great!",
+  "@homeStatStreakSubtext": {
+    "description": "Small encouraging subtext under the streak count in the home screen's stats row."
+  },
+  "homeStatMoodLabel": "Mood",
+  "@homeStatMoodLabel": {
+    "description": "Label for the mood tile in the home screen's stats row."
+  },
+  "homeStatMoodUnset": "Pick",
+  "@homeStatMoodUnset": {
+    "description": "Short placeholder shown in the mood tile before the user has picked today's mood."
+  },
+  "homeStatGoalLabel": "Today's Goal",
+  "@homeStatGoalLabel": {
+    "description": "Label for the goal-completion tile in the home screen's stats row."
+  },
+  "homeStatSelfCareLabel": "Self-Care",
+  "@homeStatSelfCareLabel": {
+    "description": "Label for the self-care nudge tile in the home screen's stats row."
+  },
+  "homeSelfCareNudge1": "Don't forget to do something kind for yourself today.",
+  "@homeSelfCareNudge1": {
+    "description": "First rotating self-care reminder in the home screen's stats row."
+  },
+  "homeSelfCareNudge2": "A few deep breaths count as self-care too.",
+  "@homeSelfCareNudge2": {
+    "description": "Second rotating self-care reminder in the home screen's stats row."
+  },
+  "homeSelfCareNudge3": "Drink some water and give your shoulders a little stretch.",
+  "@homeSelfCareNudge3": {
+    "description": "Third rotating self-care reminder in the home screen's stats row."
+  },
+  "homeSelfCareNudge4": "It's okay to rest — you don't have to earn it.",
+  "@homeSelfCareNudge4": {
+    "description": "Fourth rotating self-care reminder in the home screen's stats row."
+  },
+  "homeMoodPickerTitle": "How's your mood today?",
+  "@homeMoodPickerTitle": {
+    "description": "Heading on the bottom sheet opened from the stats row's mood tile."
+  },
+  "homeFeatureJournalTitle": "Journal Writing",
+  "@homeFeatureJournalTitle": {
+    "description": "Title for the Journal Writing card in the home feature grid."
+  },
+  "homeFeatureJournalDesc": "Put today into words",
+  "@homeFeatureJournalDesc": {
+    "description": "One-line description for the Journal Writing card in the home feature grid."
+  },
+  "homeFeatureAiQuestionsTitle": "AI Questions",
+  "@homeFeatureAiQuestionsTitle": {
+    "description": "Title for the AI Questions card in the home feature grid; not built yet, routes to the shared coming-soon screen."
+  },
+  "homeFeatureAiQuestionsDesc": "Reflective prompts to explore",
+  "@homeFeatureAiQuestionsDesc": {
+    "description": "One-line description for the AI Questions card in the home feature grid."
+  },
+  "homeFeatureMeditationTitle": "Meditation",
+  "@homeFeatureMeditationTitle": {
+    "description": "Title for the Meditation card in the home feature grid; not built yet, routes to the shared coming-soon screen."
+  },
+  "homeFeatureMeditationDesc": "Pause and find your calm",
+  "@homeFeatureMeditationDesc": {
+    "description": "One-line description for the Meditation card in the home feature grid."
+  },
+  "homeFeatureBreathingTitle": "Breathing Exercise",
+  "@homeFeatureBreathingTitle": {
+    "description": "Title for the Breathing Exercise card in the home feature grid."
+  },
+  "homeFeatureBreathingDesc": "Settle your mind, breath by breath",
+  "@homeFeatureBreathingDesc": {
+    "description": "One-line description for the Breathing Exercise card in the home feature grid."
+  },
+  "homeFeatureAiChatTitle": "AI Chat",
+  "@homeFeatureAiChatTitle": {
+    "description": "Title for the AI Chat card in the home feature grid, which opens Luma's chat sheet."
+  },
+  "homeFeatureAiChatDesc": "Talk it through with Luma",
+  "@homeFeatureAiChatDesc": {
+    "description": "One-line description for the AI Chat card in the home feature grid."
+  },
+  "homeFeatureGoalsTitle": "Goal Tracking",
+  "@homeFeatureGoalsTitle": {
+    "description": "Title for the Goal Tracking card in the home feature grid."
+  },
+  "homeFeatureGoalsDesc": "Keep an eye on your goals",
+  "@homeFeatureGoalsDesc": {
+    "description": "One-line description for the Goal Tracking card in the home feature grid."
+  },
+  "homeFeatureRemindersTitle": "Reminders",
+  "@homeFeatureRemindersTitle": {
+    "description": "Title for the Reminders card in the home feature grid."
+  },
+  "homeFeatureRemindersDesc": "Manage your gentle nudges",
+  "@homeFeatureRemindersDesc": {
+    "description": "One-line description for the Reminders card in the home feature grid."
+  },
+  "homeFeatureGratitudeTitle": "Gratitude Journal",
+  "@homeFeatureGratitudeTitle": {
+    "description": "Title for the Gratitude Journal card in the home feature grid; not built yet, routes to the shared coming-soon screen."
+  },
+  "homeFeatureGratitudeDesc": "What you're grateful for today",
+  "@homeFeatureGratitudeDesc": {
+    "description": "One-line description for the Gratitude Journal card in the home feature grid."
+  },
+  "homeFeatureLetterTitle": "Letter to Future Self",
+  "@homeFeatureLetterTitle": {
+    "description": "Title for the Letter to Future Self card in the home feature grid; not built yet, routes to the shared coming-soon screen."
+  },
+  "homeFeatureLetterDesc": "Leave a note for who you'll become",
+  "@homeFeatureLetterDesc": {
+    "description": "One-line description for the Letter to Future Self card in the home feature grid."
+  },
+  "homeDreamJournalTitle": "Dream Journal",
+  "@homeDreamJournalTitle": {
+    "description": "Title on the home screen's Dream Journal banner; not built yet, routes to the shared coming-soon screen."
+  },
+  "homeDreamJournalDesc": "Record and explore your dreams",
+  "@homeDreamJournalDesc": {
+    "description": "Short description on the home screen's Dream Journal banner."
+  },
+  "homeWritingSectionTitle": "What would you like to write today?",
+  "@homeWritingSectionTitle": {
+    "description": "Heading above the journal writing area at the bottom of the home screen."
+  },
+  "homeWritingPlaceholder": "Start writing...",
+  "@homeWritingPlaceholder": {
+    "description": "Placeholder text for the journal entry text area on the home screen."
+  },
+  "homeSaveEntryButton": "Save entry",
+  "@homeSaveEntryButton": {
+    "description": "Button that saves today's journal entry and counts it toward the journaling streak."
+  },
+  "homeRecentEntriesTitle": "Recent entries",
+  "@homeRecentEntriesTitle": {
+    "description": "Heading above the list of recently saved journal entries on the home screen."
+  },
+  "homeRecentEntriesEmpty": "Your saved entries will show up here.",
+  "@homeRecentEntriesEmpty": {
+    "description": "Shown under the writing area when no journal entries have been saved yet."
+  },
+  "voiceNoteRecordTooltip": "Record a voice note",
+  "@voiceNoteRecordTooltip": {
+    "description": "Tooltip/label for the mic button that starts recording a voice note to attach to the journal entry."
+  },
+  "voiceNoteStopRecordingTooltip": "Stop recording",
+  "@voiceNoteStopRecordingTooltip": {
+    "description": "Tooltip/label for the button that stops an in-progress voice note recording."
+  },
+  "voiceNoteRecordingLabel": "Recording…",
+  "@voiceNoteRecordingLabel": {
+    "description": "Shown next to the elapsed timer while a voice note is actively being recorded."
+  },
+  "voiceNoteAttachedLabel": "Voice note attached",
+  "@voiceNoteAttachedLabel": {
+    "description": "Shown once a voice note has been recorded and is waiting to be saved with the entry."
+  },
+  "voiceNoteRemoveTooltip": "Remove voice note",
+  "@voiceNoteRemoveTooltip": {
+    "description": "Tooltip/label for the button that discards the just-recorded voice note before saving."
+  },
+  "voiceNotePermissionDenied": "Microphone access is needed to record a voice note.",
+  "@voiceNotePermissionDenied": {
+    "description": "Shown when the user denies microphone permission while trying to record a voice note."
+  },
+  "voiceNotePlayTooltip": "Play voice note",
+  "@voiceNotePlayTooltip": {
+    "description": "Tooltip/label for the play button on a saved voice note's playback control."
+  },
+  "voiceNotePauseTooltip": "Pause voice note",
+  "@voiceNotePauseTooltip": {
+    "description": "Tooltip/label for the pause button on a saved voice note's playback control."
+  },
+  "voiceNoteFileMissing": "Audio file not found",
+  "@voiceNoteFileMissing": {
+    "description": "Shown in place of the playback control when a saved voice note's audio file is missing or unreadable."
+  },
+  "moodHappy": "Happy",
+  "@moodHappy": {
+    "description": "Label for the happy mood option."
+  },
+  "moodCalm": "Calm",
+  "@moodCalm": {
+    "description": "Label for the calm mood option."
+  },
+  "moodTired": "Tired",
+  "@moodTired": {
+    "description": "Label for the tired mood option."
+  },
+  "moodSad": "Sad",
+  "@moodSad": {
+    "description": "Label for the sad mood option."
+  },
+  "moodAnxious": "Anxious",
+  "@moodAnxious": {
+    "description": "Label for the anxious mood option."
+  },
+  "lumaGreeting1": "I'm here with you today",
+  "@lumaGreeting1": {
+    "description": "Rotating warm greeting spoken by Luma, the companion character, on home screen load."
+  },
+  "lumaGreeting2": "Glad you're here",
+  "@lumaGreeting2": {
+    "description": "Rotating warm greeting spoken by Luma, the companion character, on home screen load."
+  },
+  "lumaGreeting3": "Take your time, I'm listening",
+  "@lumaGreeting3": {
+    "description": "Rotating warm greeting spoken by Luma, the companion character, on home screen load."
+  },
+  "lumaGreeting4": "One gentle moment at a time",
+  "@lumaGreeting4": {
+    "description": "Rotating warm greeting spoken by Luma, the companion character, on home screen load."
+  },
+  "lumaGreeting5": "You don't have to carry today alone",
+  "@lumaGreeting5": {
+    "description": "Rotating warm greeting spoken by Luma, the companion character, on home screen load."
+  },
+  "lumaMoodAckHappy": "Your light is lovely today",
+  "@lumaMoodAckHappy": {
+    "description": "Luma's warm acknowledgement line shown when the user selects the happy mood."
+  },
+  "lumaMoodAckCalm": "Steady and peaceful — I feel it too",
+  "@lumaMoodAckCalm": {
+    "description": "Luma's warm acknowledgement line shown when the user selects the calm mood."
+  },
+  "lumaMoodAckTired": "Rest is productive too",
+  "@lumaMoodAckTired": {
+    "description": "Luma's warm acknowledgement line shown when the user selects the tired mood."
+  },
+  "lumaMoodAckSad": "I'm right here with you",
+  "@lumaMoodAckSad": {
+    "description": "Luma's warm acknowledgement line shown when the user selects the sad mood."
+  },
+  "lumaMoodAckAnxious": "Breathe with me, slowly",
+  "@lumaMoodAckAnxious": {
+    "description": "Luma's warm acknowledgement line shown when the user selects the anxious mood."
+  },
+  "lumaChatTooltip": "Chat with Luma",
+  "@lumaChatTooltip": {
+    "description": "Accessibility label / tooltip for tapping Luma's speech bubble to open the chat panel."
+  },
+  "lumaSoundOnTooltip": "Mute ambient sound",
+  "@lumaSoundOnTooltip": {
+    "description": "Accessibility label / tooltip for the sound toggle icon when ambient sound is currently on (tapping mutes it)."
+  },
+  "lumaSoundOffTooltip": "Unmute ambient sound",
+  "@lumaSoundOffTooltip": {
+    "description": "Accessibility label / tooltip for the sound toggle icon when ambient sound is currently muted (tapping unmutes it)."
+  },
+  "lumaChatTitle": "Chat with Luma",
+  "@lumaChatTitle": {
+    "description": "Heading shown at the top of Luma's chat bottom sheet."
+  },
+  "lumaChatInputHint": "Say something to Luma...",
+  "@lumaChatInputHint": {
+    "description": "Placeholder text for the chat message text field in Luma's chat panel."
+  },
+  "lumaChatThinking": "Luma is thinking...",
+  "@lumaChatThinking": {
+    "description": "Subtle status line shown while waiting for Luma's AI response."
+  },
+  "lumaChatError": "Luma went quiet for a moment — want to try again?",
+  "@lumaChatError": {
+    "description": "Warm fallback message shown when Luma's chat response fails, instead of a raw error."
+  },
+  "lumaChatEmptyState": "Say hello — Luma is listening.",
+  "@lumaChatEmptyState": {
+    "description": "Gentle placeholder text shown in the chat panel before any messages have been sent."
+  },
+  "lumaChatSessionLoading": "Getting things ready...",
+  "@lumaChatSessionLoading": {
+    "description": "Brief input hint shown while the chat panel waits for the auth session to finish restoring before allowing a message to be sent."
+  },
+  "breathingTitle": "Breathing Exercise",
+  "@breathingTitle": {
+    "description": "Heading at the top of the breathing exercise screen."
+  },
+  "breathingModePrompt": "What do you need right now?",
+  "@breathingModePrompt": {
+    "description": "Prompt shown above the technique/mode selector, the first step of the breathing exercise flow."
+  },
+  "breathingModeCalmAnger": "Calm anger",
+  "@breathingModeCalmAnger": {
+    "description": "Label for the breathing mode that uses box breathing to calm anger."
+  },
+  "breathingModeEaseAnxiety": "Ease anxiety",
+  "@breathingModeEaseAnxiety": {
+    "description": "Label for the breathing mode that uses the 4-7-8 technique to ease anxiety."
+  },
+  "breathingModeRelaxUnwind": "Relax & unwind",
+  "@breathingModeRelaxUnwind": {
+    "description": "Label for the breathing mode that uses coherent breathing for general relaxation."
+  },
+  "breathingModeBoostEnergy": "Boost energy",
+  "@breathingModeBoostEnergy": {
+    "description": "Label for the breathing mode that uses a brisker energizing breath pattern."
+  },
+  "breathingDurationPrompt": "Choose a duration",
+  "@breathingDurationPrompt": {
+    "description": "Small label above the duration selector pills on the breathing exercise screen."
+  },
+  "breathingDurationOption": "{minutes} min",
+  "@breathingDurationOption": {
+    "description": "Label for a selectable session-length pill on the breathing exercise screen.",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "breathingStartButton": "Start",
+  "@breathingStartButton": {
+    "description": "Button label that begins the breathing exercise session."
+  },
+  "breathingStopButton": "Stop",
+  "@breathingStopButton": {
+    "description": "Button label that ends an in-progress breathing exercise session early."
+  },
+  "breathingPhaseIn": "Breathe In",
+  "@breathingPhaseIn": {
+    "description": "Label shown while the breathing orb is expanding, prompting the user to breathe in."
+  },
+  "breathingPhaseHold": "Hold",
+  "@breathingPhaseHold": {
+    "description": "Label shown during the brief pause at the top of the breathing orb's expansion."
+  },
+  "breathingPhaseOut": "Breathe Out",
+  "@breathingPhaseOut": {
+    "description": "Label shown while the breathing orb is contracting, prompting the user to breathe out."
+  },
+  "breathingCompletionMessage": "Well done, you took time for yourself",
+  "@breathingCompletionMessage": {
+    "description": "Gentle completion message shown when a breathing exercise session finishes naturally."
+  },
+  "breathingCompletionContinue": "Continue",
+  "@breathingCompletionContinue": {
+    "description": "Button label on the completion message that returns the user to the duration selector."
+  },
+  "profileTitle": "Profile",
+  "@profileTitle": {
+    "description": "Heading at the top of the profile tab's menu screen."
+  },
+  "profileMenuReminders": "Reminders",
+  "@profileMenuReminders": {
+    "description": "Label for the menu item on the profile screen that opens the Reminders screen."
+  },
+  "profileMenuLogout": "Log Out",
+  "@profileMenuLogout": {
+    "description": "Label for the button on the profile screen that signs the user out."
+  },
+  "profileMenuAppLock": "Privacy & Security",
+  "@profileMenuAppLock": {
+    "description": "Label for the menu item on the profile screen that opens the Privacy & Security settings screen."
+  },
+  "appLockTitle": "Privacy & Security",
+  "@appLockTitle": {
+    "description": "Heading at the top of the Privacy & Security settings screen."
+  },
+  "appLockPinSectionHeading": "PIN Code",
+  "@appLockPinSectionHeading": {
+    "description": "Heading above the set/change PIN action row on the Privacy & Security settings screen."
+  },
+  "appLockSetPinLabel": "Set PIN Code",
+  "@appLockSetPinLabel": {
+    "description": "Label for the action row that starts PIN setup, shown when no PIN exists yet."
+  },
+  "appLockChangePinLabel": "Change PIN",
+  "@appLockChangePinLabel": {
+    "description": "Label for the row on the settings screen that starts the change-PIN flow, shown once a PIN already exists."
+  },
+  "appLockPinUpdatedMessage": "PIN updated",
+  "@appLockPinUpdatedMessage": {
+    "description": "Snackbar confirmation shown after successfully changing the PIN."
+  },
+  "appLockCreatePinTitle": "Create a PIN",
+  "@appLockCreatePinTitle": {
+    "description": "Heading on the first step of the PIN setup screen."
+  },
+  "appLockConfirmPinTitle": "Confirm your PIN",
+  "@appLockConfirmPinTitle": {
+    "description": "Heading on the second step of the PIN setup screen."
+  },
+  "appLockPinLengthHint": "Enter a 4-6 digit PIN",
+  "@appLockPinLengthHint": {
+    "description": "Hint text shown under the PIN setup heading describing the allowed PIN length."
+  },
+  "appLockPinMismatchMessage": "PINs didn't match — try again",
+  "@appLockPinMismatchMessage": {
+    "description": "Message shown on the PIN setup screen when the confirmation step doesn't match the first entry."
+  },
+  "appLockVerifyCurrentPinTitle": "Enter your current PIN",
+  "@appLockVerifyCurrentPinTitle": {
+    "description": "Heading on the PIN verify screen shown as the first step of the change-PIN flow."
+  },
+  "appLockSectionsHeading": "Protected Sections",
+  "@appLockSectionsHeading": {
+    "description": "Heading above the list of toggleable PIN-protected sections on the settings screen."
+  },
+  "appLockSectionsHint": "Set a PIN code first to lock sections.",
+  "@appLockSectionsHint": {
+    "description": "Hint shown above the section toggle list when no PIN has been set yet, explaining why the toggles are disabled."
+  },
+  "appLockSectionJournalWriting": "Journal Writing",
+  "@appLockSectionJournalWriting": {
+    "description": "Display name for the Journal Writing section in the App Lock section toggle list."
+  },
+  "appLockSectionAiChat": "AI Chat",
+  "@appLockSectionAiChat": {
+    "description": "Display name for the AI Chat (Luma) section in the App Lock section toggle list."
+  },
+  "appLockSectionDreamJournal": "Dream Journal",
+  "@appLockSectionDreamJournal": {
+    "description": "Display name for the Dream Journal section in the App Lock section toggle list."
+  },
+  "appLockSectionUnlockTitle": "Enter your PIN to open {sectionName}",
+  "@appLockSectionUnlockTitle": {
+    "description": "Heading on the PIN entry screen shown when opening a PIN-protected section.",
+    "placeholders": {
+      "sectionName": {
+        "type": "String",
+        "example": "Journal Writing"
+      }
+    }
+  },
+  "appLockAttemptsRemainingMessage": "Incorrect PIN. {count} attempts left.",
+  "@appLockAttemptsRemainingMessage": {
+    "description": "Message shown after a wrong PIN entry, stating how many attempts remain before a cooldown.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "appLockLockoutMessage": "Too many attempts. Try again in {seconds}s.",
+  "@appLockLockoutMessage": {
+    "description": "Message shown while the PIN entry cooldown is active, with a live countdown.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "remindersTitle": "Reminders",
+  "@remindersTitle": {
+    "description": "Heading at the top of the reminders screen."
+  },
+  "remindersTabUpcoming": "Upcoming",
+  "@remindersTabUpcoming": {
+    "description": "Tab label showing only enabled reminders, soonest first."
+  },
+  "remindersTabAll": "All",
+  "@remindersTabAll": {
+    "description": "Tab label showing every reminder, enabled or not."
+  },
+  "remindersEmptyUpcoming": "No upcoming reminders — turn one on below, or add your own.",
+  "@remindersEmptyUpcoming": {
+    "description": "Empty-state message on the Upcoming tab when no reminders are enabled."
+  },
+  "remindersEmptyAll": "No reminders yet.",
+  "@remindersEmptyAll": {
+    "description": "Empty-state message on the All tab when no reminders exist at all."
+  },
+  "remindersLoadError": "Couldn't load your reminders right now.",
+  "@remindersLoadError": {
+    "description": "Error message shown if reading reminders from local storage fails."
+  },
+  "remindersFrequencyDaily": "Daily",
+  "@remindersFrequencyDaily": {
+    "description": "Frequency label for a reminder that repeats every day."
+  },
+  "remindersFrequencyWeekly": "Weekly",
+  "@remindersFrequencyWeekly": {
+    "description": "Frequency option label for a reminder that repeats on a specific weekday, shown in the new-reminder sheet's frequency picker."
+  },
+  "remindersFrequencyOnce": "Once",
+  "@remindersFrequencyOnce": {
+    "description": "Frequency label for a reminder that fires a single time and doesn't repeat."
+  },
+  "remindersNewButton": "+ New Reminder",
+  "@remindersNewButton": {
+    "description": "Floating button label that opens the sheet for creating a custom reminder."
+  },
+  "remindersNewSheetTitle": "New Reminder",
+  "@remindersNewSheetTitle": {
+    "description": "Heading at the top of the new-reminder bottom sheet."
+  },
+  "remindersNewTitleHint": "Reminder title",
+  "@remindersNewTitleHint": {
+    "description": "Placeholder text for the title input field in the new-reminder sheet."
+  },
+  "remindersNewTitleValidationEmpty": "Give your reminder a title",
+  "@remindersNewTitleValidationEmpty": {
+    "description": "Validation message when the title field is left empty in the new-reminder sheet."
+  },
+  "remindersNewWeekdayPrompt": "Which day?",
+  "@remindersNewWeekdayPrompt": {
+    "description": "Label above the weekday chip picker in the new-reminder sheet, shown only when the weekly frequency is selected."
+  },
+  "remindersNewTimePrompt": "Time",
+  "@remindersNewTimePrompt": {
+    "description": "Label above the time picker field in the new-reminder sheet."
+  },
+  "remindersNewSubmitButton": "Add",
+  "@remindersNewSubmitButton": {
+    "description": "Submit button label in the new-reminder sheet."
+  },
+  "reminderCustomBody": "Time for your reminder",
+  "@reminderCustomBody": {
+    "description": "Generic notification body used for reminders the user creates themselves, which have no bespoke warm copy."
+  },
+  "reminderMorningJournalTitle": "Morning Journal",
+  "@reminderMorningJournalTitle": {
+    "description": "Title of the seeded 'morning journal' starter reminder."
+  },
+  "reminderMorningJournalBody": "How are you today? Take a few minutes for yourself",
+  "@reminderMorningJournalBody": {
+    "description": "Warm notification body for the 'morning journal' starter reminder."
+  },
+  "reminderBreathingBreakTitle": "Breathing Break",
+  "@reminderBreathingBreakTitle": {
+    "description": "Title of the seeded 'breathing break' starter reminder."
+  },
+  "reminderBreathingBreakBody": "Take a moment to breathe — your body will thank you",
+  "@reminderBreathingBreakBody": {
+    "description": "Warm notification body for the 'breathing break' starter reminder."
+  },
+  "reminderGratitudeMomentTitle": "Gratitude Moment",
+  "@reminderGratitudeMomentTitle": {
+    "description": "Title of the seeded 'gratitude moment' starter reminder."
+  },
+  "reminderGratitudeMomentBody": "What's one small thing you're grateful for today?",
+  "@reminderGratitudeMomentBody": {
+    "description": "Warm notification body for the 'gratitude moment' starter reminder."
+  },
+  "reminderWeeklyReflectionTitle": "Weekly Reflection",
+  "@reminderWeeklyReflectionTitle": {
+    "description": "Title of the seeded 'weekly reflection' starter reminder."
+  },
+  "reminderWeeklyReflectionBody": "Take a quiet moment to look back on your week",
+  "@reminderWeeklyReflectionBody": {
+    "description": "Warm notification body for the 'weekly reflection' starter reminder."
+  },
+  "profileMenuGoals": "Goal Tracking",
+  "@profileMenuGoals": {
+    "description": "Label for the menu item on the profile screen that opens the Goals screen."
+  },
+  "goalsTitle": "Goal Tracking",
+  "@goalsTitle": {
+    "description": "Heading at the top of the goal tracking screen."
+  },
+  "goalsLoadError": "Couldn't load your goals right now.",
+  "@goalsLoadError": {
+    "description": "Error message shown if reading goals from local storage fails."
+  },
+  "goalsStreakBanner": "{count}-Day Streak · Day {count}",
+  "@goalsStreakBanner": {
+    "description": "Streak banner text shown once the user has an active streak, e.g. '7-Day Streak · Day 7'.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "7"
+      }
+    }
+  },
+  "goalsStreakStartPrompt": "Take your first step today and start your streak",
+  "@goalsStreakStartPrompt": {
+    "description": "Streak banner text shown instead of a day count when the user has no active streak yet."
+  },
+  "goalsDefaultWaterTitle": "Drink more water",
+  "@goalsDefaultWaterTitle": {
+    "description": "Title of the seeded 'drink more water' starter goal."
+  },
+  "goalsDefaultJournalTitle": "Journal writing",
+  "@goalsDefaultJournalTitle": {
+    "description": "Title of the seeded 'journal writing' starter goal."
+  },
+  "goalsDefaultMeditationTitle": "Meditation",
+  "@goalsDefaultMeditationTitle": {
+    "description": "Title of the seeded 'meditation' starter goal."
+  },
+  "goalsDefaultReadingTitle": "Reading",
+  "@goalsDefaultReadingTitle": {
+    "description": "Title of the seeded 'reading' starter goal."
+  },
+  "goalsUnitGlasses": "glasses",
+  "@goalsUnitGlasses": {
+    "description": "Unit label for goals measured in glasses (e.g. of water)."
+  },
+  "goalsUnitMinutes": "minutes",
+  "@goalsUnitMinutes": {
+    "description": "Unit label for goals measured in minutes."
+  },
+  "goalsUnitPages": "pages",
+  "@goalsUnitPages": {
+    "description": "Unit label for goals measured in pages."
+  },
+  "goalsUnitBooks": "books",
+  "@goalsUnitBooks": {
+    "description": "Unit label for goals measured in books."
+  },
+  "goalsUnitCustomLabel": "Custom",
+  "@goalsUnitCustomLabel": {
+    "description": "Label for the 'custom unit' option in the new-goal sheet's unit picker."
+  },
+  "goalsProgressFraction": "{current}/{target} {unit}",
+  "@goalsProgressFraction": {
+    "description": "Progress fraction shown on a goal card, e.g. '6/8 glasses'.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "6"
+      },
+      "target": {
+        "type": "int",
+        "example": "8"
+      },
+      "unit": {
+        "type": "String",
+        "example": "glasses"
+      }
+    }
+  },
+  "goalsIncrementButton": "+{step} {unit}",
+  "@goalsIncrementButton": {
+    "description": "Label for the button on a goal card that increments its progress, e.g. '+1 glasses'.",
+    "placeholders": {
+      "step": {
+        "type": "int",
+        "example": "1"
+      },
+      "unit": {
+        "type": "String",
+        "example": "glasses"
+      }
+    }
+  },
+  "goalsCompletedLabel": "Completed",
+  "@goalsCompletedLabel": {
+    "description": "Small label shown on a goal card once its progress has reached the target for the current period."
+  },
+  "goalsCelebrationMessage": "You completed your \"{goalTitle}\" goal! Amazing.",
+  "@goalsCelebrationMessage": {
+    "description": "Gentle celebratory message shown briefly when a goal's progress reaches its target.",
+    "placeholders": {
+      "goalTitle": {
+        "type": "String",
+        "example": "Drink more water"
+      }
+    }
+  },
+  "goalsNewButton": "+ New Goal",
+  "@goalsNewButton": {
+    "description": "Floating button label that opens the sheet for creating a custom goal."
+  },
+  "goalsNewSheetTitle": "New Goal",
+  "@goalsNewSheetTitle": {
+    "description": "Heading at the top of the new-goal bottom sheet."
+  },
+  "goalsNewTitleHint": "Goal title",
+  "@goalsNewTitleHint": {
+    "description": "Placeholder text for the title input field in the new-goal sheet."
+  },
+  "goalsNewTitleValidationEmpty": "Give your goal a title",
+  "@goalsNewTitleValidationEmpty": {
+    "description": "Validation message when the title field is left empty in the new-goal sheet."
+  },
+  "goalsNewTargetHint": "Target number",
+  "@goalsNewTargetHint": {
+    "description": "Placeholder text for the target number input field in the new-goal sheet."
+  },
+  "goalsNewTargetValidationEmpty": "Enter a target number",
+  "@goalsNewTargetValidationEmpty": {
+    "description": "Validation message when the target number field is left empty in the new-goal sheet."
+  },
+  "goalsNewTargetValidationInvalid": "Enter a valid number",
+  "@goalsNewTargetValidationInvalid": {
+    "description": "Validation message when the target number field isn't a positive whole number."
+  },
+  "goalsNewUnitPrompt": "Unit",
+  "@goalsNewUnitPrompt": {
+    "description": "Label above the unit picker in the new-goal sheet."
+  },
+  "goalsNewCustomUnitHint": "Unit name (e.g. pages)",
+  "@goalsNewCustomUnitHint": {
+    "description": "Placeholder text for the custom unit name field, shown only when 'custom' is selected as the unit."
+  },
+  "goalsNewCustomUnitValidationEmpty": "Enter a unit name",
+  "@goalsNewCustomUnitValidationEmpty": {
+    "description": "Validation message when the custom unit name field is left empty."
+  },
+  "goalsNewFrequencyPrompt": "Frequency",
+  "@goalsNewFrequencyPrompt": {
+    "description": "Label above the frequency picker in the new-goal sheet."
+  },
+  "goalsFrequencyDaily": "Daily",
+  "@goalsFrequencyDaily": {
+    "description": "Frequency option label for a goal that resets every day."
+  },
+  "goalsFrequencyWeekly": "Weekly",
+  "@goalsFrequencyWeekly": {
+    "description": "Frequency option label for a goal that resets every week."
+  },
+  "goalsFrequencyMonthly": "Monthly",
+  "@goalsFrequencyMonthly": {
+    "description": "Frequency option label for a goal that resets every month."
+  },
+  "goalsNewSubmitButton": "Add",
+  "@goalsNewSubmitButton": {
+    "description": "Submit button label in the new-goal sheet."
+  },
+  "dreamJournalTitle": "Dream Journal",
+  "@dreamJournalTitle": {
+    "description": "Heading at the top of the dream journal screen."
+  },
+  "dreamJournalSubtitle": "Write your dreams, discover their symbols",
+  "@dreamJournalSubtitle": {
+    "description": "Subtitle shown under the dream journal screen's title."
+  },
+  "dreamJournalWriteButton": "Write a Dream",
+  "@dreamJournalWriteButton": {
+    "description": "Pill-shaped button label that opens the new dream entry screen."
+  },
+  "dreamJournalListHeader": "My Dreams ({count})",
+  "@dreamJournalListHeader": {
+    "description": "Heading above the list of saved dreams, including the total count.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "dreamJournalEmptyState": "No dreams recorded yet — write your first one above.",
+  "@dreamJournalEmptyState": {
+    "description": "Empty-state message shown when no dreams have been saved yet."
+  },
+  "dreamJournalLoadError": "Couldn't load your dreams right now.",
+  "@dreamJournalLoadError": {
+    "description": "Error message shown if reading dreams from local storage fails."
+  },
+  "dreamJournalRecurringSymbolInsight": "The symbol '{symbol}' has been recurring lately",
+  "@dreamJournalRecurringSymbolInsight": {
+    "description": "Gentle insight line shown below the list header when a symbol has appeared in 3 or more saved dreams.",
+    "placeholders": {
+      "symbol": {
+        "type": "String",
+        "example": "water"
+      }
+    }
+  },
+  "dreamEntryTitle": "Write a Dream",
+  "@dreamEntryTitle": {
+    "description": "Heading at the top of the new dream entry screen."
+  },
+  "dreamEntryPlaceholder": "Describe your dream...",
+  "@dreamEntryPlaceholder": {
+    "description": "Placeholder text for the large text area on the new dream entry screen."
+  },
+  "dreamEntrySaveButton": "Save",
+  "@dreamEntrySaveButton": {
+    "description": "Button label that saves a new dream entry."
+  },
+  "dreamEntryValidationEmpty": "Write something before saving",
+  "@dreamEntryValidationEmpty": {
+    "description": "Validation message shown when trying to save an empty dream entry."
+  },
+  "dreamReflectionSkipButton": "Skip",
+  "@dreamReflectionSkipButton": {
+    "description": "Button label that skips the rest of the post-save dream reflection flow, always visible at every step."
+  },
+  "dreamReflectionNextButton": "Next",
+  "@dreamReflectionNextButton": {
+    "description": "Button label that advances to the next question in the dream reflection flow."
+  },
+  "dreamReflectionFinishButton": "Finish",
+  "@dreamReflectionFinishButton": {
+    "description": "Button label on the last question of the dream reflection flow that saves the answers and returns to the dream list."
+  },
+  "dreamReflectionTextFieldHint": "Optional — write if you'd like",
+  "@dreamReflectionTextFieldHint": {
+    "description": "Placeholder shown in the two free-text questions of the dream reflection flow, making clear they're optional."
+  },
+  "dreamReflectionFeelingQuestion": "How did this dream make you feel?",
+  "@dreamReflectionFeelingQuestion": {
+    "description": "First question in the post-save dream reflection flow, paired with a single-select set of feeling chips."
+  },
+  "dreamFeelingPeaceful": "Peaceful",
+  "@dreamFeelingPeaceful": {
+    "description": "Quick-select chip option for the dream reflection feeling question."
+  },
+  "dreamFeelingAnxious": "Anxious",
+  "@dreamFeelingAnxious": {
+    "description": "Quick-select chip option for the dream reflection feeling question."
+  },
+  "dreamFeelingConfused": "Confused",
+  "@dreamFeelingConfused": {
+    "description": "Quick-select chip option for the dream reflection feeling question."
+  },
+  "dreamFeelingHappy": "Happy",
+  "@dreamFeelingHappy": {
+    "description": "Quick-select chip option for the dream reflection feeling question."
+  },
+  "dreamFeelingSad": "Sad",
+  "@dreamFeelingSad": {
+    "description": "Quick-select chip option for the dream reflection feeling question."
+  },
+  "dreamFeelingNeutral": "Neutral",
+  "@dreamFeelingNeutral": {
+    "description": "Quick-select chip option for the dream reflection feeling question."
+  },
+  "dreamReflectionFamiliarPersonQuestion": "Was anyone familiar in the dream?",
+  "@dreamReflectionFamiliarPersonQuestion": {
+    "description": "Second question in the post-save dream reflection flow, paired with a single-select set of yes/no/not-sure chips."
+  },
+  "dreamFamiliarPersonYes": "Yes",
+  "@dreamFamiliarPersonYes": {
+    "description": "Quick-select chip option for the dream reflection familiar-person question."
+  },
+  "dreamFamiliarPersonNo": "No",
+  "@dreamFamiliarPersonNo": {
+    "description": "Quick-select chip option for the dream reflection familiar-person question."
+  },
+  "dreamFamiliarPersonNotSure": "Not sure",
+  "@dreamFamiliarPersonNotSure": {
+    "description": "Quick-select chip option for the dream reflection familiar-person question."
+  },
+  "dreamReflectionFirstThoughtQuestion": "What was your first thought when you woke up?",
+  "@dreamReflectionFirstThoughtQuestion": {
+    "description": "Third question in the post-save dream reflection flow, paired with a short optional free-text field."
+  },
+  "dreamReflectionLifeConnectionQuestion": "Could this dream connect to something in your waking life?",
+  "@dreamReflectionLifeConnectionQuestion": {
+    "description": "Fourth and final question in the post-save dream reflection flow, paired with a short optional free-text field."
+  },
+  "dreamCardFamiliarPersonLabel": "Familiar person",
+  "@dreamCardFamiliarPersonLabel": {
+    "description": "Label prefixing the familiar-person reflection answer in a dream card's expanded view."
+  },
+  "dreamCardFirstThoughtLabel": "First thought",
+  "@dreamCardFirstThoughtLabel": {
+    "description": "Label prefixing the first-thought reflection answer in a dream card's expanded view."
+  },
+  "dreamCardLifeConnectionLabel": "Life connection",
+  "@dreamCardLifeConnectionLabel": {
+    "description": "Label prefixing the life-connection reflection answer in a dream card's expanded view."
+  },
+  "dreamCardShowMore": "Show more",
+  "@dreamCardShowMore": {
+    "description": "Tappable label that expands a dream card to reveal its full text and reflection answers."
+  },
+  "dreamCardShowLess": "Show less",
+  "@dreamCardShowLess": {
+    "description": "Tappable label that collapses an expanded dream card back to its compact preview."
+  },
+  "dreamSymbolWaterLabel": "Water",
+  "@dreamSymbolWaterLabel": {
+    "description": "Label for the 'water' detected dream symbol."
+  },
+  "dreamSymbolWaterDesc": "May reflect your emotional state",
+  "@dreamSymbolWaterDesc": {
+    "description": "Gentle, non-definitive association shown for the 'water' dream symbol."
+  },
+  "dreamSymbolFlyingLabel": "Flying",
+  "@dreamSymbolFlyingLabel": {
+    "description": "Label for the 'flying' detected dream symbol."
+  },
+  "dreamSymbolFlyingDesc": "May symbolize a desire for freedom",
+  "@dreamSymbolFlyingDesc": {
+    "description": "Gentle, non-definitive association shown for the 'flying' dream symbol."
+  },
+  "dreamSymbolFallingLabel": "Falling",
+  "@dreamSymbolFallingLabel": {
+    "description": "Label for the 'falling' detected dream symbol."
+  },
+  "dreamSymbolFallingDesc": "May reflect a feeling of losing control",
+  "@dreamSymbolFallingDesc": {
+    "description": "Gentle, non-definitive association shown for the 'falling' dream symbol."
+  },
+  "dreamSymbolHouseLabel": "House",
+  "@dreamSymbolHouseLabel": {
+    "description": "Label for the 'house' detected dream symbol."
+  },
+  "dreamSymbolHouseDesc": "May represent your sense of self or security",
+  "@dreamSymbolHouseDesc": {
+    "description": "Gentle, non-definitive association shown for the 'house' dream symbol."
+  },
+  "dreamSymbolTeethLabel": "Teeth",
+  "@dreamSymbolTeethLabel": {
+    "description": "Label for the 'teeth' detected dream symbol."
+  },
+  "dreamSymbolTeethDesc": "May reflect worries about appearance or confidence",
+  "@dreamSymbolTeethDesc": {
+    "description": "Gentle, non-definitive association shown for the 'teeth' dream symbol."
+  },
+  "dreamSymbolRunningLabel": "Running",
+  "@dreamSymbolRunningLabel": {
+    "description": "Label for the 'running' detected dream symbol."
+  },
+  "dreamSymbolRunningDesc": "May reflect a wish to escape a situation",
+  "@dreamSymbolRunningDesc": {
+    "description": "Gentle, non-definitive association shown for the 'running' dream symbol."
+  },
+  "dreamSymbolLostLabel": "Being Lost",
+  "@dreamSymbolLostLabel": {
+    "description": "Label for the 'being lost' detected dream symbol."
+  },
+  "dreamSymbolLostDesc": "May reflect uncertainty about your direction in life",
+  "@dreamSymbolLostDesc": {
+    "description": "Gentle, non-definitive association shown for the 'being lost' dream symbol."
+  },
+  "dreamSymbolSnakeLabel": "Snake",
+  "@dreamSymbolSnakeLabel": {
+    "description": "Label for the 'snake' detected dream symbol."
+  },
+  "dreamSymbolSnakeDesc": "May symbolize a hidden fear or transformation",
+  "@dreamSymbolSnakeDesc": {
+    "description": "Gentle, non-definitive association shown for the 'snake' dream symbol."
+  },
+  "dreamSymbolDeathLabel": "Death",
+  "@dreamSymbolDeathLabel": {
+    "description": "Label for the 'death' detected dream symbol."
+  },
+  "dreamSymbolDeathDesc": "May gently symbolize an ending and a new beginning, not literally",
+  "@dreamSymbolDeathDesc": {
+    "description": "Gentle, non-definitive association shown for the 'death' dream symbol, carefully framed to avoid alarm."
+  },
+  "dreamSymbolBabyLabel": "Baby",
+  "@dreamSymbolBabyLabel": {
+    "description": "Label for the 'baby' detected dream symbol."
+  },
+  "dreamSymbolBabyDesc": "May reflect a new beginning or something you're nurturing",
+  "@dreamSymbolBabyDesc": {
+    "description": "Gentle, non-definitive association shown for the 'baby' dream symbol."
+  },
+  "dreamSymbolExamLabel": "Exam",
+  "@dreamSymbolExamLabel": {
+    "description": "Label for the 'exam' detected dream symbol."
+  },
+  "dreamSymbolExamDesc": "May reflect a feeling of being tested or judged",
+  "@dreamSymbolExamDesc": {
+    "description": "Gentle, non-definitive association shown for the 'exam' dream symbol."
+  },
+  "dreamSymbolOceanLabel": "Ocean",
+  "@dreamSymbolOceanLabel": {
+    "description": "Label for the 'ocean' detected dream symbol."
+  },
+  "dreamSymbolOceanDesc": "May reflect the depth of your emotions",
+  "@dreamSymbolOceanDesc": {
+    "description": "Gentle, non-definitive association shown for the 'ocean' dream symbol."
+  },
+  "dreamSymbolCarLabel": "Car",
+  "@dreamSymbolCarLabel": {
+    "description": "Label for the 'car' detected dream symbol."
+  },
+  "dreamSymbolCarDesc": "May reflect how much control you feel over your life's direction",
+  "@dreamSymbolCarDesc": {
+    "description": "Gentle, non-definitive association shown for the 'car' dream symbol."
+  },
+  "dreamSymbolStairsLabel": "Stairs",
+  "@dreamSymbolStairsLabel": {
+    "description": "Label for the 'stairs' detected dream symbol."
+  },
+  "dreamSymbolStairsDesc": "May reflect a sense of progress or transition",
+  "@dreamSymbolStairsDesc": {
+    "description": "Gentle, non-definitive association shown for the 'stairs' dream symbol."
+  },
+  "dreamSymbolMirrorLabel": "Mirror",
+  "@dreamSymbolMirrorLabel": {
+    "description": "Label for the 'mirror' detected dream symbol."
+  },
+  "dreamSymbolMirrorDesc": "May reflect how you see yourself",
+  "@dreamSymbolMirrorDesc": {
+    "description": "Gentle, non-definitive association shown for the 'mirror' dream symbol."
+  },
+  "dreamSymbolDoorLabel": "Door",
+  "@dreamSymbolDoorLabel": {
+    "description": "Label for the 'door' detected dream symbol."
+  },
+  "dreamSymbolDoorDesc": "May symbolize a new opportunity or choice ahead",
+  "@dreamSymbolDoorDesc": {
+    "description": "Gentle, non-definitive association shown for the 'door' dream symbol."
+  },
+  "dreamSymbolLightLabel": "Light",
+  "@dreamSymbolLightLabel": {
+    "description": "Label for the 'light' detected dream symbol."
+  },
+  "dreamSymbolLightDesc": "May reflect clarity or hope you're feeling",
+  "@dreamSymbolLightDesc": {
+    "description": "Gentle, non-definitive association shown for the 'light' dream symbol."
+  },
+  "exploreFeatureDailyQuestion": "Daily Question",
+  "@exploreFeatureDailyQuestion": {
+    "description": "Title for the Daily Question card in the home feature grid."
+  },
+  "crisisSupportOpeningLine": "It looks like you're going through something hard right now. You're not alone.",
+  "@crisisSupportOpeningLine": {
+    "description": "Warm, caring opening line at the top of the crisis support resource sheet, shown when local keyword detection notices language suggesting suicidal ideation or self-harm."
+  },
+  "crisisSupportSubtitle": "If you're in danger or need to talk to someone right now, these are here for you.",
+  "@crisisSupportSubtitle": {
+    "description": "Short supporting line under the opening line on the crisis support sheet, introducing the resource list below."
+  },
+  "crisisSupportDisclaimer": "This isn't a substitute for professional care, but reaching out can really help.",
+  "@crisisSupportDisclaimer": {
+    "description": "Gentle note near the bottom of the crisis support sheet clarifying it doesn't replace professional help."
+  },
+  "crisisSupportContinueButton": "I'm okay, continue",
+  "@crisisSupportContinueButton": {
+    "description": "Button label on the crisis support sheet that dismisses it and lets the user keep writing or chatting; the sheet never blocks the app."
+  },
+  "crisisResourceTurkeyEmergencyLabel": "112 - Emergency Line",
+  "@crisisResourceTurkeyEmergencyLabel": {
+    "description": "Tap-to-call resource shown on the crisis support sheet when the device region is Turkey: the national emergency line."
+  },
+  "crisisResourceTurkeySocialSupportLabel": "183 - Social Support Line",
+  "@crisisResourceTurkeySocialSupportLabel": {
+    "description": "Tap-to-call resource shown on the crisis support sheet when the device region is Turkey: the social support helpline."
+  },
+  "crisisResourceUsLabel": "988 - Suicide & Crisis Lifeline",
+  "@crisisResourceUsLabel": {
+    "description": "Tap-to-call resource shown on the crisis support sheet when the device region is the United States."
+  },
+  "crisisResourceFindAHelplineLabel": "Find a helpline near you",
+  "@crisisResourceFindAHelplineLabel": {
+    "description": "Tappable resource on the crisis support sheet that opens findahelpline.com in the browser; shown for any region without a dedicated local resource, or as the fallback when the device region can't be determined."
+  },
+  "crisisResourceFindAHelplineDesc": "Helplines for 130+ countries at findahelpline.com",
+  "@crisisResourceFindAHelplineDesc": {
+    "description": "Short description under the findahelpline.com resource on the crisis support sheet."
+  },
+  "dreamCardInterpretButton": "Interpret with AI",
+  "@dreamCardInterpretButton": {
+    "description": "Button on a dream card's expanded view that requests an optional AI-generated reflection on the dream, alongside the local symbol tags."
+  },
+  "dreamCardInterpretingStatus": "Luma is interpreting...",
+  "@dreamCardInterpretingStatus": {
+    "description": "Loading state shown while the dream-interpret Edge Function call is in flight."
+  },
+  "dreamCardAiInsightLabel": "AI Insight",
+  "@dreamCardAiInsightLabel": {
+    "description": "Small label on the AI interpretation card that visually distinguishes it from the locally-detected symbol tags."
+  },
+  "dreamCardReinterpretButton": "Re-interpret",
+  "@dreamCardReinterpretButton": {
+    "description": "Small option shown once an AI interpretation already exists, letting the user explicitly regenerate it instead of it happening automatically."
+  },
+  "dreamCardInterpretError": "Luma couldn't reach this dream just now — want to try again?",
+  "@dreamCardInterpretError": {
+    "description": "Warm fallback message shown when the AI dream interpretation request fails, instead of a raw error."
+  },
+  "exploreFeatureCommunity": "Safe Space Community",
+  "@exploreFeatureCommunity": {
+    "description": "Title for the Safe Space Community card in the home feature grid."
+  },
+  "homeFeatureDailyQuestionDesc": "A little moment to reflect",
+  "@homeFeatureDailyQuestionDesc": {
+    "description": "One-line description for the Daily Question card in the home feature grid."
+  },
+  "homeFeatureCommunityDesc": "Read gentle, anonymous answers",
+  "@homeFeatureCommunityDesc": {
+    "description": "One-line description for the Safe Space Community card in the home feature grid."
+  },
+  "dailyQuestionTitle": "Question of the Day",
+  "@dailyQuestionTitle": {
+    "description": "Heading at the top of the Daily Question screen."
+  },
+  "dailyQuestionSubtitle": "A little moment to reflect",
+  "@dailyQuestionSubtitle": {
+    "description": "Subtitle shown under the Daily Question screen's title."
+  },
+  "dailyQuestionAnswerButton": "Answer",
+  "@dailyQuestionAnswerButton": {
+    "description": "Pill-shaped button label that opens the answer sheet for today's question, shown before it's been answered."
+  },
+  "dailyQuestionEditButton": "Edit your answer",
+  "@dailyQuestionEditButton": {
+    "description": "Tappable label shown under today's answer that reopens the answer sheet to edit it."
+  },
+  "dailyQuestionAnsweredToday": "Answered today",
+  "@dailyQuestionAnsweredToday": {
+    "description": "Small status line shown once today's question has been answered."
+  },
+  "dailyQuestionInputHint": "Write your answer...",
+  "@dailyQuestionInputHint": {
+    "description": "Placeholder text for the answer text field in the answer sheet."
+  },
+  "dailyQuestionSaveButton": "Save",
+  "@dailyQuestionSaveButton": {
+    "description": "Submit button label in the Daily Question answer sheet."
+  },
+  "dailyQuestionValidationEmpty": "Write something before saving",
+  "@dailyQuestionValidationEmpty": {
+    "description": "Validation message shown when trying to save an empty answer."
+  },
+  "dailyQuestionShareToggleLabel": "Share this answer with the community anonymously",
+  "@dailyQuestionShareToggleLabel": {
+    "description": "Label for the toggle in the answer sheet that opts into anonymously sharing the answer to the Safe Space Community feed."
+  },
+  "dailyQuestionShareToggleDesc": "Your identity always stays private",
+  "@dailyQuestionShareToggleDesc": {
+    "description": "Short helper text under the community share toggle in the answer sheet."
+  },
+  "dailyQuestionHistoryTitle": "Past Questions",
+  "@dailyQuestionHistoryTitle": {
+    "description": "Heading above the history list of previously answered daily questions."
+  },
+  "dailyQuestionHistoryEmpty": "Your past answers will show up here.",
+  "@dailyQuestionHistoryEmpty": {
+    "description": "Empty-state message shown when no past daily questions have been answered yet."
+  },
+  "dailyQuestionLoadError": "Couldn't load today's question right now.",
+  "@dailyQuestionLoadError": {
+    "description": "Error message shown if reading the Daily Question data from local storage fails."
+  },
+  "dailyQuestion1": "What are three things you're grateful for right now?",
+  "@dailyQuestion1": { "description": "Daily Question bank entry 1 of 45." },
+  "dailyQuestion2": "What made you smile today?",
+  "@dailyQuestion2": { "description": "Daily Question bank entry 2 of 45." },
+  "dailyQuestion3": "What's one act of kindness you showed yourself this week?",
+  "@dailyQuestion3": { "description": "Daily Question bank entry 3 of 45." },
+  "dailyQuestion4": "What's something you learned about yourself recently?",
+  "@dailyQuestion4": { "description": "Daily Question bank entry 4 of 45." },
+  "dailyQuestion5": "What's one small thing you've been putting off that you could do today?",
+  "@dailyQuestion5": { "description": "Daily Question bank entry 5 of 45." },
+  "dailyQuestion6": "Who is someone you're thankful to have in your life, and why?",
+  "@dailyQuestion6": { "description": "Daily Question bank entry 6 of 45." },
+  "dailyQuestion7": "What's a little moment from today you'd like to remember?",
+  "@dailyQuestion7": { "description": "Daily Question bank entry 7 of 45." },
+  "dailyQuestion8": "How are you really feeling right now, underneath the surface?",
+  "@dailyQuestion8": { "description": "Daily Question bank entry 8 of 45." },
+  "dailyQuestion9": "What's one habit you'd like to gently work on?",
+  "@dailyQuestion9": { "description": "Daily Question bank entry 9 of 45." },
+  "dailyQuestion10": "What's a fear you'd like to feel a little braver about?",
+  "@dailyQuestion10": { "description": "Daily Question bank entry 10 of 45." },
+  "dailyQuestion11": "What's something about your body you're grateful for today?",
+  "@dailyQuestion11": { "description": "Daily Question bank entry 11 of 45." },
+  "dailyQuestion12": "What song or sound lifted your mood recently?",
+  "@dailyQuestion12": { "description": "Daily Question bank entry 12 of 45." },
+  "dailyQuestion13": "What do you need more of in your life right now?",
+  "@dailyQuestion13": { "description": "Daily Question bank entry 13 of 45." },
+  "dailyQuestion14": "What's a mistake that taught you something valuable?",
+  "@dailyQuestion14": { "description": "Daily Question bank entry 14 of 45." },
+  "dailyQuestion15": "Is there a conversation you've been avoiding? What's holding you back?",
+  "@dailyQuestion15": { "description": "Daily Question bank entry 15 of 45." },
+  "dailyQuestion16": "What part of today are you thankful you got to experience?",
+  "@dailyQuestion16": { "description": "Daily Question bank entry 16 of 45." },
+  "dailyQuestion17": "What's something small that made today easier?",
+  "@dailyQuestion17": { "description": "Daily Question bank entry 17 of 45." },
+  "dailyQuestion18": "When did you last feel truly at peace?",
+  "@dailyQuestion18": { "description": "Daily Question bank entry 18 of 45." },
+  "dailyQuestion19": "What's one way you've grown in the past year?",
+  "@dailyQuestion19": { "description": "Daily Question bank entry 19 of 45." },
+  "dailyQuestion20": "What's one boundary you could practice setting this week?",
+  "@dailyQuestion20": { "description": "Daily Question bank entry 20 of 45." },
+  "dailyQuestion21": "What's a comfort in your daily life you sometimes take for granted?",
+  "@dailyQuestion21": { "description": "Daily Question bank entry 21 of 45." },
+  "dailyQuestion22": "What made you laugh recently?",
+  "@dailyQuestion22": { "description": "Daily Question bank entry 22 of 45." },
+  "dailyQuestion23": "What does \"rest\" look like for you right now?",
+  "@dailyQuestion23": { "description": "Daily Question bank entry 23 of 45." },
+  "dailyQuestion24": "What's a skill you'd love to get better at?",
+  "@dailyQuestion24": { "description": "Daily Question bank entry 24 of 45." },
+  "dailyQuestion25": "What's something you'd try if you weren't afraid of failing?",
+  "@dailyQuestion25": { "description": "Daily Question bank entry 25 of 45." },
+  "dailyQuestion26": "Who taught you something important without even realizing it?",
+  "@dailyQuestion26": { "description": "Daily Question bank entry 26 of 45." },
+  "dailyQuestion27": "What's a small pleasure you enjoyed today?",
+  "@dailyQuestion27": { "description": "Daily Question bank entry 27 of 45." },
+  "dailyQuestion28": "What are you carrying today that you could set down, even briefly?",
+  "@dailyQuestion28": { "description": "Daily Question bank entry 28 of 45." },
+  "dailyQuestion29": "What's one thing you did differently than you would have a year ago?",
+  "@dailyQuestion29": { "description": "Daily Question bank entry 29 of 45." },
+  "dailyQuestion30": "What's one kind thing you could say to yourself right now?",
+  "@dailyQuestion30": { "description": "Daily Question bank entry 30 of 45." },
+  "dailyQuestion31": "What's a place that makes you feel grateful just thinking about it?",
+  "@dailyQuestion31": { "description": "Daily Question bank entry 31 of 45." },
+  "dailyQuestion32": "What's something you're looking forward to this week?",
+  "@dailyQuestion32": { "description": "Daily Question bank entry 32 of 45." },
+  "dailyQuestion33": "What does your inner voice sound like today — gentle or harsh?",
+  "@dailyQuestion33": { "description": "Daily Question bank entry 33 of 45." },
+  "dailyQuestion34": "What's a challenge that made you stronger?",
+  "@dailyQuestion34": { "description": "Daily Question bank entry 34 of 45." },
+  "dailyQuestion35": "What's one thing you could forgive yourself for today?",
+  "@dailyQuestion35": { "description": "Daily Question bank entry 35 of 45." },
+  "dailyQuestion36": "What's a simple pleasure — food, weather, a texture — you appreciated today?",
+  "@dailyQuestion36": { "description": "Daily Question bank entry 36 of 45." },
+  "dailyQuestion37": "What's the best part of your morning today?",
+  "@dailyQuestion37": { "description": "Daily Question bank entry 37 of 45." },
+  "dailyQuestion38": "What's one feeling you've been avoiding sitting with?",
+  "@dailyQuestion38": { "description": "Daily Question bank entry 38 of 45." },
+  "dailyQuestion39": "What would you tell yourself from a year ago?",
+  "@dailyQuestion39": { "description": "Daily Question bank entry 39 of 45." },
+  "dailyQuestion40": "What's a small risk that could open a new door for you?",
+  "@dailyQuestion40": { "description": "Daily Question bank entry 40 of 45." },
+  "dailyQuestion41": "What's something your past self would be proud you kept going with?",
+  "@dailyQuestion41": { "description": "Daily Question bank entry 41 of 45." },
+  "dailyQuestion42": "What made today feel a little lighter?",
+  "@dailyQuestion42": { "description": "Daily Question bank entry 42 of 45." },
+  "dailyQuestion43": "If today had a color, what would it be and why?",
+  "@dailyQuestion43": { "description": "Daily Question bank entry 43 of 45." },
+  "dailyQuestion44": "What's one thing you're better at than you give yourself credit for?",
+  "@dailyQuestion44": { "description": "Daily Question bank entry 44 of 45." },
+  "dailyQuestion45": "What's one thing you could do this week purely because it brings you joy?",
+  "@dailyQuestion45": { "description": "Daily Question bank entry 45 of 45." },
+  "communityTitle": "Safe Space Community",
+  "@communityTitle": {
+    "description": "Heading at the top of the Safe Space Community feed screen."
+  },
+  "communityFramingText": "This is a safe space filled with others sharing their experiences. Be kind.",
+  "@communityFramingText": {
+    "description": "Gentle framing banner shown at the top of the community feed screen."
+  },
+  "communityTodayQuestionLabel": "Today's Question",
+  "@communityTodayQuestionLabel": {
+    "description": "Small label above today's question text at the top of the community feed."
+  },
+  "communityEmptyState": "No one has shared yet today — be the first.",
+  "@communityEmptyState": {
+    "description": "Empty-state message shown when no one has shared an answer for today's question yet."
+  },
+  "communityLoadError": "Couldn't load the feed right now.",
+  "@communityLoadError": {
+    "description": "Error message shown if fetching the community feed from Supabase fails."
+  },
+  "communityReportTooltip": "Report",
+  "@communityReportTooltip": {
+    "description": "Accessibility label for the flag icon on a community feed entry that lets a user report it."
+  },
+  "communityReportConfirmTitle": "Report this share?",
+  "@communityReportConfirmTitle": {
+    "description": "Title of the confirmation dialog shown when tapping the report icon on a community feed entry."
+  },
+  "communityReportConfirmBody": "This share will be removed from the feed and flagged for review.",
+  "@communityReportConfirmBody": {
+    "description": "Body text of the report confirmation dialog, explaining what reporting does."
+  },
+  "communityReportConfirmButton": "Report",
+  "@communityReportConfirmButton": {
+    "description": "Confirm button label in the report confirmation dialog."
+  },
+  "communityReportCancelButton": "Cancel",
+  "@communityReportCancelButton": {
+    "description": "Cancel button label in the report confirmation dialog."
+  },
+  "communityReportSuccessMessage": "Thanks — this share has been reported.",
+  "@communityReportSuccessMessage": {
+    "description": "Snackbar confirmation shown after successfully reporting a community feed entry."
+  },
+  "communityRelativeTimeJustNow": "Just now",
+  "@communityRelativeTimeJustNow": {
+    "description": "Relative timestamp shown on a community feed entry shared less than a minute ago."
+  },
+  "communityRelativeTimeMinutes": "{minutes}m ago",
+  "@communityRelativeTimeMinutes": {
+    "description": "Relative timestamp shown on a community feed entry shared less than an hour ago.",
+    "placeholders": {
+      "minutes": { "type": "int", "example": "5" }
+    }
+  },
+  "communityRelativeTimeHours": "{hours}h ago",
+  "@communityRelativeTimeHours": {
+    "description": "Relative timestamp shown on a community feed entry shared less than a day ago.",
+    "placeholders": {
+      "hours": { "type": "int", "example": "2" }
+    }
+  },
+  "communityRelativeTimeDays": "{days}d ago",
+  "@communityRelativeTimeDays": {
+    "description": "Relative timestamp shown on a community feed entry shared a day or more ago.",
+    "placeholders": {
+      "days": { "type": "int", "example": "3" }
+    }
+  },
+  "communityAdjective1": "Quiet",
+  "@communityAdjective1": { "description": "Adjective option 1 of 8 used to generate a user's anonymous community display name." },
+  "communityAdjective2": "Kind",
+  "@communityAdjective2": { "description": "Adjective option 2 of 8 used to generate a user's anonymous community display name." },
+  "communityAdjective3": "Calm",
+  "@communityAdjective3": { "description": "Adjective option 3 of 8 used to generate a user's anonymous community display name." },
+  "communityAdjective4": "Brave",
+  "@communityAdjective4": { "description": "Adjective option 4 of 8 used to generate a user's anonymous community display name." },
+  "communityAdjective5": "Hopeful",
+  "@communityAdjective5": { "description": "Adjective option 5 of 8 used to generate a user's anonymous community display name." },
+  "communityAdjective6": "Gentle",
+  "@communityAdjective6": { "description": "Adjective option 6 of 8 used to generate a user's anonymous community display name." },
+  "communityAdjective7": "Cheerful",
+  "@communityAdjective7": { "description": "Adjective option 7 of 8 used to generate a user's anonymous community display name." },
+  "communityAdjective8": "Curious",
+  "@communityAdjective8": { "description": "Adjective option 8 of 8 used to generate a user's anonymous community display name." },
+  "communityNoun1": "Star",
+  "@communityNoun1": { "description": "Noun option 1 of 8 used to generate a user's anonymous community display name." },
+  "communityNoun2": "Butterfly",
+  "@communityNoun2": { "description": "Noun option 2 of 8 used to generate a user's anonymous community display name." },
+  "communityNoun3": "Moon",
+  "@communityNoun3": { "description": "Noun option 3 of 8 used to generate a user's anonymous community display name." },
+  "communityNoun4": "Cloud",
+  "@communityNoun4": { "description": "Noun option 4 of 8 used to generate a user's anonymous community display name." },
+  "communityNoun5": "Blossom",
+  "@communityNoun5": { "description": "Noun option 5 of 8 used to generate a user's anonymous community display name." },
+  "communityNoun6": "Breeze",
+  "@communityNoun6": { "description": "Noun option 6 of 8 used to generate a user's anonymous community display name." },
+  "communityNoun7": "Wave",
+  "@communityNoun7": { "description": "Noun option 7 of 8 used to generate a user's anonymous community display name." },
+  "communityNoun8": "Bird",
+  "@communityNoun8": { "description": "Noun option 8 of 8 used to generate a user's anonymous community display name." }
+}
