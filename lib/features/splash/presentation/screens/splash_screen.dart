@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/onboarding_storage_service.dart';
+import '../../../../features/theme_choice/presentation/screens/theme_choice_screen.dart';
 import '../../../../theme/app_theme.dart';
 
 /// Shown on app start. Decides whether to route to onboarding (first
 /// launch), straight to home (an existing, still-valid Supabase session —
 /// restored synchronously by `Supabase.initialize()` in main.dart before
 /// this screen ever mounts), or login (onboarding done, no session).
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   final _onboardingStorage = OnboardingStorageService();
 
   @override
@@ -29,17 +34,30 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _decideNextRoute() async {
     final results = await Future.wait([
       _onboardingStorage.isOnboardingComplete(),
+      SharedPreferences.getInstance(),
       Future<void>.delayed(const Duration(milliseconds: 900)),
     ]);
     final onboardingComplete = results[0] as bool;
+    final prefs = results[1] as SharedPreferences;
 
     if (!mounted) return;
+    // Very first thing: let the user pick a light/dark ASTRA theme.
+    if (prefs.getString(astraThemeKey) == null) {
+      context.go(AppRoutes.themeChoice);
+      return;
+    }
     if (!onboardingComplete) {
       context.go(AppRoutes.onboarding);
       return;
     }
     final hasSession = Supabase.instance.client.auth.currentSession != null;
-    context.go(hasSession ? AppRoutes.home : AppRoutes.login);
+    if (hasSession) {
+      // On a fresh device this pulls the user's cloud backup down before any
+      // screen reads local data, so nothing looks "lost" after a reinstall.
+      await ref.read(cloudBackupServiceProvider).syncOnStartup();
+      if (!mounted) return;
+    }
+    context.go(hasSession ? AppRoutes.home : AppRoutes.astraLanding);
   }
 
   @override
@@ -85,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                'Lumora',
+                'ASTRA',
                 style: AppTheme.displayFont(
                   fontSize: 32,
                   color: AppTheme.onGradientText,

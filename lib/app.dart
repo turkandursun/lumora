@@ -11,7 +11,7 @@ class LumoraApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Lumora',
+      title: 'ASTRA',
       theme: AppTheme.lightTheme,
       routerConfig: appRouter,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

@@ -5,7 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// than showing anything the Edge Function or network layer returned
 /// directly.
 class DreamInterpretationException implements Exception {
-  const DreamInterpretationException();
+  const DreamInterpretationException([this.detail]);
+
+  /// Underlying cause, surfaced only for diagnostics.
+  final String? detail;
+
+  @override
+  String toString() => detail ?? 'DreamInterpretationException';
 }
 
 /// Talks to the `dream-interpret` Supabase Edge Function, which is the only
@@ -73,11 +79,12 @@ class DreamInterpretationService {
       if (interpretation is String && interpretation.trim().isNotEmpty) {
         return interpretation.trim();
       }
-      throw const DreamInterpretationException();
+      final err = data is Map ? data['error'] : null;
+      throw DreamInterpretationException('empty/invalid response: $err');
     } on DreamInterpretationException {
       rethrow;
-    } catch (_) {
-      throw const DreamInterpretationException();
+    } catch (e) {
+      throw DreamInterpretationException(e.toString());
     }
   }
 }

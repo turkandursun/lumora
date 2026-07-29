@@ -86,9 +86,19 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   Future<void> _advance() async {
     if (_navigated || !mounted) return;
     _navigated = true;
-    final onboarded = await HobbiesRepository().isOnboarded();
+    final repo = HobbiesRepository();
+    final onboarded = await repo.isOnboarded();
     if (!mounted) return;
-    context.go(onboarded ? AppRoutes.home : AppRoutes.hobbiesOnboarding);
+    if (onboarded) {
+      context.go(AppRoutes.home);
+      return;
+    }
+    // First time only: mark the one-time hobby prompt as seen *now*, before
+    // showing it, so it never reappears on later logins even if the user
+    // backs out without finishing. Hobbies stay editable from Profile.
+    await repo.setOnboarded();
+    if (!mounted) return;
+    context.go(AppRoutes.hobbiesOnboarding);
   }
 
   void _pickMood(AppMood mood) {

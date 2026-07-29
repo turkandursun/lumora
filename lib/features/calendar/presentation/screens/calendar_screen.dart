@@ -503,15 +503,15 @@ class _DayCell extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 if (hasMood && !isPeriod) ...[
-                  // Whole-circle mood: symbol centred, day number small on top.
+                  // Whole-circle mood: big symbol centred, day number small on top.
                   Icon(moodSymbolIcons[moodIndex!],
-                      size: 15, color: Colors.white),
+                      size: 22, color: Colors.white),
                   Positioned(
-                    top: 3,
+                    top: 1,
                     child: Text(
                       '$day',
                       style: AppTheme.bodyFont(
-                        fontSize: 8.5,
+                        fontSize: 8,
                         fontWeight: FontWeight.w700,
                         color: Colors.white.withValues(alpha: 0.9),
                       ),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/app_background.dart';
@@ -91,6 +92,87 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     await Supabase.instance.client.auth
         .updateUser(UserAttributes(data: {'full_name': result}));
     if (mounted) setState(() {});
+  }
+
+  Future<void> _backupNow(bool isTr) async {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(isTr ? 'Yedekleniyor...' : 'Backing up...'),
+    ));
+    try {
+      await ref.read(cloudBackupServiceProvider).backup();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text(isTr ? 'Yedeklendi 🌸' : 'Backed up 🌸'),
+        ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          duration: const Duration(seconds: 10),
+          content: Text(isTr ? 'Yedeklenemedi: $e' : "Couldn't back up: $e"),
+        ));
+    }
+  }
+
+  Future<void> _restoreNow(bool isTr) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: SakuraHomePalette.cardWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Text(
+          isTr ? 'Buluttan geri yükle' : 'Restore from cloud',
+          style: AppTheme.displayFont(
+              fontSize: 18, color: SakuraHomePalette.textDeep),
+        ),
+        content: Text(
+          isTr
+              ? 'Bu cihazdaki veriler, buluttaki son yedekle değiştirilecek. Devam edilsin mi?'
+              : 'Data on this device will be replaced with your latest cloud backup. Continue?',
+          style: AppTheme.bodyFont(
+              fontSize: 14, color: SakuraHomePalette.textMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel',
+                style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(isTr ? 'Geri yükle' : 'Restore',
+                style: AppTheme.bodyFont(
+                    color: SakuraHomePalette.blossomPink,
+                    fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final ok = await ref.read(cloudBackupServiceProvider).restore();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        duration: const Duration(seconds: 6),
+        content: Text(ok
+            ? (isTr
+                ? 'Geri yüklendi. Değişikliklerin görünmesi için uygulamayı yeniden başlat.'
+                : 'Restored. Restart the app to see your data.')
+            : (isTr
+                ? 'Bulutta yedek bulunamadı.'
+                : 'No cloud backup found.')),
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(isTr
+            ? 'Geri yüklenemedi. (Sunucu kurulumu gerekebilir.)'
+            : "Couldn't restore. (Server setup may be needed.)"),
+      ));
+    }
   }
 
   String _memberSince(bool isTr) {
@@ -218,6 +300,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.lock_outline_rounded,
                   label: l10n.profileMenuAppLock,
                   onTap: () => context.push(AppRoutes.appLock),
+                ),
+                const SizedBox(height: 12),
+                _MenuItem(
+                  icon: Icons.cloud_upload_rounded,
+                  label: isTr ? 'Verilerimi yedekle' : 'Back up my data',
+                  onTap: () => _backupNow(isTr),
+                ),
+                const SizedBox(height: 12),
+                _MenuItem(
+                  icon: Icons.cloud_download_rounded,
+                  label: isTr ? 'Buluttan geri yükle' : 'Restore from cloud',
+                  onTap: () => _restoreNow(isTr),
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
