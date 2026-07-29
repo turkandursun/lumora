@@ -153,12 +153,15 @@ List<HomeFeatureItem> homeFeatureItems(
   ];
 }
 
-/// Alternating soft pastel duotone backgrounds for the icon badges, so
-/// neighboring cards read as gentle variety rather than a repeated tile.
+/// Rich mid-pastel duotone gradients rotated across the feature cards, deep
+/// enough that white text and a frosted glass badge read cleanly on top.
 const _iconGradients = [
-  [SakuraHomePalette.blossomPink, SakuraHomePalette.petalPink],
-  [Color(0xFFC4B5FD), Color(0xFFE9D8FD)],
-  [Color(0xFFFBCFE8), Color(0xFFFFE4F1)],
+  [Color(0xFFF178B6), Color(0xFFF9A8D4)], // pink
+  [Color(0xFF9B84E6), Color(0xFFC3B0F2)], // lavender
+  [Color(0xFF5FBFA0), Color(0xFF93D9C4)], // mint
+  [Color(0xFFEF9A6B), Color(0xFFF7BE95)], // peach
+  [Color(0xFF6FA8E0), Color(0xFF9FC7F0)], // sky
+  [Color(0xFFE8859B), Color(0xFFF4B0C0)], // rose
 ];
 
 /// A responsive 3-column grid of soft pastel illustrated feature cards.
@@ -197,48 +200,68 @@ class _FeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(22),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: item.onTap,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: gradient,
-            ),
+    const shadow = [
+      Shadow(color: Color(0x33000000), blurRadius: 4, offset: Offset(0, 1)),
+    ];
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradient,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.first.withValues(alpha: 0.4),
+            blurRadius: 18,
+            offset: const Offset(0, 9),
           ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: item.onTap,
+          splashColor: Colors.white.withValues(alpha: 0.2),
           child: Stack(
             children: [
-              // Large ghosted feature icon as the card's "artwork".
+              // Faint oversized glyph as soft "artwork" in the corner.
               Positioned(
-                right: -14,
-                top: -8,
+                right: -18,
+                bottom: -14,
                 child: Icon(
                   item.primaryIcon,
                   size: 104,
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: Colors.white.withValues(alpha: 0.16),
                 ),
               ),
-              if (item.accentIcon != null)
-                Positioned(
-                  left: 14,
-                  top: 14,
-                  child: Icon(
-                    item.accentIcon,
-                    size: 20,
-                    color: Colors.white.withValues(alpha: 0.85),
+              // Frosted-glass badge holding the feature's icon.
+              Positioned(
+                left: 14,
+                top: 14,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.28),
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.45), width: 1),
                   ),
+                  child: Icon(item.primaryIcon, size: 23, color: Colors.white),
                 ),
+              ),
               if (item.badgeCount > 0)
                 Positioned(
                   right: 12,
                   top: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEF4444),
                       borderRadius: BorderRadius.circular(999),
@@ -253,9 +276,25 @@ class _FeatureCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              // Little arrow chip in the bottom-right — a gentle "tap me".
+              Positioned(
+                right: 12,
+                bottom: 12,
+                child: Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.25),
+                  ),
+                  child: const Icon(Icons.arrow_forward_rounded,
+                      size: 15, color: Colors.white),
+                ),
+              ),
               Positioned(
                 left: 14,
-                right: 12,
+                right: 44,
                 bottom: 14,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,8 +306,8 @@ class _FeatureCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.displayFont(
                         fontSize: 16,
-                        color: SakuraHomePalette.textDeep,
-                      ),
+                        color: Colors.white,
+                      ).copyWith(shadows: shadow),
                     ),
                     const SizedBox(height: 3),
                     Text(
@@ -277,9 +316,9 @@ class _FeatureCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.bodyFont(
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: SakuraHomePalette.textMuted,
-                      ),
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ).copyWith(shadows: shadow),
                     ),
                   ],
                 ),

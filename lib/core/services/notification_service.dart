@@ -65,7 +65,7 @@ class NotificationService implements ReminderNotifier {
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         iOS: DarwinInitializationSettings(),
         windows: WindowsInitializationSettings(
-          appName: 'Lumora',
+          appName: 'ASTRA',
           appUserModelId: _windowsAppUserModelId,
           guid: _windowsGuid,
         ),

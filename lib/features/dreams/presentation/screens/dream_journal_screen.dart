@@ -280,12 +280,18 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
       await ref.read(dreamsRepositoryProvider).saveAiInterpretation(id: dream.id, interpretation: interpretation);
       if (!mounted) return;
       setState(() => _isInterpreting = false);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _isInterpreting = false;
         _interpretError = true;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 8),
+          content: Text('Rüya yorumu hatası: $e'),
+        ),
+      );
     }
   }
 

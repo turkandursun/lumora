@@ -54,7 +54,10 @@ class HomeHeader extends ConsumerWidget {
                   Flexible(
                     child: Text(
                       _timeOfDayGreeting(l10n, now, firstName),
-                      style: AppTheme.displayFont(fontSize: 22, color: SakuraHomePalette.textDeep),
+                      style: AppTheme.displayFont(fontSize: 22, color: Colors.white)
+                          .copyWith(shadows: const [
+                        Shadow(color: Color(0x99000000), blurRadius: 8, offset: Offset(0, 1)),
+                      ]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -72,8 +75,10 @@ class HomeHeader extends ConsumerWidget {
                       style: AppTheme.bodyFont(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
-                        color: SakuraHomePalette.textMuted,
-                      ),
+                        color: Colors.white.withValues(alpha: 0.92),
+                      ).copyWith(shadows: const [
+                        Shadow(color: Color(0x99000000), blurRadius: 6, offset: Offset(0, 1)),
+                      ]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

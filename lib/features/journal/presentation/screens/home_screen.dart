@@ -9,7 +9,7 @@ import '../providers/journal_streak_provider.dart';
 import '../widgets/dream_journal_banner.dart';
 import '../widgets/home_feature_grid.dart';
 import '../widgets/home_header.dart';
-import '../../../../theme/app_background.dart';
+import '../../../../theme/astra_home_background.dart';
 import '../widgets/home_stats_row.dart';
 import '../widgets/motivation_quote_carousel.dart';
 
@@ -55,7 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: SakuraHomePalette.cream,
-      body: AppBackground(
+      body: AstraHomeBackground(
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),

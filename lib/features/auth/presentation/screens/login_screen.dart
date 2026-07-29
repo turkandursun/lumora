@@ -194,7 +194,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         const SizedBox(height: 4),
         const Butterfly(),
         const SizedBox(height: 10),
-        Text('Lumora', textAlign: TextAlign.center, style: PastelAuthPalette.wordmark()),
+        Text('ASTRA', textAlign: TextAlign.center, style: PastelAuthPalette.wordmark()),
         const SizedBox(height: 8),
         Text(
           l10n.loginTagline,

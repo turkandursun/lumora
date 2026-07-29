@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/cloud_backup_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../theme/app_theme.dart';
@@ -26,8 +27,39 @@ class AppShell extends ConsumerStatefulWidget {
 
 enum _ActiveTab { home, profile }
 
-class _AppShellState extends ConsumerState<AppShell> {
+class _AppShellState extends ConsumerState<AppShell>
+    with WidgetsBindingObserver {
   _ActiveTab _active = _ActiveTab.home;
+  DateTime? _lastBackup;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back up whenever the user leaves the app, so the latest data is safe in
+    // the cloud. Debounced so rapid pause/resume cycles don't spam uploads.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      final now = DateTime.now();
+      if (_lastBackup != null &&
+          now.difference(_lastBackup!) < const Duration(seconds: 20)) {
+        return;
+      }
+      _lastBackup = now;
+      // Fire-and-forget; failures must never disrupt the app.
+      ref.read(cloudBackupServiceProvider).backup().catchError((_) {});
+    }
+  }
 
   Future<void> _openAiChat() async {
     final unlocked = await ensureSectionUnlocked(context, ref, AppSection.aiChat);
