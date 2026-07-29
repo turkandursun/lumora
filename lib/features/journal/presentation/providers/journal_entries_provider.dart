@@ -10,10 +10,14 @@ final journalEntriesRepositoryProvider = Provider<JournalEntriesRepository>((ref
 
 /// Reactive list of the most recently saved journal entries, newest first.
 final recentJournalEntriesProvider = StreamProvider<List<JournalEntryRow>>((ref) {
-  return ref.watch(journalEntriesRepositoryProvider).watchRecent();
+  final repo = ref.watch(journalEntriesRepositoryProvider);
+  repo.fetchAndSyncFromSupabase();
+  return repo.watchRecent();
 });
 
 /// Every saved journal entry, newest first — used by analytics/stats.
 final allJournalEntriesProvider = StreamProvider<List<JournalEntryRow>>((ref) {
-  return ref.watch(journalEntriesRepositoryProvider).watchAll();
+  final repo = ref.watch(journalEntriesRepositoryProvider);
+  repo.fetchAndSyncFromSupabase();
+  return repo.watchAll();
 });

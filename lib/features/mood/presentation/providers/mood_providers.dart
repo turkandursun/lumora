@@ -17,6 +17,8 @@ class MoodLogNotifier extends StateNotifier<Map<DateTime, int>> {
 
   Future<void> _load() async {
     state = await _repo.load();
+    await _repo.fetchAndSyncFromSupabase();
+    state = await _repo.load();
   }
 
   Future<void> setForDay(DateTime day, int moodIndex) async {
@@ -25,6 +27,7 @@ class MoodLogNotifier extends StateNotifier<Map<DateTime, int>> {
     next[key] = moodIndex;
     state = next;
     await _repo.save(next);
+    await _repo.syncMoodToSupabase(key, moodIndex);
   }
 
   /// Removes any logged mood for [day].

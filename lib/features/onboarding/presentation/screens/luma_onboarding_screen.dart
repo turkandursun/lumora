@@ -2,11 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../../../core/router/app_router.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../theme/lumora_palette.dart';
+import '../../../profile/data/profile_repository.dart';
 
 /// A short, character-led welcome shown right after sign-up: Luma (a warm
 /// glowing star) introduces itself, then asks what to call the user. The
@@ -41,8 +40,7 @@ class _LumaOnboardingScreenState extends State<LumaOnboardingScreen> {
     final nick = _nickController.text.trim();
     if (nick.isNotEmpty) {
       try {
-        await Supabase.instance.client.auth
-            .updateUser(UserAttributes(data: {'full_name': nick}));
+        await ProfileRepository().updateFullName(nick);
       } catch (_) {
         // Saving the nickname is best-effort; never block onboarding on it.
       }

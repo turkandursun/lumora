@@ -14,9 +14,11 @@ import '../../../dreams/presentation/providers/dreams_providers.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 import '../../../hobbies/presentation/providers/hobbies_providers.dart';
 import '../../../hobbies/presentation/screens/hobbies_screen.dart' show hobbyLabel;
+import '../../../journal/presentation/providers/journal_entries_provider.dart';
 import '../../../journal/presentation/providers/journal_streak_provider.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../../rewards/domain/rewards.dart';
+import '../../data/profile_repository.dart';
 
 /// Profile tab — a profile card, a stats summary, an achievements preview,
 /// the user's chosen hobbies and a settings menu.
@@ -88,8 +90,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
     if (result == null || result.isEmpty) return;
-    await Supabase.instance.client.auth
-        .updateUser(UserAttributes(data: {'full_name': result}));
+    await ProfileRepository().updateFullName(result);
     if (mounted) setState(() {});
   }
 
@@ -224,6 +225,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.logout_rounded,
                   label: l10n.profileMenuLogout,
                   onTap: () async {
+                    try {
+                      await ref.read(journalEntriesRepositoryProvider).deleteAll();
+                    } catch (_) {}
                     await Supabase.instance.client.auth.signOut();
                     if (context.mounted) context.go(AppRoutes.login);
                   },
