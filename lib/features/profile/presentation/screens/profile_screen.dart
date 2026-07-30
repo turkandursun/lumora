@@ -297,12 +297,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
-                  icon: Icons.lock_outline_rounded,
-                  label: l10n.profileMenuAppLock,
-                  onTap: () => context.push(AppRoutes.appLock),
-                ),
-                const SizedBox(height: 12),
-                _MenuItem(
                   icon: Icons.cloud_upload_rounded,
                   label: isTr ? 'Verilerimi yedekle' : 'Back up my data',
                   onTap: () => _backupNow(isTr),
