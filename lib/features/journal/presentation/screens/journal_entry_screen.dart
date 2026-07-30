@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../../../../core/database/app_database.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/services/crisis_detection_service.dart';
 import '../../../../theme/crisis_support_sheet.dart';
@@ -51,6 +52,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
   Timer? _recordingTicker;
   String? _pendingAudioPath;
   String _preSpeechText = '';
+  JournalEntryRow? _editingEntry;
 
   DateTime _selectedDate = DateTime.now();
 
@@ -268,8 +270,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       CrisisSupportSheet.show(context);
     }
 
-<<<<<<< HEAD
-    final audioPath = _pendingAudioPath;
+    final audioPath = _keepVoiceRecording ? _pendingAudioPath : null;
     if (_editingEntry != null) {
       await ref.read(journalEntriesRepositoryProvider).update(
         _editingEntry!.id,
@@ -286,11 +287,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
           .incrementByIconKey(DefaultGoalIconKeys.journal, 10);
       ref.read(goalStreakProvider.notifier).refresh();
     }
-=======
-    final audioPath = _keepVoiceRecording ? _pendingAudioPath : null;
-    await ref.read(journalEntriesRepositoryProvider).save(content, audioPath: audioPath);
-    await ref.read(journalStreakProvider.notifier).recordEntrySaved();
->>>>>>> 09dd9a024fac84c2547991009d9b25974832f166
 
     if (!mounted) return;
     _entryController.clear();
@@ -298,6 +294,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     setState(() {
       _pendingAudioPath = null;
       _keepVoiceRecording = true;
+      _editingEntry = null;
     });
     FocusScope.of(context).unfocus();
   }
