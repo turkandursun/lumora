@@ -120,18 +120,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     setState(() => _isGoogleSubmitting = false);
   }
 
-  /// Google sign-in (whether it created a brand-new account or logged an
-  /// existing one back in) routes by the persisted onboarding flag, same
-  /// as the login screen — not the "always onboarding" rule above, which
-  /// only applies to a fresh email/password signup.
+  /// Google sign-in from the sign-up screen is treated as a new signup: meet
+  /// Luma, run onboarding, then pick hobbies. (Returning users normally use
+  /// the login screen's Google button, which skips the hobbies step.)
   Future<void> _routeAfterGoogleSignIn() async {
-    final onboardingComplete = await _onboardingStorage.isOnboardingComplete();
     if (!mounted) return;
-    // New users meet Luma first; returning users go to the mood check-in.
-    context.go(
-      onboardingComplete ? AppRoutes.welcome : AppRoutes.lumaOnboarding,
-      extra: true,
-    );
+    context.go(AppRoutes.lumaOnboarding);
   }
 
   void _onLoginTap() {

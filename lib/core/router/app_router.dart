@@ -149,7 +149,8 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.onboarding,
-      builder: (context, state) => const OnboardingScreen(),
+      builder: (context, state) =>
+          OnboardingScreen(isNewSignup: (state.extra as bool?) ?? false),
     ),
     GoRoute(
       path: AppRoutes.lumaOnboarding,
