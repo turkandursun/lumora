@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/onboarding_storage_service.dart';
@@ -46,7 +47,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _completeOnboarding() async {
     await _onboardingStorage.setOnboardingComplete();
     if (!mounted) return;
-    context.go(AppRoutes.login);
+    final hasSession = Supabase.instance.client.auth.currentSession != null;
+    if (hasSession) {
+      context.go(AppRoutes.welcome, extra: true);
+    } else {
+      context.go(AppRoutes.login);
+    }
   }
 
   void _onNextPressed() {

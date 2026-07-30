@@ -116,7 +116,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _routeAfterSignIn() async {
     final onboardingComplete = await _onboardingStorage.isOnboardingComplete();
     if (!mounted) return;
-    context.go(onboardingComplete ? AppRoutes.welcome : AppRoutes.onboarding);
+    context.go(
+      onboardingComplete ? AppRoutes.welcome : AppRoutes.onboarding,
+      extra: false,
+    );
   }
 
   void _onSignUpTap() {

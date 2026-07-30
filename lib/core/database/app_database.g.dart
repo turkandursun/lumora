@@ -481,6 +481,17 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
   late final GeneratedColumn<DateTime> periodStart = GeneratedColumn<DateTime>(
       'period_start', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _supabaseIdMeta =
+      const VerificationMeta('supabaseId');
+  @override
+  late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
+      'supabase_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -491,7 +502,9 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
         target,
         progress,
         frequency,
-        periodStart
+        periodStart,
+        userId,
+        supabaseId
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -542,6 +555,16 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
     } else if (isInserting) {
       context.missing(_periodStartMeta);
     }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    }
+    if (data.containsKey('supabase_id')) {
+      context.handle(
+          _supabaseIdMeta,
+          supabaseId.isAcceptableOrUnknown(
+              data['supabase_id']!, _supabaseIdMeta));
+    }
     return context;
   }
 
@@ -570,6 +593,10 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
           .read(DriftSqlType.string, data['${effectivePrefix}frequency'])!),
       periodStart: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}period_start'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
+      supabaseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
     );
   }
 
@@ -600,6 +627,12 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
   /// of today, this week's Monday, or this month's 1st, depending on
   /// [frequency].
   final DateTime periodStart;
+
+  /// Supabase auth ID of the user who owns this goal.
+  final String? userId;
+
+  /// Remote primary key in Supabase `goals` table.
+  final String? supabaseId;
   const GoalRow(
       {required this.id,
       required this.title,
@@ -609,7 +642,9 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       required this.target,
       required this.progress,
       required this.frequency,
-      required this.periodStart});
+      required this.periodStart,
+      this.userId,
+      this.supabaseId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -629,6 +664,12 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
           Variable<String>($GoalsTable.$converterfrequency.toSql(frequency));
     }
     map['period_start'] = Variable<DateTime>(periodStart);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    if (!nullToAbsent || supabaseId != null) {
+      map['supabase_id'] = Variable<String>(supabaseId);
+    }
     return map;
   }
 
@@ -645,6 +686,11 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       progress: Value(progress),
       frequency: Value(frequency),
       periodStart: Value(periodStart),
+      userId:
+          userId == null && nullToAbsent ? const Value.absent() : Value(userId),
+      supabaseId: supabaseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supabaseId),
     );
   }
 
@@ -663,6 +709,8 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       frequency: $GoalsTable.$converterfrequency
           .fromJson(serializer.fromJson<String>(json['frequency'])),
       periodStart: serializer.fromJson<DateTime>(json['periodStart']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      supabaseId: serializer.fromJson<String?>(json['supabaseId']),
     );
   }
   @override
@@ -680,6 +728,8 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       'frequency': serializer
           .toJson<String>($GoalsTable.$converterfrequency.toJson(frequency)),
       'periodStart': serializer.toJson<DateTime>(periodStart),
+      'userId': serializer.toJson<String?>(userId),
+      'supabaseId': serializer.toJson<String?>(supabaseId),
     };
   }
 
@@ -692,7 +742,9 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
           int? target,
           int? progress,
           GoalFrequency? frequency,
-          DateTime? periodStart}) =>
+          DateTime? periodStart,
+          Value<String?> userId = const Value.absent(),
+          Value<String?> supabaseId = const Value.absent()}) =>
       GoalRow(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -705,6 +757,8 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
         progress: progress ?? this.progress,
         frequency: frequency ?? this.frequency,
         periodStart: periodStart ?? this.periodStart,
+        userId: userId.present ? userId.value : this.userId,
+        supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
       );
   GoalRow copyWithCompanion(GoalsCompanion data) {
     return GoalRow(
@@ -720,6 +774,9 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       frequency: data.frequency.present ? data.frequency.value : this.frequency,
       periodStart:
           data.periodStart.present ? data.periodStart.value : this.periodStart,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      supabaseId:
+          data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
     );
   }
 
@@ -734,14 +791,16 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
           ..write('target: $target, ')
           ..write('progress: $progress, ')
           ..write('frequency: $frequency, ')
-          ..write('periodStart: $periodStart')
+          ..write('periodStart: $periodStart, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, title, iconKey, unit, customUnitLabel,
-      target, progress, frequency, periodStart);
+      target, progress, frequency, periodStart, userId, supabaseId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -754,7 +813,9 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
           other.target == this.target &&
           other.progress == this.progress &&
           other.frequency == this.frequency &&
-          other.periodStart == this.periodStart);
+          other.periodStart == this.periodStart &&
+          other.userId == this.userId &&
+          other.supabaseId == this.supabaseId);
 }
 
 class GoalsCompanion extends UpdateCompanion<GoalRow> {
@@ -767,6 +828,8 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
   final Value<int> progress;
   final Value<GoalFrequency> frequency;
   final Value<DateTime> periodStart;
+  final Value<String?> userId;
+  final Value<String?> supabaseId;
   const GoalsCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -777,6 +840,8 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
     this.progress = const Value.absent(),
     this.frequency = const Value.absent(),
     this.periodStart = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
   });
   GoalsCompanion.insert({
     this.id = const Value.absent(),
@@ -788,6 +853,8 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
     this.progress = const Value.absent(),
     required GoalFrequency frequency,
     required DateTime periodStart,
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
   })  : title = Value(title),
         iconKey = Value(iconKey),
         unit = Value(unit),
@@ -804,6 +871,8 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
     Expression<int>? progress,
     Expression<String>? frequency,
     Expression<DateTime>? periodStart,
+    Expression<String>? userId,
+    Expression<String>? supabaseId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -815,6 +884,8 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
       if (progress != null) 'progress': progress,
       if (frequency != null) 'frequency': frequency,
       if (periodStart != null) 'period_start': periodStart,
+      if (userId != null) 'user_id': userId,
+      if (supabaseId != null) 'supabase_id': supabaseId,
     });
   }
 
@@ -827,7 +898,9 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
       Value<int>? target,
       Value<int>? progress,
       Value<GoalFrequency>? frequency,
-      Value<DateTime>? periodStart}) {
+      Value<DateTime>? periodStart,
+      Value<String?>? userId,
+      Value<String?>? supabaseId}) {
     return GoalsCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -838,6 +911,8 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
       progress: progress ?? this.progress,
       frequency: frequency ?? this.frequency,
       periodStart: periodStart ?? this.periodStart,
+      userId: userId ?? this.userId,
+      supabaseId: supabaseId ?? this.supabaseId,
     );
   }
 
@@ -873,6 +948,12 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
     if (periodStart.present) {
       map['period_start'] = Variable<DateTime>(periodStart.value);
     }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (supabaseId.present) {
+      map['supabase_id'] = Variable<String>(supabaseId.value);
+    }
     return map;
   }
 
@@ -887,7 +968,9 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
           ..write('target: $target, ')
           ..write('progress: $progress, ')
           ..write('frequency: $frequency, ')
-          ..write('periodStart: $periodStart')
+          ..write('periodStart: $periodStart, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
           ..write(')'))
         .toString();
   }
@@ -1427,8 +1510,7 @@ class $JournalEntriesTable extends JournalEntries
   late final GeneratedColumn<String> audioPath = GeneratedColumn<String>(
       'audio_path', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _userIdMeta =
-      const VerificationMeta('userId');
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
   @override
   late final GeneratedColumn<String> userId = GeneratedColumn<String>(
       'user_id', aliasedName, true,
@@ -1440,7 +1522,8 @@ class $JournalEntriesTable extends JournalEntries
       'supabase_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
   @override
-  List<GeneratedColumn> get $columns => [id, createdAt, content, audioPath, userId, supabaseId];
+  List<GeneratedColumn> get $columns =>
+      [id, createdAt, content, audioPath, userId, supabaseId];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1475,8 +1558,10 @@ class $JournalEntriesTable extends JournalEntries
           userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
     }
     if (data.containsKey('supabase_id')) {
-      context.handle(_supabaseIdMeta,
-          supabaseId.isAcceptableOrUnknown(data['supabase_id']!, _supabaseIdMeta));
+      context.handle(
+          _supabaseIdMeta,
+          supabaseId.isAcceptableOrUnknown(
+              data['supabase_id']!, _supabaseIdMeta));
     }
     return context;
   }
@@ -1516,7 +1601,11 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
   /// Absolute path to an attached voice-note recording, if the entry has
   /// one. Null for text-only entries (the common case).
   final String? audioPath;
+
+  /// ID of the Supabase user who owns this entry.
   final String? userId;
+
+  /// Remote primary key ID in Supabase's `journal_entries` table.
   final String? supabaseId;
   const JournalEntryRow(
       {required this.id,
@@ -1551,9 +1640,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       audioPath: audioPath == null && nullToAbsent
           ? const Value.absent()
           : Value(audioPath),
-      userId: userId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(userId),
+      userId:
+          userId == null && nullToAbsent ? const Value.absent() : Value(userId),
       supabaseId: supabaseId == null && nullToAbsent
           ? const Value.absent()
           : Value(supabaseId),
@@ -1607,7 +1695,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       content: data.content.present ? data.content.value : this.content,
       audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
       userId: data.userId.present ? data.userId.value : this.userId,
-      supabaseId: data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+      supabaseId:
+          data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
     );
   }
 
@@ -1625,7 +1714,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
   }
 
   @override
-  int get hashCode => Object.hash(id, createdAt, content, audioPath, userId, supabaseId);
+  int get hashCode =>
+      Object.hash(id, createdAt, content, audioPath, userId, supabaseId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1727,7 +1817,9 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('content: $content, ')
-          ..write('audioPath: $audioPath')
+          ..write('audioPath: $audioPath, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
           ..write(')'))
         .toString();
   }
@@ -2417,6 +2509,8 @@ typedef $$GoalsTableCreateCompanionBuilder = GoalsCompanion Function({
   Value<int> progress,
   required GoalFrequency frequency,
   required DateTime periodStart,
+  Value<String?> userId,
+  Value<String?> supabaseId,
 });
 typedef $$GoalsTableUpdateCompanionBuilder = GoalsCompanion Function({
   Value<int> id,
@@ -2428,6 +2522,8 @@ typedef $$GoalsTableUpdateCompanionBuilder = GoalsCompanion Function({
   Value<int> progress,
   Value<GoalFrequency> frequency,
   Value<DateTime> periodStart,
+  Value<String?> userId,
+  Value<String?> supabaseId,
 });
 
 class $$GoalsTableFilterComposer extends Composer<_$AppDatabase, $GoalsTable> {
@@ -2469,6 +2565,12 @@ class $$GoalsTableFilterComposer extends Composer<_$AppDatabase, $GoalsTable> {
 
   ColumnFilters<DateTime> get periodStart => $composableBuilder(
       column: $table.periodStart, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnFilters(column));
 }
 
 class $$GoalsTableOrderingComposer
@@ -2507,6 +2609,12 @@ class $$GoalsTableOrderingComposer
 
   ColumnOrderings<DateTime> get periodStart => $composableBuilder(
       column: $table.periodStart, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
 }
 
 class $$GoalsTableAnnotationComposer
@@ -2544,6 +2652,12 @@ class $$GoalsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get periodStart => $composableBuilder(
       column: $table.periodStart, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => column);
 }
 
 class $$GoalsTableTableManager extends RootTableManager<
@@ -2578,6 +2692,8 @@ class $$GoalsTableTableManager extends RootTableManager<
             Value<int> progress = const Value.absent(),
             Value<GoalFrequency> frequency = const Value.absent(),
             Value<DateTime> periodStart = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
           }) =>
               GoalsCompanion(
             id: id,
@@ -2589,6 +2705,8 @@ class $$GoalsTableTableManager extends RootTableManager<
             progress: progress,
             frequency: frequency,
             periodStart: periodStart,
+            userId: userId,
+            supabaseId: supabaseId,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -2600,6 +2718,8 @@ class $$GoalsTableTableManager extends RootTableManager<
             Value<int> progress = const Value.absent(),
             required GoalFrequency frequency,
             required DateTime periodStart,
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
           }) =>
               GoalsCompanion.insert(
             id: id,
@@ -2611,6 +2731,8 @@ class $$GoalsTableTableManager extends RootTableManager<
             progress: progress,
             frequency: frequency,
             periodStart: periodStart,
+            userId: userId,
+            supabaseId: supabaseId,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -2863,6 +2985,8 @@ typedef $$JournalEntriesTableCreateCompanionBuilder = JournalEntriesCompanion
   required DateTime createdAt,
   required String content,
   Value<String?> audioPath,
+  Value<String?> userId,
+  Value<String?> supabaseId,
 });
 typedef $$JournalEntriesTableUpdateCompanionBuilder = JournalEntriesCompanion
     Function({
@@ -2870,6 +2994,8 @@ typedef $$JournalEntriesTableUpdateCompanionBuilder = JournalEntriesCompanion
   Value<DateTime> createdAt,
   Value<String> content,
   Value<String?> audioPath,
+  Value<String?> userId,
+  Value<String?> supabaseId,
 });
 
 class $$JournalEntriesTableFilterComposer
@@ -2892,6 +3018,12 @@ class $$JournalEntriesTableFilterComposer
 
   ColumnFilters<String> get audioPath => $composableBuilder(
       column: $table.audioPath, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnFilters(column));
 }
 
 class $$JournalEntriesTableOrderingComposer
@@ -2914,6 +3046,12 @@ class $$JournalEntriesTableOrderingComposer
 
   ColumnOrderings<String> get audioPath => $composableBuilder(
       column: $table.audioPath, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
 }
 
 class $$JournalEntriesTableAnnotationComposer
@@ -2936,6 +3074,12 @@ class $$JournalEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get audioPath =>
       $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => column);
 }
 
 class $$JournalEntriesTableTableManager extends RootTableManager<
@@ -2969,24 +3113,32 @@ class $$JournalEntriesTableTableManager extends RootTableManager<
             Value<DateTime> createdAt = const Value.absent(),
             Value<String> content = const Value.absent(),
             Value<String?> audioPath = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
           }) =>
               JournalEntriesCompanion(
             id: id,
             createdAt: createdAt,
             content: content,
             audioPath: audioPath,
+            userId: userId,
+            supabaseId: supabaseId,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
             required DateTime createdAt,
             required String content,
             Value<String?> audioPath = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
           }) =>
               JournalEntriesCompanion.insert(
             id: id,
             createdAt: createdAt,
             content: content,
             audioPath: audioPath,
+            userId: userId,
+            supabaseId: supabaseId,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -60,27 +60,51 @@ class JournalEntriesRepository {
     debugPrint('[JournalSave] insert complete, new row id=$id');
   }
 
-  Future<void> update(int localId, String content, {String? supabaseId}) async {
-    await (_db.update(_db.journalEntries)..where((t) => t.id.equals(localId))).write(
-      JournalEntriesCompanion(
-        content: Value(content),
-      ),
-    );
+  Future<void> update(
+    int localId, {
+    required String content,
+    String? audioPath,
+    String? supabaseId,
+  }) async {
+    final user = _client.auth.currentUser;
+    debugPrint('[JournalUpdate] updating localId=$localId, supabaseId=$supabaseId');
+
+    if (user != null) {
+      await (_db.update(_db.journalEntries)
+            ..where((t) => t.id.equals(localId) & (t.userId.equals(user.id) | t.userId.isNull())))
+          .write(
+        JournalEntriesCompanion(
+          content: Value(content),
+          audioPath: Value(audioPath),
+        ),
+      );
+    } else {
+      await (_db.update(_db.journalEntries)..where((t) => t.id.equals(localId))).write(
+        JournalEntriesCompanion(
+          content: Value(content),
+          audioPath: Value(audioPath),
+        ),
+      );
+    }
 
     try {
-      final user = _client.auth.currentUser;
       if (user != null) {
         final nowIso = DateTime.now().toIso8601String();
+        final data = <String, dynamic>{
+          'content': content,
+          'updated_at': nowIso,
+        };
+        if (audioPath != null) {
+          data['audio_path'] = audioPath;
+        }
+
         if (supabaseId != null) {
-          await _client.from('journal_entries').update({
-            'content': content,
-            'updated_at': nowIso,
-          }).eq('id', supabaseId).eq('user_id', user.id);
-        } else {
-          await _client.from('journal_entries').update({
-            'content': content,
-            'updated_at': nowIso,
-          }).eq('user_id', user.id).eq('content', content);
+          await _client
+              .from('journal_entries')
+              .update(data)
+              .eq('id', supabaseId)
+              .eq('user_id', user.id);
+          debugPrint('[JournalSync] Successfully updated entry in Supabase');
         }
       }
     } catch (e) {
@@ -89,12 +113,25 @@ class JournalEntriesRepository {
   }
 
   Future<void> delete(int localId, {String? supabaseId}) async {
-    await (_db.delete(_db.journalEntries)..where((t) => t.id.equals(localId))).go();
+    final user = _client.auth.currentUser;
+    debugPrint('[JournalDelete] deleting localId=$localId, supabaseId=$supabaseId');
+
+    if (user != null) {
+      await (_db.delete(_db.journalEntries)
+            ..where((t) => t.id.equals(localId) & (t.userId.equals(user.id) | t.userId.isNull())))
+          .go();
+    } else {
+      await (_db.delete(_db.journalEntries)..where((t) => t.id.equals(localId))).go();
+    }
 
     try {
-      final user = _client.auth.currentUser;
       if (user != null && supabaseId != null) {
-        await _client.from('journal_entries').delete().eq('id', supabaseId).eq('user_id', user.id);
+        await _client
+            .from('journal_entries')
+            .delete()
+            .eq('id', supabaseId)
+            .eq('user_id', user.id);
+        debugPrint('[JournalSync] Successfully deleted entry from Supabase');
       }
     } catch (e) {
       debugPrint('[JournalSync] Error deleting from Supabase: $e');

@@ -128,7 +128,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     final onboardingComplete = await _onboardingStorage.isOnboardingComplete();
     if (!mounted) return;
     // New users meet Luma first; returning users go to the mood check-in.
-    context.go(onboardingComplete ? AppRoutes.welcome : AppRoutes.lumaOnboarding);
+    context.go(
+      onboardingComplete ? AppRoutes.welcome : AppRoutes.lumaOnboarding,
+      extra: true,
+    );
   }
 
   void _onLoginTap() {

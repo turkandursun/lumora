@@ -33,4 +33,10 @@ class Goals extends Table {
   /// of today, this week's Monday, or this month's 1st, depending on
   /// [frequency].
   DateTimeColumn get periodStart => dateTime()();
+
+  /// Supabase auth ID of the user who owns this goal.
+  TextColumn get userId => text().nullable()();
+
+  /// Remote primary key in Supabase `goals` table.
+  TextColumn get supabaseId => text().nullable()();
 }

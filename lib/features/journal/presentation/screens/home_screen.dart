@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../../../theme/sakura_home_palette.dart';
+import '../../../profile/presentation/providers/visit_tracker_providers.dart';
+import '../providers/journal_entries_provider.dart';
 import '../providers/journal_streak_provider.dart';
 import '../widgets/dream_journal_banner.dart';
 import '../widgets/home_feature_grid.dart';
@@ -39,6 +41,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (_didInitialStreakLoad) return;
     _didInitialStreakLoad = true;
     ref.read(journalStreakProvider.notifier).refresh();
+    ref.read(journalEntriesRepositoryProvider).fetchAndSyncFromSupabase();
+    ref.read(visitDaysCountProvider.notifier).recordAndLoad();
   }
 
   String? get _userFirstName {
