@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../goals/data/goals_repository.dart';
+import '../../../goals/presentation/providers/goals_providers.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../theme/lumora_palette.dart';
@@ -51,14 +54,14 @@ enum _SessionStage { selectingMode, selectingDuration, running, completed }
 /// need right now, pick a duration, follow an expanding and contracting
 /// orb through that technique's inhale/hold/exhale cycle, and land on a
 /// gentle completion message once the chosen time is up.
-class BreathingScreen extends StatefulWidget {
+class BreathingScreen extends ConsumerStatefulWidget {
   const BreathingScreen({super.key});
 
   @override
-  State<BreathingScreen> createState() => _BreathingScreenState();
+  ConsumerState<BreathingScreen> createState() => _BreathingScreenState();
 }
 
-class _BreathingScreenState extends State<BreathingScreen>
+class _BreathingScreenState extends ConsumerState<BreathingScreen>
     with SingleTickerProviderStateMixin {
   static const _durationOptionsMinutes = [2, 4, 6];
 
@@ -141,6 +144,11 @@ class _BreathingScreenState extends State<BreathingScreen>
     _countdownTimer?.cancel();
     _breathController.stop();
     setState(() => _stage = _SessionStage.completed);
+    // Auto-advance the "breathing" goal by the minutes just completed.
+    ref
+        .read(goalsRepositoryProvider)
+        .incrementByIconKey(DefaultGoalIconKeys.breathing, _selectedMinutes);
+    ref.read(goalStreakProvider.notifier).refresh();
   }
 
   void _backToModeSelector() {

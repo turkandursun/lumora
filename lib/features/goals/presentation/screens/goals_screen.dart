@@ -22,6 +22,7 @@ Map<String, GoalCopy> defaultGoalCopy(AppLocalizations l10n) => {
       DefaultGoalIconKeys.water: GoalCopy(title: l10n.goalsDefaultWaterTitle),
       DefaultGoalIconKeys.journal: GoalCopy(title: l10n.goalsDefaultJournalTitle),
       DefaultGoalIconKeys.meditation: GoalCopy(title: l10n.goalsDefaultMeditationTitle),
+      DefaultGoalIconKeys.breathing: GoalCopy(title: l10n.homeFeatureBreathingTitle),
       DefaultGoalIconKeys.reading: GoalCopy(title: l10n.goalsDefaultReadingTitle),
     };
 
@@ -33,6 +34,8 @@ IconData iconForGoal(String iconKey) {
       return Icons.edit_outlined;
     case DefaultGoalIconKeys.meditation:
       return Icons.spa_outlined;
+    case DefaultGoalIconKeys.breathing:
+      return Icons.air_rounded;
     case DefaultGoalIconKeys.reading:
       return Icons.menu_book_outlined;
     default:

@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
+import '../../../goals/data/goals_repository.dart';
+import '../../../goals/presentation/providers/goals_providers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../theme/premium_button.dart';
 import '../../../../theme/lumora_palette.dart';
@@ -31,14 +34,14 @@ const _guideEn = [
 
 enum _Stage { setup, running, done }
 
-class MeditationScreen extends StatefulWidget {
+class MeditationScreen extends ConsumerStatefulWidget {
   const MeditationScreen({super.key});
 
   @override
-  State<MeditationScreen> createState() => _MeditationScreenState();
+  ConsumerState<MeditationScreen> createState() => _MeditationScreenState();
 }
 
-class _MeditationScreenState extends State<MeditationScreen>
+class _MeditationScreenState extends ConsumerState<MeditationScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse = AnimationController(
     vsync: this,
@@ -191,6 +194,11 @@ class _MeditationScreenState extends State<MeditationScreen>
     _safe(() => _tts.stop());
     if (!mounted) return;
     setState(() => _stage = _Stage.done);
+    // Auto-advance the "meditation" goal by the minutes just completed.
+    ref
+        .read(goalsRepositoryProvider)
+        .incrementByIconKey(DefaultGoalIconKeys.meditation, _minutes);
+    ref.read(goalStreakProvider.notifier).refresh();
   }
 
   void _stop() {

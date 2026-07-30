@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase
     show AuthState;
 
+import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/onboarding_storage_service.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -115,6 +116,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   /// storytelling onboarding runs every time, with isNewSignup=false so the
   /// hobbies step is skipped for logins.
   Future<void> _routeAfterSignIn() async {
+    // If this is a different account than last used on this device, wipe the
+    // local data and pull this account's own cloud backup — so accounts don't
+    // see each other's entries on a shared device.
+    await ref.read(cloudBackupServiceProvider).onSignIn();
     if (!mounted) return;
     context.go(AppRoutes.onboarding, extra: false);
   }

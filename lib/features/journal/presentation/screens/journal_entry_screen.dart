@@ -17,6 +17,8 @@ import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../../../theme/premium_button.dart';
 import '../../../../theme/sakura_home_palette.dart';
+import '../../../goals/data/goals_repository.dart';
+import '../../../goals/presentation/providers/goals_providers.dart';
 import '../providers/journal_entries_provider.dart';
 import '../providers/journal_streak_provider.dart';
 import '../../../../theme/app_background.dart';
@@ -222,6 +224,11 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
     } else {
       await ref.read(journalEntriesRepositoryProvider).save(content, audioPath: audioPath);
       await ref.read(journalStreakProvider.notifier).recordEntrySaved();
+      // Auto-advance the "journal" goal when a new entry is written.
+      await ref
+          .read(goalsRepositoryProvider)
+          .incrementByIconKey(DefaultGoalIconKeys.journal, 10);
+      ref.read(goalStreakProvider.notifier).refresh();
     }
 
     if (!mounted) return;
