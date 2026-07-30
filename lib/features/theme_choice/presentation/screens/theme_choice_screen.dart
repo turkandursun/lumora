@@ -14,7 +14,7 @@ const astraThemeKey = 'astra_bg_theme';
 Future<String> astraBackgroundAsset() async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getString(astraThemeKey) == 'light'
-      ? 'assets/images/astra_light.png'
+      ? 'assets/images/astra_sun_entry.png'
       : 'assets/images/astra_dark.png';
 }
 
@@ -53,7 +53,7 @@ class _ThemeChoiceScreenState extends State<ThemeChoiceScreen> {
               child: Image.asset(
                 _dark
                     ? 'assets/images/astra_dark.png'
-                    : 'assets/images/astra_light.png',
+                    : 'assets/images/astra_sun_entry.png',
                 key: ValueKey(_dark),
                 fit: BoxFit.cover,
               ),
@@ -111,14 +111,8 @@ class _DayNightToggle extends StatelessWidget {
         height: height,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(height / 2),
-          color: dark ? const Color(0xFF1E2140) : const Color(0xFF9FD3F6),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          color: Colors.white.withValues(alpha: 0.14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
         ),
         child: Stack(
           children: [
@@ -171,16 +165,8 @@ class _DayNightToggle extends StatelessWidget {
                 height: height - 12,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: dark
-                      ? const Color(0xFF2B2E55)
-                      : const Color(0xFFF3FAFF),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: Colors.white.withValues(alpha: 0.28),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.55)),
                 ),
               ),
             ),

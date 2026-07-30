@@ -200,64 +200,53 @@ class _FeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const gold = Color(0xFFE9C98C);
     const shadow = [
-      Shadow(color: Color(0x33000000), blurRadius: 4, offset: Offset(0, 1)),
+      Shadow(color: Color(0x77000000), blurRadius: 6, offset: Offset(0, 1)),
     ];
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradient,
-        ),
+        borderRadius: BorderRadius.circular(20),
+        // A single, more opaque grey glass panel for every card.
+        color: const Color(0xFF3E3C4A).withValues(alpha: 0.78),
+        border: Border.all(color: gold.withValues(alpha: 0.5), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: gradient.first.withValues(alpha: 0.4),
-            blurRadius: 18,
-            offset: const Offset(0, 9),
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 14,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: item.onTap,
-          splashColor: Colors.white.withValues(alpha: 0.2),
+          splashColor: Colors.white.withValues(alpha: 0.14),
           child: Stack(
             children: [
-              // Faint oversized glyph as soft "artwork" in the corner.
+              // Outlined icon circle in the top-right corner.
               Positioned(
-                right: -18,
-                bottom: -14,
-                child: Icon(
-                  item.primaryIcon,
-                  size: 104,
-                  color: Colors.white.withValues(alpha: 0.16),
-                ),
-              ),
-              // Frosted-glass badge holding the feature's icon.
-              Positioned(
-                left: 14,
-                top: 14,
+                right: 12,
+                top: 12,
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 40,
+                  height: 40,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.28),
+                    color: Colors.white.withValues(alpha: 0.08),
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.45), width: 1),
+                        color: gold.withValues(alpha: 0.6), width: 1.2),
                   ),
-                  child: Icon(item.primaryIcon, size: 23, color: Colors.white),
+                  child: Icon(item.primaryIcon, size: 20, color: gold),
                 ),
               ),
               if (item.badgeCount > 0)
                 Positioned(
-                  right: 12,
+                  left: 12,
                   top: 12,
                   child: Container(
                     padding:
@@ -276,50 +265,37 @@ class _FeatureCard extends StatelessWidget {
                     ),
                   ),
                 ),
-              // Little arrow chip in the bottom-right — a gentle "tap me".
-              Positioned(
-                right: 12,
-                bottom: 12,
-                child: Container(
-                  width: 26,
-                  height: 26,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.25),
-                  ),
-                  child: const Icon(Icons.arrow_forward_rounded,
-                      size: 15, color: Colors.white),
-                ),
-              ),
+              // Title + description + a small sparkle divider, at the bottom.
               Positioned(
                 left: 14,
-                right: 44,
-                bottom: 14,
+                right: 14,
+                bottom: 12,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       item.title,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.displayFont(
-                        fontSize: 16,
-                        color: Colors.white,
+                        fontSize: 17,
+                        color: gold,
                       ).copyWith(shadows: shadow),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       item.description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.bodyFont(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.92),
                       ).copyWith(shadows: shadow),
                     ),
+                    const SizedBox(height: 9),
+                    const _SparkleDivider(gold: gold),
                   ],
                 ),
               ),
@@ -327,6 +303,34 @@ class _FeatureCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A hairline divider with a small diamond sparkle in the middle, echoing
+/// the ornamental line under each card's title.
+class _SparkleDivider extends StatelessWidget {
+  const _SparkleDivider({required this.gold});
+
+  final Color gold;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget line() => Expanded(
+          child: Container(height: 1, color: gold.withValues(alpha: 0.35)),
+        );
+    return Row(
+      children: [
+        line(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 7),
+          child: Transform.rotate(
+            angle: 0.785398,
+            child: Container(width: 5, height: 5, color: gold),
+          ),
+        ),
+        line(),
+      ],
     );
   }
 }

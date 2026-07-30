@@ -95,3 +95,5 @@ flutter:
     - assets/images/astra_dark.png
     - assets/images/astra_light_plain.png
     - assets/images/astra_dark_plain.png
+    - assets/images/astra_sun_entry.png
+    - assets/images/astra_sun_bg.png
