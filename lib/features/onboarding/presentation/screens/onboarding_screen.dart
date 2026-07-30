@@ -17,7 +17,11 @@ import '../widgets/onboarding_photo_background.dart';
 /// sign up, each set against its own pastel ocean/sky photo that crossfades
 /// in as the user swipes between pages.
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({super.key, this.isNewSignup = false});
+
+  /// True when reached from the sign-up flow — carried through to the mood
+  /// check-in so the hobbies step is shown only for new registrations.
+  final bool isNewSignup;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -50,7 +54,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     final hasSession = Supabase.instance.client.auth.currentSession != null;
     if (hasSession) {
-      context.go(AppRoutes.welcome, extra: true);
+      context.go(AppRoutes.welcome, extra: widget.isNewSignup);
     } else {
       context.go(AppRoutes.login);
     }

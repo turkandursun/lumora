@@ -111,15 +111,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     setState(() => _isGoogleSubmitting = false);
   }
 
-  /// Shared destination logic for any successful sign-in (password or
-  /// Google) — mirrors the check the splash screen uses on cold start.
+  /// Destination after any successful sign-in (password or Google): the
+  /// storytelling onboarding runs every time, with isNewSignup=false so the
+  /// hobbies step is skipped for logins.
   Future<void> _routeAfterSignIn() async {
-    final onboardingComplete = await _onboardingStorage.isOnboardingComplete();
     if (!mounted) return;
-    context.go(
-      onboardingComplete ? AppRoutes.welcome : AppRoutes.onboarding,
-      extra: false,
-    );
+    context.go(AppRoutes.onboarding, extra: false);
   }
 
   void _onSignUpTap() {

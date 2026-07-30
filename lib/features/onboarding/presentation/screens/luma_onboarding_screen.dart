@@ -46,7 +46,9 @@ class _LumaOnboardingScreenState extends State<LumaOnboardingScreen> {
       }
     }
     if (!mounted) return;
-    context.go(AppRoutes.onboarding);
+    // Reached only from the sign-up flow, so onboarding runs as a new signup
+    // (which then shows the hobbies step).
+    context.go(AppRoutes.onboarding, extra: true);
   }
 
   @override
