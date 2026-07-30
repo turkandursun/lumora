@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../../theme/mood_gradients.dart';
 import '../../../../theme/sakura_home_palette.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../domain/motivational_quote.dart';

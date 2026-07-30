@@ -8,11 +8,8 @@ import '../../features/gratitude/presentation/screens/gratitude_screen.dart';
 import '../../features/letters/presentation/screens/letters_screen.dart';
 import '../../features/meditation/presentation/screens/meditation_screen.dart';
 
-import '../../features/app_lock/domain/app_section.dart';
-import '../../features/app_lock/presentation/screens/app_lock_settings_screen.dart';
 import '../../features/activities/presentation/screens/activities_screen.dart';
 import '../../features/ai_questions/presentation/screens/ai_questions_screen.dart';
-import '../../features/app_lock/presentation/widgets/section_lock_gate.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
@@ -52,7 +49,6 @@ class AppRoutes {
   static const home = '/home';
   static const reminders = '/reminders';
   static const goals = '/goals';
-  static const appLock = '/app-lock';
   static const breathing = '/breathing';
   static const dreams = '/dreams';
   static const newDream = '/dreams/new';
@@ -101,7 +97,6 @@ const _protectedRoutes = {
   AppRoutes.home,
   AppRoutes.reminders,
   AppRoutes.goals,
-  AppRoutes.appLock,
   AppRoutes.breathing,
   AppRoutes.dreams,
   AppRoutes.newDream,
@@ -186,33 +181,20 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const GoalsScreen(),
     ),
     GoRoute(
-      path: AppRoutes.appLock,
-      builder: (context, state) => const AppLockSettingsScreen(),
-    ),
-    GoRoute(
       path: AppRoutes.breathing,
       builder: (context, state) => const BreathingScreen(),
     ),
     GoRoute(
       path: AppRoutes.dreams,
-      builder: (context, state) => SectionLockGate(
-        section: AppSection.dreamJournal,
-        builder: (_) => const DreamJournalScreen(),
-      ),
+      builder: (context, state) => const DreamJournalScreen(),
     ),
     GoRoute(
       path: AppRoutes.newDream,
-      builder: (context, state) => SectionLockGate(
-        section: AppSection.dreamJournal,
-        builder: (_) => const NewDreamScreen(),
-      ),
+      builder: (context, state) => const NewDreamScreen(),
     ),
     GoRoute(
       path: AppRoutes.dreamReflection,
-      builder: (context, state) => SectionLockGate(
-        section: AppSection.dreamJournal,
-        builder: (_) => DreamReflectionScreen(dreamId: state.extra! as int),
-      ),
+      builder: (context, state) => DreamReflectionScreen(dreamId: state.extra! as int),
     ),
     GoRoute(
       path: AppRoutes.featureComingSoon,
@@ -229,10 +211,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.journalEntry,
-      builder: (context, state) => SectionLockGate(
-        section: AppSection.journalWriting,
-        builder: (_) => const JournalEntryScreen(),
-      ),
+      builder: (context, state) => const JournalEntryScreen(),
     ),
     GoRoute(
       path: AppRoutes.calendar,

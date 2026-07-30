@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,28 +10,25 @@ import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
-import '../../../../core/database/app_database.dart';
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/services/crisis_detection_service.dart';
-import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
 import '../../../../theme/crisis_support_sheet.dart';
+import '../../../../theme/gold_glass_theme.dart';
 import '../../../../theme/responsive_content.dart';
+
 import '../../../../theme/premium_button.dart';
 import '../../../../theme/sakura_home_palette.dart';
 import '../../../goals/data/goals_repository.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 import '../providers/journal_entries_provider.dart';
 import '../providers/journal_streak_provider.dart';
-import '../../../../theme/app_background.dart';
-import '../widgets/voice_entry_player.dart';
 
-/// Dedicated Journal Writing screen — previously an inline writing area on
-/// Home; moved to its own route so it can be individually PIN-gated (see
-/// `AppRoutes.journalEntry`'s `SectionLockGate` wrapping) without locking
-/// the rest of Home behind it. Visually stays in Home's pastel/photo world
-/// ([HomeMoodBackground]) since the content itself didn't change, only
-/// where it lives.
+/// Exact replica of the reference screenshot:
+/// Moon background · Date+Title card · Writing card · Voice card ·
+/// Action bar (Fotoğraf / Etiket / Duygu / Hatırlatıcı / Yıldızla) ·
+/// "Günlüğü Mühürle" gold pill.
 class JournalEntryScreen extends ConsumerStatefulWidget {
   const JournalEntryScreen({super.key});
 
@@ -37,172 +36,228 @@ class JournalEntryScreen extends ConsumerStatefulWidget {
   ConsumerState<JournalEntryScreen> createState() => _JournalEntryScreenState();
 }
 
-class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
+class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
+    with TickerProviderStateMixin {
   final _entryController = TextEditingController();
+  final _titleController = TextEditingController();
   final _recorder = AudioRecorder();
+  final _stt = stt.SpeechToText();
 
-  bool _isRecording = false;
+  bool _sttInitialized = false;
+  bool _isListeningAndRecording = false;
+  bool _keepVoiceRecording = true;
+
   Duration _recordingElapsed = Duration.zero;
   Timer? _recordingTicker;
   String? _pendingAudioPath;
-  JournalEntryRow? _editingEntry;
+  String _preSpeechText = '';
+
+  DateTime _selectedDate = DateTime.now();
+
+  // Waveform animation
+  late final AnimationController _waveController;
+  late final List<double> _barHeights;
 
   @override
-  void dispose() {
-    _entryController.dispose();
-    _recordingTicker?.cancel();
-    _recorder.dispose();
-    super.dispose();
-  }
+  void initState() {
+    super.initState();
+    _initSpeechToText();
+    _entryController.addListener(_onTextChanged);
 
-  void _startEditing(JournalEntryRow entry) {
-    setState(() {
-      _editingEntry = entry;
-      _entryController.text = entry.content;
-      _pendingAudioPath = entry.audioPath;
-    });
-  }
-
-  void _cancelEditing() {
-    setState(() {
-      _editingEntry = null;
-      _entryController.clear();
-      _pendingAudioPath = null;
-    });
-  }
-
-  Future<void> _confirmAndDelete(JournalEntryRow entry) async {
-    final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: SakuraHomePalette.cardWhite,
-        title: Text(
-          isTr ? 'Günlüğü Sil' : 'Delete Entry',
-          style: AppTheme.displayFont(fontSize: 18, color: SakuraHomePalette.textDeep),
-        ),
-        content: Text(
-          isTr
-              ? 'Bu günlüğü silmek istediğinize emin misiniz?'
-              : 'Are you sure you want to delete this journal entry?',
-          style: AppTheme.bodyFont(fontSize: 14, color: SakuraHomePalette.textDeep),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(isTr ? 'İptal' : 'Cancel', style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              isTr ? 'Sil' : 'Delete',
-              style: AppTheme.bodyFont(color: Colors.redAccent, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
+    // Waveform bars (15 bars)
+    _barHeights = List.generate(15, (i) => 0.2 + math.Random().nextDouble() * 0.5);
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
+  }
 
-    if (confirm == true) {
-      await ref.read(journalEntriesRepositoryProvider).delete(
-        entry.id,
-        supabaseId: entry.supabaseId,
+  void _onTextChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _initSpeechToText() async {
+    try {
+      _sttInitialized = await _stt.initialize(
+        onError: (v) => debugPrint('[STT] error: $v'),
+        onStatus: (v) => debugPrint('[STT] status: $v'),
       );
-      if (!mounted) return;
-      if (_editingEntry?.id == entry.id) {
-        _cancelEditing();
-      }
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('[STT] init failed: $e');
     }
   }
 
-  Future<void> _startRecording() async {
-    final l10n = AppLocalizations.of(context);
+  @override
+  void dispose() {
+    _entryController.removeListener(_onTextChanged);
+    _entryController.dispose();
+    _titleController.dispose();
+    _recordingTicker?.cancel();
+    _recorder.dispose();
+    _stt.stop();
+    _waveController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.dark(
+            primary: Color(0xFFD4AF37),
+            onPrimary: Colors.black,
+            surface: Color(0xFF1A1233),
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null && mounted) setState(() => _selectedDate = picked);
+  }
+
+  Future<void> _startVoiceSession() async {
     bool hasPermission;
     try {
       hasPermission = await _recorder.hasPermission();
     } catch (_) {
       hasPermission = false;
     }
+
     if (!hasPermission) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.voiceNotePermissionDenied)),
+        const SnackBar(content: Text('Mikrofon izni gerekli.')),
       );
       return;
     }
 
+    if (!_sttInitialized) await _initSpeechToText();
+
     try {
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final voiceNotesDir = Directory(p.join(documentsDir.path, 'voice_notes'));
-      if (!await voiceNotesDir.exists()) {
-        await voiceNotesDir.create(recursive: true);
-      }
-
-      const candidates = [
-        AudioEncoder.aacLc,
-        AudioEncoder.opus,
-        AudioEncoder.wav,
-      ];
-      var encoder = AudioEncoder.aacLc;
-      for (final candidate in candidates) {
-        if (await _recorder.isEncoderSupported(candidate)) {
-          encoder = candidate;
-          break;
+      if (kIsWeb) {
+        await _recorder.start(
+          const RecordConfig(encoder: AudioEncoder.opus),
+          path: 'entry_${DateTime.now().millisecondsSinceEpoch}.webm',
+        );
+      } else {
+        final dir = await getApplicationDocumentsDirectory();
+        final voiceDir = Directory(p.join(dir.path, 'voice_notes'));
+        if (!await voiceDir.exists()) await voiceDir.create(recursive: true);
+        const candidates = [AudioEncoder.aacLc, AudioEncoder.opus, AudioEncoder.wav];
+        var encoder = AudioEncoder.aacLc;
+        for (final c in candidates) {
+          if (await _recorder.isEncoderSupported(c)) {
+            encoder = c;
+            break;
+          }
         }
+        final ext = encoder == AudioEncoder.opus
+            ? 'ogg'
+            : encoder == AudioEncoder.wav
+                ? 'wav'
+                : 'm4a';
+        await _recorder.start(
+          RecordConfig(encoder: encoder),
+          path: p.join(voiceDir.path, 'entry_${DateTime.now().millisecondsSinceEpoch}.$ext'),
+        );
       }
-      final ext = switch (encoder) {
-        AudioEncoder.opus => 'ogg',
-        AudioEncoder.wav => 'wav',
-        _ => 'm4a',
-      };
-
-      final path = p.join(
-        voiceNotesDir.path,
-        'note_${DateTime.now().millisecondsSinceEpoch}.$ext',
-      );
-      await _recorder.start(
-        RecordConfig(encoder: encoder),
-        path: path,
-      );
-
-      _recordingTicker?.cancel();
-      setState(() {
-        _isRecording = true;
-        _recordingElapsed = Duration.zero;
-      });
-      _recordingTicker = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (!mounted) return;
-        setState(() {
-          _recordingElapsed += const Duration(seconds: 1);
-        });
-      });
     } catch (e) {
-      if (!mounted) return;
-      final isTr = Localizations.localeOf(context).languageCode == 'tr';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isTr ? 'Ses kaydı başlatılamadı' : 'Failed to start recording')),
-      );
+      debugPrint('[VoiceNote] recorder start failed: $e');
     }
+
+    _preSpeechText = _entryController.text;
+    if (_preSpeechText.isNotEmpty && !_preSpeechText.endsWith(' ')) {
+      _preSpeechText += ' ';
+    }
+
+    if (_sttInitialized && mounted) {
+      final isTr = Localizations.localeOf(context).languageCode == 'tr';
+      try {
+        await _stt.listen(
+          listenOptions: stt.SpeechListenOptions(
+            cancelOnError: false,
+            partialResults: true,
+            listenMode: stt.ListenMode.dictation,
+            localeId: isTr ? 'tr_TR' : 'en_US',
+          ),
+          onResult: (result) {
+            if (!mounted) return;
+            setState(() {
+              _entryController.text = _preSpeechText + result.recognizedWords;
+              _entryController.selection =
+                  TextSelection.fromPosition(TextPosition(offset: _entryController.text.length));
+            });
+          },
+        );
+      } catch (e) {
+        debugPrint('[STT] listen error: $e');
+      }
+    }
+
+    // Animate waveform
+    _waveController.repeat(reverse: true);
+
+    final startedAt = DateTime.now();
+    _recordingTicker?.cancel();
+    _recordingTicker = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      if (!mounted) return;
+      setState(() {
+        _recordingElapsed = DateTime.now().difference(startedAt);
+        // Randomly shift bar heights for live waveform effect
+        for (var i = 0; i < _barHeights.length; i++) {
+          _barHeights[i] = 0.15 + math.Random().nextDouble() * 0.85;
+        }
+      });
+    });
+
+    setState(() {
+      _isListeningAndRecording = true;
+      _recordingElapsed = Duration.zero;
+      _pendingAudioPath = null;
+      _keepVoiceRecording = true;
+    });
   }
 
-  Future<void> _stopRecording() async {
+  Future<void> _stopVoiceSession() async {
     _recordingTicker?.cancel();
-    final path = await _recorder.stop();
+    _recordingTicker = null;
+    _waveController.stop();
+
+    String? audioPath;
+    try {
+      audioPath = await _recorder.stop();
+    } catch (_) {}
+    try {
+      await _stt.stop();
+    } catch (_) {}
+
+    // Reset bars to idle state
+    for (var i = 0; i < _barHeights.length; i++) {
+      _barHeights[i] = 0.2 + math.Random().nextDouble() * 0.3;
+    }
+
     if (!mounted) return;
     setState(() {
-      _isRecording = false;
-      _recordingElapsed = Duration.zero;
-      if (path != null && path.isNotEmpty) {
-        _pendingAudioPath = path;
-      }
+      _isListeningAndRecording = false;
+      _pendingAudioPath = audioPath;
     });
   }
 
-  void _removePendingAudio() {
+  Future<void> _removePendingAudio() async {
+    final path = _pendingAudioPath;
     setState(() {
       _pendingAudioPath = null;
+      _keepVoiceRecording = false;
     });
+    if (path == null) return;
+    try {
+      await File(path).delete();
+    } catch (_) {}
   }
 
   Future<void> _saveEntry() async {
@@ -213,6 +268,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
       CrisisSupportSheet.show(context);
     }
 
+<<<<<<< HEAD
     final audioPath = _pendingAudioPath;
     if (_editingEntry != null) {
       await ref.read(journalEntriesRepositoryProvider).update(
@@ -230,578 +286,749 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
           .incrementByIconKey(DefaultGoalIconKeys.journal, 10);
       ref.read(goalStreakProvider.notifier).refresh();
     }
+=======
+    final audioPath = _keepVoiceRecording ? _pendingAudioPath : null;
+    await ref.read(journalEntriesRepositoryProvider).save(content, audioPath: audioPath);
+    await ref.read(journalStreakProvider.notifier).recordEntrySaved();
+>>>>>>> 09dd9a024fac84c2547991009d9b25974832f166
 
     if (!mounted) return;
     _entryController.clear();
+    _titleController.clear();
     setState(() {
       _pendingAudioPath = null;
-      _editingEntry = null;
+      _keepVoiceRecording = true;
     });
     FocusScope.of(context).unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    final mode = ref.watch(astraThemeProvider);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = isDark ? AstraGlassTheme.moonPrimary : AstraGlassTheme.sunPrimary;
+
+    final localeStr = Localizations.localeOf(context).toString();
+    final dateStr = DateFormat('d MMMM yyyy, EEEE', localeStr).format(_selectedDate);
 
     return Scaffold(
-      backgroundColor: SakuraHomePalette.cream,
-      body: AppBackground(
+      body: DynamicAstraBackground(
+        mode: mode,
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-            child: ResponsiveContent(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.homeFeatureJournalTitle,
-                    style: AppTheme.displayFont(fontSize: 22, color: SakuraHomePalette.textDeep),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _editingEntry != null
-                            ? (isTr ? 'Günlüğü Düzenle' : 'Edit Entry')
-                            : l10n.homeWritingSectionTitle,
-                        style: AppTheme.displayFont(fontSize: 16, color: SakuraHomePalette.textDeep),
-                      ),
-                      if (_editingEntry != null)
-                        TextButton.icon(
-                          onPressed: _cancelEditing,
-                          icon: const Icon(Icons.close_rounded, size: 16, color: SakuraHomePalette.textMuted),
-                          label: Text(
-                            isTr ? 'Vazgeç' : 'Cancel',
-                            style: AppTheme.bodyFont(fontSize: 13, color: SakuraHomePalette.textMuted),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: 260,
-                    child: _WritingArea(
-                      controller: _entryController,
-                      onSave: _saveEntry,
-                      isRecording: _isRecording,
-                      recordingElapsed: _recordingElapsed,
-                      pendingAudioPath: _pendingAudioPath,
-                      isEditing: _editingEntry != null,
-                      onStartRecording: _startRecording,
-                      onStopRecording: _stopRecording,
-                      onRemovePendingAudio: _removePendingAudio,
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  Text(
-                    l10n.homeRecentEntriesTitle,
-                    style: AppTheme.displayFont(fontSize: 16, color: SakuraHomePalette.textDeep),
-                  ),
-                  const SizedBox(height: 10),
-                  _RecentEntriesList(
-                    onEdit: _startEditing,
-                    onDelete: _confirmAndDelete,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Draws faint ruled lines and a dusty-pink left margin behind the writing
-/// area, giving it the feel of a paper notebook page.
-class _NotebookLinesPainter extends CustomPainter {
-  const _NotebookLinesPainter();
-
-  static const double _lineHeight = 30;
-  static const double _topPad = 2;
-  static const double _marginX = 18;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rule = Paint()
-      ..color = const Color(0xFFC9B79A).withValues(alpha: 0.55)
-      ..strokeWidth = 1;
-    for (var y = _topPad + _lineHeight; y < size.height; y += _lineHeight) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), rule);
-    }
-    final margin = Paint()
-      ..color = const Color(0xFFE39BAE).withValues(alpha: 0.6)
-      ..strokeWidth = 1.4;
-    canvas.drawLine(const Offset(_marginX, 0), Offset(_marginX, size.height), margin);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _WritingArea extends StatelessWidget {
-  const _WritingArea({
-    required this.controller,
-    required this.onSave,
-    required this.isRecording,
-    required this.recordingElapsed,
-    required this.pendingAudioPath,
-    this.isEditing = false,
-    required this.onStartRecording,
-    required this.onStopRecording,
-    required this.onRemovePendingAudio,
-  });
-
-  final TextEditingController controller;
-  final VoidCallback onSave;
-  final bool isRecording;
-  final Duration recordingElapsed;
-  final String? pendingAudioPath;
-  final bool isEditing;
-  final VoidCallback onStartRecording;
-  final VoidCallback onStopRecording;
-  final VoidCallback onRemovePendingAudio;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final isTr = Localizations.localeOf(context).languageCode == 'tr';
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBF5E6),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE7D9BE)),
-        boxShadow: [
-          BoxShadow(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.14),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                const Positioned.fill(
-                  child: CustomPaint(painter: _NotebookLinesPainter()),
-                ),
-                TextField(
-                  controller: controller,
-                  maxLines: null,
-                  expands: true,
-                  textAlignVertical: TextAlignVertical.top,
-                  style: GoogleFonts.kalam(
-                    fontSize: 16,
-                    color: SakuraHomePalette.textDeep,
-                    height: 30 / 16,
-                  ),
-                  cursorColor: SakuraHomePalette.blossomPink,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    isCollapsed: true,
-                    contentPadding: const EdgeInsets.only(left: 30, top: 2),
-                    hintText: l10n.homeWritingPlaceholder,
-                    hintStyle: GoogleFonts.kalam(
-                      fontSize: 16,
-                      color: SakuraHomePalette.textMuted,
-                      height: 30 / 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          _VoiceAttachmentRow(
-            isRecording: isRecording,
-            recordingElapsed: recordingElapsed,
-            pendingAudioPath: pendingAudioPath,
-            onStartRecording: onStartRecording,
-            onStopRecording: onStopRecording,
-            onRemovePendingAudio: onRemovePendingAudio,
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: controller,
-              builder: (context, value, _) {
-                final hasText = value.text.trim().isNotEmpty;
-                final enabled = hasText && !isRecording;
-                return AnimatedOpacity(
-                  duration: const Duration(milliseconds: 180),
-                  opacity: enabled ? 1 : 0.4,
-                  child: _SaveEntryButton(
-                    label: isEditing
-                        ? (isTr ? 'Güncelle' : 'Update')
-                        : l10n.homeSaveEntryButton,
-                    enabled: enabled,
-                    onTap: onSave,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The list of previously saved journal entries, right under the writing
-/// area — without this, saved entries were persisted but never surfaced
-/// anywhere in the app.
-class _RecentEntriesList extends ConsumerWidget {
-  const _RecentEntriesList({
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final ValueChanged<JournalEntryRow> onEdit;
-  final ValueChanged<JournalEntryRow> onDelete;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final entriesAsync = ref.watch(recentJournalEntriesProvider);
-
-    return entriesAsync.when(
-      loading: () => const SizedBox.shrink(),
-      error: (error, stackTrace) => const SizedBox.shrink(),
-      data: (entries) {
-        if (entries.isEmpty) {
-          return Text(
-            l10n.homeRecentEntriesEmpty,
-            style: AppTheme.bodyFont(fontSize: 13, color: SakuraHomePalette.textMuted),
-          );
-        }
-        return Column(
-          children: [
-            for (final entry in entries)
-              _RecentEntryCard(
-                entry: entry,
-                onEdit: () => onEdit(entry),
-                onDelete: () => onDelete(entry),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// A single saved entry. Tapping it expands/collapses the full text (the
-/// entry's "detail view" — this app has no separate detail screen, so
-/// expanding in place fills that role); an attached voice note's playback
-/// control is shown either way via the shared [VoiceEntryPlayer] widget.
-class _RecentEntryCard extends StatefulWidget {
-  const _RecentEntryCard({
-    required this.entry,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final JournalEntryRow entry;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  State<_RecentEntryCard> createState() => _RecentEntryCardState();
-}
-
-class _RecentEntryCardState extends State<_RecentEntryCard> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).toString();
-    final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final entry = widget.entry;
-    final audioPath = entry.audioPath;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => setState(() => _expanded = !_expanded),
-        child: Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.fromLTRB(14, 10, 8, 14),
-          decoration: BoxDecoration(
-            color: SakuraHomePalette.cardWhite,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: SakuraHomePalette.branchMauve.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+          bottom: false,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    DateFormat.yMMMd(locale).add_jm().format(entry.createdAt),
-                    style: AppTheme.bodyFont(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: SakuraHomePalette.textMuted,
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded, size: 18, color: SakuraHomePalette.textMuted),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        widget.onEdit();
-                      } else if (value == 'delete') {
-                        widget.onDelete();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
+              // ── Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: ResponsiveContent(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ── App Bar
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Icon(Icons.edit_rounded, size: 18, color: SakuraHomePalette.branchMauve),
-                            const SizedBox(width: 8),
-                            Text(isTr ? 'Düzenle' : 'Edit', style: AppTheme.bodyFont(fontSize: 13)),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
-                            const SizedBox(width: 8),
-                            Text(
-                              isTr ? 'Sil' : 'Delete',
-                              style: AppTheme.bodyFont(fontSize: 13, color: Colors.redAccent),
+                            _CircleBtn(
+                              icon: Icons.arrow_back_ios_new_rounded,
+                              primary: primary,
+                              isDark: isDark,
+                              onTap: () => Navigator.of(context).maybePop(),
+                            ),
+                            _CircleBtn(
+                              icon: Icons.auto_awesome,
+                              primary: primary,
+                              isDark: isDark,
+                              onTap: () {
+                                final next = isDark
+                                    ? AstraThemeMode.light
+                                    : AstraThemeMode.dark;
+                                ref.read(astraThemeProvider.notifier).setTheme(next);
+                              },
                             ),
                           ],
                         ),
-                      ),
-                    ],
+
+                        const SizedBox(height: 16),
+
+                        // ── Card 1: Date + Title
+                        _GlassCard(
+                          isDark: isDark,
+                          primary: primary,
+                          child: Row(
+                            children: [
+                              // Date column
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.auto_awesome,
+                                            size: 13, color: primary),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          isTr ? 'Tarih' : 'Date',
+                                          style: _labelStyle(primary),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    GestureDetector(
+                                      onTap: _pickDate,
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              dateStr,
+                                              style: GoogleFonts.outfit(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: isDark
+                                                    ? const Color(0xFFEDE0FF)
+                                                    : const Color(0xFF1A1005),
+                                              ),
+                                            ),
+                                          ),
+                                          Icon(Icons.calendar_today_outlined,
+                                              size: 16, color: primary),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Divider
+                              Container(
+                                width: 1,
+                                height: 44,
+                                margin: const EdgeInsets.symmetric(horizontal: 12),
+                                color: primary.withValues(alpha: 0.25),
+                              ),
+
+                              // Title column
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.auto_awesome,
+                                            size: 13, color: primary),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          isTr ? 'Başlık' : 'Title',
+                                          style: _labelStyle(primary),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    TextField(
+                                      controller: _titleController,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                      cursorColor: primary,
+                                      maxLines: 1,
+                                      decoration: InputDecoration(
+                                        border: InputBorder.none,
+                                        isCollapsed: true,
+                                        hintText: isTr
+                                            ? 'Günün özeti...'
+                                            : 'Summary...',
+                                        hintStyle: GoogleFonts.outfit(
+                                          fontSize: 13,
+                                          color: isDark
+                                              ? const Color(0x88C0A8FF)
+                                              : const Color(0x88996600),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // ── Card 2: Main Writing Area
+                        _GlassCard(
+                          isDark: isDark,
+                          primary: primary,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SizedBox(
+                                height: 200,
+                                child: TextField(
+                                  controller: _entryController,
+                                  maxLines: null,
+                                  expands: true,
+                                  maxLength: 5000,
+                                  textAlignVertical: TextAlignVertical.top,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 16,
+                                    color: Colors.black,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  cursorColor: primary,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    isCollapsed: true,
+                                    counterText: '',
+                                    hintText: isTr
+                                        ? 'Bugün aklından geçenleri yaz...'
+                                        : 'Write what is on your mind today...',
+                                    hintStyle: GoogleFonts.outfit(
+                                      fontSize: 15,
+                                      color: isDark
+                                          ? const Color(0x77C0A8FF)
+                                          : const Color(0x77996633),
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${_entryController.text.length} / 5000',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? const Color(0x88C0A8FF)
+                                          : const Color(0x88996600),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(Icons.auto_awesome,
+                                      size: 13, color: primary.withValues(alpha: 0.7)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // ── Card 3: Voice Panel
+                        _GlassCard(
+                          isDark: isDark,
+                          primary: primary,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.auto_awesome, size: 14, color: primary),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    isTr ? 'Sesle yaz' : 'Voice type',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark
+                                          ? const Color(0xFFEDE0FF)
+                                          : const Color(0xFF1A1005),
+                                    ),
+                                  ),
+                                  if (pendingAudioPath != null) ...[
+                                    const Spacer(),
+                                    Icon(Icons.check_circle,
+                                        size: 16,
+                                        color: Colors.greenAccent.withValues(alpha: 0.9)),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isTr
+                                    ? 'Düşüncelerini sesinle kaydedebilirsin.'
+                                    : 'You can record your thoughts with your voice.',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? const Color(0x99C0A8FF)
+                                      : const Color(0x99664400),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Waveform + Mic button
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  // Left waveform bars
+                                  _WaveformBars(
+                                    heights: _barHeights.sublist(0, 7),
+                                    active: _isListeningAndRecording,
+                                    primary: primary,
+                                    mirrored: true,
+                                  ),
+
+                                  const SizedBox(width: 12),
+
+                                  // Circular mic button
+                                  GestureDetector(
+                                    onTap: _isListeningAndRecording
+                                        ? _stopVoiceSession
+                                        : _startVoiceSession,
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 300),
+                                      width: 56,
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: RadialGradient(
+                                          colors: _isListeningAndRecording
+                                              ? [
+                                                  Colors.redAccent.shade100,
+                                                  Colors.redAccent,
+                                                ]
+                                              : [
+                                                  primary.withValues(alpha: 0.85),
+                                                  isDark
+                                                      ? const Color(0xFF7653D9)
+                                                      : const Color(0xFFB8860B),
+                                                ],
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: (_isListeningAndRecording
+                                                    ? Colors.redAccent
+                                                    : primary)
+                                                .withValues(alpha: 0.55),
+                                            blurRadius: 18,
+                                            spreadRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        _isListeningAndRecording
+                                            ? Icons.stop_rounded
+                                            : Icons.mic_rounded,
+                                        color: Colors.black,
+                                        size: 26,
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 12),
+
+                                  // Right waveform bars
+                                  _WaveformBars(
+                                    heights: _barHeights.sublist(8),
+                                    active: _isListeningAndRecording,
+                                    primary: primary,
+                                    mirrored: false,
+                                  ),
+                                ],
+                              ),
+
+                              // Recording toggle if audio saved
+                              if (_pendingAudioPath != null) ...[
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Icon(Icons.graphic_eq,
+                                        size: 14, color: primary),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      isTr
+                                          ? 'Ses kaydı saklansın mı?'
+                                          : 'Keep voice recording?',
+                                      style: GoogleFonts.outfit(
+                                          fontSize: 12,
+                                          color: isDark
+                                              ? const Color(0xBBC0A8FF)
+                                              : const Color(0xBB665544)),
+                                    ),
+                                    const Spacer(),
+                                    Switch.adaptive(
+                                      value: _keepVoiceRecording,
+                                      activeThumbColor: primary,
+                                      onChanged: (val) {
+                                        setState(() => _keepVoiceRecording = val);
+                                        if (!val) _removePendingAudio();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 100), // Space for bottom bar
+                      ],
+                    ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Text(
-                  entry.content,
-                  maxLines: _expanded ? null : 4,
-                  overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                  style: AppTheme.bodyFont(fontSize: 14, color: SakuraHomePalette.textDeep),
                 ),
               ),
-              if (audioPath != null) ...[
-                const SizedBox(height: 10),
-                VoiceEntryPlayer(audioPath: audioPath),
-              ],
+
+              // ── Bottom Action Bar + Save Button (fixed at bottom)
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: isDark
+                        ? [
+                            const Color(0x00000000),
+                            const Color(0xCC0D0818),
+                            const Color(0xFF0B0716),
+                          ]
+                        : [
+                            const Color(0x00000000),
+                            const Color(0xCCFAF0D8),
+                            const Color(0xFFF5E8C8),
+                          ],
+                  ),
+                ),
+                padding: EdgeInsets.fromLTRB(
+                  16, 12, 16, MediaQuery.of(context).padding.bottom + 16),
+                child: Column(
+                  children: [
+                    // Action toolbar
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _ActionBtn(icon: Icons.photo_outlined, label: isTr ? 'Fotoğraf' : 'Photo', primary: primary, isDark: isDark, onTap: () {}),
+                        _ActionBtn(icon: Icons.local_offer_outlined, label: isTr ? 'Etiket ekle' : 'Tag', primary: primary, isDark: isDark, onTap: () {}),
+                        _ActionBtn(icon: Icons.download_outlined, label: isTr ? 'Duygu eki' : 'Mood', primary: primary, isDark: isDark, onTap: () {}),
+                        _ActionBtn(icon: Icons.notifications_none_rounded, label: isTr ? 'Hatırlatıcı' : 'Remind', primary: primary, isDark: isDark, onTap: () {}),
+                        _ActionBtn(icon: Icons.star_border_rounded, label: isTr ? 'Yıldızla' : 'Star', primary: primary, isDark: isDark, onTap: () {}),
+                      ],
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // "Günlüğü Mühürle" gold pill button
+                    ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _entryController,
+                      builder: (ctx, val, _) {
+                        final enabled =
+                            val.text.trim().isNotEmpty && !_isListeningAndRecording;
+                        return _SealButton(
+                          isDark: isDark,
+                          primary: primary,
+                          enabled: enabled,
+                          isTr: isTr,
+                          onTap: _saveEntry,
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // Footer
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.lock_outline_rounded,
+                            size: 13,
+                            color: primary.withValues(alpha: 0.6)),
+                        const SizedBox(width: 5),
+                        Text(
+                          isTr
+                              ? 'Günlüğün sadece seninle güvende.'
+                              : 'Your journal is safe & private with you.',
+                          style: GoogleFonts.outfit(
+                            fontSize: 11,
+                            color: isDark
+                                ? const Color(0x88C0A8FF)
+                                : const Color(0x88664400),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Icon(Icons.auto_awesome,
+                        size: 12, color: primary.withValues(alpha: 0.5)),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
+  String? get pendingAudioPath => _pendingAudioPath;
 }
 
-/// Sits between the text field and the Save button: a mic button when
-/// idle, a pulsing "Recording… 0:07" row with a stop button while
-/// recording, or a small "Voice note attached" chip once one's been
-/// captured and is waiting to be saved with the entry.
-class _VoiceAttachmentRow extends StatelessWidget {
-  const _VoiceAttachmentRow({
-    required this.isRecording,
-    required this.recordingElapsed,
-    required this.pendingAudioPath,
-    required this.onStartRecording,
-    required this.onStopRecording,
-    required this.onRemovePendingAudio,
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+TextStyle _labelStyle(Color primary) => GoogleFonts.outfit(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: primary,
+      letterSpacing: 0.3,
+    );
+
+// Semi-transparent glass card matching the screenshot
+class _GlassCard extends StatelessWidget {
+  const _GlassCard({
+    required this.isDark,
+    required this.primary,
+    required this.child,
   });
 
-  final bool isRecording;
-  final Duration recordingElapsed;
-  final String? pendingAudioPath;
-  final VoidCallback onStartRecording;
-  final VoidCallback onStopRecording;
-  final VoidCallback onRemovePendingAudio;
-
-  String _formatElapsed(Duration duration) {
-    final totalSeconds = duration.inSeconds;
-    final minutes = totalSeconds ~/ 60;
-    final seconds = totalSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
+  final bool isDark;
+  final Color primary;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    if (isRecording) {
-      return Row(
-        children: [
-          const _RecordingPulseDot(),
-          const SizedBox(width: 8),
-          Text(
-            '${l10n.voiceNoteRecordingLabel} ${_formatElapsed(recordingElapsed)}',
-            style: AppTheme.bodyFont(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: SakuraHomePalette.textDeep,
-            ),
-          ),
-          const Spacer(),
-          _RoundIconButton(
-            icon: Icons.stop_rounded,
-            tooltip: l10n.voiceNoteStopRecordingTooltip,
-            onTap: onStopRecording,
-            filled: true,
-          ),
-        ],
-      );
-    }
-
-    if (pendingAudioPath != null) {
-      return Row(
-        children: [
-          const Icon(Icons.graphic_eq_rounded, size: 16, color: SakuraHomePalette.branchMauve),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              l10n.voiceNoteAttachedLabel,
-              style: AppTheme.bodyFont(fontSize: 12, color: SakuraHomePalette.textMuted),
-            ),
-          ),
-          _RoundIconButton(
-            icon: Icons.close_rounded,
-            tooltip: l10n.voiceNoteRemoveTooltip,
-            onTap: onRemovePendingAudio,
-          ),
-        ],
-      );
-    }
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: _RoundIconButton(
-        icon: Icons.mic_none_rounded,
-        tooltip: l10n.voiceNoteRecordTooltip,
-        onTap: onStartRecording,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0x44231845)
+            : const Color(0x55FFF8EE),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: primary.withValues(alpha: 0.22),
+          width: 1.2,
+        ),
       ),
+      child: child,
     );
   }
 }
 
-/// Small red dot that gently pulses in opacity while a voice note is being
-/// recorded — enough motion to read as "live" without being distracting.
-class _RecordingPulseDot extends StatefulWidget {
-  const _RecordingPulseDot();
-
-  @override
-  State<_RecordingPulseDot> createState() => _RecordingPulseDotState();
-}
-
-class _RecordingPulseDotState extends State<_RecordingPulseDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 800),
-  )..repeat(reverse: true);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: Tween(begin: 0.35, end: 1.0)
-          .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut)),
-      child: const DecoratedBox(
-        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.redAccent),
-        child: SizedBox(width: 8, height: 8),
-      ),
-    );
-  }
-}
-
-class _RoundIconButton extends StatelessWidget {
-  const _RoundIconButton({
+// Circular icon button
+class _CircleBtn extends StatelessWidget {
+  const _CircleBtn({
     required this.icon,
-    required this.tooltip,
+    required this.primary,
+    required this.isDark,
     required this.onTap,
-    this.filled = false,
   });
 
   final IconData icon;
-  final String tooltip;
+  final Color primary;
+  final bool isDark;
   final VoidCallback onTap;
-  final bool filled;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: filled ? SakuraHomePalette.blossomPink : SakuraHomePalette.lavender,
-            ),
-            child: Icon(
-              icon,
-              size: 16,
-              color: filled ? Colors.white : SakuraHomePalette.branchMauve,
-            ),
-          ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isDark ? const Color(0x44231845) : const Color(0x55FFF8EE),
+          border: Border.all(color: primary.withValues(alpha: 0.3)),
         ),
+        child: Icon(icon, size: 18, color: primary),
       ),
     );
   }
 }
 
-class _SaveEntryButton extends StatelessWidget {
-  const _SaveEntryButton({required this.label, required this.enabled, required this.onTap});
+// Animated waveform bars
+class _WaveformBars extends StatelessWidget {
+  const _WaveformBars({
+    required this.heights,
+    required this.active,
+    required this.primary,
+    required this.mirrored,
+  });
 
+  final List<double> heights;
+  final bool active;
+  final Color primary;
+  final bool mirrored;
+
+  @override
+  Widget build(BuildContext context) {
+    final bars = mirrored ? heights.reversed.toList() : heights;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: bars.map((h) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          width: 3,
+          height: (active ? h * 36.0 : 8.0).clamp(4.0, 36.0),
+          decoration: BoxDecoration(
+            color: active
+                ? primary.withValues(alpha: 0.7 + h * 0.3)
+                : primary.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+// Bottom action toolbar button
+class _ActionBtn extends StatelessWidget {
+  const _ActionBtn({
+    required this.icon,
+    required this.label,
+    required this.primary,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  final IconData icon;
   final String label;
-  final bool enabled;
+  final Color primary;
+  final bool isDark;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return PremiumButton(
-      label: label,
-      icon: Icons.auto_awesome_rounded,
-      expand: false,
-      onPressed: enabled ? onTap : null,
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 22, color: primary.withValues(alpha: 0.85)),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: isDark
+                  ? const Color(0xBBC0A8FF)
+                  : const Color(0xBB664400),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Gold "Günlüğü Mühürle" pill button
+class _SealButton extends StatelessWidget {
+  const _SealButton({
+    required this.isDark,
+    required this.primary,
+    required this.enabled,
+    required this.isTr,
+    required this.onTap,
+  });
+
+  final bool isDark;
+  final Color primary;
+  final bool enabled;
+  final bool isTr;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final gradient = isDark
+        ? const LinearGradient(
+            colors: [Color(0xFFD4B860), Color(0xFFB89030), Color(0xFF8A6A10)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        : const LinearGradient(
+            colors: [Color(0xFFFFD966), Color(0xFFD4A820), Color(0xFFAA8010)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 200),
+      opacity: enabled ? 1.0 : 0.55,
+      child: GestureDetector(
+        onTap: enabled ? onTap : null,
+        child: Container(
+          height: 60,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            gradient: enabled
+                ? gradient
+                : LinearGradient(
+                    colors: [
+                      const Color(0x44D4AF37),
+                      const Color(0x22B8860B),
+                    ],
+                  ),
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: primary.withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 16),
+              // Wax seal icon
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.18),
+                ),
+                child: const Icon(
+                  Icons.local_florist_rounded,
+                  color: Colors.black87,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isTr ? 'Günlüğü Mühürle' : 'Save Journal',
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1A0F00),
+                      ),
+                    ),
+                    Text(
+                      isTr
+                          ? 'Bu anı sakla ve yolculuğuna devam et.'
+                          : 'Preserve this moment and continue.',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0x99331100),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.auto_awesome, color: Color(0xFF1A0F00), size: 18),
+              const SizedBox(width: 18),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

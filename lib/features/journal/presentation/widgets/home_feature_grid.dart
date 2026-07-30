@@ -7,8 +7,6 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../theme/luma_chat_sheet.dart';
 import '../../../../theme/sakura_home_palette.dart';
-import '../../../app_lock/domain/app_section.dart';
-import '../../../app_lock/presentation/widgets/section_lock_gate.dart';
 import '../../../reminders/presentation/providers/reminders_providers.dart';
 import '../../../shell/presentation/widgets/feature_coming_soon_screen.dart';
 
@@ -104,11 +102,7 @@ List<HomeFeatureItem> homeFeatureItems(
       description: l10n.homeFeatureAiChatDesc,
       primaryIcon: Icons.chat_bubble_rounded,
       accentIcon: Icons.auto_awesome_rounded,
-      onTap: () async {
-        final unlocked = await ensureSectionUnlocked(context, ref, AppSection.aiChat);
-        if (!unlocked || !context.mounted) return;
-        LumaChatSheet.show(context);
-      },
+      onTap: () => LumaChatSheet.show(context),
     ),
     HomeFeatureItem(
       title: l10n.homeFeatureGoalsTitle,
