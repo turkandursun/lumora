@@ -15,6 +15,8 @@ class HobbiesNotifier extends StateNotifier<Set<String>> {
 
   Future<void> _load() async {
     state = await _repo.load();
+    final synced = await _repo.syncHobbiesWithSupabase();
+    state = synced;
   }
 
   Future<void> toggle(String id) async {

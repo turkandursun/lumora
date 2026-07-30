@@ -7,16 +7,15 @@ import '../../../../core/services/ai_service.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../theme/premium_button.dart';
-import '../../../../theme/lumora_palette.dart';
 import '../../../../theme/sakura_home_palette.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../dreams/presentation/providers/dreams_providers.dart';
 import '../../../gratitude/presentation/providers/gratitude_providers.dart';
 import '../../../journal/presentation/providers/journal_entries_provider.dart';
 import '../../../../theme/app_background.dart';
-import '../../../journal/presentation/providers/journal_streak_provider.dart';
 import '../../../letters/presentation/providers/letter_providers.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
+import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 import '../../domain/journal_text_stats.dart';
 
 const List<Color> _moodColors = [
@@ -40,7 +39,7 @@ class StatsScreen extends ConsumerWidget {
 
     final entryDays =
         ref.watch(journalEntryDaysProvider).valueOrNull ?? const <DateTime>{};
-    final streak = ref.watch(journalStreakProvider).count;
+    final streak = ref.watch(visitDaysCountProvider).valueOrNull ?? 0;
     final dreams = ref.watch(dreamsStreamProvider).valueOrNull?.length ?? 0;
     final moodLog = ref.watch(moodLogProvider);
     final gratitudeCount = ref.watch(gratitudeProvider).length;

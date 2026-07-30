@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/tables/goals_table.dart';
@@ -27,10 +29,6 @@ class DefaultGoalIconKeys {
 /// sheet.
 const customGoalIconKey = 'custom';
 
-const _seededPrefKey = 'goals_seeded';
-const _streakCountKey = 'goals_streak_count';
-const _streakLastActiveKey = 'goals_streak_last_active_date';
-
 /// The user's current goal-tracking streak: how many consecutive days they
 /// made progress on at least one goal (the simpler of the two streak
 /// definitions the design allowed for — "made progress" rather than
@@ -46,22 +44,35 @@ class GoalStreak {
 /// Owns goal persistence (via [AppDatabase]) and the small streak record
 /// that lives alongside it in [SharedPreferences].
 class GoalsRepository {
-  GoalsRepository({required AppDatabase database}) : _db = database;
+  GoalsRepository({
+    required AppDatabase database,
+    SupabaseClient? supabaseClient,
+  })  : _db = database,
+        _client = supabaseClient ?? Supabase.instance.client;
 
   final AppDatabase _db;
+  final SupabaseClient _client;
 
-  Stream<List<GoalRow>> watchAll() => _db.select(_db.goals).watch();
+  String get _currentUserId => _client.auth.currentUser?.id ?? 'guest';
 
-  /// Inserts the four starter goals exactly once, ever (tracked via a
-  /// [SharedPreferences] flag, so manually deleting them all later doesn't
-  /// bring them back).
-  ///
-  /// [defaultCopy] must have an entry for each key in
-  /// [DefaultGoalIconKeys].
+  String get _seededPrefKey => 'goals_seeded_$_currentUserId';
+  String get _streakCountKey => 'goals_streak_count_$_currentUserId';
+  String get _streakLastActiveKey => 'goals_streak_last_active_date_$_currentUserId';
+
+  /// Only returns goals belonging to the currently logged in user.
+  Stream<List<GoalRow>> watchAll() {
+    final user = _client.auth.currentUser;
+    if (user == null) return Stream.value(const []);
+    return (_db.select(_db.goals)..where((t) => t.userId.equals(user.id))).watch();
+  }
+
+  /// Inserts the four starter goals exactly once per user (tracked via a
+  /// [SharedPreferences] flag).
   Future<void> ensureSeeded(Map<String, GoalCopy> defaultCopy) async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_seededPrefKey) ?? false) return;
 
+    final userId = _client.auth.currentUser?.id;
     final now = DateTime.now();
     await _db.batch((batch) {
       batch.insertAll(_db.goals, [
@@ -72,6 +83,7 @@ class GoalsRepository {
           target: 8,
           frequency: GoalFrequency.daily,
           periodStart: _periodStartFor(GoalFrequency.daily, now),
+          userId: Value(userId),
         ),
         GoalsCompanion.insert(
           title: defaultCopy[DefaultGoalIconKeys.journal]!.title,
@@ -80,6 +92,7 @@ class GoalsRepository {
           target: 30,
           frequency: GoalFrequency.daily,
           periodStart: _periodStartFor(GoalFrequency.daily, now),
+          userId: Value(userId),
         ),
         GoalsCompanion.insert(
           title: defaultCopy[DefaultGoalIconKeys.meditation]!.title,
@@ -88,6 +101,7 @@ class GoalsRepository {
           target: 15,
           frequency: GoalFrequency.daily,
           periodStart: _periodStartFor(GoalFrequency.daily, now),
+          userId: Value(userId),
         ),
         GoalsCompanion.insert(
           title: defaultCopy[DefaultGoalIconKeys.reading]!.title,
@@ -96,6 +110,7 @@ class GoalsRepository {
           target: 4,
           frequency: GoalFrequency.monthly,
           periodStart: _periodStartFor(GoalFrequency.monthly, now),
+          userId: Value(userId),
         ),
       ]);
     });
@@ -109,7 +124,30 @@ class GoalsRepository {
     required int target,
     required GoalFrequency frequency,
   }) async {
+    final user = _client.auth.currentUser;
     final now = DateTime.now();
+
+    String? cloudId;
+    if (user != null) {
+      try {
+        final insertedRow = await _client.from('goals').insert({
+          'user_id': user.id,
+          'title': title,
+          'icon_key': customGoalIconKey,
+          'unit': unit.name,
+          'custom_unit_label': customUnitLabel,
+          'target': target,
+          'progress': 0,
+          'frequency': frequency.name,
+          'period_start': _periodStartFor(frequency, now).toIso8601String(),
+        }).select('id').single();
+        cloudId = insertedRow['id'] as String?;
+        debugPrint('[GoalsSync] Successfully inserted goal to Supabase, cloudId=$cloudId');
+      } catch (e) {
+        debugPrint('[GoalsSync] Error inserting goal into Supabase: $e');
+      }
+    }
+
     await _db.into(_db.goals).insert(
           GoalsCompanion.insert(
             title: title,
@@ -119,40 +157,160 @@ class GoalsRepository {
             target: target,
             frequency: frequency,
             periodStart: _periodStartFor(frequency, now),
+            userId: Value(user?.id),
+            supabaseId: Value(cloudId),
           ),
         );
   }
 
   /// Zeroes [GoalRow.progress] (and moves [GoalRow.periodStart] forward)
   /// for any goal whose tracked period no longer matches the period its
-  /// [GoalRow.frequency] implies for "now" — e.g. a daily goal whose
-  /// [GoalRow.periodStart] was yesterday. Meant to be called once per
-  /// screen load, since there's no background scheduler to run it on a
-  /// timer.
+  /// [GoalRow.frequency] implies for "now".
   Future<void> resetElapsedPeriods() async {
+    final user = _client.auth.currentUser;
     final now = DateTime.now();
-    final goals = await _db.select(_db.goals).get();
+    final goals = await (_db.select(_db.goals)
+          ..where((t) => user != null ? t.userId.equals(user.id) : t.userId.isNull()))
+        .get();
     for (final goal in goals) {
       final expected = _periodStartFor(goal.frequency, now);
       if (!_isSameDate(goal.periodStart, expected)) {
         await (_db.update(_db.goals)..where((t) => t.id.equals(goal.id))).write(
           GoalsCompanion(progress: const Value(0), periodStart: Value(expected)),
         );
+        if (user != null && goal.supabaseId != null) {
+          try {
+            await _client.from('goals').update({
+              'progress': 0,
+              'period_start': expected.toIso8601String(),
+            }).eq('id', goal.supabaseId!).eq('user_id', user.id);
+          } catch (e) {
+            debugPrint('[GoalsSync] Error updating period reset in Supabase: $e');
+          }
+        }
       }
     }
   }
 
   /// Adds [amount] to [goal]'s progress (clamped to its target), records
   /// today as a qualifying streak day, and reports whether this increment
-  /// is the one that just completed the goal for its current period (so
-  /// the UI can show a one-time celebration rather than one every tap).
+  /// completed the goal.
   Future<bool> incrementProgress(GoalRow goal, int amount) async {
     final newProgress = (goal.progress + amount).clamp(0, goal.target);
     await (_db.update(_db.goals)..where((t) => t.id.equals(goal.id)))
         .write(GoalsCompanion(progress: Value(newProgress)));
     await recordActivityToday();
+
+    final user = _client.auth.currentUser;
+    if (user != null && goal.supabaseId != null) {
+      try {
+        await _client.from('goals').update({
+          'progress': newProgress,
+        }).eq('id', goal.supabaseId!).eq('user_id', user.id);
+      } catch (e) {
+        debugPrint('[GoalsSync] Error updating progress in Supabase: $e');
+      }
+    }
     return goal.progress < goal.target && newProgress >= goal.target;
   }
+
+  /// Deletes all local goals from Drift SQLite (e.g. upon user logout).
+  Future<void> deleteAll() async {
+    await _db.delete(_db.goals).go();
+  }
+
+  /// Fetches the user's goals from Supabase and syncs missing/deleted ones to local Drift DB.
+  Future<void> syncGoalsWithSupabase() async {
+    try {
+      final user = _client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await _client
+          .from('goals')
+          .select()
+          .eq('user_id', user.id);
+
+      final cloudRows = response as List;
+      final cloudMap = <String, Map<String, dynamic>>{};
+      for (final row in cloudRows) {
+        final id = row['id'] as String?;
+        if (id != null) {
+          cloudMap[id] = row as Map<String, dynamic>;
+        }
+      }
+
+      final localEntries = await (_db.select(_db.goals)
+            ..where((t) => t.userId.equals(user.id)))
+          .get();
+
+      final localSupabaseIdMap = <String, GoalRow>{};
+      for (final entry in localEntries) {
+        if (entry.supabaseId != null) {
+          localSupabaseIdMap[entry.supabaseId!] = entry;
+        }
+      }
+
+      // Delete local entries that were deleted in cloud
+      for (final localSupabaseId in localSupabaseIdMap.keys) {
+        if (!cloudMap.containsKey(localSupabaseId)) {
+          await (_db.delete(_db.goals)
+                ..where((t) => t.supabaseId.equals(localSupabaseId)))
+              .go();
+          debugPrint('[GoalsSync] Deleted local goal with supabaseId=$localSupabaseId (deleted from cloud)');
+        }
+      }
+
+      // Insert cloud entries that are missing locally
+      for (final cloudId in cloudMap.keys) {
+        if (!localSupabaseIdMap.containsKey(cloudId)) {
+          final row = cloudMap[cloudId]!;
+          final title = row['title'] as String?;
+          final iconKey = row['icon_key'] as String? ?? 'custom';
+          final unitStr = row['unit'] as String?;
+          final customUnitLabel = row['custom_unit_label'] as String?;
+          final target = (row['target'] as num?)?.toInt() ?? 1;
+          final progress = (row['progress'] as num?)?.toInt() ?? 0;
+          final freqStr = row['frequency'] as String?;
+          final periodStartStr = row['period_start'] as String?;
+
+          if (title == null || title.isEmpty) continue;
+
+          final unit = GoalUnit.values.firstWhere(
+            (e) => e.name == unitStr,
+            orElse: () => GoalUnit.custom,
+          );
+          final frequency = GoalFrequency.values.firstWhere(
+            (e) => e.name == freqStr,
+            orElse: () => GoalFrequency.daily,
+          );
+          final periodStart = periodStartStr != null
+              ? DateTime.tryParse(periodStartStr) ?? DateTime.now()
+              : DateTime.now();
+
+          await _db.into(_db.goals).insert(
+                GoalsCompanion.insert(
+                  title: title,
+                  iconKey: iconKey,
+                  unit: unit,
+                  customUnitLabel: Value(customUnitLabel),
+                  target: target,
+                  progress: Value(progress),
+                  frequency: frequency,
+                  periodStart: periodStart,
+                  userId: Value(user.id),
+                  supabaseId: Value(cloudId),
+                ),
+              );
+          debugPrint('[GoalsSync] Inserted cloud goal locally, cloudId=$cloudId');
+        }
+      }
+    } catch (e) {
+      debugPrint('[GoalsSync] Error fetching from Supabase: $e');
+    }
+  }
+
+  /// Alias for [syncGoalsWithSupabase] to match the journal repository naming.
+  Future<void> fetchAndSyncFromSupabase() => syncGoalsWithSupabase();
 
   /// The current streak, correcting it to zero first if more than a day
   /// has passed since [GoalStreak.lastActiveDate] (i.e. a day was missed).

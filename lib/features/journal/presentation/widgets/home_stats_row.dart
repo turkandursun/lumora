@@ -10,7 +10,7 @@ import '../../../../theme/mood_theme_provider.dart';
 import '../../../../theme/sakura_home_palette.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
-import '../providers/journal_streak_provider.dart';
+import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 
 extension _MoodEmoji on AppMood {
   String get emoji {
@@ -78,7 +78,7 @@ class HomeStatsRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final streak = ref.watch(journalStreakProvider);
+    final visitDays = ref.watch(visitDaysCountProvider).valueOrNull ?? 0;
     final mood = ref.watch(moodThemeProvider);
     final goalsAsync = ref.watch(goalsStreamProvider);
     final goalFraction = goalsAsync.maybeWhen(
@@ -103,7 +103,7 @@ class HomeStatsRow extends ConsumerWidget {
         child: Row(
           children: [
             Expanded(
-              child: _StreakTile(streakDays: streak.count, l10n: l10n),
+              child: _StreakTile(streakDays: visitDays, l10n: l10n),
             ),
             const _TileDivider(),
             Expanded(

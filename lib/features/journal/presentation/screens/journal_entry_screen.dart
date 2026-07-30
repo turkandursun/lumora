@@ -43,6 +43,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
   Duration _recordingElapsed = Duration.zero;
   Timer? _recordingTicker;
   String? _pendingAudioPath;
+  JournalEntryRow? _editingEntry;
 
   @override
   void dispose() {
@@ -50,6 +51,67 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
     _recordingTicker?.cancel();
     _recorder.dispose();
     super.dispose();
+  }
+
+  void _startEditing(JournalEntryRow entry) {
+    setState(() {
+      _editingEntry = entry;
+      _entryController.text = entry.content;
+      _pendingAudioPath = entry.audioPath;
+    });
+  }
+
+  void _cancelEditing() {
+    setState(() {
+      _editingEntry = null;
+      _entryController.clear();
+      _pendingAudioPath = null;
+    });
+  }
+
+  Future<void> _confirmAndDelete(JournalEntryRow entry) async {
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: SakuraHomePalette.cardWhite,
+        title: Text(
+          isTr ? 'Günlüğü Sil' : 'Delete Entry',
+          style: AppTheme.displayFont(fontSize: 18, color: SakuraHomePalette.textDeep),
+        ),
+        content: Text(
+          isTr
+              ? 'Bu günlüğü silmek istediğinize emin misiniz?'
+              : 'Are you sure you want to delete this journal entry?',
+          style: AppTheme.bodyFont(fontSize: 14, color: SakuraHomePalette.textDeep),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(isTr ? 'İptal' : 'Cancel', style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              isTr ? 'Sil' : 'Delete',
+              style: AppTheme.bodyFont(color: Colors.redAccent, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await ref.read(journalEntriesRepositoryProvider).delete(
+        entry.id,
+        supabaseId: entry.supabaseId,
+      );
+      if (!mounted) return;
+      if (_editingEntry?.id == entry.id) {
+        _cancelEditing();
+      }
+    }
   }
 
   Future<void> _startRecording() async {
@@ -75,10 +137,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
         await voiceNotesDir.create(recursive: true);
       }
 
-      // Pick an encoder the current platform actually supports. Web, for
-      // example, can't encode AAC — it needs opus/webm — so falling back
-      // here keeps recording working across platforms instead of failing
-      // silently.
       const candidates = [
         AudioEncoder.aacLc,
         AudioEncoder.opus,
@@ -99,88 +157,86 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
 
       final path = p.join(
         voiceNotesDir.path,
-        'entry_${DateTime.now().millisecondsSinceEpoch}.$ext',
+        'note_${DateTime.now().millisecondsSinceEpoch}.$ext',
       );
-      await _recorder.start(RecordConfig(encoder: encoder), path: path);
+      await _recorder.start(
+        RecordConfig(encoder: encoder),
+        path: path,
+      );
+
+      _recordingTicker?.cancel();
+      setState(() {
+        _isRecording = true;
+        _recordingElapsed = Duration.zero;
+      });
+      _recordingTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() {
+          _recordingElapsed += const Duration(seconds: 1);
+        });
+      });
     } catch (e) {
-      debugPrint('[VoiceNote] recording failed to start: $e');
       if (!mounted) return;
       final isTr = Localizations.localeOf(context).languageCode == 'tr';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isTr
-              ? 'Ses kaydı başlatılamadı: $e'
-              : "Couldn't start recording: $e"),
-        ),
+        SnackBar(content: Text(isTr ? 'Ses kaydı başlatılamadı' : 'Failed to start recording')),
       );
-      return;
     }
-
-    final startedAt = DateTime.now();
-    _recordingTicker?.cancel();
-    _recordingTicker = Timer.periodic(const Duration(milliseconds: 200), (_) {
-      if (!mounted) return;
-      setState(() => _recordingElapsed = DateTime.now().difference(startedAt));
-    });
-
-    setState(() {
-      _isRecording = true;
-      _recordingElapsed = Duration.zero;
-      _pendingAudioPath = null;
-    });
   }
 
   Future<void> _stopRecording() async {
     _recordingTicker?.cancel();
-    _recordingTicker = null;
-
-    String? path;
-    try {
-      path = await _recorder.stop();
-    } catch (_) {
-      path = null;
-    }
-
+    final path = await _recorder.stop();
     if (!mounted) return;
     setState(() {
       _isRecording = false;
-      _pendingAudioPath = path;
+      _recordingElapsed = Duration.zero;
+      if (path != null && path.isNotEmpty) {
+        _pendingAudioPath = path;
+      }
     });
   }
 
-  Future<void> _removePendingAudio() async {
-    final path = _pendingAudioPath;
-    setState(() => _pendingAudioPath = null);
-    if (path == null) return;
-    try {
-      await File(path).delete();
-    } catch (_) {
-      // Best-effort cleanup of the discarded recording; nothing to recover.
-    }
+  void _removePendingAudio() {
+    setState(() {
+      _pendingAudioPath = null;
+    });
   }
 
   Future<void> _saveEntry() async {
     final content = _entryController.text.trim();
     if (content.isEmpty) return;
 
-    // Local, offline keyword check — shown immediately, before the (fast
-    // but still async) save completes, so it never waits on anything.
     if (CrisisDetectionService.containsCrisisLanguage(content)) {
       CrisisSupportSheet.show(context);
     }
 
     final audioPath = _pendingAudioPath;
-    await ref.read(journalEntriesRepositoryProvider).save(content, audioPath: audioPath);
-    await ref.read(journalStreakProvider.notifier).recordEntrySaved();
+    if (_editingEntry != null) {
+      await ref.read(journalEntriesRepositoryProvider).update(
+        _editingEntry!.id,
+        content: content,
+        audioPath: audioPath,
+        supabaseId: _editingEntry!.supabaseId,
+      );
+    } else {
+      await ref.read(journalEntriesRepositoryProvider).save(content, audioPath: audioPath);
+      await ref.read(journalStreakProvider.notifier).recordEntrySaved();
+    }
+
     if (!mounted) return;
     _entryController.clear();
-    setState(() => _pendingAudioPath = null);
+    setState(() {
+      _pendingAudioPath = null;
+      _editingEntry = null;
+    });
     FocusScope.of(context).unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
 
     return Scaffold(
       backgroundColor: SakuraHomePalette.cream,
@@ -197,9 +253,25 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                     style: AppTheme.displayFont(fontSize: 22, color: SakuraHomePalette.textDeep),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    l10n.homeWritingSectionTitle,
-                    style: AppTheme.displayFont(fontSize: 16, color: SakuraHomePalette.textDeep),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _editingEntry != null
+                            ? (isTr ? 'Günlüğü Düzenle' : 'Edit Entry')
+                            : l10n.homeWritingSectionTitle,
+                        style: AppTheme.displayFont(fontSize: 16, color: SakuraHomePalette.textDeep),
+                      ),
+                      if (_editingEntry != null)
+                        TextButton.icon(
+                          onPressed: _cancelEditing,
+                          icon: const Icon(Icons.close_rounded, size: 16, color: SakuraHomePalette.textMuted),
+                          label: Text(
+                            isTr ? 'Vazgeç' : 'Cancel',
+                            style: AppTheme.bodyFont(fontSize: 13, color: SakuraHomePalette.textMuted),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
@@ -210,6 +282,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                       isRecording: _isRecording,
                       recordingElapsed: _recordingElapsed,
                       pendingAudioPath: _pendingAudioPath,
+                      isEditing: _editingEntry != null,
                       onStartRecording: _startRecording,
                       onStopRecording: _stopRecording,
                       onRemovePendingAudio: _removePendingAudio,
@@ -221,7 +294,10 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                     style: AppTheme.displayFont(fontSize: 16, color: SakuraHomePalette.textDeep),
                   ),
                   const SizedBox(height: 10),
-                  const _RecentEntriesList(),
+                  _RecentEntriesList(
+                    onEdit: _startEditing,
+                    onDelete: _confirmAndDelete,
+                  ),
                 ],
               ),
             ),
@@ -252,7 +328,7 @@ class _NotebookLinesPainter extends CustomPainter {
     final margin = Paint()
       ..color = const Color(0xFFE39BAE).withValues(alpha: 0.6)
       ..strokeWidth = 1.4;
-    canvas.drawLine(Offset(_marginX, 0), Offset(_marginX, size.height), margin);
+    canvas.drawLine(const Offset(_marginX, 0), Offset(_marginX, size.height), margin);
   }
 
   @override
@@ -266,6 +342,7 @@ class _WritingArea extends StatelessWidget {
     required this.isRecording,
     required this.recordingElapsed,
     required this.pendingAudioPath,
+    this.isEditing = false,
     required this.onStartRecording,
     required this.onStopRecording,
     required this.onRemovePendingAudio,
@@ -276,6 +353,7 @@ class _WritingArea extends StatelessWidget {
   final bool isRecording;
   final Duration recordingElapsed;
   final String? pendingAudioPath;
+  final bool isEditing;
   final VoidCallback onStartRecording;
   final VoidCallback onStopRecording;
   final VoidCallback onRemovePendingAudio;
@@ -283,6 +361,8 @@ class _WritingArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
@@ -354,7 +434,9 @@ class _WritingArea extends StatelessWidget {
                   duration: const Duration(milliseconds: 180),
                   opacity: enabled ? 1 : 0.4,
                   child: _SaveEntryButton(
-                    label: l10n.homeSaveEntryButton,
+                    label: isEditing
+                        ? (isTr ? 'Güncelle' : 'Update')
+                        : l10n.homeSaveEntryButton,
                     enabled: enabled,
                     onTap: onSave,
                   ),
@@ -363,6 +445,171 @@ class _WritingArea extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The list of previously saved journal entries, right under the writing
+/// area — without this, saved entries were persisted but never surfaced
+/// anywhere in the app.
+class _RecentEntriesList extends ConsumerWidget {
+  const _RecentEntriesList({
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final ValueChanged<JournalEntryRow> onEdit;
+  final ValueChanged<JournalEntryRow> onDelete;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final entriesAsync = ref.watch(recentJournalEntriesProvider);
+
+    return entriesAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (error, stackTrace) => const SizedBox.shrink(),
+      data: (entries) {
+        if (entries.isEmpty) {
+          return Text(
+            l10n.homeRecentEntriesEmpty,
+            style: AppTheme.bodyFont(fontSize: 13, color: SakuraHomePalette.textMuted),
+          );
+        }
+        return Column(
+          children: [
+            for (final entry in entries)
+              _RecentEntryCard(
+                entry: entry,
+                onEdit: () => onEdit(entry),
+                onDelete: () => onDelete(entry),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// A single saved entry. Tapping it expands/collapses the full text (the
+/// entry's "detail view" — this app has no separate detail screen, so
+/// expanding in place fills that role); an attached voice note's playback
+/// control is shown either way via the shared [VoiceEntryPlayer] widget.
+class _RecentEntryCard extends StatefulWidget {
+  const _RecentEntryCard({
+    required this.entry,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final JournalEntryRow entry;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  State<_RecentEntryCard> createState() => _RecentEntryCardState();
+}
+
+class _RecentEntryCardState extends State<_RecentEntryCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).toString();
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final entry = widget.entry;
+    final audioPath = entry.audioPath;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => setState(() => _expanded = !_expanded),
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.fromLTRB(14, 10, 8, 14),
+          decoration: BoxDecoration(
+            color: SakuraHomePalette.cardWhite,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: SakuraHomePalette.branchMauve.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    DateFormat.yMMMd(locale).add_jm().format(entry.createdAt),
+                    style: AppTheme.bodyFont(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: SakuraHomePalette.textMuted,
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert_rounded, size: 18, color: SakuraHomePalette.textMuted),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        widget.onEdit();
+                      } else if (value == 'delete') {
+                        widget.onDelete();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.edit_rounded, size: 18, color: SakuraHomePalette.branchMauve),
+                            const SizedBox(width: 8),
+                            Text(isTr ? 'Düzenle' : 'Edit', style: AppTheme.bodyFont(fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+                            const SizedBox(width: 8),
+                            Text(
+                              isTr ? 'Sil' : 'Delete',
+                              style: AppTheme.bodyFont(fontSize: 13, color: Colors.redAccent),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Text(
+                  entry.content,
+                  maxLines: _expanded ? null : 4,
+                  overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                  style: AppTheme.bodyFont(fontSize: 14, color: SakuraHomePalette.textDeep),
+                ),
+              ),
+              if (audioPath != null) ...[
+                const SizedBox(height: 10),
+                VoiceEntryPlayer(audioPath: audioPath),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -548,109 +795,6 @@ class _SaveEntryButton extends StatelessWidget {
       icon: Icons.auto_awesome_rounded,
       expand: false,
       onPressed: enabled ? onTap : null,
-    );
-  }
-}
-
-/// The list of previously saved journal entries, right under the writing
-/// area — without this, saved entries were persisted but never surfaced
-/// anywhere in the app.
-class _RecentEntriesList extends ConsumerWidget {
-  const _RecentEntriesList();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final entriesAsync = ref.watch(recentJournalEntriesProvider);
-
-    return entriesAsync.when(
-      loading: () => const SizedBox.shrink(),
-      error: (error, stackTrace) => const SizedBox.shrink(),
-      data: (entries) {
-        if (entries.isEmpty) {
-          return Text(
-            l10n.homeRecentEntriesEmpty,
-            style: AppTheme.bodyFont(fontSize: 13, color: SakuraHomePalette.textMuted),
-          );
-        }
-        return Column(
-          children: [
-            for (final entry in entries) _RecentEntryCard(entry: entry),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// A single saved entry. Tapping it expands/collapses the full text (the
-/// entry's "detail view" — this app has no separate detail screen, so
-/// expanding in place fills that role); an attached voice note's playback
-/// control is shown either way via the shared [VoiceEntryPlayer] widget.
-class _RecentEntryCard extends StatefulWidget {
-  const _RecentEntryCard({required this.entry});
-
-  final JournalEntryRow entry;
-
-  @override
-  State<_RecentEntryCard> createState() => _RecentEntryCardState();
-}
-
-class _RecentEntryCardState extends State<_RecentEntryCard> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).toString();
-    final entry = widget.entry;
-    final audioPath = entry.audioPath;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => setState(() => _expanded = !_expanded),
-        child: Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: SakuraHomePalette.cardWhite,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: SakuraHomePalette.branchMauve.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                DateFormat.yMMMd(locale).add_jm().format(entry.createdAt),
-                style: AppTheme.bodyFont(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: SakuraHomePalette.textMuted,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                entry.content,
-                maxLines: _expanded ? null : 4,
-                overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                style: AppTheme.bodyFont(fontSize: 14, color: SakuraHomePalette.textDeep),
-              ),
-              if (audioPath != null) ...[
-                const SizedBox(height: 10),
-                VoiceEntryPlayer(audioPath: audioPath),
-              ],
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

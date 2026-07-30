@@ -15,11 +15,11 @@ import '../../../dreams/presentation/providers/dreams_providers.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 import '../../../hobbies/presentation/providers/hobbies_providers.dart';
 import '../../../hobbies/presentation/screens/hobbies_screen.dart' show hobbyLabel;
-import '../../../journal/presentation/providers/journal_entries_provider.dart';
 import '../../../journal/presentation/providers/journal_streak_provider.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../../rewards/domain/rewards.dart';
 import '../../data/profile_repository.dart';
+import '../providers/visit_tracker_providers.dart';
 
 /// Profile tab — a profile card, a stats summary, an achievements preview,
 /// the user's chosen hobbies and a settings menu.
@@ -191,6 +191,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final hobbies = ref.watch(hobbiesProvider).toList();
 
+    final visitDays = ref.watch(visitDaysCountProvider).valueOrNull ?? 0;
     final journaledDays =
         ref.watch(journalEntryDaysProvider).valueOrNull?.length ?? 0;
     final streak = ref.watch(journalStreakProvider).count;
@@ -233,7 +234,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     Expanded(
                       child: _StatCard(
                         icon: Icons.local_fire_department_rounded,
-                        value: '$streak',
+                        value: '$visitDays',
                         label: isTr ? 'Gün serisi' : 'Day streak',
                       ),
                     ),
@@ -317,9 +318,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.logout_rounded,
                   label: l10n.profileMenuLogout,
                   onTap: () async {
-                    try {
-                      await ref.read(journalEntriesRepositoryProvider).deleteAll();
-                    } catch (_) {}
                     await Supabase.instance.client.auth.signOut();
                     if (context.mounted) context.go(AppRoutes.login);
                   },

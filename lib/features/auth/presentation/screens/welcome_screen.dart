@@ -13,8 +13,9 @@ import '../../../../theme/app_theme.dart';
 import '../../../../theme/mood_gradients.dart';
 import '../../../../theme/mood_theme_provider.dart';
 import '../../../../theme/sakura_home_palette.dart';
-import '../../../hobbies/data/hobbies_repository.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
+
+import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 
 /// Weather-style symbol + colour for each mood, in AppMood order:
 /// happy, calm, tired, sad, anxious.
@@ -35,9 +36,11 @@ const List<Color> _moodColors = [
 
 /// Shown once right after sign-in: greets by name, then asks how they feel
 /// today with weather-style mood symbols. Picking a mood sets the app's
-/// mood theme, then hands off (via hobbies onboarding, once) to the app.
+/// mood theme, then hands off (via hobbies onboarding for new signups) to the app.
 class WelcomeScreen extends ConsumerStatefulWidget {
-  const WelcomeScreen({super.key});
+  const WelcomeScreen({super.key, this.isNewSignup = false});
+
+  final bool isNewSignup;
 
   @override
   ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -53,6 +56,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   Timer? _timer;
   bool _navigated = false;
   AppMood? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(visitDaysCountProvider.notifier).recordAndLoad();
+  }
 
   static const _linesTr = [
     'Seni yeniden görmek güzel.',
@@ -86,19 +95,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   Future<void> _advance() async {
     if (_navigated || !mounted) return;
     _navigated = true;
-    final repo = HobbiesRepository();
-    final onboarded = await repo.isOnboarded();
-    if (!mounted) return;
-    if (onboarded) {
+    if (widget.isNewSignup) {
+      context.go(AppRoutes.hobbiesOnboarding);
+    } else {
       context.go(AppRoutes.home);
-      return;
     }
-    // First time only: mark the one-time hobby prompt as seen *now*, before
-    // showing it, so it never reappears on later logins even if the user
-    // backs out without finishing. Hobbies stay editable from Profile.
-    await repo.setOnboarded();
-    if (!mounted) return;
-    context.go(AppRoutes.hobbiesOnboarding);
   }
 
   void _pickMood(AppMood mood) {

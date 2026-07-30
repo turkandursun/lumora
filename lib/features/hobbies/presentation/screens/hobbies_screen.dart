@@ -221,8 +221,7 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
     );
   }
 
-  Future<void> _finishOnboarding() async {
-    await ref.read(hobbiesRepositoryProvider).setOnboarded();
+  void _finishOnboarding() {
     if (!mounted) return;
     context.go(AppRoutes.home);
   }

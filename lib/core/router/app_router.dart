@@ -165,7 +165,12 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.welcome,
-      builder: (context, state) => const WelcomeScreen(),
+      builder: (context, state) {
+        final isNewSignup = (state.extra as bool?) ??
+            ((state.extra as Map<String, dynamic>?)?['isNewSignup'] as bool?) ??
+            false;
+        return WelcomeScreen(isNewSignup: isNewSignup);
+      },
     ),
     GoRoute(
       path: AppRoutes.home,

@@ -10,7 +10,9 @@ final goalsRepositoryProvider = Provider<GoalsRepository>((ref) {
 
 /// Reactive list of every goal, in insertion order.
 final goalsStreamProvider = StreamProvider<List<GoalRow>>((ref) {
-  return ref.watch(goalsRepositoryProvider).watchAll();
+  final repo = ref.watch(goalsRepositoryProvider);
+  repo.syncGoalsWithSupabase();
+  return repo.watchAll();
 });
 
 /// Mirrors the streak persisted by [GoalsRepository] so the UI can react to
