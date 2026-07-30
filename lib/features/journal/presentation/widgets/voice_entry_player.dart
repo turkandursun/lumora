@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../theme/sakura_home_palette.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// Test-only seam (mirrors `debugRainPlayerFactory` in `luma_companion.dart`):
 /// when set, [_VoiceEntryPlayerState] uses this instead of constructing a
@@ -138,8 +139,11 @@ class _VoiceEntryPlayerState extends State<VoiceEntryPlayer> {
 
     setState(() => _status = _PlayerStatus.loading);
     _ActiveVoiceNoteRegistry.instance.notifyPlaying(_token, _pauseSilently);
-    try {
-      await _player.play(DeviceFileSource(widget.audioPath));
+   try {
+      final source = kIsWeb
+          ? UrlSource(widget.audioPath)
+          : DeviceFileSource(widget.audioPath);
+      await _player.play(source);
       if (!mounted) return;
       setState(() => _status = _PlayerStatus.playing);
     } catch (_) {
