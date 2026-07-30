@@ -19,8 +19,6 @@ import '../../../letters/presentation/providers/letter_providers.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../domain/journal_text_stats.dart';
 
-const _periodColor = Color(0xFFE0748F);
-const List<int> _moodScores = [5, 4, 3, 1, 2];
 const List<Color> _moodColors = [
   Color(0xFFF4C95D), // happy
   Color(0xFF9FD8B0), // calm
@@ -45,7 +43,6 @@ class StatsScreen extends ConsumerWidget {
     final streak = ref.watch(journalStreakProvider).count;
     final dreams = ref.watch(dreamsStreamProvider).valueOrNull?.length ?? 0;
     final moodLog = ref.watch(moodLogProvider);
-    final periodDays = ref.watch(periodDaysProvider);
     final gratitudeCount = ref.watch(gratitudeProvider).length;
     final lettersCount = ref.watch(lettersProvider).length;
     final contents = ref.watch(allJournalEntriesProvider).valueOrNull
@@ -88,7 +85,6 @@ class StatsScreen extends ConsumerWidget {
                       streak: streak,
                       dreams: dreams,
                       moods: moodLog.length,
-                      periodDays: periodDays.length,
                       gratitude: gratitudeCount,
                       letters: lettersCount,
                     ),
@@ -100,12 +96,6 @@ class StatsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     _WeekdayCard(isTr: isTr, entryDays: entryDays),
-                    const SizedBox(height: 12),
-                    _CycleMoodCard(
-                      isTr: isTr,
-                      moodLog: moodLog,
-                      periodDays: periodDays,
-                    ),
                     const SizedBox(height: 12),
                     _JournalAnalysisCard(isTr: isTr, stats: textStats),
                     const SizedBox(height: 12),
@@ -158,7 +148,6 @@ class _OverviewCard extends StatelessWidget {
     required this.streak,
     required this.dreams,
     required this.moods,
-    required this.periodDays,
     required this.gratitude,
     required this.letters,
   });
@@ -168,7 +157,6 @@ class _OverviewCard extends StatelessWidget {
   final int streak;
   final int dreams;
   final int moods;
-  final int periodDays;
   final int gratitude;
   final int letters;
 
@@ -198,12 +186,6 @@ class _OverviewCard extends StatelessWidget {
         color: const Color(0xFF9FD8B0),
         value: '$moods',
         label: isTr ? 'ruh hali' : 'moods',
-      ),
-      _StatTile(
-        icon: Icons.water_drop_rounded,
-        color: _periodColor,
-        value: '$periodDays',
-        label: isTr ? 'regl günü' : 'period days',
       ),
       _StatTile(
         icon: Icons.volunteer_activism_rounded,
@@ -521,88 +503,6 @@ class _WeekdayCard extends StatelessWidget {
   }
 }
 
-class _CycleMoodCard extends StatelessWidget {
-  const _CycleMoodCard({
-    required this.isTr,
-    required this.moodLog,
-    required this.periodDays,
-  });
-
-  final bool isTr;
-  final Map<DateTime, int> moodLog;
-  final Set<DateTime> periodDays;
-
-  @override
-  Widget build(BuildContext context) {
-    final onPeriod = <int>[];
-    final offPeriod = <int>[];
-    moodLog.forEach((day, index) {
-      final score = _moodScores[index.clamp(0, 4)];
-      if (periodDays.contains(day)) {
-        onPeriod.add(score);
-      } else {
-        offPeriod.add(score);
-      }
-    });
-    double? avg(List<int> l) =>
-        l.isEmpty ? null : l.reduce((a, b) => a + b) / l.length;
-    final avgOn = avg(onPeriod);
-    final avgOff = avg(offPeriod);
-    final hasBoth = avgOn != null && avgOff != null;
-
-    return _Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.favorite_rounded, size: 18, color: _periodColor),
-              const SizedBox(width: 8),
-              Text(
-                isTr ? 'Ruh hali & döngü' : 'Mood & cycle',
-                style: AppTheme.displayFont(
-                  fontSize: 16,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (!hasBoth)
-            Text(
-              isTr
-                  ? 'Hem regl günlerinde hem diğer günlerde ruh halini kaydettikçe, buradaki karşılaştırma oluşacak.'
-                  : 'Log moods on both period and non-period days to see this comparison.',
-              style: AppTheme.bodyFont(
-                fontSize: 13,
-                color: SakuraHomePalette.textMuted,
-              ),
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: _MiniStat(
-                    color: _periodColor,
-                    value: avgOn.toStringAsFixed(1),
-                    label: isTr ? 'regl günü ort.' : 'period avg',
-                  ),
-                ),
-                Expanded(
-                  child: _MiniStat(
-                    color: SakuraHomePalette.blossomPink,
-                    value: avgOff.toStringAsFixed(1),
-                    label: isTr ? 'diğer günler ort.' : 'other days avg',
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _MiniStat extends StatelessWidget {
   const _MiniStat({
     required this.color,
@@ -862,7 +762,7 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
                     : "Couldn't get the analysis. Check your connection and try again.",
                 style: AppTheme.bodyFont(
                   fontSize: 13,
-                  color: _periodColor,
+                  color: const Color(0xFFD87070),
                 ),
               ),
             ),

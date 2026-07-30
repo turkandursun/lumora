@@ -14,7 +14,7 @@ const astraThemeKey = 'astra_bg_theme';
 Future<String> astraBackgroundAsset() async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getString(astraThemeKey) == 'light'
-      ? 'assets/images/astra_sun_entry.png'
+      ? 'assets/images/astra_sun_entry_g3.png'
       : 'assets/images/astra_dark.png';
 }
 
@@ -53,7 +53,7 @@ class _ThemeChoiceScreenState extends State<ThemeChoiceScreen> {
               child: Image.asset(
                 _dark
                     ? 'assets/images/astra_dark.png'
-                    : 'assets/images/astra_sun_entry.png',
+                    : 'assets/images/astra_sun_entry_g3.png',
                 key: ValueKey(_dark),
                 fit: BoxFit.cover,
               ),

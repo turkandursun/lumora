@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../theme/app_background.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../../theme/lumora_palette.dart';
-import '../../../../theme/mood_gradient_background.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../../../theme/sakura_home_palette.dart';
 import '../../../daily_question/domain/daily_question_bank.dart';
 import '../../domain/community_share.dart';
 import '../../domain/relative_time.dart';
@@ -28,13 +28,13 @@ class CommunityScreen extends ConsumerWidget {
     final feedAsync = ref.watch(communityFeedProvider);
 
     return Scaffold(
-      backgroundColor: LumoraPalette.nightBackground,
-      body: MoodGradientBackground(
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
         child: SafeArea(
           child: ResponsiveContent(
             child: RefreshIndicator(
-              color: Colors.white,
-              backgroundColor: LumoraPalette.primaryPurple,
+              color: SakuraHomePalette.blossomPink,
+              backgroundColor: SakuraHomePalette.cardWhite,
               onRefresh: () async {
                 ref.invalidate(communityFeedProvider);
                 await ref.read(communityFeedProvider.future);
@@ -44,19 +44,27 @@ class CommunityScreen extends ConsumerWidget {
                 children: [
                   Text(
                     l10n.communityTitle,
-                    style: AppTheme.displayFont(fontSize: 24, color: Colors.white),
+                    style: AppTheme.displayFont(
+                        fontSize: 24, color: SakuraHomePalette.textDeep),
                   ),
                   const SizedBox(height: 12),
                   _FramingBanner(text: l10n.communityFramingText),
                   const SizedBox(height: 20),
                   Text(
                     l10n.communityTodayQuestionLabel,
-                    style: AppTheme.bodyFont(fontSize: 11.5, fontWeight: FontWeight.w700, color: Colors.white.withValues(alpha: 0.55)),
+                    style: AppTheme.bodyFont(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: SakuraHomePalette.textMuted),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     todayQuestionText,
-                    style: AppTheme.bodyFont(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white).copyWith(height: 1.35),
+                    style: AppTheme.bodyFont(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: SakuraHomePalette.textDeep)
+                        .copyWith(height: 1.35),
                   ),
                   const SizedBox(height: 22),
                   feedAsync.when(
@@ -65,7 +73,8 @@ class CommunityScreen extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(vertical: 20),
                             child: Text(
                               l10n.communityEmptyState,
-                              style: AppTheme.bodyFont(color: Colors.white.withValues(alpha: 0.6)),
+                              style: AppTheme.bodyFont(
+                                  color: SakuraHomePalette.textMuted),
                             ),
                           )
                         : Column(
@@ -73,17 +82,21 @@ class CommunityScreen extends ConsumerWidget {
                               for (final share in shares)
                                 _ShareCard(
                                   share: share,
-                                  onReported: () => ref.invalidate(communityFeedProvider),
+                                  onReported: () =>
+                                      ref.invalidate(communityFeedProvider),
                                 ),
                             ],
                           ),
                     loading: () => const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(child: CircularProgressIndicator(color: Colors.white)),
+                      child: Center(
+                          child: CircularProgressIndicator(
+                              color: SakuraHomePalette.blossomPink)),
                     ),
                     error: (_, __) => Text(
                       l10n.communityLoadError,
-                      style: AppTheme.bodyFont(color: Colors.white.withValues(alpha: 0.8)),
+                      style:
+                          AppTheme.bodyFont(color: SakuraHomePalette.textMuted),
                     ),
                   ),
                 ],
@@ -107,19 +120,23 @@ class _FramingBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: LumoraPalette.warmCream.withValues(alpha: 0.08),
+        color: SakuraHomePalette.blossomPink.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: LumoraPalette.warmCream.withValues(alpha: 0.3)),
+        border: Border.all(
+            color: SakuraHomePalette.blossomPink.withValues(alpha: 0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.spa_outlined, size: 16, color: LumoraPalette.warmCream),
+          const Icon(Icons.spa_outlined,
+              size: 16, color: SakuraHomePalette.blossomPink),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
-              style: AppTheme.bodyFont(fontSize: 12.5, color: LumoraPalette.warmCream).copyWith(height: 1.4),
+              style: AppTheme.bodyFont(
+                      fontSize: 12.5, color: SakuraHomePalette.textDeep)
+                  .copyWith(height: 1.4),
             ),
           ),
         ],
@@ -139,11 +156,12 @@ class _ShareCard extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: LumoraPalette.nightBackground,
-        title: Text(l10n.communityReportConfirmTitle, style: const TextStyle(color: Colors.white)),
+        backgroundColor: SakuraHomePalette.cardWhite,
+        title: Text(l10n.communityReportConfirmTitle,
+            style: const TextStyle(color: SakuraHomePalette.textDeep)),
         content: Text(
           l10n.communityReportConfirmBody,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+          style: const TextStyle(color: SakuraHomePalette.textMuted),
         ),
         actions: [
           TextButton(
@@ -152,7 +170,8 @@ class _ShareCard extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.communityReportConfirmButton, style: const TextStyle(color: LumoraPalette.accentPink)),
+            child: Text(l10n.communityReportConfirmButton,
+                style: const TextStyle(color: SakuraHomePalette.blossomPink)),
           ),
         ],
       ),
@@ -180,9 +199,10 @@ class _ShareCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: SakuraHomePalette.cardWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+        border: Border.all(
+            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.22)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,12 +212,16 @@ class _ShareCard extends ConsumerWidget {
               Expanded(
                 child: Text(
                   share.displayName,
-                  style: AppTheme.bodyFont(fontSize: 13, fontWeight: FontWeight.w700, color: LumoraPalette.lightPurple),
+                  style: AppTheme.bodyFont(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: SakuraHomePalette.blossomPink),
                 ),
               ),
               Text(
                 communityRelativeTime(l10n, share.createdAt),
-                style: AppTheme.bodyFont(fontSize: 11, color: Colors.white.withValues(alpha: 0.45)),
+                style: AppTheme.bodyFont(
+                    fontSize: 11, color: SakuraHomePalette.textMuted),
               ),
               const SizedBox(width: 4),
               InkWell(
@@ -208,7 +232,7 @@ class _ShareCard extends ConsumerWidget {
                   child: Icon(
                     Icons.flag_outlined,
                     size: 16,
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: SakuraHomePalette.textMuted,
                     semanticLabel: l10n.communityReportTooltip,
                   ),
                 ),
@@ -218,7 +242,9 @@ class _ShareCard extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             share.answerText,
-            style: AppTheme.bodyFont(fontSize: 13.5, color: Colors.white.withValues(alpha: 0.88)).copyWith(height: 1.4),
+            style: AppTheme.bodyFont(
+                    fontSize: 13.5, color: SakuraHomePalette.textDeep)
+                .copyWith(height: 1.4),
           ),
         ],
       ),

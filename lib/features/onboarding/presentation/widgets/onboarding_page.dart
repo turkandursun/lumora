@@ -28,33 +28,55 @@ class OnboardingPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _IllustrationMedallion(child: illustration),
-          const SizedBox(height: 36),
-          if (eyebrow != null) ...[
-            Text(
-              eyebrow!,
-              textAlign: TextAlign.center,
-              style: LumoraPalette.taglineStyle(
-                fontSize: 13,
-                color: SakuraHomePalette.textDeep.withValues(alpha: 0.85),
-              ),
+          const SizedBox(height: 30),
+          // A soft frosted panel behind the copy so it stays crisp and
+          // readable on top of any photo backdrop.
+          Container(
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.82),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.9)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-          ],
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: LumoraPalette.storyTitleStyle(
-              color: SakuraHomePalette.textDeep,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            body,
-            textAlign: TextAlign.center,
-            style: LumoraPalette.bodyStyle(
-              fontSize: 15.5,
-              fontWeight: FontWeight.w400,
-              color: SakuraHomePalette.textMuted,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (eyebrow != null) ...[
+                  Text(
+                    eyebrow!,
+                    textAlign: TextAlign.center,
+                    style: LumoraPalette.taglineStyle(
+                      fontSize: 13,
+                      color: SakuraHomePalette.blossomPink,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: LumoraPalette.storyTitleStyle(
+                    color: SakuraHomePalette.textDeep,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  body,
+                  textAlign: TextAlign.center,
+                  style: LumoraPalette.bodyStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w500,
+                    color: SakuraHomePalette.textDeep.withValues(alpha: 0.78),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

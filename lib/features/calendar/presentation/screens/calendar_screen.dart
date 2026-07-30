@@ -11,21 +11,7 @@ import '../../../../theme/sakura_home_palette.dart';
 import '../../../journal/presentation/providers/journal_streak_provider.dart';
 import '../../../../theme/app_background.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
-import '../../domain/period_insights.dart';
 import '../providers/calendar_providers.dart';
-
-/// Colour used to mark menstruation days on the calendar.
-const _periodColor = Color(0xFFE0748F);
-
-/// Period symptoms the user can log per day: (id, Turkish, English).
-const List<(String, String, String)> _symptomOptions = [
-  ('cramps', 'Kramp', 'Cramps'),
-  ('headache', 'Baş ağrısı', 'Headache'),
-  ('fatigue', 'Yorgunluk', 'Fatigue'),
-  ('bloating', 'Şişkinlik', 'Bloating'),
-  ('backache', 'Bel ağrısı', 'Backache'),
-  ('moodswing', 'Ruh hali değişimi', 'Mood swings'),
-];
 
 /// Positivity score per AppMood index (order: happy, calm, tired, sad,
 /// anxious) — higher reads as a better day on the mood chart.
@@ -76,9 +62,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => Consumer(
         builder: (context, ref, __) {
-          final isPeriod = ref.watch(periodDaysProvider).contains(_dateOnly(day));
-          final symptoms =
-              ref.watch(symptomsProvider)[_dateOnly(day)] ?? const <String>{};
           final moodIdx = ref.watch(moodLogProvider)[_dateOnly(day)];
           final dateLabel = DateFormat(
             'd MMMM yyyy · EEEE',
@@ -174,64 +157,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  const Divider(height: 22),
-                  Row(
-                    children: [
-                      const Icon(Icons.water_drop_rounded, size: 18, color: _periodColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          isTr ? 'Regl günü' : 'Period day',
-                          style: AppTheme.bodyFont(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                            color: SakuraHomePalette.textDeep,
-                          ),
-                        ),
-                      ),
-                      Switch(
-                        value: isPeriod,
-                        activeColor: _periodColor,
-                        onChanged: (_) =>
-                            ref.read(periodDaysProvider.notifier).toggle(day),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    isTr ? 'Semptomlar' : 'Symptoms',
-                    style: AppTheme.bodyFont(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: SakuraHomePalette.textMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final s in _symptomOptions)
-                        FilterChip(
-                          label: Text(isTr ? s.$2 : s.$3),
-                          labelStyle: AppTheme.bodyFont(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: symptoms.contains(s.$1)
-                                ? Colors.white
-                                : SakuraHomePalette.textDeep,
-                          ),
-                          showCheckmark: false,
-                          backgroundColor: SakuraHomePalette.cardWhite,
-                          selectedColor: _periodColor,
-                          selected: symptoms.contains(s.$1),
-                          onSelected: (_) => ref
-                              .read(symptomsProvider.notifier)
-                              .toggle(day, s.$1),
-                        ),
-                    ],
-                  ),
+                  const SizedBox(height: 4),
                 ],
               ),
             ),
@@ -245,15 +171,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     final isTr = _isTr(context);
     final locale = Localizations.localeOf(context).languageCode;
-    final periodDays = ref.watch(periodDaysProvider);
     final entryDays = ref.watch(journalEntryDaysProvider).valueOrNull ?? const {};
     final streak = ref.watch(journalStreakProvider).count;
     final moodLog = ref.watch(moodLogProvider);
-    final insights = computePeriodInsights(periodDays);
     final journaledThisMonth = entryDays
-        .where((d) => d.year == _visibleMonth.year && d.month == _visibleMonth.month)
-        .length;
-    final periodThisMonth = periodDays
         .where((d) => d.year == _visibleMonth.year && d.month == _visibleMonth.month)
         .length;
 
@@ -290,7 +211,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       _MonthCard(
                         month: _visibleMonth,
                         locale: locale,
-                        periodDays: periodDays,
                         entryDays: entryDays,
                         moodLog: moodLog,
                         onPrev: () => _changeMonth(-1),
@@ -300,28 +220,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       const SizedBox(height: 14),
                       _Legend(isTr: isTr),
                       const SizedBox(height: 16),
-                      _PeriodInsightCard(
-                        insights: insights,
-                        locale: locale,
-                        isTr: isTr,
-                      ),
-                      const SizedBox(height: 12),
                       _MonthlySummaryCard(
                         month: _visibleMonth,
                         locale: locale,
                         isTr: isTr,
                         journaledDays: journaledThisMonth,
-                        periodDays: periodThisMonth,
                         streak: streak,
                       ),
                       const SizedBox(height: 12),
                       _MoodChartCard(moodLog: moodLog, isTr: isTr),
-                      const SizedBox(height: 12),
-                      _CycleMoodCard(
-                        moodLog: moodLog,
-                        periodDays: periodDays,
-                        isTr: isTr,
-                      ),
                       const SizedBox(height: 8),
                     ],
                   ),
@@ -340,7 +247,6 @@ class _MonthCard extends StatelessWidget {
   const _MonthCard({
     required this.month,
     required this.locale,
-    required this.periodDays,
     required this.entryDays,
     required this.moodLog,
     required this.onPrev,
@@ -350,7 +256,6 @@ class _MonthCard extends StatelessWidget {
 
   final DateTime month;
   final String locale;
-  final Set<DateTime> periodDays;
   final Set<DateTime> entryDays;
   final Map<DateTime, int> moodLog;
   final VoidCallback onPrev;
@@ -378,7 +283,6 @@ class _MonthCard extends StatelessWidget {
       cells.add(_DayCell(
         day: d,
         isToday: day == today,
-        isPeriod: periodDays.contains(day),
         hasEntry: hasEntry,
         moodIndex: moodLog[day],
         onTap: () => onDayTap(day, hasEntry),
@@ -454,7 +358,6 @@ class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.day,
     required this.isToday,
-    required this.isPeriod,
     required this.hasEntry,
     required this.moodIndex,
     required this.onTap,
@@ -462,7 +365,6 @@ class _DayCell extends StatelessWidget {
 
   final int day;
   final bool isToday;
-  final bool isPeriod;
   final bool hasEntry;
   final int? moodIndex;
   final VoidCallback onTap;
@@ -474,12 +376,10 @@ class _DayCell extends StatelessWidget {
         moodIndex! < moodSymbolIcons.length;
 
     // A day tagged with a mood fills its whole circle with that mood's
-    // colour + weather symbol. Period days keep their red fill; a period
-    // day that also has a mood shows a small mood symbol at the corner.
-    final Color fill = isPeriod
-        ? _periodColor
-        : (hasMood ? moodSymbolColors[moodIndex!] : Colors.transparent);
-    final bool filled = isPeriod || hasMood;
+    // colour + weather symbol.
+    final Color fill =
+        hasMood ? moodSymbolColors[moodIndex!] : Colors.transparent;
+    final bool filled = hasMood;
     final Color textColor = filled ? Colors.white : SakuraHomePalette.textDeep;
 
     return InkWell(
@@ -502,7 +402,7 @@ class _DayCell extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                if (hasMood && !isPeriod) ...[
+                if (hasMood) ...[
                   // Whole-circle mood: big symbol centred, day number small on top.
                   Icon(moodSymbolIcons[moodIndex!],
                       size: 22, color: Colors.white),
@@ -525,13 +425,6 @@ class _DayCell extends StatelessWidget {
                       fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
                       color: textColor,
                     ),
-                  ),
-                if (isPeriod && hasMood)
-                  Positioned(
-                    top: 2,
-                    right: 4,
-                    child: Icon(moodSymbolIcons[moodIndex!],
-                        size: 9, color: Colors.white),
                   ),
                 if (hasEntry)
                   Positioned(
@@ -581,14 +474,6 @@ class _Legend extends StatelessWidget {
       runSpacing: 8,
       alignment: WrapAlignment.center,
       children: [
-        item(
-          Container(
-            width: 14,
-            height: 14,
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: _periodColor),
-          ),
-          isTr ? 'Regl günü' : 'Period day',
-        ),
         item(
           Container(
             width: 6,
@@ -643,142 +528,13 @@ class _Card extends StatelessWidget {
   }
 }
 
-/// Cycle prediction + average cycle length, derived from the marked days.
-class _PeriodInsightCard extends StatelessWidget {
-  const _PeriodInsightCard({
-    required this.insights,
-    required this.locale,
-    required this.isTr,
-  });
-
-  final PeriodInsights insights;
-  final String locale;
-  final bool isTr;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.favorite_rounded, size: 18, color: _periodColor),
-              const SizedBox(width: 8),
-              Text(
-                isTr ? 'Regl döngüsü' : 'Cycle',
-                style: AppTheme.displayFont(
-                  fontSize: 16,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (!insights.hasData)
-            Text(
-              isTr
-                  ? 'Günlere regl işaretledikçe burada sonraki regl tahmini ve döngü uzunluğun oluşacak.'
-                  : 'As you mark period days, your next-period estimate and cycle length will appear here.',
-              style: AppTheme.bodyFont(
-                fontSize: 13,
-                color: SakuraHomePalette.textMuted,
-              ),
-            )
-          else ...[
-            _line(
-              icon: Icons.event_rounded,
-              label: isTr ? 'Sonraki regl tahmini' : 'Next period (estimate)',
-              value: insights.predictedNextStart == null
-                  ? '—'
-                  : DateFormat('d MMMM', locale).format(insights.predictedNextStart!),
-              subtitle: _daysUntilText(),
-            ),
-            const SizedBox(height: 10),
-            _line(
-              icon: Icons.autorenew_rounded,
-              label: isTr ? 'Ortalama döngü' : 'Average cycle',
-              value: insights.averageCycleDays == null
-                  ? (isTr ? 'Henüz yeterli veri yok' : 'Not enough data yet')
-                  : (isTr
-                      ? '${insights.averageCycleDays} gün'
-                      : '${insights.averageCycleDays} days'),
-              subtitle: insights.averageCycleDays == null
-                  ? (isTr
-                      ? 'Ortalama için en az iki regl dönemi işaretle'
-                      : 'Mark at least two periods for an average')
-                  : null,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _daysUntilText() {
-    final d = insights.daysUntilNext;
-    if (d == null) return '';
-    if (d == 0) return isTr ? 'Bugün' : 'Today';
-    if (d > 0) return isTr ? '$d gün kaldı' : 'in $d days';
-    return isTr ? '${-d} gün gecikti' : '${-d} days late';
-  }
-
-  Widget _line({
-    required IconData icon,
-    required String label,
-    required String value,
-    String? subtitle,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 17, color: SakuraHomePalette.branchMauve),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: AppTheme.bodyFont(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: SakuraHomePalette.textMuted,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: AppTheme.bodyFont(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
-              if (subtitle != null && subtitle.isNotEmpty)
-                Text(
-                  subtitle,
-                  style: AppTheme.bodyFont(
-                    fontSize: 11.5,
-                    color: SakuraHomePalette.textMuted,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// "This month" summary: journaled days, period days, and current streak.
+/// "This month" summary: journaled days and current streak.
 class _MonthlySummaryCard extends StatelessWidget {
   const _MonthlySummaryCard({
     required this.month,
     required this.locale,
     required this.isTr,
     required this.journaledDays,
-    required this.periodDays,
     required this.streak,
   });
 
@@ -786,7 +542,6 @@ class _MonthlySummaryCard extends StatelessWidget {
   final String locale;
   final bool isTr;
   final int journaledDays;
-  final int periodDays;
   final int streak;
 
   @override
@@ -813,14 +568,6 @@ class _MonthlySummaryCard extends StatelessWidget {
                   color: SakuraHomePalette.blossomPink,
                   value: '$journaledDays',
                   label: isTr ? 'günlük gün' : 'journaled',
-                ),
-              ),
-              Expanded(
-                child: _StatBlock(
-                  icon: Icons.water_drop_rounded,
-                  color: _periodColor,
-                  value: '$periodDays',
-                  label: isTr ? 'regl günü' : 'period days',
                 ),
               ),
               Expanded(
@@ -961,119 +708,5 @@ class _MoodChartCard extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-/// Compares average mood on period days vs the rest — a gentle read on how
-/// the cycle relates to how the user feels.
-class _CycleMoodCard extends StatelessWidget {
-  const _CycleMoodCard({
-    required this.moodLog,
-    required this.periodDays,
-    required this.isTr,
-  });
-
-  final Map<DateTime, int> moodLog;
-  final Set<DateTime> periodDays;
-  final bool isTr;
-
-  @override
-  Widget build(BuildContext context) {
-    final onPeriod = <int>[];
-    final offPeriod = <int>[];
-    moodLog.forEach((day, index) {
-      final score = _moodScores[index.clamp(0, 4)];
-      if (periodDays.contains(day)) {
-        onPeriod.add(score);
-      } else {
-        offPeriod.add(score);
-      }
-    });
-
-    double? avg(List<int> list) => list.isEmpty
-        ? null
-        : list.reduce((a, b) => a + b) / list.length;
-    final avgOn = avg(onPeriod);
-    final avgOff = avg(offPeriod);
-    final hasBoth = avgOn != null && avgOff != null;
-
-    return _Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.favorite_rounded, size: 18, color: _periodColor),
-              const SizedBox(width: 8),
-              Text(
-                isTr ? 'Ruh hali & döngü' : 'Mood & cycle',
-                style: AppTheme.displayFont(
-                  fontSize: 16,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (!hasBoth)
-            Text(
-              isTr
-                  ? 'Hem regl günlerinde hem diğer günlerde ruh halini kaydettikçe, döngünün ruh haline etkisini burada göstereceğiz.'
-                  : 'Once you log moods on both period and non-period days, we\'ll show how your cycle relates to your mood here.',
-              style: AppTheme.bodyFont(
-                fontSize: 13,
-                color: SakuraHomePalette.textMuted,
-              ),
-            )
-          else ...[
-            Row(
-              children: [
-                Expanded(
-                  child: _StatBlock(
-                    icon: Icons.water_drop_rounded,
-                    color: _periodColor,
-                    value: avgOn.toStringAsFixed(1),
-                    label: isTr ? 'regl günü ort.' : 'period avg',
-                  ),
-                ),
-                Expanded(
-                  child: _StatBlock(
-                    icon: Icons.wb_sunny_rounded,
-                    color: SakuraHomePalette.blossomPink,
-                    value: avgOff.toStringAsFixed(1),
-                    label: isTr ? 'diğer günler ort.' : 'other days avg',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _summary(avgOn, avgOff),
-              style: AppTheme.bodyFont(
-                fontSize: 12.5,
-                color: SakuraHomePalette.textMuted,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _summary(double on, double off) {
-    final diff = on - off;
-    if (diff <= -0.6) {
-      return isTr
-          ? 'Regl günlerinde ruh halin biraz daha düşük görünüyor — o günlerde kendine ekstra şefkat göstermek iyi gelebilir.'
-          : 'Your mood tends to dip a little on period days — extra self-kindness on those days may help.';
-    }
-    if (diff >= 0.6) {
-      return isTr
-          ? 'Regl günlerinde ruh halin diğer günlerden daha yüksek görünüyor.'
-          : 'Your mood tends to be higher on period days than other days.';
-    }
-    return isTr
-        ? 'Ruh halin regl günleriyle diğer günler arasında belirgin bir fark göstermiyor.'
-        : 'Your mood is fairly similar on period days and other days.';
   }
 }

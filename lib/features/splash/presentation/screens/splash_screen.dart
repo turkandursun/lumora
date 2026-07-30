@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/services/onboarding_storage_service.dart';
 import '../../../../features/theme_choice/presentation/screens/theme_choice_screen.dart';
 import '../../../../theme/app_theme.dart';
 
@@ -23,8 +22,6 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
-  final _onboardingStorage = OnboardingStorageService();
-
   @override
   void initState() {
     super.initState();
@@ -33,12 +30,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> _decideNextRoute() async {
     final results = await Future.wait([
-      _onboardingStorage.isOnboardingComplete(),
       SharedPreferences.getInstance(),
       Future<void>.delayed(const Duration(milliseconds: 900)),
     ]);
-    final onboardingComplete = results[0] as bool;
-    final prefs = results[1] as SharedPreferences;
+    final prefs = results[0] as SharedPreferences;
 
     if (!mounted) return;
     // Very first thing: let the user pick a light/dark ASTRA theme.
@@ -46,10 +41,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       context.go(AppRoutes.themeChoice);
       return;
     }
-    if (!onboardingComplete) {
-      context.go(AppRoutes.onboarding);
-      return;
-    }
+    // The storytelling onboarding now comes *after* login/sign-up, so the
+    // splash no longer gates on it here.
     final hasSession = Supabase.instance.client.auth.currentSession != null;
     if (hasSession) {
       // On a fresh device this pulls the user's cloud backup down before any
@@ -57,7 +50,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       await ref.read(cloudBackupServiceProvider).syncOnStartup();
       if (!mounted) return;
     }
-    context.go(hasSession ? AppRoutes.home : AppRoutes.astraLanding);
+    context.go(hasSession ? AppRoutes.home : AppRoutes.login);
   }
 
   @override

@@ -196,14 +196,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final streak = ref.watch(journalStreakProvider).count;
     final moodCount = ref.watch(moodLogProvider).length;
     final dreams = ref.watch(dreamsStreamProvider).valueOrNull?.length ?? 0;
-    final periodDays = ref.watch(periodDaysProvider).length;
     final goalStreak = ref.watch(goalStreakProvider).count;
 
     final reward = computeRewardProgress(
       journaledDays: journaledDays,
       streak: streak,
       dreams: dreams,
-      periodDays: periodDays,
       goalStreak: goalStreak,
     );
 

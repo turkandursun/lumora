@@ -32,7 +32,7 @@ class _AstraLandingScreenState extends State<AstraLandingScreen> {
     await prefs.setString(astraThemeKey, next);
     if (!mounted) return;
     setState(() => _asset = next == 'light'
-        ? 'assets/images/astra_sun_entry.png'
+        ? 'assets/images/astra_sun_entry_g3.png'
         : 'assets/images/astra_dark.png');
   }
 

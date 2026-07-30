@@ -28,7 +28,7 @@ class _AstraHomeBackgroundState extends State<AstraHomeBackground> {
     final prefs = await SharedPreferences.getInstance();
     final theme = prefs.getString(astraThemeKey);
     final asset = theme == 'light'
-        ? 'assets/images/astra_sun_bg.png'
+        ? 'assets/images/astra_sun_bg_g5.png'
         : 'assets/images/astra_dark_plain.png';
     if (mounted) setState(() => _asset = asset);
   }

@@ -44,7 +44,7 @@ class _AstraBackdropState extends State<_AstraBackdrop> {
     final theme = prefs.getString(astraThemeKey);
     if (mounted) {
       setState(() => _asset = theme == 'light'
-          ? 'assets/images/astra_sun_bg.png'
+          ? 'assets/images/astra_sun_bg_g5.png'
           : 'assets/images/astra_dark_plain.png');
     }
   }

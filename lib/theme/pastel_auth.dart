@@ -3,7 +3,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../features/theme_choice/presentation/screens/theme_choice_screen.dart';
 import 'photo_ken_burns.dart';
 
 /// Soft pastel "cherry-blossom dawn" design system for Lumora's first-touch
@@ -106,9 +108,13 @@ class _PastelAuthBackgroundState extends State<PastelAuthBackground>
   late final Animation<double> _scale;
   late final Animation<Alignment> _alignment;
 
+  /// The chosen theme's scene, loaded async; falls back to the pastel photo.
+  String? _themedAsset;
+
   @override
   void initState() {
     super.initState();
+    _loadTheme();
     _controller = AnimationController(vsync: this, duration: _duration)
       ..repeat(reverse: true);
     _scale = Tween<double>(begin: 1.0, end: 1.06).animate(
@@ -117,6 +123,16 @@ class _PastelAuthBackgroundState extends State<PastelAuthBackground>
     _alignment =
         AlignmentTween(begin: Alignment.topLeft, end: Alignment.bottomRight)
             .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final theme = prefs.getString(astraThemeKey);
+    if (mounted) {
+      setState(() => _themedAsset = theme == 'light'
+          ? 'assets/images/astra_sun_bg_g5.png'
+          : 'assets/images/astra_dark_plain.png');
+    }
   }
 
   @override
@@ -131,23 +147,14 @@ class _PastelAuthBackgroundState extends State<PastelAuthBackground>
       fit: StackFit.expand,
       children: [
         KenBurnsPhoto(
-          asset: PastelAuthBackground.asset,
+          asset: _themedAsset ?? PastelAuthBackground.asset,
           scale: _scale,
           alignment: _alignment,
           imageAlignment: Alignment.topCenter,
         ),
-        // Airy veil: a touch of white top and bottom lifts contrast for the
-        // wordmark and footer while keeping the scene bright and pastel.
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0x24FFFFFF), Color(0x00FFFFFF), Color(0x33FFF6FA)],
-              stops: [0.0, 0.4, 1.0],
-            ),
-          ),
-        ),
+        // Readability veil over the themed scene so the wordmark, footer and
+        // form all stay legible on both the sunset and moon backgrounds.
+        Container(color: Colors.white.withValues(alpha: 0.4)),
         if (widget.child != null) widget.child!,
         if (widget.bottomOverlay != null)
           Positioned(

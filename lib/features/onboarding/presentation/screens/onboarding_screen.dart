@@ -46,7 +46,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _completeOnboarding() async {
     await _onboardingStorage.setOnboardingComplete();
     if (!mounted) return;
-    context.go(AppRoutes.login);
+    // Onboarding now runs *after* sign-in, so continue into the app.
+    context.go(AppRoutes.welcome);
   }
 
   void _onNextPressed() {

@@ -37,13 +37,11 @@ RewardProgress computeRewardProgress({
   required int journaledDays,
   required int streak,
   required int dreams,
-  required int periodDays,
   required int goalStreak,
 }) {
   final points = journaledDays * 10 +
       streak * 5 +
       dreams * 8 +
-      periodDays * 3 +
       goalStreak * 5;
 
   var levelIndex = 0;

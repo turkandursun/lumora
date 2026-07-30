@@ -54,9 +54,9 @@ List<HomeFeatureItem> homeFeatureItems(
   return [
     HomeFeatureItem(
       title: isTr ? 'Takvim' : 'Calendar',
-      description: isTr ? 'Günlük & regl takibi' : 'Daily & period tracking',
+      description: isTr ? 'Günlük & ruh hali' : 'Journal & moods',
       primaryIcon: Icons.calendar_month_rounded,
-      accentIcon: Icons.water_drop_rounded,
+      accentIcon: Icons.wb_sunny_rounded,
       onTap: () => context.push(AppRoutes.calendar),
     ),
     HomeFeatureItem(

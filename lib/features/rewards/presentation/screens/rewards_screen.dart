@@ -121,16 +121,13 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
         ref.read(journalEntryDaysProvider).valueOrNull?.length ?? 0;
     final streak = ref.read(journalStreakProvider).count;
     final dreams = ref.read(dreamsStreamProvider).valueOrNull?.length ?? 0;
-    final periodDays = ref.read(periodDaysProvider).length;
     final goalStreak = ref.read(goalStreakProvider).count;
     final moodCount = ref.read(moodLogProvider).length;
-    final symptomDays = ref.read(symptomsProvider).length;
     return _RewardData(
       computeRewardProgress(
         journaledDays: journaledDays,
         streak: streak,
         dreams: dreams,
-        periodDays: periodDays,
         goalStreak: goalStreak,
       ),
       _buildBadges(
@@ -138,10 +135,8 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
         journaledDays: journaledDays,
         streak: streak,
         dreams: dreams,
-        periodDays: periodDays,
         goalStreak: goalStreak,
         moodCount: moodCount,
-        symptomDays: symptomDays,
       ),
     );
   }
@@ -154,16 +149,13 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
         ref.watch(journalEntryDaysProvider).valueOrNull?.length ?? 0;
     final streak = ref.watch(journalStreakProvider).count;
     final dreams = ref.watch(dreamsStreamProvider).valueOrNull?.length ?? 0;
-    final periodDays = ref.watch(periodDaysProvider).length;
     final goalStreak = ref.watch(goalStreakProvider).count;
     final moodCount = ref.watch(moodLogProvider).length;
-    final symptomDays = ref.watch(symptomsProvider).length;
 
     final progress = computeRewardProgress(
       journaledDays: journaledDays,
       streak: streak,
       dreams: dreams,
-      periodDays: periodDays,
       goalStreak: goalStreak,
     );
     final badges = _buildBadges(
@@ -171,10 +163,8 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
       journaledDays: journaledDays,
       streak: streak,
       dreams: dreams,
-      periodDays: periodDays,
       goalStreak: goalStreak,
       moodCount: moodCount,
-      symptomDays: symptomDays,
     );
     final unlocked = badges.where((b) => b.unlocked).length;
 
@@ -248,10 +238,8 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
     required int journaledDays,
     required int streak,
     required int dreams,
-    required int periodDays,
     required int goalStreak,
     required int moodCount,
-    required int symptomDays,
   }) {
     return [
       _Badge(
@@ -313,18 +301,6 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
         icon: Icons.insights_rounded,
         title: isTr ? '7 gün ruh hali' : '7 moods logged',
         unlocked: moodCount >= 7,
-      ),
-      _Badge(
-        id: 'period1',
-        icon: Icons.favorite_rounded,
-        title: isTr ? 'İlk regl kaydı' : 'First period log',
-        unlocked: periodDays >= 1,
-      ),
-      _Badge(
-        id: 'symptom1',
-        icon: Icons.healing_rounded,
-        title: isTr ? 'İlk semptom' : 'First symptom',
-        unlocked: symptomDays >= 1,
       ),
       _Badge(
         id: 'goal7',
