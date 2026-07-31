@@ -44,6 +44,8 @@ Future<void> clearLocalUserData(WidgetRef ref) async {
   try {
     await ref.read(journalEntriesRepositoryProvider).deleteAll();
     await ref.read(goalsRepositoryProvider).deleteAll();
+    await ref.read(dreamsRepositoryProvider).deleteAll();
+    await ref.read(gratitudeRepositoryProvider).deleteAll();
     debugPrint('[AuthListener] Successfully cleared local user database tables');
   } catch (e) {
     debugPrint('[AuthListener] Error clearing local user database tables: $e');

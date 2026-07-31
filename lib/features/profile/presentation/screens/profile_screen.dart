@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/providers/auth_listener.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -312,6 +313,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.logout_rounded,
                   label: l10n.profileMenuLogout,
                   onTap: () async {
+                    await clearLocalUserData(ref);
                     await Supabase.instance.client.auth.signOut();
                     if (context.mounted) context.go(AppRoutes.login);
                   },
