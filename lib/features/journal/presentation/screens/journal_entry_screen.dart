@@ -278,6 +278,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       CrisisSupportSheet.show(context);
     }
 
+<<<<<<< HEAD
     final title = _titleController.text.trim();
     if (_editingEntry != null) {
       await ref.read(journalEntriesRepositoryProvider).update(
@@ -301,6 +302,15 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
           .incrementByIconKey(DefaultGoalIconKeys.journal, 10);
       ref.read(goalStreakProvider.notifier).refresh();
     }
+=======
+
+    
+
+
+   
+
+
+>>>>>>> 5f2c36c (Fix merge conflict in journal_entry_screen.dart)
 
     if (!mounted) return;
     _entryController.clear();
