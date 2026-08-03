@@ -29,4 +29,11 @@ class Dreams extends Table {
   /// replacing them. Null until the user explicitly requests an
   /// interpretation; re-requesting overwrites it rather than appending.
   TextColumn get aiInterpretation => text().nullable()();
+
+  /// The Supabase auth user ID owning this entry.
+  TextColumn get userId => text().nullable()();
+
+  /// The primary key ID in Supabase's `dreams` cloud table.
+  TextColumn get supabaseId => text().nullable()();
 }
+

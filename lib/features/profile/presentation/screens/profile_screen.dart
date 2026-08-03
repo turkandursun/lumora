@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../core/providers/auth_listener.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -288,14 +289,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
-                  icon: Icons.lock_outline_rounded,
-                  label: l10n.profileMenuAppLock,
-                  isDark: isDark,
-                  primary: primary,
-                  onTap: () => context.push(AppRoutes.appLock),
-                ),
-                const SizedBox(height: 12),
-                _MenuItem(
                   icon: Icons.cloud_upload_rounded,
                   label: isTr ? 'Verilerimi yedekle' : 'Back up my data',
                   isDark: isDark,
@@ -317,6 +310,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   isDark: isDark,
                   primary: primary,
                   onTap: () async {
+                    await clearLocalUserData(ref);
                     await Supabase.instance.client.auth.signOut();
                     if (context.mounted) context.go(AppRoutes.login);
                   },

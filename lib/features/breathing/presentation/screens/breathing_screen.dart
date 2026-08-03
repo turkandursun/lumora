@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../goals/data/goals_repository.dart';
+import '../../../goals/presentation/providers/goals_providers.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
@@ -140,6 +142,11 @@ class _BreathingScreenState extends ConsumerState<BreathingScreen>
     _countdownTimer?.cancel();
     _breathController.stop();
     setState(() => _stage = _SessionStage.completed);
+    // Auto-advance the "breathing" goal by the minutes just completed.
+    ref
+        .read(goalsRepositoryProvider)
+        .incrementByIconKey(DefaultGoalIconKeys.breathing, _selectedMinutes);
+    ref.read(goalStreakProvider.notifier).refresh();
   }
 
   void _backToModeSelector() {

@@ -7,6 +7,8 @@ import 'package:flutter_tts/flutter_tts.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../goals/data/goals_repository.dart';
+import '../../../goals/presentation/providers/goals_providers.dart';
 
 const _rainAsset = 'audio/rain_loop.mp3';
 
@@ -189,6 +191,11 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     _safe(() => _tts.stop());
     if (!mounted) return;
     setState(() => _stage = _Stage.done);
+    // Auto-advance the "meditation" goal by the minutes just completed.
+    ref
+        .read(goalsRepositoryProvider)
+        .incrementByIconKey(DefaultGoalIconKeys.meditation, _minutes);
+    ref.read(goalStreakProvider.notifier).refresh();
   }
 
   void _stop() {

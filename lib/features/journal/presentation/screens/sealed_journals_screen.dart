@@ -16,8 +16,7 @@ import '../widgets/voice_entry_player.dart';
 /// "Mühürlü Günlükler" — a read-only archive of every sealed journal entry,
 /// grouped day by day, newest first. Each entry shows the time it was sealed,
 /// its written text, and (when present) an inline player for its attached
-/// voice note. Reached from the journal writing screen and PIN-gated through
-/// the same [AppSection.journalWriting] lock as the writing screen itself.
+/// voice note. Reached from the journal writing screen.
 class SealedJournalsScreen extends ConsumerWidget {
   const SealedJournalsScreen({super.key});
 

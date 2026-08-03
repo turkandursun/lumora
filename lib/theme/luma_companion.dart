@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../features/app_lock/domain/app_section.dart';
-import '../features/app_lock/presentation/widgets/section_lock_gate.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'luma_chat_sheet.dart';
 import 'lumora_palette.dart';
@@ -263,9 +261,7 @@ class _LumaCompanionState extends ConsumerState<LumaCompanion>
     }
   }
 
-  Future<void> _openChat(AppMood? mood) async {
-    final unlocked = await ensureSectionUnlocked(context, ref, AppSection.aiChat);
-    if (!unlocked || !mounted) return;
+  void _openChat(AppMood? mood) {
     LumaChatSheet.show(
       context,
       moodContext: mood == null ? null : 'Current selected mood: ${mood.name}',

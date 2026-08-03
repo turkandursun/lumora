@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supabase
     show AuthState;
 
 import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/onboarding_storage_service.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -110,6 +111,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     if (!success || !mounted) return;
 
     await _onboardingStorage.setOnboardingIncomplete();
+    // Fresh account: wipe any local data left by a previous account on this
+    // device so the new user starts clean and account-isolated.
+    await ref.read(cloudBackupServiceProvider).onSignIn();
     if (!mounted) return;
     context.go(AppRoutes.lumaOnboarding);
   }
@@ -126,6 +130,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   /// Luma, run onboarding, then pick hobbies. (Returning users normally use
   /// the login screen's Google button, which skips the hobbies step.)
   Future<void> _routeAfterGoogleSignIn() async {
+    await ref.read(cloudBackupServiceProvider).onSignIn();
     if (!mounted) return;
     context.go(AppRoutes.lumaOnboarding);
   }

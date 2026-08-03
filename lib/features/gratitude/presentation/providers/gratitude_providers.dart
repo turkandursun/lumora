@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/providers/database_provider.dart';
 import '../../data/gratitude_repository.dart';
 
 final gratitudeRepositoryProvider = Provider<GratitudeRepository>((ref) {
-  return GratitudeRepository();
+  return GratitudeRepository(database: ref.watch(appDatabaseProvider));
 });
 
 class GratitudeNotifier extends StateNotifier<List<GratitudeEntry>> {
@@ -17,22 +18,16 @@ class GratitudeNotifier extends StateNotifier<List<GratitudeEntry>> {
     state = await _repo.load();
   }
 
-  bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
+  Future<void> fetchAndSync() async {
+    await _repo.fetchAndSyncFromSupabase();
+    state = await _repo.load();
+  }
 
   /// Saves today's gratitude items (and optional [mood]), replacing any
   /// existing entry for today.
   Future<void> saveToday(List<String> items, {String? mood}) async {
-    final today = GratitudeRepository.dateOnly(DateTime.now());
-    final cleaned = items.map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-    final rest = state.where((e) => !_sameDay(e.date, today)).toList();
-    final next = [
-      if (cleaned.isNotEmpty)
-        GratitudeEntry(date: today, items: cleaned, mood: mood),
-      ...rest,
-    ]..sort((a, b) => b.date.compareTo(a.date));
-    state = next;
-    await _repo.save(next);
+    await _repo.saveToday(items, mood: mood);
+    await _load();
   }
 }
 

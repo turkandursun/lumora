@@ -25,6 +25,11 @@ class CloudBackupService {
   /// we don't clobber active local edits with an auto-restore on every launch.
   static const _syncedMarkerKey = 'cloud_synced_marker_v1';
 
+  /// The last account that was active on this device, so we can tell an
+  /// account switch (which must wipe + reload local data) from a normal
+  /// re-login of the same account.
+  static const _lastUserKey = 'cloud_last_user_id';
+
   /// The SharedPreferences keys that hold real user data worth syncing.
   /// Deliberately excludes device-only/security keys (app-lock PIN, ambient
   /// sound toggle) which should stay on the device.
@@ -219,5 +224,51 @@ class CloudBackupService {
     } catch (_) {
       // Never let a sync problem block app startup.
     }
+  }
+
+  /// Wipes every local store (Drift tables + the whitelisted prefs) so no
+  /// data leaks between accounts sharing the same device.
+  Future<void> _clearLocalData() async {
+    for (final table in await _tableNames()) {
+      await _db.customStatement('DELETE FROM "$table"');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    for (final key in _prefsKeys) {
+      await prefs.remove(key);
+    }
+  }
+
+  /// Call right after a successful sign-in. If a *different* account than the
+  /// last one signed in on this device, the device's local data is wiped and
+  /// this account's cloud backup is pulled down — so each account only ever
+  /// sees its own data on a shared device. A normal re-login of the same
+  /// account keeps the local data untouched.
+  Future<void> onSignIn() async {
+    final uid = _userId;
+    if (uid == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final last = prefs.getString(_lastUserKey);
+
+    // Same account re-logging in — never touch local data.
+    if (last == uid) return;
+
+    // First sign-in we've ever tracked on this device: assume the local data
+    // belongs to this account (or is empty). Don't wipe anything — just
+    // remember who's here, so a *future* switch can be detected safely.
+    if (last == null) {
+      await prefs.setString(_lastUserKey, uid);
+      return;
+    }
+
+    // A genuine switch from a different account: wipe local data and pull
+    // this account's own cloud backup so the two accounts stay isolated.
+    try {
+      await _clearLocalData();
+      await restore();
+    } catch (_) {
+      // A sync hiccup must not block sign-in.
+    }
+    await prefs.setString(_lastUserKey, uid);
+    await prefs.setString(_syncedMarkerKey, DateTime.now().toIso8601String());
   }
 }

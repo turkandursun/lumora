@@ -50,7 +50,16 @@ class _GratitudeScreenState extends ConsumerState<GratitudeScreen> {
     TextEditingController(),
   ];
   bool _prefilled = false;
+  bool _didSync = false;
   String? _mood;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didSync) return;
+    _didSync = true;
+    ref.read(gratitudeProvider.notifier).fetchAndSync();
+  }
 
   @override
   void dispose() {

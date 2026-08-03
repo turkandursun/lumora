@@ -8,8 +8,6 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/luma_chat_sheet.dart';
 import '../../../theme/sakura_home_palette.dart';
-import '../../app_lock/domain/app_section.dart';
-import '../../app_lock/presentation/widgets/section_lock_gate.dart';
 import '../../journal/presentation/screens/home_screen.dart';
 import '../../profile/presentation/screens/profile_screen.dart';
 
@@ -61,15 +59,12 @@ class _AppShellState extends ConsumerState<AppShell>
     }
   }
 
-  Future<void> _openAiChat() async {
-    final unlocked = await ensureSectionUnlocked(context, ref, AppSection.aiChat);
-    if (!unlocked || !mounted) return;
+  void _openAiChat() {
     LumaChatSheet.show(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final screens = [
       const HomeScreen(),
       const ProfileScreen(),

@@ -4,27 +4,35 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'tables/daily_questions_table.dart';
 import 'tables/dreams_table.dart';
 import 'tables/goals_table.dart';
+import 'tables/gratitude_entries_table.dart';
 import 'tables/journal_entries_table.dart';
 import 'tables/reminders_table.dart';
 
 part 'app_database.g.dart';
 
 /// The app's local offline-first database: [Reminders], [Goals], [Dreams],
-/// [JournalEntries] (Home's writing area), and [DailyQuestionAnswers].
+/// [JournalEntries] (Home's writing area), [DailyQuestionAnswers], and [GratitudeEntries].
 ///
 /// The connection is platform-conditional under the hood: `drift_flutter`
 /// picks a native sqlite3 connection on Android/iOS/desktop and a
 /// WASM-based one (see `web/sqlite3.wasm` + `web/drift_worker.dart.js`) when
 /// running on Flutter web, so the rest of the app never has to care which
 /// one is active.
-@DriftDatabase(tables: [Reminders, Goals, Dreams, JournalEntries, DailyQuestionAnswers])
+@DriftDatabase(tables: [
+  Reminders,
+  Goals,
+  Dreams,
+  JournalEntries,
+  DailyQuestionAnswers,
+  GratitudeEntries,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -91,6 +99,17 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 11 && !await _hasColumn('journal_entries', 'title')) {
             await m.addColumn(journalEntries, journalEntries.title);
+          }
+          if (from < 12) {
+            if (!await _hasColumn('dreams', 'user_id')) {
+              await m.addColumn(dreams, dreams.userId);
+            }
+            if (!await _hasColumn('dreams', 'supabase_id')) {
+              await m.addColumn(dreams, dreams.supabaseId);
+            }
+          }
+          if (from < 13 && !await _hasTable('gratitude_entries')) {
+            await m.createTable(gratitudeEntries);
           }
         },
       );

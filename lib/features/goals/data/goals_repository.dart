@@ -23,6 +23,7 @@ class DefaultGoalIconKeys {
   static const journal = 'journal';
   static const meditation = 'meditation';
   static const reading = 'reading';
+  static const breathing = 'breathing';
 }
 
 /// Icon key used for goals the user creates themselves via the "New Goal"
@@ -99,6 +100,15 @@ class GoalsRepository {
           iconKey: DefaultGoalIconKeys.meditation,
           unit: GoalUnit.minutes,
           target: 15,
+          frequency: GoalFrequency.daily,
+          periodStart: _periodStartFor(GoalFrequency.daily, now),
+          userId: Value(userId),
+        ),
+        GoalsCompanion.insert(
+          title: defaultCopy[DefaultGoalIconKeys.breathing]!.title,
+          iconKey: DefaultGoalIconKeys.breathing,
+          unit: GoalUnit.minutes,
+          target: 10,
           frequency: GoalFrequency.daily,
           periodStart: _periodStartFor(GoalFrequency.daily, now),
           userId: Value(userId),
@@ -212,6 +222,22 @@ class GoalsRepository {
       }
     }
     return goal.progress < goal.target && newProgress >= goal.target;
+  }
+
+  /// Auto-advances any goal whose [iconKey] matches a completed activity
+  /// (journal / meditation / breathing) by [amount], so tracked goals fill
+  /// in on their own as the user actually does the activity.
+  Future<void> incrementByIconKey(String iconKey, int amount) async {
+    if (amount <= 0) return;
+    final uid = _client.auth.currentUser?.id;
+    final rows = await (_db.select(_db.goals)
+          ..where((t) => t.iconKey.equals(iconKey)))
+        .get();
+    for (final goal in rows) {
+      if (uid != null && goal.userId != uid) continue;
+      if (goal.progress >= goal.target) continue;
+      await incrementProgress(goal, amount);
+    }
   }
 
   /// Deletes all local goals from Drift SQLite (e.g. upon user logout).

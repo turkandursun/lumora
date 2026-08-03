@@ -1039,6 +1039,17 @@ class $DreamsTable extends Dreams with TableInfo<$DreamsTable, DreamRow> {
   late final GeneratedColumn<String> aiInterpretation = GeneratedColumn<String>(
       'ai_interpretation', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _supabaseIdMeta =
+      const VerificationMeta('supabaseId');
+  @override
+  late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
+      'supabase_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -1049,7 +1060,9 @@ class $DreamsTable extends Dreams with TableInfo<$DreamsTable, DreamRow> {
         familiarPerson,
         firstThought,
         lifeConnection,
-        aiInterpretation
+        aiInterpretation,
+        userId,
+        supabaseId
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1112,6 +1125,16 @@ class $DreamsTable extends Dreams with TableInfo<$DreamsTable, DreamRow> {
           aiInterpretation.isAcceptableOrUnknown(
               data['ai_interpretation']!, _aiInterpretationMeta));
     }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    }
+    if (data.containsKey('supabase_id')) {
+      context.handle(
+          _supabaseIdMeta,
+          supabaseId.isAcceptableOrUnknown(
+              data['supabase_id']!, _supabaseIdMeta));
+    }
     return context;
   }
 
@@ -1139,6 +1162,10 @@ class $DreamsTable extends Dreams with TableInfo<$DreamsTable, DreamRow> {
           .read(DriftSqlType.string, data['${effectivePrefix}life_connection']),
       aiInterpretation: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}ai_interpretation']),
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
+      supabaseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
     );
   }
 
@@ -1173,6 +1200,12 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
   /// replacing them. Null until the user explicitly requests an
   /// interpretation; re-requesting overwrites it rather than appending.
   final String? aiInterpretation;
+
+  /// The Supabase auth user ID owning this entry.
+  final String? userId;
+
+  /// The primary key ID in Supabase's `dreams` cloud table.
+  final String? supabaseId;
   const DreamRow(
       {required this.id,
       required this.date,
@@ -1182,7 +1215,9 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       this.familiarPerson,
       this.firstThought,
       this.lifeConnection,
-      this.aiInterpretation});
+      this.aiInterpretation,
+      this.userId,
+      this.supabaseId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1204,6 +1239,12 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
     }
     if (!nullToAbsent || aiInterpretation != null) {
       map['ai_interpretation'] = Variable<String>(aiInterpretation);
+    }
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    if (!nullToAbsent || supabaseId != null) {
+      map['supabase_id'] = Variable<String>(supabaseId);
     }
     return map;
   }
@@ -1229,6 +1270,11 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       aiInterpretation: aiInterpretation == null && nullToAbsent
           ? const Value.absent()
           : Value(aiInterpretation),
+      userId:
+          userId == null && nullToAbsent ? const Value.absent() : Value(userId),
+      supabaseId: supabaseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supabaseId),
     );
   }
 
@@ -1245,6 +1291,8 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       firstThought: serializer.fromJson<String?>(json['firstThought']),
       lifeConnection: serializer.fromJson<String?>(json['lifeConnection']),
       aiInterpretation: serializer.fromJson<String?>(json['aiInterpretation']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      supabaseId: serializer.fromJson<String?>(json['supabaseId']),
     );
   }
   @override
@@ -1260,6 +1308,8 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       'firstThought': serializer.toJson<String?>(firstThought),
       'lifeConnection': serializer.toJson<String?>(lifeConnection),
       'aiInterpretation': serializer.toJson<String?>(aiInterpretation),
+      'userId': serializer.toJson<String?>(userId),
+      'supabaseId': serializer.toJson<String?>(supabaseId),
     };
   }
 
@@ -1272,7 +1322,9 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
           Value<String?> familiarPerson = const Value.absent(),
           Value<String?> firstThought = const Value.absent(),
           Value<String?> lifeConnection = const Value.absent(),
-          Value<String?> aiInterpretation = const Value.absent()}) =>
+          Value<String?> aiInterpretation = const Value.absent(),
+          Value<String?> userId = const Value.absent(),
+          Value<String?> supabaseId = const Value.absent()}) =>
       DreamRow(
         id: id ?? this.id,
         date: date ?? this.date,
@@ -1288,6 +1340,8 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
         aiInterpretation: aiInterpretation.present
             ? aiInterpretation.value
             : this.aiInterpretation,
+        userId: userId.present ? userId.value : this.userId,
+        supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
       );
   DreamRow copyWithCompanion(DreamsCompanion data) {
     return DreamRow(
@@ -1310,6 +1364,9 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       aiInterpretation: data.aiInterpretation.present
           ? data.aiInterpretation.value
           : this.aiInterpretation,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      supabaseId:
+          data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
     );
   }
 
@@ -1324,14 +1381,26 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
           ..write('familiarPerson: $familiarPerson, ')
           ..write('firstThought: $firstThought, ')
           ..write('lifeConnection: $lifeConnection, ')
-          ..write('aiInterpretation: $aiInterpretation')
+          ..write('aiInterpretation: $aiInterpretation, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, date, content, symbolTags, feelingTag,
-      familiarPerson, firstThought, lifeConnection, aiInterpretation);
+  int get hashCode => Object.hash(
+      id,
+      date,
+      content,
+      symbolTags,
+      feelingTag,
+      familiarPerson,
+      firstThought,
+      lifeConnection,
+      aiInterpretation,
+      userId,
+      supabaseId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1344,7 +1413,9 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
           other.familiarPerson == this.familiarPerson &&
           other.firstThought == this.firstThought &&
           other.lifeConnection == this.lifeConnection &&
-          other.aiInterpretation == this.aiInterpretation);
+          other.aiInterpretation == this.aiInterpretation &&
+          other.userId == this.userId &&
+          other.supabaseId == this.supabaseId);
 }
 
 class DreamsCompanion extends UpdateCompanion<DreamRow> {
@@ -1357,6 +1428,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
   final Value<String?> firstThought;
   final Value<String?> lifeConnection;
   final Value<String?> aiInterpretation;
+  final Value<String?> userId;
+  final Value<String?> supabaseId;
   const DreamsCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
@@ -1367,6 +1440,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
     this.firstThought = const Value.absent(),
     this.lifeConnection = const Value.absent(),
     this.aiInterpretation = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
   });
   DreamsCompanion.insert({
     this.id = const Value.absent(),
@@ -1378,6 +1453,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
     this.firstThought = const Value.absent(),
     this.lifeConnection = const Value.absent(),
     this.aiInterpretation = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
   })  : date = Value(date),
         content = Value(content);
   static Insertable<DreamRow> custom({
@@ -1390,6 +1467,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
     Expression<String>? firstThought,
     Expression<String>? lifeConnection,
     Expression<String>? aiInterpretation,
+    Expression<String>? userId,
+    Expression<String>? supabaseId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1401,6 +1480,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
       if (firstThought != null) 'first_thought': firstThought,
       if (lifeConnection != null) 'life_connection': lifeConnection,
       if (aiInterpretation != null) 'ai_interpretation': aiInterpretation,
+      if (userId != null) 'user_id': userId,
+      if (supabaseId != null) 'supabase_id': supabaseId,
     });
   }
 
@@ -1413,7 +1494,9 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
       Value<String?>? familiarPerson,
       Value<String?>? firstThought,
       Value<String?>? lifeConnection,
-      Value<String?>? aiInterpretation}) {
+      Value<String?>? aiInterpretation,
+      Value<String?>? userId,
+      Value<String?>? supabaseId}) {
     return DreamsCompanion(
       id: id ?? this.id,
       date: date ?? this.date,
@@ -1424,6 +1507,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
       firstThought: firstThought ?? this.firstThought,
       lifeConnection: lifeConnection ?? this.lifeConnection,
       aiInterpretation: aiInterpretation ?? this.aiInterpretation,
+      userId: userId ?? this.userId,
+      supabaseId: supabaseId ?? this.supabaseId,
     );
   }
 
@@ -1457,6 +1542,12 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
     if (aiInterpretation.present) {
       map['ai_interpretation'] = Variable<String>(aiInterpretation.value);
     }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (supabaseId.present) {
+      map['supabase_id'] = Variable<String>(supabaseId.value);
+    }
     return map;
   }
 
@@ -1471,7 +1562,9 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
           ..write('familiarPerson: $familiarPerson, ')
           ..write('firstThought: $firstThought, ')
           ..write('lifeConnection: $lifeConnection, ')
-          ..write('aiInterpretation: $aiInterpretation')
+          ..write('aiInterpretation: $aiInterpretation, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
           ..write(')'))
         .toString();
   }
@@ -2315,6 +2408,344 @@ class DailyQuestionAnswersCompanion
   }
 }
 
+class $GratitudeEntriesTable extends GratitudeEntries
+    with TableInfo<$GratitudeEntriesTable, GratitudeEntryRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GratitudeEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+      'date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _itemsJsonMeta =
+      const VerificationMeta('itemsJson');
+  @override
+  late final GeneratedColumn<String> itemsJson = GeneratedColumn<String>(
+      'items_json', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _moodMeta = const VerificationMeta('mood');
+  @override
+  late final GeneratedColumn<String> mood = GeneratedColumn<String>(
+      'mood', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _supabaseIdMeta =
+      const VerificationMeta('supabaseId');
+  @override
+  late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
+      'supabase_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, date, itemsJson, mood, userId, supabaseId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'gratitude_entries';
+  @override
+  VerificationContext validateIntegrity(Insertable<GratitudeEntryRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+          _dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('items_json')) {
+      context.handle(_itemsJsonMeta,
+          itemsJson.isAcceptableOrUnknown(data['items_json']!, _itemsJsonMeta));
+    } else if (isInserting) {
+      context.missing(_itemsJsonMeta);
+    }
+    if (data.containsKey('mood')) {
+      context.handle(
+          _moodMeta, mood.isAcceptableOrUnknown(data['mood']!, _moodMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    }
+    if (data.containsKey('supabase_id')) {
+      context.handle(
+          _supabaseIdMeta,
+          supabaseId.isAcceptableOrUnknown(
+              data['supabase_id']!, _supabaseIdMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  GratitudeEntryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GratitudeEntryRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      date: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}date'])!,
+      itemsJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}items_json'])!,
+      mood: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}mood']),
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
+      supabaseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
+    );
+  }
+
+  @override
+  $GratitudeEntriesTable createAlias(String alias) {
+    return $GratitudeEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class GratitudeEntryRow extends DataClass
+    implements Insertable<GratitudeEntryRow> {
+  final int id;
+  final DateTime date;
+  final String itemsJson;
+  final String? mood;
+  final String? userId;
+  final String? supabaseId;
+  const GratitudeEntryRow(
+      {required this.id,
+      required this.date,
+      required this.itemsJson,
+      this.mood,
+      this.userId,
+      this.supabaseId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['date'] = Variable<DateTime>(date);
+    map['items_json'] = Variable<String>(itemsJson);
+    if (!nullToAbsent || mood != null) {
+      map['mood'] = Variable<String>(mood);
+    }
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    if (!nullToAbsent || supabaseId != null) {
+      map['supabase_id'] = Variable<String>(supabaseId);
+    }
+    return map;
+  }
+
+  GratitudeEntriesCompanion toCompanion(bool nullToAbsent) {
+    return GratitudeEntriesCompanion(
+      id: Value(id),
+      date: Value(date),
+      itemsJson: Value(itemsJson),
+      mood: mood == null && nullToAbsent ? const Value.absent() : Value(mood),
+      userId:
+          userId == null && nullToAbsent ? const Value.absent() : Value(userId),
+      supabaseId: supabaseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supabaseId),
+    );
+  }
+
+  factory GratitudeEntryRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GratitudeEntryRow(
+      id: serializer.fromJson<int>(json['id']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      itemsJson: serializer.fromJson<String>(json['itemsJson']),
+      mood: serializer.fromJson<String?>(json['mood']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      supabaseId: serializer.fromJson<String?>(json['supabaseId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'date': serializer.toJson<DateTime>(date),
+      'itemsJson': serializer.toJson<String>(itemsJson),
+      'mood': serializer.toJson<String?>(mood),
+      'userId': serializer.toJson<String?>(userId),
+      'supabaseId': serializer.toJson<String?>(supabaseId),
+    };
+  }
+
+  GratitudeEntryRow copyWith(
+          {int? id,
+          DateTime? date,
+          String? itemsJson,
+          Value<String?> mood = const Value.absent(),
+          Value<String?> userId = const Value.absent(),
+          Value<String?> supabaseId = const Value.absent()}) =>
+      GratitudeEntryRow(
+        id: id ?? this.id,
+        date: date ?? this.date,
+        itemsJson: itemsJson ?? this.itemsJson,
+        mood: mood.present ? mood.value : this.mood,
+        userId: userId.present ? userId.value : this.userId,
+        supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
+      );
+  GratitudeEntryRow copyWithCompanion(GratitudeEntriesCompanion data) {
+    return GratitudeEntryRow(
+      id: data.id.present ? data.id.value : this.id,
+      date: data.date.present ? data.date.value : this.date,
+      itemsJson: data.itemsJson.present ? data.itemsJson.value : this.itemsJson,
+      mood: data.mood.present ? data.mood.value : this.mood,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      supabaseId:
+          data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GratitudeEntryRow(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('itemsJson: $itemsJson, ')
+          ..write('mood: $mood, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, date, itemsJson, mood, userId, supabaseId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GratitudeEntryRow &&
+          other.id == this.id &&
+          other.date == this.date &&
+          other.itemsJson == this.itemsJson &&
+          other.mood == this.mood &&
+          other.userId == this.userId &&
+          other.supabaseId == this.supabaseId);
+}
+
+class GratitudeEntriesCompanion extends UpdateCompanion<GratitudeEntryRow> {
+  final Value<int> id;
+  final Value<DateTime> date;
+  final Value<String> itemsJson;
+  final Value<String?> mood;
+  final Value<String?> userId;
+  final Value<String?> supabaseId;
+  const GratitudeEntriesCompanion({
+    this.id = const Value.absent(),
+    this.date = const Value.absent(),
+    this.itemsJson = const Value.absent(),
+    this.mood = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
+  });
+  GratitudeEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime date,
+    required String itemsJson,
+    this.mood = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
+  })  : date = Value(date),
+        itemsJson = Value(itemsJson);
+  static Insertable<GratitudeEntryRow> custom({
+    Expression<int>? id,
+    Expression<DateTime>? date,
+    Expression<String>? itemsJson,
+    Expression<String>? mood,
+    Expression<String>? userId,
+    Expression<String>? supabaseId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (date != null) 'date': date,
+      if (itemsJson != null) 'items_json': itemsJson,
+      if (mood != null) 'mood': mood,
+      if (userId != null) 'user_id': userId,
+      if (supabaseId != null) 'supabase_id': supabaseId,
+    });
+  }
+
+  GratitudeEntriesCompanion copyWith(
+      {Value<int>? id,
+      Value<DateTime>? date,
+      Value<String>? itemsJson,
+      Value<String?>? mood,
+      Value<String?>? userId,
+      Value<String?>? supabaseId}) {
+    return GratitudeEntriesCompanion(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      itemsJson: itemsJson ?? this.itemsJson,
+      mood: mood ?? this.mood,
+      userId: userId ?? this.userId,
+      supabaseId: supabaseId ?? this.supabaseId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (itemsJson.present) {
+      map['items_json'] = Variable<String>(itemsJson.value);
+    }
+    if (mood.present) {
+      map['mood'] = Variable<String>(mood.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (supabaseId.present) {
+      map['supabase_id'] = Variable<String>(supabaseId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GratitudeEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('itemsJson: $itemsJson, ')
+          ..write('mood: $mood, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2324,12 +2755,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $JournalEntriesTable journalEntries = $JournalEntriesTable(this);
   late final $DailyQuestionAnswersTable dailyQuestionAnswers =
       $DailyQuestionAnswersTable(this);
+  late final $GratitudeEntriesTable gratitudeEntries =
+      $GratitudeEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [reminders, goals, dreams, journalEntries, dailyQuestionAnswers];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+        reminders,
+        goals,
+        dreams,
+        journalEntries,
+        dailyQuestionAnswers,
+        gratitudeEntries
+      ];
 }
 
 typedef $$RemindersTableCreateCompanionBuilder = RemindersCompanion Function({
@@ -2802,6 +3241,8 @@ typedef $$DreamsTableCreateCompanionBuilder = DreamsCompanion Function({
   Value<String?> firstThought,
   Value<String?> lifeConnection,
   Value<String?> aiInterpretation,
+  Value<String?> userId,
+  Value<String?> supabaseId,
 });
 typedef $$DreamsTableUpdateCompanionBuilder = DreamsCompanion Function({
   Value<int> id,
@@ -2813,6 +3254,8 @@ typedef $$DreamsTableUpdateCompanionBuilder = DreamsCompanion Function({
   Value<String?> firstThought,
   Value<String?> lifeConnection,
   Value<String?> aiInterpretation,
+  Value<String?> userId,
+  Value<String?> supabaseId,
 });
 
 class $$DreamsTableFilterComposer
@@ -2853,6 +3296,12 @@ class $$DreamsTableFilterComposer
   ColumnFilters<String> get aiInterpretation => $composableBuilder(
       column: $table.aiInterpretation,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnFilters(column));
 }
 
 class $$DreamsTableOrderingComposer
@@ -2894,6 +3343,12 @@ class $$DreamsTableOrderingComposer
   ColumnOrderings<String> get aiInterpretation => $composableBuilder(
       column: $table.aiInterpretation,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
 }
 
 class $$DreamsTableAnnotationComposer
@@ -2931,6 +3386,12 @@ class $$DreamsTableAnnotationComposer
 
   GeneratedColumn<String> get aiInterpretation => $composableBuilder(
       column: $table.aiInterpretation, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => column);
 }
 
 class $$DreamsTableTableManager extends RootTableManager<
@@ -2965,6 +3426,8 @@ class $$DreamsTableTableManager extends RootTableManager<
             Value<String?> firstThought = const Value.absent(),
             Value<String?> lifeConnection = const Value.absent(),
             Value<String?> aiInterpretation = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
           }) =>
               DreamsCompanion(
             id: id,
@@ -2976,6 +3439,8 @@ class $$DreamsTableTableManager extends RootTableManager<
             firstThought: firstThought,
             lifeConnection: lifeConnection,
             aiInterpretation: aiInterpretation,
+            userId: userId,
+            supabaseId: supabaseId,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -2987,6 +3452,8 @@ class $$DreamsTableTableManager extends RootTableManager<
             Value<String?> firstThought = const Value.absent(),
             Value<String?> lifeConnection = const Value.absent(),
             Value<String?> aiInterpretation = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
           }) =>
               DreamsCompanion.insert(
             id: id,
@@ -2998,6 +3465,8 @@ class $$DreamsTableTableManager extends RootTableManager<
             firstThought: firstThought,
             lifeConnection: lifeConnection,
             aiInterpretation: aiInterpretation,
+            userId: userId,
+            supabaseId: supabaseId,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -3439,6 +3908,189 @@ typedef $$DailyQuestionAnswersTableProcessedTableManager
         ),
         DailyQuestionAnswerRow,
         PrefetchHooks Function()>;
+typedef $$GratitudeEntriesTableCreateCompanionBuilder
+    = GratitudeEntriesCompanion Function({
+  Value<int> id,
+  required DateTime date,
+  required String itemsJson,
+  Value<String?> mood,
+  Value<String?> userId,
+  Value<String?> supabaseId,
+});
+typedef $$GratitudeEntriesTableUpdateCompanionBuilder
+    = GratitudeEntriesCompanion Function({
+  Value<int> id,
+  Value<DateTime> date,
+  Value<String> itemsJson,
+  Value<String?> mood,
+  Value<String?> userId,
+  Value<String?> supabaseId,
+});
+
+class $$GratitudeEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $GratitudeEntriesTable> {
+  $$GratitudeEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+      column: $table.date, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get itemsJson => $composableBuilder(
+      column: $table.itemsJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mood => $composableBuilder(
+      column: $table.mood, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnFilters(column));
+}
+
+class $$GratitudeEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $GratitudeEntriesTable> {
+  $$GratitudeEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+      column: $table.date, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get itemsJson => $composableBuilder(
+      column: $table.itemsJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get mood => $composableBuilder(
+      column: $table.mood, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
+}
+
+class $$GratitudeEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GratitudeEntriesTable> {
+  $$GratitudeEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get itemsJson =>
+      $composableBuilder(column: $table.itemsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get mood =>
+      $composableBuilder(column: $table.mood, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => column);
+}
+
+class $$GratitudeEntriesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $GratitudeEntriesTable,
+    GratitudeEntryRow,
+    $$GratitudeEntriesTableFilterComposer,
+    $$GratitudeEntriesTableOrderingComposer,
+    $$GratitudeEntriesTableAnnotationComposer,
+    $$GratitudeEntriesTableCreateCompanionBuilder,
+    $$GratitudeEntriesTableUpdateCompanionBuilder,
+    (
+      GratitudeEntryRow,
+      BaseReferences<_$AppDatabase, $GratitudeEntriesTable, GratitudeEntryRow>
+    ),
+    GratitudeEntryRow,
+    PrefetchHooks Function()> {
+  $$GratitudeEntriesTableTableManager(
+      _$AppDatabase db, $GratitudeEntriesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GratitudeEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GratitudeEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GratitudeEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<DateTime> date = const Value.absent(),
+            Value<String> itemsJson = const Value.absent(),
+            Value<String?> mood = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
+          }) =>
+              GratitudeEntriesCompanion(
+            id: id,
+            date: date,
+            itemsJson: itemsJson,
+            mood: mood,
+            userId: userId,
+            supabaseId: supabaseId,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required DateTime date,
+            required String itemsJson,
+            Value<String?> mood = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
+          }) =>
+              GratitudeEntriesCompanion.insert(
+            id: id,
+            date: date,
+            itemsJson: itemsJson,
+            mood: mood,
+            userId: userId,
+            supabaseId: supabaseId,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$GratitudeEntriesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $GratitudeEntriesTable,
+    GratitudeEntryRow,
+    $$GratitudeEntriesTableFilterComposer,
+    $$GratitudeEntriesTableOrderingComposer,
+    $$GratitudeEntriesTableAnnotationComposer,
+    $$GratitudeEntriesTableCreateCompanionBuilder,
+    $$GratitudeEntriesTableUpdateCompanionBuilder,
+    (
+      GratitudeEntryRow,
+      BaseReferences<_$AppDatabase, $GratitudeEntriesTable, GratitudeEntryRow>
+    ),
+    GratitudeEntryRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3453,4 +4105,6 @@ class $AppDatabaseManager {
       $$JournalEntriesTableTableManager(_db, _db.journalEntries);
   $$DailyQuestionAnswersTableTableManager get dailyQuestionAnswers =>
       $$DailyQuestionAnswersTableTableManager(_db, _db.dailyQuestionAnswers);
+  $$GratitudeEntriesTableTableManager get gratitudeEntries =>
+      $$GratitudeEntriesTableTableManager(_db, _db.gratitudeEntries);
 }

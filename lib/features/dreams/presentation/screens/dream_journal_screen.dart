@@ -99,11 +99,26 @@ String? _recurringSymbolInsight(AppLocalizations l10n, List<DreamRow> dreams) {
 /// reflection via [DreamInterpretationService] (see `_AiInterpretationSection`),
 /// cached on the entry once generated. Backed by a local Drift database via
 /// [DreamsRepository].
-class DreamJournalScreen extends ConsumerWidget {
+class DreamJournalScreen extends ConsumerStatefulWidget {
   const DreamJournalScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DreamJournalScreen> createState() => _DreamJournalScreenState();
+}
+
+class _DreamJournalScreenState extends ConsumerState<DreamJournalScreen> {
+  bool _didSync = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didSync) return;
+    _didSync = true;
+    ref.read(dreamsRepositoryProvider).fetchAndSyncDreamsFromSupabase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final dreamsAsync = ref.watch(dreamsStreamProvider);
     final primary = AstraKit.primary(_isDark);
@@ -292,6 +307,50 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
     }
   }
 
+  Future<void> _confirmDelete(BuildContext context) async {
+    final dream = widget.dream;
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+
+    const errorColor = Color(0xFFE07A7A);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF15102A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: AstraKit.primary(_isDark).withValues(alpha: 0.3)),
+        ),
+        title: Text(isTr ? 'Rüyayı Sil' : 'Delete Dream', style: AstraKit.heading2(_isDark, fontSize: 18)),
+        content: Text(
+          isTr
+              ? 'Bu rüya kaydını silmek istediğine emin misin?'
+              : 'Are you sure you want to delete this dream entry?',
+          style: AstraKit.mutedText(_isDark, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(_isDark)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              isTr ? 'Sil' : 'Delete',
+              style: AstraKit.body(_isDark, fontSize: 14, fontWeight: FontWeight.w700, color: errorColor),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await ref.read(dreamsRepositoryProvider).deleteDream(
+            dream.id,
+            supabaseId: dream.supabaseId,
+          );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dream = widget.dream;
@@ -330,6 +389,14 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
                 Text(
                   DateFormat.yMMMd(locale).format(dream.date),
                   style: AstraKit.body(_isDark, fontSize: 12.5, fontWeight: FontWeight.w700),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.delete_outline_rounded, color: AstraKit.muted(_isDark), size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: Localizations.localeOf(context).languageCode == 'tr' ? 'Sil' : 'Delete',
+                  onPressed: () => _confirmDelete(context),
                 ),
               ],
             ),

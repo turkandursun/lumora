@@ -15,11 +15,15 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../../../../core/database/app_database.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/services/crisis_detection_service.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
+
+import '../../../goals/data/goals_repository.dart';
+import '../../../goals/presentation/providers/goals_providers.dart';
 import '../providers/journal_entries_provider.dart';
 import '../providers/journal_streak_provider.dart';
 
@@ -49,6 +53,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
   Timer? _recordingTicker;
   String? _pendingAudioPath;
   String _preSpeechText = '';
+  JournalEntryRow? _editingEntry;
 
   /// Optionally attached photo for this entry (local file path). Kept only in
   /// the composer for now; persisting photos into the sealed archive needs a
@@ -318,13 +323,27 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
 
     final title = _titleController.text.trim();
     final audioPath = _keepVoiceRecording ? _pendingAudioPath : null;
-    await ref.read(journalEntriesRepositoryProvider).save(
-          content,
-          title: title.isEmpty ? null : title,
-          audioPath: audioPath,
-          photoPath: _pickedPhotoPath,
-        );
-    await ref.read(journalStreakProvider.notifier).recordEntrySaved();
+    if (_editingEntry != null) {
+      await ref.read(journalEntriesRepositoryProvider).update(
+        _editingEntry!.id,
+        content: content,
+        audioPath: audioPath,
+        supabaseId: _editingEntry!.supabaseId,
+      );
+    } else {
+      await ref.read(journalEntriesRepositoryProvider).save(
+            content,
+            title: title.isEmpty ? null : title,
+            audioPath: audioPath,
+            photoPath: _pickedPhotoPath,
+          );
+      await ref.read(journalStreakProvider.notifier).recordEntrySaved();
+      // Auto-advance the "journal" goal when a new entry is written.
+      await ref
+          .read(goalsRepositoryProvider)
+          .incrementByIconKey(DefaultGoalIconKeys.journal, 10);
+      ref.read(goalStreakProvider.notifier).refresh();
+    }
 
     if (!mounted) return;
     _entryController.clear();
@@ -333,6 +352,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       _pendingAudioPath = null;
       _keepVoiceRecording = true;
       _pickedPhotoPath = null;
+      _editingEntry = null;
     });
     FocusScope.of(context).unfocus();
     _showSealedToast(context);
