@@ -7,7 +7,6 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../theme/luma_chat_sheet.dart';
 import '../../../../theme/sakura_home_palette.dart';
-import '../../../reminders/presentation/providers/reminders_providers.dart';
 import '../../../shell/presentation/widgets/feature_coming_soon_screen.dart';
 
 /// One tappable card in the Home feature grid.
@@ -41,11 +40,6 @@ List<HomeFeatureItem> homeFeatureItems(
       extra: FeatureComingSoonArgs(icon: icon, title: title),
     );
   }
-
-  final reminders = ref.watch(remindersStreamProvider).maybeWhen(
-        data: (rows) => rows.where((r) => r.enabled).length,
-        orElse: () => 0,
-      );
 
   final isTr = Localizations.localeOf(context).languageCode == 'tr';
 
@@ -109,13 +103,6 @@ List<HomeFeatureItem> homeFeatureItems(
       description: l10n.homeFeatureGoalsDesc,
       primaryIcon: Icons.track_changes_rounded,
       onTap: () => context.push(AppRoutes.goals),
-    ),
-    HomeFeatureItem(
-      title: l10n.homeFeatureRemindersTitle,
-      description: l10n.homeFeatureRemindersDesc,
-      primaryIcon: Icons.notifications_rounded,
-      badgeCount: reminders,
-      onTap: () => context.push(AppRoutes.reminders),
     ),
     HomeFeatureItem(
       title: l10n.homeFeatureGratitudeTitle,

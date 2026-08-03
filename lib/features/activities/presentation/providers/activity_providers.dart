@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/providers/database_provider.dart';
 import '../../data/activity_repository.dart';
 
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
-  return ActivityRepository();
+  return ActivityRepository(database: ref.watch(appDatabaseProvider));
 });
 
 class ActivitiesNotifier extends StateNotifier<List<Activity>> {
@@ -17,29 +16,23 @@ class ActivitiesNotifier extends StateNotifier<List<Activity>> {
 
   Future<void> _load() async {
     state = await _repo.load();
+    await _repo.fetchAndSyncFromSupabase();
+    state = await _repo.load();
+  }
+
+  Future<void> refreshSync() async {
+    await _repo.fetchAndSyncFromSupabase();
+    state = await _repo.load();
   }
 
   Future<void> add(Activity activity) async {
-    final next = [activity, ...state]
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    state = next;
-    await _repo.save(next);
+    await _repo.add(activity);
+    state = await _repo.load();
   }
 
-  Future<void> remove(int id) async {
-    final target = state.where((a) => a.id == id).toList();
-    final next = state.where((a) => a.id != id).toList();
-    state = next;
-    await _repo.save(next);
-    // Best-effort cleanup of the attached photo file.
-    for (final a in target) {
-      final path = a.photoPath;
-      if (path != null) {
-        try {
-          await File(path).delete();
-        } catch (_) {}
-      }
-    }
+  Future<void> remove(int localId, {String? supabaseId, String? photoUrl, String? photoPath}) async {
+    await _repo.delete(localId, supabaseId: supabaseId, photoUrl: photoUrl, photoPath: photoPath);
+    state = await _repo.load();
   }
 }
 

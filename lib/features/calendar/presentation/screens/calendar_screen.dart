@@ -7,7 +7,7 @@ import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../../../theme/mood_gradients.dart';
-import '../../../journal/presentation/providers/journal_streak_provider.dart';
+import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 import '../providers/calendar_providers.dart';
 
 /// Positivity score per AppMood index (order: happy, calm, tired, sad,
@@ -151,7 +151,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final isTr = _isTr(context);
     final locale = Localizations.localeOf(context).languageCode;
     final entryDays = ref.watch(journalEntryDaysProvider).valueOrNull ?? const {};
-    final streak = ref.watch(journalStreakProvider).count;
+    final streak = ref.watch(visitDaysCountProvider).valueOrNull ?? 0;
     final moodLog = ref.watch(moodLogProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;

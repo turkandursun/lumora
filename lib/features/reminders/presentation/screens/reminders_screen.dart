@@ -122,8 +122,12 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
     if (_didInitialSetup) return;
     _didInitialSetup = true;
     final l10n = AppLocalizations.of(context);
+    final copy = defaultReminderCopy(l10n);
     ref.read(notificationServiceProvider).requestPermission();
-    ref.read(remindersRepositoryProvider).ensureSeeded(defaultReminderCopy(l10n));
+    ref.read(remindersRepositoryProvider).ensureSeeded(copy);
+    ref.read(remindersRepositoryProvider).fixLegacyDefaultRemindersDisabled();
+    ref.read(remindersRepositoryProvider).syncUnsyncedRemindersToCloud();
+    ref.read(remindersRepositoryProvider).fetchAndSyncFromSupabase(copy);
   }
 
   @override
@@ -255,9 +259,53 @@ class _ReminderCard extends ConsumerWidget {
   final bool isDark;
   final Color primary;
 
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    const errorColor = Color(0xFFE07A7A);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF15102A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: primary.withValues(alpha: 0.3)),
+        ),
+        title: Text(
+          isTr ? 'Hatırlatıcıyı Sil' : 'Delete Reminder',
+          style: AstraKit.heading2(isDark, fontSize: 18),
+        ),
+        content: Text(
+          isTr
+              ? 'Bu hatırlatıcıyı silmek istediğine emin misin?'
+              : 'Are you sure you want to delete this reminder?',
+          style: AstraKit.mutedText(isDark, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(isDark)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              isTr ? 'Sil' : 'Delete',
+              style: const TextStyle(color: errorColor, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(remindersRepositoryProvider).delete(reminder);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: AstraGlassCard(
@@ -293,6 +341,15 @@ class _ReminderCard extends ConsumerWidget {
                 final copy = value ? reminderCopyFor(l10n, reminder) : null;
                 ref.read(remindersRepositoryProvider).setEnabled(reminder, value, copy: copy);
               },
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                color: AstraKit.muted(isDark),
+                size: 20,
+              ),
+              onPressed: () => _confirmDelete(context, ref),
+              tooltip: isTr ? 'Sil' : 'Delete',
             ),
           ],
         ),

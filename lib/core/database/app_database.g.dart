@@ -61,9 +61,30 @@ class $RemindersTable extends Reminders
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("enabled" IN (0, 1))'),
       defaultValue: const Constant(true));
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, title, iconKey, frequency, weekday, hour, minute, enabled];
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _supabaseIdMeta =
+      const VerificationMeta('supabaseId');
+  @override
+  late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
+      'supabase_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        title,
+        iconKey,
+        frequency,
+        weekday,
+        hour,
+        minute,
+        enabled,
+        userId,
+        supabaseId
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -109,6 +130,16 @@ class $RemindersTable extends Reminders
       context.handle(_enabledMeta,
           enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta));
     }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    }
+    if (data.containsKey('supabase_id')) {
+      context.handle(
+          _supabaseIdMeta,
+          supabaseId.isAcceptableOrUnknown(
+              data['supabase_id']!, _supabaseIdMeta));
+    }
     return context;
   }
 
@@ -135,6 +166,10 @@ class $RemindersTable extends Reminders
           .read(DriftSqlType.int, data['${effectivePrefix}minute'])!,
       enabled: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}enabled'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
+      supabaseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
     );
   }
 
@@ -160,6 +195,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
   final int hour;
   final int minute;
   final bool enabled;
+  final String? userId;
+  final String? supabaseId;
   const ReminderRow(
       {required this.id,
       required this.title,
@@ -168,7 +205,9 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       this.weekday,
       required this.hour,
       required this.minute,
-      required this.enabled});
+      required this.enabled,
+      this.userId,
+      this.supabaseId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -185,6 +224,12 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
     map['hour'] = Variable<int>(hour);
     map['minute'] = Variable<int>(minute);
     map['enabled'] = Variable<bool>(enabled);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    if (!nullToAbsent || supabaseId != null) {
+      map['supabase_id'] = Variable<String>(supabaseId);
+    }
     return map;
   }
 
@@ -200,6 +245,11 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       hour: Value(hour),
       minute: Value(minute),
       enabled: Value(enabled),
+      userId:
+          userId == null && nullToAbsent ? const Value.absent() : Value(userId),
+      supabaseId: supabaseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supabaseId),
     );
   }
 
@@ -216,6 +266,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       hour: serializer.fromJson<int>(json['hour']),
       minute: serializer.fromJson<int>(json['minute']),
       enabled: serializer.fromJson<bool>(json['enabled']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      supabaseId: serializer.fromJson<String?>(json['supabaseId']),
     );
   }
   @override
@@ -231,6 +283,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       'hour': serializer.toJson<int>(hour),
       'minute': serializer.toJson<int>(minute),
       'enabled': serializer.toJson<bool>(enabled),
+      'userId': serializer.toJson<String?>(userId),
+      'supabaseId': serializer.toJson<String?>(supabaseId),
     };
   }
 
@@ -242,7 +296,9 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
           Value<int?> weekday = const Value.absent(),
           int? hour,
           int? minute,
-          bool? enabled}) =>
+          bool? enabled,
+          Value<String?> userId = const Value.absent(),
+          Value<String?> supabaseId = const Value.absent()}) =>
       ReminderRow(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -252,6 +308,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
         hour: hour ?? this.hour,
         minute: minute ?? this.minute,
         enabled: enabled ?? this.enabled,
+        userId: userId.present ? userId.value : this.userId,
+        supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
       );
   ReminderRow copyWithCompanion(RemindersCompanion data) {
     return ReminderRow(
@@ -263,6 +321,9 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       hour: data.hour.present ? data.hour.value : this.hour,
       minute: data.minute.present ? data.minute.value : this.minute,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      supabaseId:
+          data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
     );
   }
 
@@ -276,14 +337,16 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
           ..write('weekday: $weekday, ')
           ..write('hour: $hour, ')
           ..write('minute: $minute, ')
-          ..write('enabled: $enabled')
+          ..write('enabled: $enabled, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, title, iconKey, frequency, weekday, hour, minute, enabled);
+  int get hashCode => Object.hash(id, title, iconKey, frequency, weekday, hour,
+      minute, enabled, userId, supabaseId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -295,7 +358,9 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
           other.weekday == this.weekday &&
           other.hour == this.hour &&
           other.minute == this.minute &&
-          other.enabled == this.enabled);
+          other.enabled == this.enabled &&
+          other.userId == this.userId &&
+          other.supabaseId == this.supabaseId);
 }
 
 class RemindersCompanion extends UpdateCompanion<ReminderRow> {
@@ -307,6 +372,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
   final Value<int> hour;
   final Value<int> minute;
   final Value<bool> enabled;
+  final Value<String?> userId;
+  final Value<String?> supabaseId;
   const RemindersCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -316,6 +383,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     this.hour = const Value.absent(),
     this.minute = const Value.absent(),
     this.enabled = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
   });
   RemindersCompanion.insert({
     this.id = const Value.absent(),
@@ -326,6 +395,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     required int hour,
     required int minute,
     this.enabled = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
   })  : title = Value(title),
         iconKey = Value(iconKey),
         frequency = Value(frequency),
@@ -340,6 +411,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     Expression<int>? hour,
     Expression<int>? minute,
     Expression<bool>? enabled,
+    Expression<String>? userId,
+    Expression<String>? supabaseId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -350,6 +423,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
       if (hour != null) 'hour': hour,
       if (minute != null) 'minute': minute,
       if (enabled != null) 'enabled': enabled,
+      if (userId != null) 'user_id': userId,
+      if (supabaseId != null) 'supabase_id': supabaseId,
     });
   }
 
@@ -361,7 +436,9 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
       Value<int?>? weekday,
       Value<int>? hour,
       Value<int>? minute,
-      Value<bool>? enabled}) {
+      Value<bool>? enabled,
+      Value<String?>? userId,
+      Value<String?>? supabaseId}) {
     return RemindersCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -371,6 +448,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
       hour: hour ?? this.hour,
       minute: minute ?? this.minute,
       enabled: enabled ?? this.enabled,
+      userId: userId ?? this.userId,
+      supabaseId: supabaseId ?? this.supabaseId,
     );
   }
 
@@ -402,6 +481,12 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     if (enabled.present) {
       map['enabled'] = Variable<bool>(enabled.value);
     }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (supabaseId.present) {
+      map['supabase_id'] = Variable<String>(supabaseId.value);
+    }
     return map;
   }
 
@@ -415,7 +500,9 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
           ..write('weekday: $weekday, ')
           ..write('hour: $hour, ')
           ..write('minute: $minute, ')
-          ..write('enabled: $enabled')
+          ..write('enabled: $enabled, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
           ..write(')'))
         .toString();
   }
@@ -2746,6 +2833,436 @@ class GratitudeEntriesCompanion extends UpdateCompanion<GratitudeEntryRow> {
   }
 }
 
+class $ActivitiesTable extends Activities
+    with TableInfo<$ActivitiesTable, ActivityRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActivitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _activityIdsJsonMeta =
+      const VerificationMeta('activityIdsJson');
+  @override
+  late final GeneratedColumn<String> activityIdsJson = GeneratedColumn<String>(
+      'activity_ids_json', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _activityTextMeta =
+      const VerificationMeta('activityText');
+  @override
+  late final GeneratedColumn<String> activityText = GeneratedColumn<String>(
+      'text', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _photoPathMeta =
+      const VerificationMeta('photoPath');
+  @override
+  late final GeneratedColumn<String> photoPath = GeneratedColumn<String>(
+      'photo_path', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _photoUrlMeta =
+      const VerificationMeta('photoUrl');
+  @override
+  late final GeneratedColumn<String> photoUrl = GeneratedColumn<String>(
+      'photo_url', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _supabaseIdMeta =
+      const VerificationMeta('supabaseId');
+  @override
+  late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
+      'supabase_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        createdAt,
+        activityIdsJson,
+        activityText,
+        photoPath,
+        photoUrl,
+        userId,
+        supabaseId
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'activities';
+  @override
+  VerificationContext validateIntegrity(Insertable<ActivityRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('activity_ids_json')) {
+      context.handle(
+          _activityIdsJsonMeta,
+          activityIdsJson.isAcceptableOrUnknown(
+              data['activity_ids_json']!, _activityIdsJsonMeta));
+    } else if (isInserting) {
+      context.missing(_activityIdsJsonMeta);
+    }
+    if (data.containsKey('text')) {
+      context.handle(_activityTextMeta,
+          activityText.isAcceptableOrUnknown(data['text']!, _activityTextMeta));
+    } else if (isInserting) {
+      context.missing(_activityTextMeta);
+    }
+    if (data.containsKey('photo_path')) {
+      context.handle(_photoPathMeta,
+          photoPath.isAcceptableOrUnknown(data['photo_path']!, _photoPathMeta));
+    }
+    if (data.containsKey('photo_url')) {
+      context.handle(_photoUrlMeta,
+          photoUrl.isAcceptableOrUnknown(data['photo_url']!, _photoUrlMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    }
+    if (data.containsKey('supabase_id')) {
+      context.handle(
+          _supabaseIdMeta,
+          supabaseId.isAcceptableOrUnknown(
+              data['supabase_id']!, _supabaseIdMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ActivityRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ActivityRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      activityIdsJson: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}activity_ids_json'])!,
+      activityText: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}text'])!,
+      photoPath: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}photo_path']),
+      photoUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}photo_url']),
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
+      supabaseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
+    );
+  }
+
+  @override
+  $ActivitiesTable createAlias(String alias) {
+    return $ActivitiesTable(attachedDatabase, alias);
+  }
+}
+
+class ActivityRow extends DataClass implements Insertable<ActivityRow> {
+  final int id;
+  final DateTime createdAt;
+  final String activityIdsJson;
+  final String activityText;
+  final String? photoPath;
+  final String? photoUrl;
+  final String? userId;
+  final String? supabaseId;
+  const ActivityRow(
+      {required this.id,
+      required this.createdAt,
+      required this.activityIdsJson,
+      required this.activityText,
+      this.photoPath,
+      this.photoUrl,
+      this.userId,
+      this.supabaseId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['activity_ids_json'] = Variable<String>(activityIdsJson);
+    map['text'] = Variable<String>(activityText);
+    if (!nullToAbsent || photoPath != null) {
+      map['photo_path'] = Variable<String>(photoPath);
+    }
+    if (!nullToAbsent || photoUrl != null) {
+      map['photo_url'] = Variable<String>(photoUrl);
+    }
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    if (!nullToAbsent || supabaseId != null) {
+      map['supabase_id'] = Variable<String>(supabaseId);
+    }
+    return map;
+  }
+
+  ActivitiesCompanion toCompanion(bool nullToAbsent) {
+    return ActivitiesCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      activityIdsJson: Value(activityIdsJson),
+      activityText: Value(activityText),
+      photoPath: photoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photoPath),
+      photoUrl: photoUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photoUrl),
+      userId:
+          userId == null && nullToAbsent ? const Value.absent() : Value(userId),
+      supabaseId: supabaseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supabaseId),
+    );
+  }
+
+  factory ActivityRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ActivityRow(
+      id: serializer.fromJson<int>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      activityIdsJson: serializer.fromJson<String>(json['activityIdsJson']),
+      activityText: serializer.fromJson<String>(json['activityText']),
+      photoPath: serializer.fromJson<String?>(json['photoPath']),
+      photoUrl: serializer.fromJson<String?>(json['photoUrl']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      supabaseId: serializer.fromJson<String?>(json['supabaseId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'activityIdsJson': serializer.toJson<String>(activityIdsJson),
+      'activityText': serializer.toJson<String>(activityText),
+      'photoPath': serializer.toJson<String?>(photoPath),
+      'photoUrl': serializer.toJson<String?>(photoUrl),
+      'userId': serializer.toJson<String?>(userId),
+      'supabaseId': serializer.toJson<String?>(supabaseId),
+    };
+  }
+
+  ActivityRow copyWith(
+          {int? id,
+          DateTime? createdAt,
+          String? activityIdsJson,
+          String? activityText,
+          Value<String?> photoPath = const Value.absent(),
+          Value<String?> photoUrl = const Value.absent(),
+          Value<String?> userId = const Value.absent(),
+          Value<String?> supabaseId = const Value.absent()}) =>
+      ActivityRow(
+        id: id ?? this.id,
+        createdAt: createdAt ?? this.createdAt,
+        activityIdsJson: activityIdsJson ?? this.activityIdsJson,
+        activityText: activityText ?? this.activityText,
+        photoPath: photoPath.present ? photoPath.value : this.photoPath,
+        photoUrl: photoUrl.present ? photoUrl.value : this.photoUrl,
+        userId: userId.present ? userId.value : this.userId,
+        supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
+      );
+  ActivityRow copyWithCompanion(ActivitiesCompanion data) {
+    return ActivityRow(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      activityIdsJson: data.activityIdsJson.present
+          ? data.activityIdsJson.value
+          : this.activityIdsJson,
+      activityText: data.activityText.present
+          ? data.activityText.value
+          : this.activityText,
+      photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
+      photoUrl: data.photoUrl.present ? data.photoUrl.value : this.photoUrl,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      supabaseId:
+          data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivityRow(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('activityIdsJson: $activityIdsJson, ')
+          ..write('activityText: $activityText, ')
+          ..write('photoPath: $photoPath, ')
+          ..write('photoUrl: $photoUrl, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, createdAt, activityIdsJson, activityText,
+      photoPath, photoUrl, userId, supabaseId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ActivityRow &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.activityIdsJson == this.activityIdsJson &&
+          other.activityText == this.activityText &&
+          other.photoPath == this.photoPath &&
+          other.photoUrl == this.photoUrl &&
+          other.userId == this.userId &&
+          other.supabaseId == this.supabaseId);
+}
+
+class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
+  final Value<int> id;
+  final Value<DateTime> createdAt;
+  final Value<String> activityIdsJson;
+  final Value<String> activityText;
+  final Value<String?> photoPath;
+  final Value<String?> photoUrl;
+  final Value<String?> userId;
+  final Value<String?> supabaseId;
+  const ActivitiesCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.activityIdsJson = const Value.absent(),
+    this.activityText = const Value.absent(),
+    this.photoPath = const Value.absent(),
+    this.photoUrl = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
+  });
+  ActivitiesCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime createdAt,
+    required String activityIdsJson,
+    required String activityText,
+    this.photoPath = const Value.absent(),
+    this.photoUrl = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
+  })  : createdAt = Value(createdAt),
+        activityIdsJson = Value(activityIdsJson),
+        activityText = Value(activityText);
+  static Insertable<ActivityRow> custom({
+    Expression<int>? id,
+    Expression<DateTime>? createdAt,
+    Expression<String>? activityIdsJson,
+    Expression<String>? activityText,
+    Expression<String>? photoPath,
+    Expression<String>? photoUrl,
+    Expression<String>? userId,
+    Expression<String>? supabaseId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (activityIdsJson != null) 'activity_ids_json': activityIdsJson,
+      if (activityText != null) 'text': activityText,
+      if (photoPath != null) 'photo_path': photoPath,
+      if (photoUrl != null) 'photo_url': photoUrl,
+      if (userId != null) 'user_id': userId,
+      if (supabaseId != null) 'supabase_id': supabaseId,
+    });
+  }
+
+  ActivitiesCompanion copyWith(
+      {Value<int>? id,
+      Value<DateTime>? createdAt,
+      Value<String>? activityIdsJson,
+      Value<String>? activityText,
+      Value<String?>? photoPath,
+      Value<String?>? photoUrl,
+      Value<String?>? userId,
+      Value<String?>? supabaseId}) {
+    return ActivitiesCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      activityIdsJson: activityIdsJson ?? this.activityIdsJson,
+      activityText: activityText ?? this.activityText,
+      photoPath: photoPath ?? this.photoPath,
+      photoUrl: photoUrl ?? this.photoUrl,
+      userId: userId ?? this.userId,
+      supabaseId: supabaseId ?? this.supabaseId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (activityIdsJson.present) {
+      map['activity_ids_json'] = Variable<String>(activityIdsJson.value);
+    }
+    if (activityText.present) {
+      map['text'] = Variable<String>(activityText.value);
+    }
+    if (photoPath.present) {
+      map['photo_path'] = Variable<String>(photoPath.value);
+    }
+    if (photoUrl.present) {
+      map['photo_url'] = Variable<String>(photoUrl.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (supabaseId.present) {
+      map['supabase_id'] = Variable<String>(supabaseId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivitiesCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('activityIdsJson: $activityIdsJson, ')
+          ..write('activityText: $activityText, ')
+          ..write('photoPath: $photoPath, ')
+          ..write('photoUrl: $photoUrl, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2757,6 +3274,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $DailyQuestionAnswersTable(this);
   late final $GratitudeEntriesTable gratitudeEntries =
       $GratitudeEntriesTable(this);
+  late final $ActivitiesTable activities = $ActivitiesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2767,7 +3285,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         dreams,
         journalEntries,
         dailyQuestionAnswers,
-        gratitudeEntries
+        gratitudeEntries,
+        activities
       ];
 }
 
@@ -2780,6 +3299,8 @@ typedef $$RemindersTableCreateCompanionBuilder = RemindersCompanion Function({
   required int hour,
   required int minute,
   Value<bool> enabled,
+  Value<String?> userId,
+  Value<String?> supabaseId,
 });
 typedef $$RemindersTableUpdateCompanionBuilder = RemindersCompanion Function({
   Value<int> id,
@@ -2790,6 +3311,8 @@ typedef $$RemindersTableUpdateCompanionBuilder = RemindersCompanion Function({
   Value<int> hour,
   Value<int> minute,
   Value<bool> enabled,
+  Value<String?> userId,
+  Value<String?> supabaseId,
 });
 
 class $$RemindersTableFilterComposer
@@ -2826,6 +3349,12 @@ class $$RemindersTableFilterComposer
 
   ColumnFilters<bool> get enabled => $composableBuilder(
       column: $table.enabled, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnFilters(column));
 }
 
 class $$RemindersTableOrderingComposer
@@ -2860,6 +3389,12 @@ class $$RemindersTableOrderingComposer
 
   ColumnOrderings<bool> get enabled => $composableBuilder(
       column: $table.enabled, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
 }
 
 class $$RemindersTableAnnotationComposer
@@ -2894,6 +3429,12 @@ class $$RemindersTableAnnotationComposer
 
   GeneratedColumn<bool> get enabled =>
       $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => column);
 }
 
 class $$RemindersTableTableManager extends RootTableManager<
@@ -2927,6 +3468,8 @@ class $$RemindersTableTableManager extends RootTableManager<
             Value<int> hour = const Value.absent(),
             Value<int> minute = const Value.absent(),
             Value<bool> enabled = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
           }) =>
               RemindersCompanion(
             id: id,
@@ -2937,6 +3480,8 @@ class $$RemindersTableTableManager extends RootTableManager<
             hour: hour,
             minute: minute,
             enabled: enabled,
+            userId: userId,
+            supabaseId: supabaseId,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -2947,6 +3492,8 @@ class $$RemindersTableTableManager extends RootTableManager<
             required int hour,
             required int minute,
             Value<bool> enabled = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
           }) =>
               RemindersCompanion.insert(
             id: id,
@@ -2957,6 +3504,8 @@ class $$RemindersTableTableManager extends RootTableManager<
             hour: hour,
             minute: minute,
             enabled: enabled,
+            userId: userId,
+            supabaseId: supabaseId,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -4091,6 +4640,213 @@ typedef $$GratitudeEntriesTableProcessedTableManager = ProcessedTableManager<
     ),
     GratitudeEntryRow,
     PrefetchHooks Function()>;
+typedef $$ActivitiesTableCreateCompanionBuilder = ActivitiesCompanion Function({
+  Value<int> id,
+  required DateTime createdAt,
+  required String activityIdsJson,
+  required String activityText,
+  Value<String?> photoPath,
+  Value<String?> photoUrl,
+  Value<String?> userId,
+  Value<String?> supabaseId,
+});
+typedef $$ActivitiesTableUpdateCompanionBuilder = ActivitiesCompanion Function({
+  Value<int> id,
+  Value<DateTime> createdAt,
+  Value<String> activityIdsJson,
+  Value<String> activityText,
+  Value<String?> photoPath,
+  Value<String?> photoUrl,
+  Value<String?> userId,
+  Value<String?> supabaseId,
+});
+
+class $$ActivitiesTableFilterComposer
+    extends Composer<_$AppDatabase, $ActivitiesTable> {
+  $$ActivitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get activityIdsJson => $composableBuilder(
+      column: $table.activityIdsJson,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get activityText => $composableBuilder(
+      column: $table.activityText, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get photoPath => $composableBuilder(
+      column: $table.photoPath, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get photoUrl => $composableBuilder(
+      column: $table.photoUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnFilters(column));
+}
+
+class $$ActivitiesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ActivitiesTable> {
+  $$ActivitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get activityIdsJson => $composableBuilder(
+      column: $table.activityIdsJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get activityText => $composableBuilder(
+      column: $table.activityText,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get photoPath => $composableBuilder(
+      column: $table.photoPath, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get photoUrl => $composableBuilder(
+      column: $table.photoUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ActivitiesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ActivitiesTable> {
+  $$ActivitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get activityIdsJson => $composableBuilder(
+      column: $table.activityIdsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get activityText => $composableBuilder(
+      column: $table.activityText, builder: (column) => column);
+
+  GeneratedColumn<String> get photoPath =>
+      $composableBuilder(column: $table.photoPath, builder: (column) => column);
+
+  GeneratedColumn<String> get photoUrl =>
+      $composableBuilder(column: $table.photoUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => column);
+}
+
+class $$ActivitiesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ActivitiesTable,
+    ActivityRow,
+    $$ActivitiesTableFilterComposer,
+    $$ActivitiesTableOrderingComposer,
+    $$ActivitiesTableAnnotationComposer,
+    $$ActivitiesTableCreateCompanionBuilder,
+    $$ActivitiesTableUpdateCompanionBuilder,
+    (ActivityRow, BaseReferences<_$AppDatabase, $ActivitiesTable, ActivityRow>),
+    ActivityRow,
+    PrefetchHooks Function()> {
+  $$ActivitiesTableTableManager(_$AppDatabase db, $ActivitiesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActivitiesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActivitiesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ActivitiesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<String> activityIdsJson = const Value.absent(),
+            Value<String> activityText = const Value.absent(),
+            Value<String?> photoPath = const Value.absent(),
+            Value<String?> photoUrl = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
+          }) =>
+              ActivitiesCompanion(
+            id: id,
+            createdAt: createdAt,
+            activityIdsJson: activityIdsJson,
+            activityText: activityText,
+            photoPath: photoPath,
+            photoUrl: photoUrl,
+            userId: userId,
+            supabaseId: supabaseId,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required DateTime createdAt,
+            required String activityIdsJson,
+            required String activityText,
+            Value<String?> photoPath = const Value.absent(),
+            Value<String?> photoUrl = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
+          }) =>
+              ActivitiesCompanion.insert(
+            id: id,
+            createdAt: createdAt,
+            activityIdsJson: activityIdsJson,
+            activityText: activityText,
+            photoPath: photoPath,
+            photoUrl: photoUrl,
+            userId: userId,
+            supabaseId: supabaseId,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ActivitiesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ActivitiesTable,
+    ActivityRow,
+    $$ActivitiesTableFilterComposer,
+    $$ActivitiesTableOrderingComposer,
+    $$ActivitiesTableAnnotationComposer,
+    $$ActivitiesTableCreateCompanionBuilder,
+    $$ActivitiesTableUpdateCompanionBuilder,
+    (ActivityRow, BaseReferences<_$AppDatabase, $ActivitiesTable, ActivityRow>),
+    ActivityRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4107,4 +4863,6 @@ class $AppDatabaseManager {
       $$DailyQuestionAnswersTableTableManager(_db, _db.dailyQuestionAnswers);
   $$GratitudeEntriesTableTableManager get gratitudeEntries =>
       $$GratitudeEntriesTableTableManager(_db, _db.gratitudeEntries);
+  $$ActivitiesTableTableManager get activities =>
+      $$ActivitiesTableTableManager(_db, _db.activities);
 }

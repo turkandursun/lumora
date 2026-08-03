@@ -22,4 +22,7 @@ class Reminders extends Table {
   IntColumn get hour => integer()();
   IntColumn get minute => integer()();
   BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+
+  TextColumn get userId => text().nullable()();
+  TextColumn get supabaseId => text().nullable()();
 }

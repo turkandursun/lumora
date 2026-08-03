@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -51,6 +52,16 @@ class ActivitiesScreen extends ConsumerStatefulWidget {
 class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
   final Set<String> _selected = {};
   String? _activityPhotoPath;
+  Uint8List? _activityPhotoBytes;
+  bool _didSync = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didSync) return;
+    _didSync = true;
+    ref.read(activitiesProvider.notifier).refreshSync();
+  }
 
   Future<XFile?> _pickImage(bool isDark, Color primary) async {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
@@ -79,7 +90,8 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     try {
       return await ImagePicker()
           .pickImage(source: source, maxWidth: 1600, imageQuality: 82);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[ActivitiesScreen] Error picking image: $e');
       return null;
     }
   }
@@ -88,33 +100,49 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     final picked = await _pickImage(isDark, primary);
     if (picked == null) return;
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final photosDir = Directory(p.join(dir.path, 'activity_photos'));
-      if (!await photosDir.exists()) await photosDir.create(recursive: true);
-      final dest = p.join(photosDir.path,
-          'act_${DateTime.now().millisecondsSinceEpoch}${p.extension(picked.path)}');
-      await File(picked.path).copy(dest);
-      if (!mounted) return;
-      setState(() => _activityPhotoPath = dest);
-    } catch (_) {}
+      if (kIsWeb) {
+        final bytes = await picked.readAsBytes();
+        if (!mounted) return;
+        setState(() {
+          _activityPhotoBytes = bytes;
+          _activityPhotoPath = null;
+        });
+      } else {
+        final dir = await getApplicationDocumentsDirectory();
+        final photosDir = Directory(p.join(dir.path, 'activity_photos'));
+        if (!await photosDir.exists()) await photosDir.create(recursive: true);
+        final dest = p.join(photosDir.path,
+            'act_${DateTime.now().millisecondsSinceEpoch}${p.extension(picked.path)}');
+        await File(picked.path).copy(dest);
+        if (!mounted) return;
+        setState(() {
+          _activityPhotoPath = dest;
+          _activityPhotoBytes = null;
+        });
+      }
+    } catch (e) {
+      debugPrint('[ActivitiesScreen] Error in _pickActivityPhoto: $e');
+    }
   }
 
   Future<void> _saveActivity() async {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final labels = _selected.map((id) => _activityLabel(id, isTr)).toList();
     final text = labels.join(', ');
-    if (text.isEmpty && _activityPhotoPath == null) return;
+    if (text.isEmpty && _activityPhotoPath == null && _activityPhotoBytes == null) return;
 
     await ref.read(activitiesProvider.notifier).add(Activity(
-          id: DateTime.now().millisecondsSinceEpoch,
           createdAt: DateTime.now(),
+          activityIds: _selected.toList(),
           text: text,
           photoPath: _activityPhotoPath,
+          photoBytes: _activityPhotoBytes,
         ));
     if (!mounted) return;
     setState(() {
       _selected.clear();
       _activityPhotoPath = null;
+      _activityPhotoBytes = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(isTr ? 'Kaydedildi 🌸' : 'Saved 🌸')),
@@ -191,10 +219,14 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                               ],
                             ),
                             const SizedBox(height: 14),
-                            if (_activityPhotoPath != null)
+                            if (_activityPhotoPath != null || _activityPhotoBytes != null)
                               _PhotoPreview(
-                                file: File(_activityPhotoPath!),
-                                onRemove: () => setState(() => _activityPhotoPath = null),
+                                file: _activityPhotoPath != null && !kIsWeb ? File(_activityPhotoPath!) : null,
+                                bytes: _activityPhotoBytes,
+                                onRemove: () => setState(() {
+                                  _activityPhotoPath = null;
+                                  _activityPhotoBytes = null;
+                                }),
                               )
                             else
                               OutlinedButton.icon(
@@ -225,7 +257,16 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                             locale: locale,
                             isDark: isDark,
                             primary: primary,
-                            onDelete: () => ref.read(activitiesProvider.notifier).remove(a.id),
+                            onDelete: () {
+                              if (a.id != null) {
+                                ref.read(activitiesProvider.notifier).remove(
+                                      a.id!,
+                                      supabaseId: a.supabaseId,
+                                      photoUrl: a.photoUrl,
+                                      photoPath: a.photoPath,
+                                    );
+                              }
+                            },
                           ),
                       ],
                       const SizedBox(height: 8),
@@ -292,19 +333,33 @@ class _OptionChip extends StatelessWidget {
 }
 
 class _PhotoPreview extends StatelessWidget {
-  const _PhotoPreview({required this.file, required this.onRemove});
+  const _PhotoPreview({
+    this.file,
+    this.bytes,
+    required this.onRemove,
+  });
 
-  final File file;
+  final File? file;
+  final Uint8List? bytes;
   final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
+    Widget imageWidget;
+    if (bytes != null) {
+      imageWidget = Image.memory(bytes!, width: double.infinity, height: 190, fit: BoxFit.cover);
+    } else if (file != null) {
+      imageWidget = Image.file(file!, width: double.infinity, height: 190, fit: BoxFit.cover);
+    } else {
+      imageWidget = const SizedBox.shrink();
+    }
+
     return Stack(
       alignment: Alignment.topRight,
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child: Image.file(file, width: double.infinity, height: 190, fit: BoxFit.cover),
+          child: imageWidget,
         ),
         Padding(
           padding: const EdgeInsets.all(6),
@@ -339,6 +394,30 @@ class _ActivityHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget? photoWidget;
+    if (activity.photoUrl != null && activity.photoUrl!.isNotEmpty) {
+      photoWidget = Image.network(
+        activity.photoUrl!,
+        width: double.infinity,
+        height: 180,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('[ActivityHistoryCard] Error loading network image: $error');
+          return const SizedBox.shrink();
+        },
+      );
+    } else if (!kIsWeb &&
+        activity.photoPath != null &&
+        activity.photoPath!.isNotEmpty &&
+        File(activity.photoPath!).existsSync()) {
+      photoWidget = Image.file(
+        File(activity.photoPath!),
+        width: double.infinity,
+        height: 180,
+        fit: BoxFit.cover,
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: AstraGlassCard(
@@ -349,10 +428,10 @@ class _ActivityHistoryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (activity.photoPath != null)
+            if (photoWidget != null)
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                child: Image.file(File(activity.photoPath!), width: double.infinity, height: 180, fit: BoxFit.cover),
+                child: photoWidget,
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
