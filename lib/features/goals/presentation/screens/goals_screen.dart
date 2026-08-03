@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/tables/goals_table.dart';
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_background.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/lumora_palette.dart';
-import '../../../../theme/premium_button.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
-import '../../../../theme/sakura_home_palette.dart';
 import '../../data/goals_repository.dart';
 import '../providers/goals_providers.dart';
 import '../widgets/new_goal_sheet.dart';
@@ -174,44 +172,43 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
           frequency: GoalFrequency.daily,
         );
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: SakuraHomePalette.blossomPink,
-          duration: const Duration(seconds: 2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          content: Text(
-            isTr ? '"${preset.tr}" hedefi eklendi' : '"${preset.en}" goal added',
-            style: LumoraPalette.bodyStyle(
-                fontSize: 13.5, fontWeight: FontWeight.w600, color: Colors.white),
-          ),
-        ),
-      );
+    final isDark = ref.read(astraThemeProvider) == AstraThemeMode.dark;
+    _showToast(
+      isDark,
+      isTr ? '"${preset.tr}" hedefi eklendi' : '"${preset.en}" goal added',
+      icon: Icons.add_task_rounded,
+    );
   }
 
   void _showCelebration(AppLocalizations l10n, String goalTitle) {
+    final isDark = ref.read(astraThemeProvider) == AstraThemeMode.dark;
+    _showToast(isDark, l10n.goalsCelebrationMessage(goalTitle), icon: Icons.auto_awesome_rounded);
+  }
+
+  /// Small gold-bordered glass toast — matches the "Günlük mühürlendi"
+  /// confirmation on the journal writing screen.
+  void _showToast(bool isDark, String message, {required IconData icon}) {
+    final primary = AstraKit.primary(isDark);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          backgroundColor: SakuraHomePalette.blossomPink,
-          duration: const Duration(seconds: 3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          backgroundColor: isDark ? const Color(0xF01A1233) : const Color(0xF0FFF8EE),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: primary.withValues(alpha: 0.4)),
+          ),
+          duration: const Duration(seconds: 2),
           content: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
+              Icon(icon, size: 16, color: primary),
+              const SizedBox(width: 8),
+              Flexible(
                 child: Text(
-                  l10n.goalsCelebrationMessage(goalTitle),
-                  style: LumoraPalette.bodyStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                  message,
+                  style: AstraKit.body(isDark, fontSize: 13),
                 ),
               ),
             ],
@@ -226,17 +223,22 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final goalsAsync = ref.watch(goalsStreamProvider);
     final streak = ref.watch(goalStreakProvider);
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: PremiumButton(
+      floatingActionButton: AstraGoldButton(
+        isDark: isDark,
         label: l10n.goalsNewButton,
         icon: Icons.add_rounded,
         expand: false,
-        onPressed: () => NewGoalSheet.show(context),
+        onTap: () => NewGoalSheet.show(context),
       ),
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: ResponsiveContent(
             child: Column(
@@ -244,15 +246,24 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 12, 24, 4),
-                  child: Text(
-                    l10n.goalsTitle,
-                    style: AppTheme.displayFont(
-                        fontSize: 24, color: SakuraHomePalette.textDeep),
+                  child: Row(
+                    children: [
+                      AstraCircleIconButton(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        isDark: isDark,
+                        primaryColor: primary,
+                        onTap: () => Navigator.of(context).maybePop(),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(l10n.goalsTitle, style: AstraKit.heading1(isDark, fontSize: 24)),
+                      ),
+                    ],
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 4),
-                  child: _StreakBanner(streak: streak),
+                  child: _StreakBanner(streak: streak, isDark: isDark, primary: primary),
                 ),
                 Expanded(
                   child: goalsAsync.when(
@@ -268,36 +279,30 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
                                 isTr
                                     ? 'Bugün $done / ${goals.length} tamamlandı'
                                     : '$done of ${goals.length} done today',
-                                style: AppTheme.bodyFont(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: SakuraHomePalette.textMuted,
-                                ),
+                                style: AstraKit.mutedText(isDark, fontSize: 13, fontWeight: FontWeight.w600),
                               ),
                             ),
                           const SizedBox(height: 8),
                           for (final goal in goals)
                             _GoalCard(
                               goal: goal,
+                              isDark: isDark,
+                              primary: primary,
                               onIncrement: () => _increment(goal),
                             ),
                           const SizedBox(height: 8),
                           _PresetSuggestions(
                             isTr: isTr,
+                            isDark: isDark,
+                            primary: primary,
                             onAdd: (preset) => _addPreset(preset, isTr),
                           ),
                         ],
                       );
                     },
-                    loading: () => const Center(
-                      child: CircularProgressIndicator(
-                          color: SakuraHomePalette.blossomPink),
-                    ),
+                    loading: () => Center(child: CircularProgressIndicator(color: primary)),
                     error: (_, __) => Center(
-                      child: Text(
-                        l10n.goalsLoadError,
-                        style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted),
-                      ),
+                      child: Text(l10n.goalsLoadError, style: AstraKit.mutedText(isDark, fontSize: 13)),
                     ),
                   ),
                 ),
@@ -312,9 +317,16 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
 
 /// A horizontal set of one-tap starter-goal suggestions.
 class _PresetSuggestions extends StatelessWidget {
-  const _PresetSuggestions({required this.isTr, required this.onAdd});
+  const _PresetSuggestions({
+    required this.isTr,
+    required this.isDark,
+    required this.primary,
+    required this.onAdd,
+  });
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final ValueChanged<_GoalPreset> onAdd;
 
   @override
@@ -324,16 +336,11 @@ class _PresetSuggestions extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.auto_awesome_rounded,
-                size: 16, color: SakuraHomePalette.blossomPink),
+            Icon(Icons.auto_awesome_rounded, size: 16, color: primary),
             const SizedBox(width: 6),
             Text(
               isTr ? 'Hazır öneriler' : 'Quick suggestions',
-              style: AppTheme.bodyFont(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: SakuraHomePalette.textDeep,
-              ),
+              style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -351,28 +358,21 @@ class _PresetSuggestions extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                     decoration: BoxDecoration(
-                      color: SakuraHomePalette.cardWhite,
+                      color: isDark ? const Color(0x44231845) : const Color(0x66FFF8EE),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                          color: SakuraHomePalette.branchMauve.withValues(alpha: 0.28)),
+                      border: Border.all(color: primary.withValues(alpha: 0.35)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(preset.icon,
-                            size: 16, color: SakuraHomePalette.blossomPink),
+                        Icon(preset.icon, size: 16, color: primary),
                         const SizedBox(width: 6),
                         Text(
                           isTr ? preset.tr : preset.en,
-                          style: AppTheme.bodyFont(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: SakuraHomePalette.textDeep,
-                          ),
+                          style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.add_rounded,
-                            size: 15, color: SakuraHomePalette.textMuted),
+                        Icon(Icons.add_rounded, size: 15, color: primary.withValues(alpha: 0.85)),
                       ],
                     ),
                   ),
@@ -386,31 +386,20 @@ class _PresetSuggestions extends StatelessWidget {
 }
 
 class _StreakBanner extends StatelessWidget {
-  const _StreakBanner({required this.streak});
+  const _StreakBanner({required this.streak, required this.isDark, required this.primary});
 
   final GoalStreak streak;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Container(
-      width: double.infinity,
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
-          colors: SakuraHomePalette.ctaGradient,
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: SakuraHomePalette.blossomPink.withValues(alpha: 0.35),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+      borderRadius: 22,
       child: Row(
         children: [
           Container(
@@ -418,19 +407,16 @@ class _StreakBanner extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.3),
+              color: primary.withValues(alpha: 0.18),
+              border: Border.all(color: primary.withValues(alpha: 0.4)),
             ),
-            child: const Icon(Icons.local_fire_department_rounded,
-                color: Colors.white, size: 24),
+            child: Icon(Icons.local_fire_department_rounded, color: primary, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
-              streak.count > 0
-                  ? l10n.goalsStreakBanner(streak.count)
-                  : l10n.goalsStreakStartPrompt,
-              style: LumoraPalette.bodyStyle(
-                  fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
+              streak.count > 0 ? l10n.goalsStreakBanner(streak.count) : l10n.goalsStreakStartPrompt,
+              style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -440,9 +426,16 @@ class _StreakBanner extends StatelessWidget {
 }
 
 class _GoalCard extends StatelessWidget {
-  const _GoalCard({required this.goal, required this.onIncrement});
+  const _GoalCard({
+    required this.goal,
+    required this.isDark,
+    required this.primary,
+    required this.onIncrement,
+  });
 
   final GoalRow goal;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onIncrement;
 
   @override
@@ -454,97 +447,83 @@ class _GoalCard extends StatelessWidget {
     final step = incrementStepFor(goal.unit);
     final isComplete = goal.progress >= goal.target;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.22)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: isComplete ? null : onIncrement,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: SakuraHomePalette.blossomPink.withValues(alpha: 0.16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: AstraGlassCard(
+        isDark: isDark,
+        primaryColor: primary,
+        borderRadius: 22,
+        padding: EdgeInsets.zero,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(22),
+            onTap: isComplete ? null : onIncrement,
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: primary.withValues(alpha: 0.16),
+                          border: Border.all(color: primary.withValues(alpha: 0.35)),
+                        ),
+                        child: Icon(iconForGoal(goal.iconKey), color: primary, size: 22),
                       ),
-                      child: Icon(iconForGoal(goal.iconKey),
-                          color: SakuraHomePalette.blossomPink, size: 22),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            goal.title,
-                            style: AppTheme.bodyFont(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: SakuraHomePalette.textDeep,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              goal.title,
+                              style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700),
                             ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            l10n.goalsProgressFraction(goal.progress, goal.target, unit),
-                            style: AppTheme.bodyFont(
-                              fontSize: 12.5,
-                              color: SakuraHomePalette.textMuted,
+                            const SizedBox(height: 3),
+                            Text(
+                              l10n.goalsProgressFraction(goal.progress, goal.target, unit),
+                              style: AstraKit.mutedText(isDark, fontSize: 12.5),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      '$percent%',
-                      style: AppTheme.bodyFont(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: SakuraHomePalette.blossomPink,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                _ProgressBar(progress: progress),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    if (isComplete) ...[
-                      const Icon(Icons.check_circle_rounded,
-                          color: SakuraHomePalette.blossomPink, size: 18),
-                      const SizedBox(width: 6),
-                      Text(
-                        l10n.goalsCompletedLabel,
-                        style: AppTheme.bodyFont(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: SakuraHomePalette.blossomPink,
+                          ],
                         ),
                       ),
+                      Text(
+                        '$percent%',
+                        style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700, color: primary),
+                      ),
                     ],
-                    const Spacer(),
-                    _IncrementPill(
-                      label: l10n.goalsIncrementButton(step, unit),
-                      enabled: !isComplete,
-                      onTap: onIncrement,
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 14),
+                  _ProgressBar(progress: progress, primary: primary),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      if (isComplete) ...[
+                        Icon(Icons.check_circle_rounded, color: primary, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          l10n.goalsCompletedLabel,
+                          style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w700, color: primary),
+                        ),
+                      ],
+                      const Spacer(),
+                      _IncrementPill(
+                        label: l10n.goalsIncrementButton(step, unit),
+                        enabled: !isComplete,
+                        isDark: isDark,
+                        primary: primary,
+                        onTap: onIncrement,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -553,13 +532,12 @@ class _GoalCard extends StatelessWidget {
   }
 }
 
-/// Rounded progress track with a gradient fill matching the app's pink
-/// CTA gradient — a plain Material [LinearProgressIndicator] can't do a
-/// gradient fill on its own.
+/// Rounded progress track with the app's gold gradient fill.
 class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.progress});
+  const _ProgressBar({required this.progress, required this.primary});
 
   final double progress;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
@@ -571,15 +549,14 @@ class _ProgressBar extends StatelessWidget {
           builder: (context, constraints) {
             return Stack(
               children: [
-                Container(
-                    color: SakuraHomePalette.branchMauve.withValues(alpha: 0.18)),
+                Container(color: primary.withValues(alpha: 0.16)),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 350),
                   curve: Curves.easeOut,
                   width: constraints.maxWidth * progress,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: SakuraHomePalette.ctaGradient,
+                      colors: [primary, primary.withValues(alpha: 0.7)],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
@@ -595,10 +572,18 @@ class _ProgressBar extends StatelessWidget {
 }
 
 class _IncrementPill extends StatelessWidget {
-  const _IncrementPill({required this.label, required this.enabled, required this.onTap});
+  const _IncrementPill({
+    required this.label,
+    required this.enabled,
+    required this.isDark,
+    required this.primary,
+    required this.onTap,
+  });
 
   final String label;
   final bool enabled;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
@@ -613,16 +598,17 @@ class _IncrementPill extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             gradient: enabled
-                ? const LinearGradient(colors: SakuraHomePalette.ctaGradient)
+                ? LinearGradient(colors: [primary, primary.withValues(alpha: 0.75)])
                 : null,
-            color: enabled
-                ? null
-                : SakuraHomePalette.branchMauve.withValues(alpha: 0.2),
+            color: enabled ? null : primary.withValues(alpha: 0.16),
           ),
           child: Text(
             label,
-            style: LumoraPalette.bodyStyle(
-                fontSize: 12.5, fontWeight: FontWeight.w700, color: Colors.white),
+            style: GoogleFonts.outfit(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: enabled ? const Color(0xFF1A0F00) : AstraKit.muted(isDark),
+            ),
           ),
         ),
       ),

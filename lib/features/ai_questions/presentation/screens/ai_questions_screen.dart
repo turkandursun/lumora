@@ -1,14 +1,9 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/services/ai_service.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/lumora_palette.dart';
-import '../../../../theme/premium_button.dart';
-import '../../../../theme/sakura_home_palette.dart';
-import '../../../../theme/app_background.dart';
+import '../../../../theme/astra_screen_kit.dart';
 
 const int _questionCount = 5;
 
@@ -70,7 +65,6 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
   final List<int?> _selected = List<int?>.filled(_questionCount, null);
   bool _loading = false;
   String? _analysis;
-  bool _offline = false;
 
   bool get _allAnswered => _selected.every((e) => e != null);
 
@@ -88,7 +82,6 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
 
     setState(() {
       _loading = true;
-      _offline = false;
       _analysis = null;
     });
 
@@ -112,7 +105,6 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
         _analysis = isTr
             ? 'Şu an analize ulaşılamadı (internet gerekebilir). Yine de bu değerlendirmeyi doldurman, kendine kulak vermenin güzel bir yolu. 🌸'
             : "Couldn't reach the analysis right now (you may need internet). Still, checking in with yourself this way is a lovely thing to do. 🌸";
-        _offline = true;
         _loading = false;
       });
     }
@@ -122,10 +114,14 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final qs = isTr ? _questionsTr : _questionsEn;
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -134,31 +130,28 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: SakuraHomePalette.textDeep),
+                    AstraCircleIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      isDark: isDark,
+                      primaryColor: primary,
+                      onTap: () => Navigator.of(context).maybePop(),
                     ),
-                    Text(
-                      isTr ? 'AI Soruları' : 'AI Questions',
-                      style: AppTheme.displayFont(
-                          fontSize: 22, color: SakuraHomePalette.textDeep),
-                    ),
+                    const SizedBox(width: 12),
+                    Text(isTr ? 'AI Soruları' : 'AI Questions', style: AstraKit.heading1(isDark, fontSize: 22)),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Expanded(
                   child: ListView(
                     children: [
-                      _FrostedCard(
+                      AstraGlassCard(
+                        isDark: isDark,
+                        primaryColor: primary,
                         child: Text(
                           isTr
                               ? 'Birkaç soruyu yanıtla, Luma ruh haline dair kısa bir analiz yapsın.'
                               : 'Answer a few questions and Luma will give a short read on your mood.',
-                          style: AppTheme.bodyFont(
-                            fontSize: 13.5,
-                            color: SakuraHomePalette.textDeep,
-                          ),
+                          style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -168,23 +161,25 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
                           question: qs[_order[i]].$1,
                           options: qs[_order[i]].$2,
                           selected: _selected[i],
+                          isDark: isDark,
+                          primary: primary,
                           onSelect: (opt) => setState(() => _selected[i] = opt),
                         ),
                         const SizedBox(height: 12),
                       ],
-                      _AnalyzeButton(
-                        isTr: isTr,
+                      AstraGoldButton(
+                        isDark: isDark,
+                        label: _loading
+                            ? (isTr ? 'Analiz ediliyor...' : 'Analyzing...')
+                            : (isTr ? 'Luma ile analiz et' : 'Analyze with Luma'),
+                        icon: Icons.auto_awesome,
+                        isLoading: _loading,
                         enabled: _allAnswered && !_loading,
-                        loading: _loading,
                         onTap: _analyze,
                       ),
                       if (_analysis != null) ...[
                         const SizedBox(height: 14),
-                        _AnalysisCard(
-                          isTr: isTr,
-                          text: _analysis!,
-                          offline: _offline,
-                        ),
+                        _AnalysisCard(isTr: isTr, text: _analysis!, isDark: isDark, primary: primary),
                       ],
                       const SizedBox(height: 8),
                     ],
@@ -199,38 +194,14 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
   }
 }
 
-class _FrostedCard extends StatelessWidget {
-  const _FrostedCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
 class _QuestionCard extends StatelessWidget {
   const _QuestionCard({
     required this.index,
     required this.question,
     required this.options,
     required this.selected,
+    required this.isDark,
+    required this.primary,
     required this.onSelect,
   });
 
@@ -238,22 +209,19 @@ class _QuestionCard extends StatelessWidget {
   final String question;
   final List<String> options;
   final int? selected;
+  final bool isDark;
+  final Color primary;
   final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    return _FrostedCard(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${index + 1}. $question',
-            style: AppTheme.bodyFont(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: SakuraHomePalette.textDeep,
-            ),
-          ),
+          Text('${index + 1}. $question', style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -262,14 +230,12 @@ class _QuestionCard extends StatelessWidget {
               for (var o = 0; o < options.length; o++)
                 ChoiceChip(
                   label: Text(options[o]),
-                  labelStyle: AppTheme.bodyFont(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: selected == o ? Colors.white : SakuraHomePalette.textDeep,
-                  ),
+                  labelStyle: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w600,
+                      color: selected == o ? const Color(0xFF1A0F00) : null),
                   showCheckmark: false,
-                  backgroundColor: Colors.white.withValues(alpha: 0.6),
-                  selectedColor: SakuraHomePalette.blossomPink,
+                  backgroundColor: isDark ? const Color(0x33231845) : const Color(0x66FFF8EE),
+                  selectedColor: primary,
+                  side: BorderSide(color: primary.withValues(alpha: 0.35)),
                   selected: selected == o,
                   onSelected: (_) => onSelect(o),
                 ),
@@ -281,72 +247,36 @@ class _QuestionCard extends StatelessWidget {
   }
 }
 
-class _AnalyzeButton extends StatelessWidget {
-  const _AnalyzeButton({
-    required this.isTr,
-    required this.enabled,
-    required this.loading,
-    required this.onTap,
-  });
-
-  final bool isTr;
-  final bool enabled;
-  final bool loading;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return PremiumButton(
-      label: loading
-          ? (isTr ? 'Analiz ediliyor...' : 'Analyzing...')
-          : (isTr ? 'Luma ile analiz et' : 'Analyze with Luma'),
-      icon: Icons.auto_awesome,
-      loading: loading,
-      gradient: const [Color(0xFFA678D6), Color(0xFFC9A9E9)],
-      onPressed: enabled ? onTap : null,
-    );
-  }
-}
-
 class _AnalysisCard extends StatelessWidget {
   const _AnalysisCard({
     required this.isTr,
     required this.text,
-    required this.offline,
+    required this.isDark,
+    required this.primary,
   });
 
   final bool isTr;
   final String text;
-  final bool offline;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
-    return _FrostedCard(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.spa_rounded, size: 18, color: Color(0xFFA678D6)),
+              Icon(Icons.spa_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(
-                isTr ? 'Luma\'nın analizi' : "Luma's analysis",
-                style: AppTheme.bodyFont(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: SakuraHomePalette.textMuted,
-                ),
-              ),
+              Text(isTr ? 'Luma\'nın analizi' : "Luma's analysis", style: AstraKit.label(isDark, fontSize: 12.5)),
             ],
           ),
           const SizedBox(height: 10),
-          Text(
-            text,
-            style: AppTheme.bodyFont(
-              fontSize: 14.5,
-              color: SakuraHomePalette.textDeep,
-            ).copyWith(height: 1.45),
-          ),
+          Text(text, style: AstraKit.body(isDark, fontSize: 14.5, fontWeight: FontWeight.w500, height: 1.45)),
         ],
       ),
     );

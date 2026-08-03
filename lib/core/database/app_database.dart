@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -88,6 +88,9 @@ class AppDatabase extends _$AppDatabase {
             if (!await _hasColumn('goals', 'supabase_id')) {
               await m.addColumn(goals, goals.supabaseId);
             }
+          }
+          if (from < 11 && !await _hasColumn('journal_entries', 'title')) {
+            await m.addColumn(journalEntries, journalEntries.title);
           }
         },
       );

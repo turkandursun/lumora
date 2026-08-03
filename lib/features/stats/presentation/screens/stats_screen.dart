@@ -1,18 +1,14 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/services/ai_service.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/premium_button.dart';
-import '../../../../theme/sakura_home_palette.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../dreams/presentation/providers/dreams_providers.dart';
 import '../../../gratitude/presentation/providers/gratitude_providers.dart';
 import '../../../journal/presentation/providers/journal_entries_provider.dart';
-import '../../../../theme/app_background.dart';
 import '../../../letters/presentation/providers/letter_providers.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../../profile/presentation/providers/visit_tracker_providers.dart';
@@ -36,6 +32,9 @@ class StatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     final entryDays =
         ref.watch(journalEntryDaysProvider).valueOrNull ?? const <DateTime>{};
@@ -60,80 +59,56 @@ class StatsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isTr ? 'İstatistikler' : 'Statistics',
-                style: AppTheme.displayFont(
-                  fontSize: 24,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    _OverviewCard(
-                      isTr: isTr,
-                      journaledDays: entryDays.length,
-                      streak: streak,
-                      dreams: dreams,
-                      moods: moodLog.length,
-                      gratitude: gratitudeCount,
-                      letters: lettersCount,
+                    AstraCircleIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      isDark: isDark,
+                      primaryColor: primary,
+                      onTap: () => Navigator.of(context).maybePop(),
                     ),
-                    const SizedBox(height: 12),
-                    _MoodDistributionCard(
-                      isTr: isTr,
-                      moodLog: moodLog,
-                      labels: moodLabels,
-                    ),
-                    const SizedBox(height: 12),
-                    _WeekdayCard(isTr: isTr, entryDays: entryDays),
-                    const SizedBox(height: 12),
-                    _JournalAnalysisCard(isTr: isTr, stats: textStats),
-                    const SizedBox(height: 12),
-                    const _AiAnalysisCard(),
-                    const SizedBox(height: 8),
+                    const SizedBox(width: 12),
+                    Text(isTr ? 'İstatistikler' : 'Statistics', style: AstraKit.heading1(isDark, fontSize: 24)),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      _OverviewCard(
+                        isTr: isTr,
+                        isDark: isDark,
+                        primary: primary,
+                        journaledDays: entryDays.length,
+                        streak: streak,
+                        dreams: dreams,
+                        moods: moodLog.length,
+                        gratitude: gratitudeCount,
+                        letters: lettersCount,
+                      ),
+                      const SizedBox(height: 12),
+                      _MoodDistributionCard(isTr: isTr, isDark: isDark, primary: primary, moodLog: moodLog, labels: moodLabels),
+                      const SizedBox(height: 12),
+                      _WeekdayCard(isTr: isTr, isDark: isDark, primary: primary, entryDays: entryDays),
+                      const SizedBox(height: 12),
+                      _JournalAnalysisCard(isTr: isTr, isDark: isDark, primary: primary, stats: textStats),
+                      const SizedBox(height: 12),
+                      _AiAnalysisCard(isDark: isDark, primary: primary),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Card extends StatelessWidget {
-  const _Card({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-          decoration: BoxDecoration(
-            // Translucent frosted glass so the mood photo shows through
-            // instead of a solid white block.
-            color: Colors.white.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-          ),
-          child: child,
         ),
       ),
     );
@@ -143,6 +118,8 @@ class _Card extends StatelessWidget {
 class _OverviewCard extends StatelessWidget {
   const _OverviewCard({
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.journaledDays,
     required this.streak,
     required this.dreams,
@@ -152,6 +129,8 @@ class _OverviewCard extends StatelessWidget {
   });
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final int journaledDays;
   final int streak;
   final int dreams;
@@ -162,55 +141,22 @@ class _OverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tiles = <Widget>[
-      _StatTile(
-        icon: Icons.edit_note_rounded,
-        color: SakuraHomePalette.blossomPink,
-        value: '$journaledDays',
-        label: isTr ? 'günlük gün' : 'journaled',
-      ),
-      _StatTile(
-        icon: Icons.local_fire_department_rounded,
-        color: const Color(0xFFF4A261),
-        value: '$streak',
-        label: isTr ? 'gün seri' : 'day streak',
-      ),
-      _StatTile(
-        icon: Icons.nights_stay_rounded,
-        color: const Color(0xFF8FA9D9),
-        value: '$dreams',
-        label: isTr ? 'rüya' : 'dreams',
-      ),
-      _StatTile(
-        icon: Icons.insights_rounded,
-        color: const Color(0xFF9FD8B0),
-        value: '$moods',
-        label: isTr ? 'ruh hali' : 'moods',
-      ),
-      _StatTile(
-        icon: Icons.volunteer_activism_rounded,
-        color: const Color(0xFFC4A5E8),
-        value: '$gratitude',
-        label: isTr ? 'şükran' : 'gratitude',
-      ),
-      _StatTile(
-        icon: Icons.mail_rounded,
-        color: const Color(0xFFE59BB0),
-        value: '$letters',
-        label: isTr ? 'mektup' : 'letters',
-      ),
+      _StatTile(icon: Icons.edit_note_rounded, primary: primary, isDark: isDark, value: '$journaledDays', label: isTr ? 'günlük gün' : 'journaled'),
+      _StatTile(icon: Icons.local_fire_department_rounded, primary: primary, isDark: isDark, value: '$streak', label: isTr ? 'gün seri' : 'day streak'),
+      _StatTile(icon: Icons.nights_stay_rounded, primary: primary, isDark: isDark, value: '$dreams', label: isTr ? 'rüya' : 'dreams'),
+      _StatTile(icon: Icons.insights_rounded, primary: primary, isDark: isDark, value: '$moods', label: isTr ? 'ruh hali' : 'moods'),
+      _StatTile(icon: Icons.volunteer_activism_rounded, primary: primary, isDark: isDark, value: '$gratitude', label: isTr ? 'şükran' : 'gratitude'),
+      _StatTile(icon: Icons.mail_rounded, primary: primary, isDark: isDark, value: '$letters', label: isTr ? 'mektup' : 'letters'),
     ];
 
-    return _Card(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      borderRadius: 22,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            isTr ? 'Genel bakış' : 'Overview',
-            style: AppTheme.displayFont(
-              fontSize: 16,
-              color: SakuraHomePalette.textDeep,
-            ),
-          ),
+          Text(isTr ? 'Genel bakış' : 'Overview', style: AstraKit.heading2(isDark, fontSize: 16)),
           const SizedBox(height: 14),
           GridView.count(
             crossAxisCount: 3,
@@ -230,13 +176,15 @@ class _OverviewCard extends StatelessWidget {
 class _StatTile extends StatelessWidget {
   const _StatTile({
     required this.icon,
-    required this.color,
+    required this.primary,
+    required this.isDark,
     required this.value,
     required this.label,
   });
 
   final IconData icon;
-  final Color color;
+  final Color primary;
+  final bool isDark;
   final String value;
   final String label;
 
@@ -245,22 +193,11 @@ class _StatTile extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, size: 20, color: color),
+        Icon(icon, size: 20, color: primary),
         const SizedBox(height: 5),
-        Text(
-          value,
-          style: AppTheme.displayFont(fontSize: 20, color: SakuraHomePalette.textDeep),
-        ),
+        Text(value, style: AstraKit.heading1(isDark, fontSize: 20)),
         const SizedBox(height: 1),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppTheme.bodyFont(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: SakuraHomePalette.textMuted,
-          ),
-        ),
+        Text(label, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 10, fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -269,11 +206,15 @@ class _StatTile extends StatelessWidget {
 class _MoodDistributionCard extends StatelessWidget {
   const _MoodDistributionCard({
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.moodLog,
     required this.labels,
   });
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final Map<DateTime, int> moodLog;
   final List<String> labels;
 
@@ -289,22 +230,18 @@ class _MoodDistributionCard extends StatelessWidget {
         ? -1
         : counts.indexOf(counts.reduce((a, b) => a > b ? a : b));
 
-    return _Card(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      borderRadius: 22,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.pie_chart_rounded,
-                  size: 18, color: SakuraHomePalette.blossomPink),
+              Icon(Icons.pie_chart_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(
-                isTr ? 'Ruh hali dağılımı' : 'Mood distribution',
-                style: AppTheme.displayFont(
-                  fontSize: 16,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
+              Text(isTr ? 'Ruh hali dağılımı' : 'Mood distribution', style: AstraKit.heading2(isDark, fontSize: 16)),
             ],
           ),
           const SizedBox(height: 12),
@@ -313,10 +250,7 @@ class _MoodDistributionCard extends StatelessWidget {
               isTr
                   ? 'Ana sayfada ruh halini seçtikçe dağılım burada oluşacak.'
                   : 'Pick your mood on Home to see the distribution here.',
-              style: AppTheme.bodyFont(
-                fontSize: 13,
-                color: SakuraHomePalette.textMuted,
-              ),
+              style: AstraKit.mutedText(isDark, fontSize: 13),
             )
           else ...[
             for (var i = 0; i < 5; i++) ...[
@@ -324,6 +258,7 @@ class _MoodDistributionCard extends StatelessWidget {
                 emoji: _moodEmojis[i],
                 label: labels[i],
                 color: _moodColors[i],
+                isDark: isDark,
                 fraction: total == 0 ? 0 : counts[i] / total,
                 percent: total == 0 ? 0 : (counts[i] / total * 100).round(),
               ),
@@ -336,14 +271,8 @@ class _MoodDistributionCard extends StatelessWidget {
                   Text(_moodEmojis[mostIndex], style: const TextStyle(fontSize: 16)),
                   const SizedBox(width: 8),
                   Text(
-                    isTr
-                        ? 'En sık: ${labels[mostIndex]}'
-                        : 'Most common: ${labels[mostIndex]}',
-                    style: AppTheme.bodyFont(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: SakuraHomePalette.textDeep,
-                    ),
+                    isTr ? 'En sık: ${labels[mostIndex]}' : 'Most common: ${labels[mostIndex]}',
+                    style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
@@ -359,6 +288,7 @@ class _MoodRow extends StatelessWidget {
     required this.emoji,
     required this.label,
     required this.color,
+    required this.isDark,
     required this.fraction,
     required this.percent,
   });
@@ -366,6 +296,7 @@ class _MoodRow extends StatelessWidget {
   final String emoji;
   final String label;
   final Color color;
+  final bool isDark;
   final double fraction;
   final int percent;
 
@@ -377,15 +308,7 @@ class _MoodRow extends StatelessWidget {
         const SizedBox(width: 6),
         SizedBox(
           width: 58,
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTheme.bodyFont(
-              fontSize: 12,
-              color: SakuraHomePalette.textDeep,
-            ),
-          ),
+          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w500)),
         ),
         Expanded(
           child: ClipRRect(
@@ -393,7 +316,7 @@ class _MoodRow extends StatelessWidget {
             child: LinearProgressIndicator(
               value: fraction,
               minHeight: 8,
-              backgroundColor: SakuraHomePalette.lavender,
+              backgroundColor: AstraKit.muted(isDark).withValues(alpha: 0.2),
               valueColor: AlwaysStoppedAnimation(color),
             ),
           ),
@@ -401,15 +324,7 @@ class _MoodRow extends StatelessWidget {
         const SizedBox(width: 8),
         SizedBox(
           width: 34,
-          child: Text(
-            '%$percent',
-            textAlign: TextAlign.right,
-            style: AppTheme.bodyFont(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: SakuraHomePalette.textMuted,
-            ),
-          ),
+          child: Text('%$percent', textAlign: TextAlign.right, style: AstraKit.mutedText(isDark, fontSize: 11.5, fontWeight: FontWeight.w700)),
         ),
       ],
     );
@@ -417,9 +332,11 @@ class _MoodRow extends StatelessWidget {
 }
 
 class _WeekdayCard extends StatelessWidget {
-  const _WeekdayCard({required this.isTr, required this.entryDays});
+  const _WeekdayCard({required this.isTr, required this.isDark, required this.primary, required this.entryDays});
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final Set<DateTime> entryDays;
 
   @override
@@ -434,22 +351,18 @@ class _WeekdayCard extends StatelessWidget {
     }
     final maxCount = counts.fold<int>(0, (m, c) => c > m ? c : m);
 
-    return _Card(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      borderRadius: 22,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.bar_chart_rounded,
-                  size: 18, color: SakuraHomePalette.blossomPink),
+              Icon(Icons.bar_chart_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(
-                isTr ? 'Yazma alışkanlığı' : 'Writing habit',
-                style: AppTheme.displayFont(
-                  fontSize: 16,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
+              Text(isTr ? 'Yazma alışkanlığı' : 'Writing habit', style: AstraKit.heading2(isDark, fontSize: 16)),
             ],
           ),
           const SizedBox(height: 14),
@@ -463,33 +376,15 @@ class _WeekdayCard extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(
-                          '${counts[i]}',
-                          style: AppTheme.bodyFont(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: SakuraHomePalette.textMuted,
-                          ),
-                        ),
+                        Text('${counts[i]}', style: AstraKit.mutedText(isDark, fontSize: 10, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 3),
                         Container(
                           width: 14,
-                          height: maxCount == 0
-                              ? 4
-                              : 6 + (counts[i] / maxCount) * 60,
-                          decoration: BoxDecoration(
-                            color: SakuraHomePalette.blossomPink,
-                            borderRadius: BorderRadius.circular(5),
-                          ),
+                          height: maxCount == 0 ? 4 : 6 + (counts[i] / maxCount) * 60,
+                          decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(5)),
                         ),
                         const SizedBox(height: 5),
-                        Text(
-                          labels[i],
-                          style: AppTheme.bodyFont(
-                            fontSize: 9.5,
-                            color: SakuraHomePalette.textMuted,
-                          ),
-                        ),
+                        Text(labels[i], style: AstraKit.mutedText(isDark, fontSize: 9.5)),
                       ],
                     ),
                   ),
@@ -503,13 +398,10 @@ class _WeekdayCard extends StatelessWidget {
 }
 
 class _MiniStat extends StatelessWidget {
-  const _MiniStat({
-    required this.color,
-    required this.value,
-    required this.label,
-  });
+  const _MiniStat({required this.isDark, required this.primary, required this.value, required this.label});
 
-  final Color color;
+  final bool isDark;
+  final Color primary;
   final String value;
   final String label;
 
@@ -517,20 +409,9 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          value,
-          style: AppTheme.displayFont(fontSize: 22, color: color),
-        ),
+        Text(value, style: AstraKit.heading1(isDark, fontSize: 22, fontWeight: FontWeight.w700).copyWith(color: primary)),
         const SizedBox(height: 2),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppTheme.bodyFont(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: SakuraHomePalette.textMuted,
-          ),
-        ),
+        Text(label, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 11, fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -538,29 +419,27 @@ class _MiniStat extends StatelessWidget {
 
 /// On-device journal analysis: entry/word counts and the most-used words.
 class _JournalAnalysisCard extends StatelessWidget {
-  const _JournalAnalysisCard({required this.isTr, required this.stats});
+  const _JournalAnalysisCard({required this.isTr, required this.isDark, required this.primary, required this.stats});
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final JournalTextStats stats;
 
   @override
   Widget build(BuildContext context) {
-    return _Card(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      borderRadius: 22,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.analytics_rounded,
-                  size: 18, color: SakuraHomePalette.blossomPink),
+              Icon(Icons.analytics_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(
-                isTr ? 'Günlük analizi' : 'Journal analysis',
-                style: AppTheme.displayFont(
-                  fontSize: 16,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
+              Text(isTr ? 'Günlük analizi' : 'Journal analysis', style: AstraKit.heading2(isDark, fontSize: 16)),
             ],
           ),
           const SizedBox(height: 12),
@@ -569,46 +448,21 @@ class _JournalAnalysisCard extends StatelessWidget {
               isTr
                   ? 'Günlük yazdıkça yazı sayın, kelime sayın ve en çok kullandığın kelimeler burada görünecek.'
                   : 'As you journal, your entry count, word count and most-used words will appear here.',
-              style: AppTheme.bodyFont(
-                fontSize: 13,
-                color: SakuraHomePalette.textMuted,
-              ),
+              style: AstraKit.mutedText(isDark, fontSize: 13),
             )
           else ...[
             Row(
               children: [
-                Expanded(
-                  child: _MiniStat(
-                    color: SakuraHomePalette.blossomPink,
-                    value: '${stats.entryCount}',
-                    label: isTr ? 'yazı' : 'entries',
-                  ),
-                ),
-                Expanded(
-                  child: _MiniStat(
-                    color: const Color(0xFF9FD8B0),
-                    value: '${stats.totalWords}',
-                    label: isTr ? 'kelime' : 'words',
-                  ),
-                ),
-                Expanded(
-                  child: _MiniStat(
-                    color: const Color(0xFF8FA9D9),
-                    value: '${stats.avgWords.round()}',
-                    label: isTr ? 'ort. kelime' : 'avg words',
-                  ),
-                ),
+                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: '${stats.entryCount}', label: isTr ? 'yazı' : 'entries')),
+                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: '${stats.totalWords}', label: isTr ? 'kelime' : 'words')),
+                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: '${stats.avgWords.round()}', label: isTr ? 'ort. kelime' : 'avg words')),
               ],
             ),
             if (stats.topWords.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text(
                 isTr ? 'En çok kullandığın kelimeler' : 'Your most-used words',
-                style: AppTheme.bodyFont(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: SakuraHomePalette.textMuted,
-                ),
+                style: AstraKit.mutedText(isDark, fontSize: 12.5, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -617,20 +471,13 @@ class _JournalAnalysisCard extends StatelessWidget {
                 children: [
                   for (final w in stats.topWords)
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: SakuraHomePalette.lavender,
+                        color: primary.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: primary.withValues(alpha: 0.3)),
                       ),
-                      child: Text(
-                        '${w.$1} · ${w.$2}',
-                        style: AppTheme.bodyFont(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: SakuraHomePalette.textDeep,
-                        ),
-                      ),
+                      child: Text('${w.$1} · ${w.$2}', style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w600)),
                     ),
                 ],
               ),
@@ -644,7 +491,10 @@ class _JournalAnalysisCard extends StatelessWidget {
 
 /// Optional AI (Luma) summary of recent journal entries.
 class _AiAnalysisCard extends ConsumerStatefulWidget {
-  const _AiAnalysisCard();
+  const _AiAnalysisCard({required this.isDark, required this.primary});
+
+  final bool isDark;
+  final Color primary;
 
   @override
   ConsumerState<_AiAnalysisCard> createState() => _AiAnalysisCardState();
@@ -706,22 +556,20 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    return _Card(
+    final isDark = widget.isDark;
+    final primary = widget.primary;
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      borderRadius: 22,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome_rounded,
-                  size: 18, color: Color(0xFFC4A5E8)),
+              Icon(Icons.auto_awesome_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(
-                isTr ? 'Luma ile analiz' : 'Analysis with Luma',
-                style: AppTheme.displayFont(
-                  fontSize: 16,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
+              Text(isTr ? 'Luma ile analiz' : 'Analysis with Luma', style: AstraKit.heading2(isDark, fontSize: 16)),
             ],
           ),
           const SizedBox(height: 8),
@@ -729,10 +577,7 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
             isTr
                 ? 'Bu analiz için son günlüklerin Luma\'ya (yapay zeka) gönderilir.'
                 : 'Your recent entries are sent to Luma (AI) for this analysis.',
-            style: AppTheme.bodyFont(
-              fontSize: 11.5,
-              color: SakuraHomePalette.textMuted,
-            ),
+            style: AstraKit.mutedText(isDark, fontSize: 11.5),
           ),
           const SizedBox(height: 12),
           if (_result != null)
@@ -741,16 +586,11 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
               padding: const EdgeInsets.all(14),
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: SakuraHomePalette.lavender,
+                color: primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: primary.withValues(alpha: 0.3)),
               ),
-              child: Text(
-                _result!,
-                style: AppTheme.bodyFont(
-                  fontSize: 14,
-                  color: SakuraHomePalette.textDeep,
-                ).copyWith(height: 1.45),
-              ),
+              child: Text(_result!, style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w500, height: 1.45)),
             ),
           if (_error)
             Padding(
@@ -759,20 +599,18 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
                 isTr
                     ? 'Analiz alınamadı. İnternetini kontrol edip tekrar dene.'
                     : "Couldn't get the analysis. Check your connection and try again.",
-                style: AppTheme.bodyFont(
-                  fontSize: 13,
-                  color: const Color(0xFFD87070),
-                ),
+                style: const TextStyle(fontSize: 13, color: Color(0xFFE07A7A)),
               ),
             ),
-          PremiumButton(
+          AstraGoldButton(
+            isDark: isDark,
             label: _loading
                 ? (isTr ? 'Analiz ediliyor...' : 'Analyzing...')
                 : (isTr ? 'Luma ile analiz et' : 'Analyze with Luma'),
             icon: Icons.auto_awesome,
-            loading: _loading,
-            gradient: const [Color(0xFFC4A5E8), Color(0xFFDCC6F2)],
-            onPressed: _loading ? null : _run,
+            isLoading: _loading,
+            enabled: !_loading,
+            onTap: _run,
           ),
         ],
       ),

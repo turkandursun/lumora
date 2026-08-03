@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../theme/app_background.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/premium_button.dart';
-import '../../../../theme/sakura_home_palette.dart';
+import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../data/gratitude_repository.dart';
 import '../providers/gratitude_providers.dart';
 
@@ -112,6 +110,9 @@ class _GratitudeScreenState extends ConsumerState<GratitudeScreen> {
     final locale = Localizations.localeOf(context).languageCode;
     final entries = ref.watch(gratitudeProvider);
     _prefillFromToday(entries);
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     final streak = gratitudeStreak(entries);
     final memory = _memoryOf(entries);
@@ -121,7 +122,8 @@ class _GratitudeScreenState extends ConsumerState<GratitudeScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -130,56 +132,43 @@ class _GratitudeScreenState extends ConsumerState<GratitudeScreen> {
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: SakuraHomePalette.textDeep),
+                    AstraCircleIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      isDark: isDark,
+                      primaryColor: primary,
+                      onTap: () => Navigator.of(context).maybePop(),
                     ),
-                    Text(
-                      isTr ? 'Şükran Günlüğü' : 'Gratitude',
-                      style: AppTheme.displayFont(
-                        fontSize: 22,
-                        color: SakuraHomePalette.textDeep,
-                      ),
-                    ),
+                    const SizedBox(width: 12),
+                    Text(isTr ? 'Şükran Günlüğü' : 'Gratitude', style: AstraKit.heading1(isDark, fontSize: 22)),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Expanded(
                   child: ListView(
                     children: [
-                      _StreakCard(
-                        isTr: isTr,
-                        streak: streak,
-                        total: entries.length,
-                      ),
+                      _StreakCard(isTr: isTr, isDark: isDark, primary: primary, streak: streak, total: entries.length),
                       const SizedBox(height: 14),
-                      _PromptCard(isTr: isTr, prompt: prompt),
+                      _PromptCard(isTr: isTr, isDark: isDark, primary: primary, prompt: prompt),
                       const SizedBox(height: 14),
                       _InputCard(
                         isTr: isTr,
+                        isDark: isDark,
+                        primary: primary,
                         controllers: _controllers,
                         mood: _mood,
-                        onMoodSelected: (m) => setState(
-                            () => _mood = _mood == m ? null : m),
+                        onMoodSelected: (m) => setState(() => _mood = _mood == m ? null : m),
                         onSave: _save,
                       ),
                       const SizedBox(height: 18),
                       if (memory != null) ...[
-                        _MemoryCard(entry: memory, locale: locale, isTr: isTr),
+                        _MemoryCard(entry: memory, locale: locale, isTr: isTr, isDark: isDark, primary: primary),
                         const SizedBox(height: 18),
                       ],
                       if (entries.isNotEmpty)
-                        Text(
-                          isTr ? 'Geçmiş' : 'History',
-                          style: AppTheme.displayFont(
-                            fontSize: 16,
-                            color: SakuraHomePalette.textDeep,
-                          ),
-                        ),
+                        Text(isTr ? 'Geçmiş' : 'History', style: AstraKit.heading2(isDark, fontSize: 16)),
                       const SizedBox(height: 8),
                       for (final entry in entries)
-                        _HistoryCard(entry: entry, locale: locale),
+                        _HistoryCard(entry: entry, locale: locale, isDark: isDark, primary: primary),
                     ],
                   ),
                 ),
@@ -196,33 +185,25 @@ class _GratitudeScreenState extends ConsumerState<GratitudeScreen> {
 class _StreakCard extends StatelessWidget {
   const _StreakCard({
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.streak,
     required this.total,
   });
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final int streak;
   final int total;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: SakuraHomePalette.ctaGradient,
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: SakuraHomePalette.blossomPink.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+      borderRadius: 20,
       child: Row(
         children: [
           Container(
@@ -231,41 +212,24 @@ class _StreakCard extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.28),
+              color: primary.withValues(alpha: 0.18),
+              border: Border.all(color: primary.withValues(alpha: 0.4)),
             ),
-            child: const Icon(Icons.local_fire_department_rounded,
-                color: Colors.white, size: 24),
+            child: Icon(Icons.local_fire_department_rounded, color: primary, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
               streak > 0
-                  ? (isTr
-                      ? '$streak gündür şükran yazıyorsun 🌸'
-                      : "$streak-day gratitude streak 🌸")
-                  : (isTr
-                      ? 'Bugün ilk şükranını yaz'
-                      : 'Write your first gratitude today'),
-              style: AppTheme.bodyFont(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+                  ? (isTr ? '$streak gündür şükran yazıyorsun 🌸' : "$streak-day gratitude streak 🌸")
+                  : (isTr ? 'Bugün ilk şükranını yaz' : 'Write your first gratitude today'),
+              style: AstraKit.body(isDark, fontSize: 14.5, fontWeight: FontWeight.w700),
             ),
           ),
           Column(
             children: [
-              Text(
-                '$total',
-                style:
-                    AppTheme.displayFont(fontSize: 20, color: Colors.white),
-              ),
-              Text(
-                isTr ? 'gün' : 'days',
-                style: AppTheme.bodyFont(
-                    fontSize: 10.5,
-                    color: Colors.white.withValues(alpha: 0.9)),
-              ),
+              Text('$total', style: AstraKit.heading1(isDark, fontSize: 20)),
+              Text(isTr ? 'gün' : 'days', style: AstraKit.mutedText(isDark, fontSize: 10.5)),
             ],
           ),
         ],
@@ -276,49 +240,32 @@ class _StreakCard extends StatelessWidget {
 
 /// The rotating daily prompt.
 class _PromptCard extends StatelessWidget {
-  const _PromptCard({required this.isTr, required this.prompt});
+  const _PromptCard({required this.isTr, required this.isDark, required this.primary, required this.prompt});
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final String prompt;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.lavender,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-            color: SakuraHomePalette.blossomPink.withValues(alpha: 0.25)),
-      ),
+      borderRadius: 18,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.auto_awesome_rounded,
-              size: 18, color: SakuraHomePalette.blossomPink),
+          Icon(Icons.auto_awesome_rounded, size: 18, color: primary),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  isTr ? 'Bugünün ilhamı' : "Today's prompt",
-                  style: AppTheme.bodyFont(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: SakuraHomePalette.blossomPink,
-                  ),
-                ),
+                Text(isTr ? 'Bugünün ilhamı' : "Today's prompt", style: AstraKit.label(isDark, fontSize: 11.5)),
                 const SizedBox(height: 3),
-                Text(
-                  prompt,
-                  style: AppTheme.bodyFont(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: SakuraHomePalette.textDeep,
-                  ),
-                ),
+                Text(prompt, style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
@@ -331,6 +278,8 @@ class _PromptCard extends StatelessWidget {
 class _InputCard extends StatelessWidget {
   const _InputCard({
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.controllers,
     required this.mood,
     required this.onMoodSelected,
@@ -338,6 +287,8 @@ class _InputCard extends StatelessWidget {
   });
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final List<TextEditingController> controllers;
   final String? mood;
   final ValueChanged<String> onMoodSelected;
@@ -345,67 +296,48 @@ class _InputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.12),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+      borderRadius: 22,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isTr
-                ? 'Bugün minnettar olduğun şeyler'
-                : "Things you're grateful for today",
-            style: AppTheme.displayFont(
-              fontSize: 16,
-              color: SakuraHomePalette.textDeep,
-            ),
+            isTr ? 'Bugün minnettar olduğun şeyler' : "Things you're grateful for today",
+            style: AstraKit.heading2(isDark, fontSize: 16),
           ),
           const SizedBox(height: 14),
           for (var i = 0; i < controllers.length; i++) ...[
             TextField(
               controller: controllers[i],
-              style: AppTheme.bodyFont(
-                fontSize: 14,
-                color: SakuraHomePalette.textDeep,
-              ),
-              cursorColor: SakuraHomePalette.blossomPink,
+              style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w500),
+              cursorColor: primary,
               decoration: InputDecoration(
                 hintText: isTr ? '${i + 1}. ...' : '${i + 1}. ...',
-                hintStyle: AppTheme.bodyFont(
-                  fontSize: 14,
-                  color: SakuraHomePalette.textMuted,
-                ),
+                hintStyle: AstraKit.mutedText(isDark, fontSize: 14),
                 filled: true,
-                fillColor: SakuraHomePalette.lavender,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                fillColor: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: primary.withValues(alpha: 0.35)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: primary.withValues(alpha: 0.35)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: primary, width: 1.5),
                 ),
               ),
             ),
             if (i < controllers.length - 1) const SizedBox(height: 10),
           ],
           const SizedBox(height: 16),
-          Text(
-            isTr ? 'Bugün nasıl hissettin?' : 'How did you feel?',
-            style: AppTheme.bodyFont(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: SakuraHomePalette.textDeep,
-            ),
-          ),
+          Text(isTr ? 'Bugün nasıl hissettin?' : 'How did you feel?', style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -420,15 +352,8 @@ class _InputCard extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: mood == m
-                          ? SakuraHomePalette.blossomPink.withValues(alpha: 0.22)
-                          : SakuraHomePalette.lavender,
-                      border: Border.all(
-                        color: mood == m
-                            ? SakuraHomePalette.blossomPink
-                            : Colors.transparent,
-                        width: 2,
-                      ),
+                      color: mood == m ? primary.withValues(alpha: 0.22) : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
+                      border: Border.all(color: mood == m ? primary : Colors.transparent, width: 2),
                     ),
                     child: Text(m, style: const TextStyle(fontSize: 20)),
                   ),
@@ -436,11 +361,7 @@ class _InputCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          PremiumButton(
-            label: isTr ? 'Kaydet' : 'Save',
-            icon: Icons.favorite_rounded,
-            onPressed: onSave,
-          ),
+          AstraGoldButton(isDark: isDark, label: isTr ? 'Kaydet' : 'Save', icon: Icons.favorite_rounded, onTap: onSave),
         ],
       ),
     );
@@ -453,59 +374,37 @@ class _MemoryCard extends StatelessWidget {
     required this.entry,
     required this.locale,
     required this.isTr,
+    required this.isDark,
+    required this.primary,
   });
 
   final GratitudeEntry entry;
   final String locale;
   final bool isTr;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            SakuraHomePalette.blush,
-            SakuraHomePalette.lavender,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.22)),
-      ),
+      borderRadius: 18,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.history_rounded,
-                  size: 18, color: SakuraHomePalette.branchMauve),
+              Icon(Icons.history_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(
-                isTr ? 'Geçmişten bir an' : 'A moment from the past',
-                style: AppTheme.bodyFont(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
+              Text(isTr ? 'Geçmişten bir an' : 'A moment from the past', style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700)),
               const Spacer(),
-              if (entry.mood != null)
-                Text(entry.mood!, style: const TextStyle(fontSize: 18)),
+              if (entry.mood != null) Text(entry.mood!, style: const TextStyle(fontSize: 18)),
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            DateFormat('d MMMM yyyy', locale).format(entry.date),
-            style: AppTheme.bodyFont(
-              fontSize: 11.5,
-              color: SakuraHomePalette.textMuted,
-            ),
-          ),
+          Text(DateFormat('d MMMM yyyy', locale).format(entry.date), style: AstraKit.mutedText(isDark, fontSize: 11.5)),
           const SizedBox(height: 8),
           for (final item in entry.items)
             Padding(
@@ -514,15 +413,7 @@ class _MemoryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('🌸  ', style: TextStyle(fontSize: 12)),
-                  Expanded(
-                    child: Text(
-                      item,
-                      style: AppTheme.bodyFont(
-                        fontSize: 13.5,
-                        color: SakuraHomePalette.textDeep,
-                      ),
-                    ),
-                  ),
+                  Expanded(child: Text(item, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500))),
                 ],
               ),
             ),
@@ -533,67 +424,49 @@ class _MemoryCard extends StatelessWidget {
 }
 
 class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({required this.entry, required this.locale});
+  const _HistoryCard({required this.entry, required this.locale, required this.isDark, required this.primary});
 
   final GratitudeEntry entry;
   final String locale;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                DateFormat('d MMMM yyyy', locale).format(entry.date),
-                style: AppTheme.bodyFont(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: SakuraHomePalette.blossomPink,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: AstraGlassCard(
+        isDark: isDark,
+        primaryColor: primary,
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        borderRadius: 18,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  DateFormat('d MMMM yyyy', locale).format(entry.date),
+                  style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w700, color: primary),
+                ),
+                const Spacer(),
+                if (entry.mood != null) Text(entry.mood!, style: const TextStyle(fontSize: 16)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            for (final item in entry.items)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('🌸  ', style: TextStyle(fontSize: 12)),
+                    Expanded(child: Text(item, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500))),
+                  ],
                 ),
               ),
-              const Spacer(),
-              if (entry.mood != null)
-                Text(entry.mood!, style: const TextStyle(fontSize: 16)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          for (final item in entry.items)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('🌸  ', style: TextStyle(fontSize: 12)),
-                  Expanded(
-                    child: Text(
-                      item,
-                      style: AppTheme.bodyFont(
-                        fontSize: 13.5,
-                        color: SakuraHomePalette.textDeep,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

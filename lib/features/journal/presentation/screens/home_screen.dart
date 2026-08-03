@@ -2,29 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
-import '../../../../theme/sakura_home_palette.dart';
 import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 import '../providers/journal_entries_provider.dart';
 import '../providers/journal_streak_provider.dart';
 import '../widgets/dream_journal_banner.dart';
 import '../widgets/home_feature_grid.dart';
 import '../widgets/home_header.dart';
-import '../../../../theme/astra_home_background.dart';
 import '../widgets/home_stats_row.dart';
 import '../widgets/motivation_quote_carousel.dart';
 
-/// Home — a light, pastel "spring morning" screen: a personalized greeting
-/// + mock weather, a rotating motivational quote, a compact stats row
-/// (streak / mood / goal / self-care), a 3-column feature shortcut grid,
-/// and a Dream Journal banner. Journal writing itself lives on its own
-/// dedicated, individually PIN-gateable screen (see [JournalEntryScreen]),
-/// reached via the feature grid's "Journal Writing" card.
-///
-/// Deliberately does not use [MoodGradientBackground]/[LumaCompanion] the
-/// way every other screen does — Home gets its own [HomeMoodBackground]:
-/// a mood-matched photo backdrop instead of the app's usual night-sky world.
+/// Home — a personalized greeting + mock weather, a rotating motivational
+/// quote, a compact stats row (streak / mood / goal / self-care), a
+/// 2-column feature shortcut grid, and a Dream Journal banner, all over the
+/// same ASTRA moon/sun scene every other screen uses. Journal writing
+/// itself lives on its own dedicated, individually PIN-gateable screen (see
+/// [JournalEntryScreen]), reached via the feature grid's "Journal Writing"
+/// card.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -56,10 +53,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final firstName = _userFirstName;
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
 
     return Scaffold(
-      backgroundColor: SakuraHomePalette.cream,
-      body: AstraHomeBackground(
+      backgroundColor: Colors.transparent,
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),

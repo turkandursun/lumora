@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/lumora_palette.dart';
-import '../../../../theme/dream_pastel_background.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../data/dream_reflection_options.dart';
 import '../providers/dreams_providers.dart';
+
+/// Dreams stay night-themed regardless of the app's light/dark choice — see
+/// [DreamJournalScreen]'s `_isDark` for the same reasoning.
+const _isDark = true;
 
 /// Localized chip labels for the reflection flow's quick-select questions,
 /// keyed by [DreamFeelingKeys] / [DreamFamiliarPersonKeys]. Shared with
@@ -105,10 +108,12 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
     final l10n = AppLocalizations.of(context);
     final isLastPage = _page.round() == _pageCount - 1;
     final pages = _buildPages(l10n);
+    final primary = AstraKit.primary(_isDark);
 
     return Scaffold(
-      backgroundColor: LumoraPalette.nightBackground,
-      body: DreamPastelBackground(
+      backgroundColor: Colors.transparent,
+      body: AstraMountainBackground(
+        isDark: _isDark,
         child: SafeArea(
           child: ResponsiveContent(
             child: Column(
@@ -121,7 +126,7 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
                     itemBuilder: (context, index) => _buildAnimatedPage(index, pages[index]),
                   ),
                 ),
-                _buildDots(),
+                _buildDots(primary),
                 const SizedBox(height: 28),
                 _buildActionButton(l10n, isLastPage),
                 const SizedBox(height: 24),
@@ -198,11 +203,7 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
             onPressed: _isSaving ? null : _finish,
             child: Text(
               l10n.dreamReflectionSkipButton,
-              style: LumoraPalette.bodyStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
+              style: AstraKit.mutedText(_isDark, fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -210,7 +211,7 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
     );
   }
 
-  Widget _buildDots() {
+  Widget _buildDots(Color primary) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(_pageCount, (index) {
@@ -224,7 +225,7 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
           height: 8,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
-            color: isActive ? LumoraPalette.softPink : Colors.white.withValues(alpha: 0.22),
+            color: isActive ? primary : AstraKit.muted(_isDark).withValues(alpha: 0.3),
           ),
         );
       }),
@@ -234,53 +235,13 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
   Widget _buildActionButton(AppLocalizations l10n, bool isLastPage) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 28),
-      child: Container(
+      child: AstraGoldButton(
+        isDark: _isDark,
         height: 56,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: const LinearGradient(
-            colors: LumoraPalette.ctaGradient,
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: LumoraPalette.primaryPurple.withValues(alpha: 0.45),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(28),
-            onTap: _isSaving ? null : _onNextPressed,
-            child: Center(
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.4,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: Text(
-                        isLastPage ? l10n.dreamReflectionFinishButton : l10n.dreamReflectionNextButton,
-                        key: ValueKey(isLastPage),
-                        style: LumoraPalette.bodyStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-            ),
-          ),
-        ),
+        isLoading: _isSaving,
+        enabled: !_isSaving,
+        label: isLastPage ? l10n.dreamReflectionFinishButton : l10n.dreamReflectionNextButton,
+        onTap: _onNextPressed,
       ),
     );
   }
@@ -302,11 +263,7 @@ class _ReflectionQuestionPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            question,
-            textAlign: TextAlign.center,
-            style: LumoraPalette.storyTitleStyle(fontSize: 22),
-          ),
+          Text(question, textAlign: TextAlign.center, style: AstraKit.heading1(_isDark, fontSize: 22)),
           const SizedBox(height: 28),
           child,
         ],
@@ -357,6 +314,7 @@ class _ChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = AstraKit.primary(_isDark);
     return Semantics(
       selected: isSelected,
       button: true,
@@ -371,21 +329,12 @@ class _ChoiceChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              color: isSelected
-                  ? LumoraPalette.primaryPurple.withValues(alpha: 0.9)
-                  : Colors.white.withValues(alpha: 0.06),
-              border: Border.all(
-                color: isSelected ? LumoraPalette.lightPurple : Colors.white.withValues(alpha: 0.16),
-                width: 1.1,
-              ),
+              color: isSelected ? primary.withValues(alpha: 0.85) : const Color(0x33231845),
+              border: Border.all(color: isSelected ? primary : primary.withValues(alpha: 0.25), width: 1.1),
             ),
             child: Text(
               label,
-              style: LumoraPalette.bodyStyle(
-                fontSize: 13.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: Colors.white,
-              ),
+              style: AstraKit.body(_isDark, fontSize: 13.5, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
             ),
           ),
         ),
@@ -402,31 +351,25 @@ class _ReflectionTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final primary = AstraKit.primary(_isDark);
+    return AstraGlassCard(
+      isDark: _isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-      ),
+      borderRadius: 18,
       child: TextField(
         controller: controller,
         maxLines: 3,
         minLines: 3,
-        style: LumoraPalette.bodyStyle(color: Colors.white),
-        cursorColor: LumoraPalette.lightPurple,
+        style: AstraKit.body(_isDark),
+        cursorColor: primary,
         textAlign: TextAlign.center,
         decoration: InputDecoration(
           border: InputBorder.none,
-          // Keep transparent so the wrapping dark card shows through
-          // instead of the light theme's default softLavender fill.
           filled: false,
           contentPadding: const EdgeInsets.all(14),
           hintText: hint,
-          hintStyle: LumoraPalette.bodyStyle(
-            fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.4),
-          ),
+          hintStyle: AstraKit.mutedText(_isDark, fontSize: 13),
         ),
       ),
     );

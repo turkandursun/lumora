@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../theme/app_background.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/premium_button.dart';
-import '../../../../theme/sakura_home_palette.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../providers/hobbies_providers.dart';
 
 /// (id, Turkish label, English label, icon)
@@ -106,118 +104,111 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final selected = ref.watch(hobbiesProvider);
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  if (widget.onboarding)
-                    const SizedBox(width: 8)
-                  else
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: SakuraHomePalette.textDeep),
-                    ),
-                  Text(
-                    widget.onboarding
-                        ? (isTr ? 'Hobilerini seç' : 'Pick your hobbies')
-                        : (isTr ? 'Hobilerim' : 'My hobbies'),
-                    style: AppTheme.displayFont(
-                      fontSize: 22,
-                      color: SakuraHomePalette.textDeep,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: ListView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
+                    if (widget.onboarding)
+                      const SizedBox(width: 8)
+                    else
+                      AstraCircleIconButton(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        isDark: isDark,
+                        primaryColor: primary,
+                        onTap: () => Navigator.of(context).maybePop(),
+                      ),
+                    const SizedBox(width: 12),
                     Text(
-                      isTr
-                          ? 'Sevdiğin hobileri seç; listede yoksa elle ekle.'
-                          : 'Pick the hobbies you love; add your own if it isn\'t listed.',
-                      style: AppTheme.bodyFont(
-                        fontSize: 13.5,
-                        color: SakuraHomePalette.textMuted,
-                      ),
+                      widget.onboarding
+                          ? (isTr ? 'Hobilerini seç' : 'Pick your hobbies')
+                          : (isTr ? 'Hobilerim' : 'My hobbies'),
+                      style: AstraKit.heading1(isDark, fontSize: 22),
                     ),
-                    const SizedBox(height: 16),
-                    if (selected.isNotEmpty) ...[
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView(
+                    children: [
                       Text(
-                        isTr ? 'Seçtiklerin' : 'Your picks',
-                        style: AppTheme.displayFont(
-                          fontSize: 15,
-                          color: SakuraHomePalette.textDeep,
-                        ),
+                        isTr
+                            ? 'Sevdiğin hobileri seç; listede yoksa elle ekle.'
+                            : 'Pick the hobbies you love; add your own if it isn\'t listed.',
+                        style: AstraKit.mutedText(isDark, fontSize: 13.5),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 16),
+                      if (selected.isNotEmpty) ...[
+                        Text(isTr ? 'Seçtiklerin' : 'Your picks', style: AstraKit.heading2(isDark, fontSize: 15)),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final id in selected)
+                              _SelectedChip(
+                                label: _labelFor(id, isTr),
+                                isDark: isDark,
+                                primary: primary,
+                                onRemove: () => ref.read(hobbiesProvider.notifier).remove(id),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+                      _CustomAddRow(
+                        isTr: isTr,
+                        isDark: isDark,
+                        primary: primary,
+                        controller: _customController,
+                        onAdd: _addCustom,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(isTr ? 'Hobiler' : 'Hobbies', style: AstraKit.heading2(isDark, fontSize: 15)),
+                      const SizedBox(height: 12),
                       Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                        spacing: 10,
+                        runSpacing: 10,
                         children: [
-                          for (final id in selected)
-                            _SelectedChip(
-                              label: _labelFor(id, isTr),
-                              onRemove: () =>
-                                  ref.read(hobbiesProvider.notifier).remove(id),
+                          for (final p in _presets)
+                            _HobbyChip(
+                              icon: p.$4,
+                              label: isTr ? p.$2 : p.$3,
+                              selected: selected.contains(p.$1),
+                              isDark: isDark,
+                              primary: primary,
+                              onTap: () => ref.read(hobbiesProvider.notifier).toggle(p.$1),
                             ),
                         ],
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 16),
+                      if (widget.onboarding)
+                        AstraGoldButton(
+                          isDark: isDark,
+                          label: isTr ? 'Devam et' : 'Continue',
+                          icon: Icons.arrow_forward_rounded,
+                          onTap: _finishOnboarding,
+                        ),
+                      const SizedBox(height: 8),
                     ],
-                    _CustomAddRow(
-                      isTr: isTr,
-                      controller: _customController,
-                      onAdd: _addCustom,
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      isTr ? 'Hobiler' : 'Hobbies',
-                      style: AppTheme.displayFont(
-                        fontSize: 15,
-                        color: SakuraHomePalette.textDeep,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        for (final p in _presets)
-                          _HobbyChip(
-                            icon: p.$4,
-                            label: isTr ? p.$2 : p.$3,
-                            selected: selected.contains(p.$1),
-                            onTap: () =>
-                                ref.read(hobbiesProvider.notifier).toggle(p.$1),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (widget.onboarding)
-                      PremiumButton(
-                        label: isTr ? 'Devam et' : 'Continue',
-                        icon: Icons.arrow_forward_rounded,
-                        onPressed: _finishOnboarding,
-                      ),
-                    const SizedBox(height: 8),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-        ),
     );
   }
 
@@ -230,11 +221,15 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
 class _CustomAddRow extends StatelessWidget {
   const _CustomAddRow({
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.controller,
     required this.onAdd,
   });
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final TextEditingController controller;
   final VoidCallback onAdd;
 
@@ -247,30 +242,31 @@ class _CustomAddRow extends StatelessWidget {
             controller: controller,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => onAdd(),
-            style: AppTheme.bodyFont(fontSize: 14, color: SakuraHomePalette.textDeep),
-            cursorColor: SakuraHomePalette.blossomPink,
+            style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w500),
+            cursorColor: primary,
             decoration: InputDecoration(
               hintText: isTr ? 'Başka bir hobi ekle...' : 'Add another hobby...',
-              hintStyle: AppTheme.bodyFont(
-                fontSize: 14,
-                color: SakuraHomePalette.textMuted,
-              ),
+              hintStyle: AstraKit.mutedText(isDark, fontSize: 14),
               filled: true,
-              fillColor: SakuraHomePalette.cardWhite,
+              fillColor: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
+                borderSide: BorderSide(color: primary.withValues(alpha: 0.35)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: primary.withValues(alpha: 0.35)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: primary, width: 1.5),
               ),
             ),
           ),
         ),
         const SizedBox(width: 10),
-        PremiumButton(
-          label: isTr ? 'Ekle' : 'Add',
-          expand: false,
-          onPressed: onAdd,
-        ),
+        AstraGoldButton(isDark: isDark, label: isTr ? 'Ekle' : 'Add', expand: false, onTap: onAdd),
       ],
     );
   }
@@ -281,12 +277,16 @@ class _HobbyChip extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.selected,
+    required this.isDark,
+    required this.primary,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
@@ -300,30 +300,18 @@ class _HobbyChip extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? SakuraHomePalette.blossomPink : SakuraHomePalette.cardWhite,
+            color: selected ? primary.withValues(alpha: 0.85) : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected
-                  ? SakuraHomePalette.blossomPink
-                  : SakuraHomePalette.branchMauve.withValues(alpha: 0.2),
-            ),
+            border: Border.all(color: selected ? primary : primary.withValues(alpha: 0.25)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 18,
-                color: selected ? Colors.white : SakuraHomePalette.blossomPink,
-              ),
+              Icon(icon, size: 18, color: selected ? Colors.white : primary),
               const SizedBox(width: 8),
               Text(
                 label,
-                style: AppTheme.bodyFont(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: selected ? Colors.white : SakuraHomePalette.textDeep,
-                ),
+                style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w600, color: selected ? Colors.white : null),
               ),
             ],
           ),
@@ -334,9 +322,11 @@ class _HobbyChip extends StatelessWidget {
 }
 
 class _SelectedChip extends StatelessWidget {
-  const _SelectedChip({required this.label, required this.onRemove});
+  const _SelectedChip({required this.label, required this.isDark, required this.primary, required this.onRemove});
 
   final String label;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onRemove;
 
   @override
@@ -344,30 +334,19 @@ class _SelectedChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
       decoration: BoxDecoration(
-        color: SakuraHomePalette.blossomPink.withValues(alpha: 0.15),
+        color: primary.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: SakuraHomePalette.blossomPink.withValues(alpha: 0.5)),
+        border: Border.all(color: primary.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: AppTheme.bodyFont(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: SakuraHomePalette.textDeep,
-            ),
-          ),
+          Text(label, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700)),
           const SizedBox(width: 4),
           InkResponse(
             onTap: onRemove,
             radius: 16,
-            child: Icon(
-              Icons.close_rounded,
-              size: 16,
-              color: SakuraHomePalette.textMuted,
-            ),
+            child: Icon(Icons.close_rounded, size: 16, color: AstraKit.muted(isDark)),
           ),
         ],
       ),

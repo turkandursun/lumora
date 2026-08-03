@@ -353,28 +353,36 @@ InputDecoration pastelFieldDecoration({
 /// A small, always-visible "crisis support" link — a quiet, persistent way
 /// to reach help, separate from the self-dismissing disclaimer banner.
 class PastelCrisisLink extends StatelessWidget {
-  const PastelCrisisLink({super.key, required this.label, required this.onTap});
+  const PastelCrisisLink({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.accentColor = PastelAuthPalette.accent,
+    this.textStyle,
+  });
 
   final String label;
   final VoidCallback onTap;
 
+  /// Override for callers using a different auth palette (e.g. the gold
+  /// ASTRA theme) than this file's default pastel purple.
+  final Color accentColor;
+  final TextStyle Function({double fontSize, FontWeight fontWeight, Color color})? textStyle;
+
   @override
   Widget build(BuildContext context) {
+    final style = textStyle ?? PastelAuthPalette.body;
     return Center(
       child: TextButton.icon(
         onPressed: onTap,
         style: TextButton.styleFrom(
-          foregroundColor: PastelAuthPalette.accent,
+          foregroundColor: accentColor,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         ),
-        icon: const Icon(Icons.favorite_border_rounded, size: 16),
+        icon: Icon(Icons.favorite_border_rounded, size: 16, color: accentColor),
         label: Text(
           label,
-          style: PastelAuthPalette.body(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: PastelAuthPalette.accent,
-          ),
+          style: style(fontSize: 13, fontWeight: FontWeight.w600, color: accentColor),
         ),
       ),
     );
@@ -391,6 +399,11 @@ class AuthDisclaimerBanner extends StatefulWidget {
     this.highlight,
     this.icon = Icons.favorite,
     this.onTap,
+    this.accentColor = PastelAuthPalette.accent,
+    this.textColor = PastelAuthPalette.plumDeep,
+    this.fillColor = PastelAuthPalette.cardFill,
+    this.borderColor = PastelAuthPalette.cardBorder,
+    this.textStyle,
   });
 
   /// The full disclaimer text.
@@ -405,6 +418,14 @@ class AuthDisclaimerBanner extends StatefulWidget {
   /// If provided, the banner becomes tappable (e.g. to open the crisis
   /// support sheet) and shows a subtle chevron affordance.
   final VoidCallback? onTap;
+
+  /// Overrides for callers using a different auth palette (e.g. the gold
+  /// ASTRA theme) than this file's default pastel purple.
+  final Color accentColor;
+  final Color textColor;
+  final Color fillColor;
+  final Color borderColor;
+  final TextStyle Function({double fontSize, Color color})? textStyle;
 
   @override
   State<AuthDisclaimerBanner> createState() => _AuthDisclaimerBannerState();
@@ -459,7 +480,7 @@ class _AuthDisclaimerBannerState extends State<AuthDisclaimerBanner>
       TextSpan(
         text: highlight,
         style: TextStyle(
-          color: PastelAuthPalette.accent,
+          color: widget.accentColor,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -470,6 +491,10 @@ class _AuthDisclaimerBannerState extends State<AuthDisclaimerBanner>
   @override
   Widget build(BuildContext context) {
     if (!_visible) return const SizedBox.shrink();
+
+    final bodyStyle = widget.textStyle ??
+        ({double fontSize = 12.5, Color color = PastelAuthPalette.plumDeep}) =>
+            PastelAuthPalette.body(fontSize: fontSize, color: color);
 
     final card = ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -483,22 +508,19 @@ class _AuthDisclaimerBannerState extends State<AuthDisclaimerBanner>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: PastelAuthPalette.cardFill,
+                color: widget.fillColor,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: PastelAuthPalette.cardBorder, width: 1),
+                border: Border.all(color: widget.borderColor, width: 1),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(widget.icon, size: 17, color: PastelAuthPalette.accent),
+                  Icon(widget.icon, size: 17, color: widget.accentColor),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text.rich(
                       TextSpan(
-                        style: PastelAuthPalette.body(
-                          fontSize: 12.5,
-                          color: PastelAuthPalette.plumDeep,
-                        ),
+                        style: bodyStyle(fontSize: 12.5, color: widget.textColor),
                         children: _spans(),
                       ),
                     ),
@@ -508,7 +530,7 @@ class _AuthDisclaimerBannerState extends State<AuthDisclaimerBanner>
                     Icon(
                       Icons.chevron_right_rounded,
                       size: 18,
-                      color: PastelAuthPalette.accent.withValues(alpha: 0.7),
+                      color: widget.accentColor.withValues(alpha: 0.7),
                     ),
                   ],
                 ],

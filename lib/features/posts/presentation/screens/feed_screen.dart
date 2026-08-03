@@ -6,11 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_background.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/premium_button.dart';
-import '../../../../theme/sakura_home_palette.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../data/posts_repository.dart';
 import '../providers/posts_providers.dart';
 
@@ -106,10 +104,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final locale = Localizations.localeOf(context).languageCode;
     final feed = ref.watch(postsFeedProvider);
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -118,24 +120,23 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: SakuraHomePalette.textDeep),
+                    AstraCircleIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      isDark: isDark,
+                      primaryColor: primary,
+                      onTap: () => Navigator.of(context).maybePop(),
                     ),
-                    Text(
-                      isTr ? 'Paylaşımlar' : 'Feed',
-                      style: AppTheme.displayFont(
-                          fontSize: 22, color: SakuraHomePalette.textDeep),
-                    ),
+                    const SizedBox(width: 12),
+                    Text(isTr ? 'Paylaşımlar' : 'Feed', style: AstraKit.heading1(isDark, fontSize: 22)),
                     const Spacer(),
-                    IconButton(
-                      onPressed: () {
+                    AstraCircleIconButton(
+                      icon: Icons.refresh_rounded,
+                      isDark: isDark,
+                      primaryColor: primary,
+                      onTap: () {
                         ref.invalidate(postsFeedProvider);
                         ref.invalidate(postLikesProvider);
                       },
-                      icon: const Icon(Icons.refresh_rounded,
-                          color: SakuraHomePalette.textMuted),
                     ),
                   ],
                 ),
@@ -145,6 +146,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                     children: [
                       _ComposeCard(
                         isTr: isTr,
+                        isDark: isDark,
+                        primary: primary,
                         controller: _captionController,
                         images: _images,
                         isPublic: _isPublic,
@@ -158,22 +161,19 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       const SizedBox(height: 16),
                       feed.when(
                         data: (posts) => posts.isEmpty
-                            ? _hint(isTr
-                                ? 'Henüz paylaşım yok. İlk sen paylaş!'
-                                : 'No posts yet. Be the first!')
+                            ? _hint(isTr ? 'Henüz paylaşım yok. İlk sen paylaş!' : 'No posts yet. Be the first!', isDark)
                             : Column(
                                 children: [
                                   for (final post in posts)
-                                    _PostCard(post: post, locale: locale),
+                                    _PostCard(post: post, locale: locale, isDark: isDark, primary: primary),
                                 ],
                               ),
-                        loading: () => const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 30),
-                          child: Center(child: CircularProgressIndicator()),
+                        loading: () => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 30),
+                          child: Center(child: CircularProgressIndicator(color: primary)),
                         ),
-                        error: (_, __) => _hint(isTr
-                            ? 'Akış yüklenemedi. (Sunucu kurulumu gerekebilir.)'
-                            : "Couldn't load the feed."),
+                        error: (_, __) => _hint(
+                            isTr ? 'Akış yüklenemedi. (Sunucu kurulumu gerekebilir.)' : "Couldn't load the feed.", isDark),
                       ),
                     ],
                   ),
@@ -186,13 +186,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     );
   }
 
-  Widget _hint(String text) => Padding(
+  Widget _hint(String text, bool isDark) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Center(
-          child: Text(text,
-              textAlign: TextAlign.center,
-              style: AppTheme.bodyFont(
-                  fontSize: 13, color: SakuraHomePalette.textMuted)),
+          child: Text(text, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 13)),
         ),
       );
 }
@@ -200,6 +197,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 class _ComposeCard extends StatelessWidget {
   const _ComposeCard({
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.controller,
     required this.images,
     required this.isPublic,
@@ -212,6 +211,8 @@ class _ComposeCard extends StatelessWidget {
   });
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final TextEditingController controller;
   final List<XFile> images;
   final bool isPublic;
@@ -224,19 +225,11 @@ class _ComposeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+      borderRadius: 20,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -249,25 +242,22 @@ class _ComposeCard extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (context, i) {
                   if (i == images.length) {
-                    return _AddThumb(onTap: onPickPhotos);
+                    return _AddThumb(onTap: onPickPhotos, isDark: isDark, primary: primary);
                   }
                   return Stack(
                     alignment: Alignment.topRight,
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.file(File(images[i].path),
-                            width: 84, height: 84, fit: BoxFit.cover),
+                        child: Image.file(File(images[i].path), width: 84, height: 84, fit: BoxFit.cover),
                       ),
                       GestureDetector(
                         onTap: () => onRemovePhoto(i),
                         child: Container(
                           margin: const EdgeInsets.all(4),
                           padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(
-                              shape: BoxShape.circle, color: Colors.black54),
-                          child: const Icon(Icons.close_rounded,
-                              size: 14, color: Colors.white),
+                          decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black54),
+                          child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
                         ),
                       ),
                     ],
@@ -282,34 +272,28 @@ class _ComposeCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: SakuraHomePalette.blossomPink,
-                      side: const BorderSide(color: SakuraHomePalette.blossomPink),
+                      foregroundColor: primary,
+                      side: BorderSide(color: primary),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     onPressed: onPickPhotos,
                     icon: const Icon(Icons.photo_library_rounded, size: 18),
                     label: Text(isTr ? 'Galeri' : 'Gallery',
-                        style: AppTheme.bodyFont(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: SakuraHomePalette.blossomPink)),
+                        style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w700, color: primary)),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: SakuraHomePalette.blossomPink,
-                      side: const BorderSide(color: SakuraHomePalette.blossomPink),
+                      foregroundColor: primary,
+                      side: BorderSide(color: primary),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     onPressed: onTakePhoto,
                     icon: const Icon(Icons.photo_camera_rounded, size: 18),
                     label: Text(isTr ? 'Kamera' : 'Camera',
-                        style: AppTheme.bodyFont(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: SakuraHomePalette.blossomPink)),
+                        style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w700, color: primary)),
                   ),
                 ),
               ],
@@ -318,34 +302,38 @@ class _ComposeCard extends StatelessWidget {
           TextField(
             controller: controller,
             maxLines: 2,
-            style:
-                AppTheme.bodyFont(fontSize: 14, color: SakuraHomePalette.textDeep),
-            cursorColor: SakuraHomePalette.blossomPink,
+            style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w500),
+            cursorColor: primary,
             decoration: InputDecoration(
               hintText: isTr ? 'Bir şeyler yaz...' : 'Write a caption...',
-              hintStyle:
-                  AppTheme.bodyFont(fontSize: 14, color: SakuraHomePalette.textMuted),
+              hintStyle: AstraKit.mutedText(isDark, fontSize: 14),
               filled: true,
-              fillColor: SakuraHomePalette.lavender,
+              fillColor: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
               contentPadding: const EdgeInsets.all(14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
+                borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: primary, width: 1.5),
               ),
             ),
           ),
           const SizedBox(height: 12),
-          _VisibilityToggle(
-            isTr: isTr,
-            isPublic: isPublic,
-            onChanged: onVisibilityChanged,
-          ),
+          _VisibilityToggle(isTr: isTr, isDark: isDark, primary: primary, isPublic: isPublic, onChanged: onVisibilityChanged),
           const SizedBox(height: 12),
-          PremiumButton(
+          AstraGoldButton(
+            isDark: isDark,
             label: isTr ? 'Paylaş' : 'Share',
             icon: Icons.send_rounded,
-            loading: posting,
-            onPressed: (images.isEmpty || posting) ? null : onShare,
+            isLoading: posting,
+            enabled: images.isNotEmpty && !posting,
+            onTap: onShare,
           ),
         ],
       ),
@@ -354,8 +342,10 @@ class _ComposeCard extends StatelessWidget {
 }
 
 class _AddThumb extends StatelessWidget {
-  const _AddThumb({required this.onTap});
+  const _AddThumb({required this.onTap, required this.isDark, required this.primary});
   final VoidCallback onTap;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
@@ -365,13 +355,11 @@ class _AddThumb extends StatelessWidget {
         width: 84,
         height: 84,
         decoration: BoxDecoration(
-          color: SakuraHomePalette.lavender,
+          color: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: SakuraHomePalette.blossomPink.withValues(alpha: 0.5)),
+          border: Border.all(color: primary.withValues(alpha: 0.5)),
         ),
-        child: const Icon(Icons.add_rounded,
-            color: SakuraHomePalette.blossomPink, size: 26),
+        child: Icon(Icons.add_rounded, color: primary, size: 26),
       ),
     );
   }
@@ -381,11 +369,15 @@ class _AddThumb extends StatelessWidget {
 class _VisibilityToggle extends StatelessWidget {
   const _VisibilityToggle({
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.isPublic,
     required this.onChanged,
   });
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final bool isPublic;
   final ValueChanged<bool> onChanged;
 
@@ -394,8 +386,9 @@ class _VisibilityToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: SakuraHomePalette.lavender,
+        color: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primary.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
@@ -428,29 +421,20 @@ class _VisibilityToggle extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? SakuraHomePalette.cardWhite : Colors.transparent,
+            color: selected ? primary.withValues(alpha: 0.22) : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon,
-                  size: 15,
-                  color: selected
-                      ? SakuraHomePalette.blossomPink
-                      : SakuraHomePalette.textMuted),
+              Icon(icon, size: 15, color: selected ? primary : AstraKit.muted(isDark)),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   label,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTheme.bodyFont(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: selected
-                        ? SakuraHomePalette.textDeep
-                        : SakuraHomePalette.textMuted,
-                  ),
+                  style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w700,
+                      color: selected ? null : AstraKit.muted(isDark)),
                 ),
               ),
             ],
@@ -462,10 +446,12 @@ class _VisibilityToggle extends StatelessWidget {
 }
 
 class _PostCard extends ConsumerStatefulWidget {
-  const _PostCard({required this.post, required this.locale});
+  const _PostCard({required this.post, required this.locale, required this.isDark, required this.primary});
 
   final Post post;
   final String locale;
+  final bool isDark;
+  final Color primary;
 
   @override
   ConsumerState<_PostCard> createState() => _PostCardState();
@@ -521,6 +507,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final isDark = widget.isDark;
+    final primary = widget.primary;
     final post = widget.post;
     final photos = post.photos;
     final likes = ref.watch(postLikesProvider);
@@ -528,126 +516,100 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final likeCount = likes.valueOrNull?.countFor(post.id) ?? 0;
     final comments = ref.watch(commentsProvider(post.id)).valueOrNull ?? const [];
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-            child: Row(
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(colors: [
-                      SakuraHomePalette.blossomPink,
-                      SakuraHomePalette.petalPink,
-                    ]),
-                  ),
-                  child: Text(
-                    post.displayName.isEmpty
-                        ? '?'
-                        : post.displayName.characters.first.toUpperCase(),
-                    style:
-                        AppTheme.displayFont(fontSize: 15, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(post.displayName,
-                      style: AppTheme.bodyFont(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: SakuraHomePalette.textDeep)),
-                ),
-                Text(DateFormat('d MMM', widget.locale).format(post.createdAt),
-                    style: AppTheme.bodyFont(
-                        fontSize: 11, color: SakuraHomePalette.textMuted)),
-              ],
-            ),
-          ),
-          // Caption
-          if (post.caption.isNotEmpty)
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: AstraGlassCard(
+        isDark: isDark,
+        primaryColor: primary,
+        padding: EdgeInsets.zero,
+        borderRadius: 18,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-              child: Text(post.caption,
-                  style: AppTheme.bodyFont(
-                      fontSize: 13.5, color: SakuraHomePalette.textDeep)),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(colors: [primary, primary.withValues(alpha: 0.6)]),
+                    ),
+                    child: Text(
+                      post.displayName.isEmpty ? '?' : post.displayName.characters.first.toUpperCase(),
+                      style: AstraKit.heading2(isDark, fontSize: 15).copyWith(color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(post.displayName, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w700)),
+                  ),
+                  Text(DateFormat('d MMM', widget.locale).format(post.createdAt), style: AstraKit.mutedText(isDark, fontSize: 11)),
+                ],
+              ),
             ),
-          // Photos
-          if (photos.isNotEmpty)
+            // Caption
+            if (post.caption.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                child: Text(post.caption, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500)),
+              ),
+            // Photos
+            if (photos.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: _PhotoGrid(urls: photos, isDark: isDark),
+              ),
+            // Visibility label
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: _PhotoGrid(urls: photos),
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+              child: Row(
+                children: [
+                  Icon(post.isPublic ? Icons.public_rounded : Icons.lock_outline_rounded, size: 14, color: AstraKit.muted(isDark)),
+                  const SizedBox(width: 5),
+                  Text(
+                    post.isPublic ? (isTr ? 'Herkese görünür' : 'Visible to everyone') : (isTr ? 'Sadece sen' : 'Only you'),
+                    style: AstraKit.mutedText(isDark, fontSize: 11),
+                  ),
+                ],
+              ),
             ),
-          // Visibility label
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
-            child: Row(
-              children: [
-                Icon(post.isPublic ? Icons.public_rounded : Icons.lock_outline_rounded,
-                    size: 14, color: SakuraHomePalette.textMuted),
-                const SizedBox(width: 5),
-                Text(
-                  post.isPublic
-                      ? (isTr ? 'Herkese görünür' : 'Visible to everyone')
-                      : (isTr ? 'Sadece sen' : 'Only you'),
-                  style: AppTheme.bodyFont(
-                      fontSize: 11, color: SakuraHomePalette.textMuted),
-                ),
-              ],
+            // Action row: like + comment
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 2),
+              child: Row(
+                children: [
+                  _ActionButton(
+                    icon: liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: liked ? primary : AstraKit.muted(isDark),
+                    label: '$likeCount',
+                    isDark: isDark,
+                    onTap: () => _toggleLike(liked),
+                  ),
+                  _ActionButton(
+                    icon: Icons.mode_comment_outlined,
+                    color: AstraKit.muted(isDark),
+                    label: '${comments.length}',
+                    isDark: isDark,
+                    onTap: () => setState(() => _expanded = true),
+                  ),
+                ],
+              ),
             ),
-          ),
-          // Action row: like + comment
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 6, 8, 2),
-            child: Row(
-              children: [
-                _ActionButton(
-                  icon: liked
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
-                  color: liked
-                      ? SakuraHomePalette.blossomPink
-                      : SakuraHomePalette.textMuted,
-                  label: '$likeCount',
-                  onTap: () => _toggleLike(liked),
-                ),
-                _ActionButton(
-                  icon: Icons.mode_comment_outlined,
-                  color: SakuraHomePalette.textMuted,
-                  label: '${comments.length}',
-                  onTap: () => setState(() => _expanded = true),
-                ),
-              ],
-            ),
-          ),
-          // Comments preview / full list
-          _buildComments(isTr, comments),
-          const SizedBox(height: 6),
-        ],
+            // Comments preview / full list
+            _buildComments(isTr, comments, isDark, primary),
+            const SizedBox(height: 6),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildComments(bool isTr, List<PostComment> comments) {
+  Widget _buildComments(bool isTr, List<PostComment> comments, bool isDark, Color primary) {
     final showList =
         _expanded ? comments : comments.take(2).toList(growable: false);
     return Padding(
@@ -660,13 +622,9 @@ class _PostCardState extends ConsumerState<_PostCard> {
               padding: const EdgeInsets.only(bottom: 5),
               child: RichText(
                 text: TextSpan(
-                  style: AppTheme.bodyFont(
-                      fontSize: 12.5, color: SakuraHomePalette.textDeep),
+                  style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w500),
                   children: [
-                    TextSpan(
-                      text: '${c.displayName}  ',
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
+                    TextSpan(text: '${c.displayName}  ', style: const TextStyle(fontWeight: FontWeight.w800)),
                     TextSpan(text: c.text),
                   ],
                 ),
@@ -678,13 +636,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 2, bottom: 4),
                 child: Text(
-                  isTr
-                      ? '${comments.length} yorumun tümünü görüntüle'
-                      : 'View all ${comments.length} comments',
-                  style: AppTheme.bodyFont(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: SakuraHomePalette.textMuted),
+                  isTr ? '${comments.length} yorumun tümünü görüntüle' : 'View all ${comments.length} comments',
+                  style: AstraKit.mutedText(isDark, fontSize: 12.5, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -696,21 +649,26 @@ class _PostCardState extends ConsumerState<_PostCard> {
                   controller: _commentController,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => _sendComment(),
-                  style: AppTheme.bodyFont(
-                      fontSize: 13, color: SakuraHomePalette.textDeep),
-                  cursorColor: SakuraHomePalette.blossomPink,
+                  style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w500),
+                  cursorColor: primary,
                   decoration: InputDecoration(
                     isDense: true,
                     hintText: isTr ? 'Yorum ekle...' : 'Add a comment...',
-                    hintStyle: AppTheme.bodyFont(
-                        fontSize: 13, color: SakuraHomePalette.textMuted),
+                    hintStyle: AstraKit.mutedText(isDark, fontSize: 13),
                     filled: true,
-                    fillColor: SakuraHomePalette.lavender,
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    fillColor: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(999),
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(999),
+                      borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(999),
+                      borderSide: BorderSide(color: primary, width: 1.4),
                     ),
                   ),
                 ),
@@ -718,13 +676,12 @@ class _PostCardState extends ConsumerState<_PostCard> {
               IconButton(
                 onPressed: _sending ? null : _sendComment,
                 icon: _sending
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: primary),
                       )
-                    : const Icon(Icons.send_rounded,
-                        color: SakuraHomePalette.blossomPink, size: 20),
+                    : Icon(Icons.send_rounded, color: primary, size: 20),
               ),
             ],
           ),
@@ -739,12 +696,14 @@ class _ActionButton extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.label,
+    required this.isDark,
     required this.onTap,
   });
 
   final IconData icon;
   final Color color;
   final String label;
+  final bool isDark;
   final VoidCallback onTap;
 
   @override
@@ -761,11 +720,7 @@ class _ActionButton extends StatelessWidget {
             children: [
               Icon(icon, size: 20, color: color),
               const SizedBox(width: 6),
-              Text(label,
-                  style: AppTheme.bodyFont(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: SakuraHomePalette.textDeep)),
+              Text(label, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700)),
             ],
           ),
         ),
@@ -777,9 +732,10 @@ class _ActionButton extends StatelessWidget {
 /// Shows 1..N post photos: a single full-width image for one photo, or a
 /// 3-column square grid for several. Tapping opens a full-screen viewer.
 class _PhotoGrid extends StatelessWidget {
-  const _PhotoGrid({required this.urls});
+  const _PhotoGrid({required this.urls, required this.isDark});
 
   final List<String> urls;
+  final bool isDark;
 
   void _open(BuildContext context, int index) {
     Navigator.of(context).push(
@@ -797,10 +753,9 @@ class _PhotoGrid extends StatelessWidget {
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => Container(
           height: height ?? 120,
-          color: SakuraHomePalette.lavender,
+          color: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
           alignment: Alignment.center,
-          child: const Icon(Icons.broken_image_rounded,
-              color: SakuraHomePalette.textMuted),
+          child: Icon(Icons.broken_image_rounded, color: AstraKit.muted(isDark)),
         ),
       );
 

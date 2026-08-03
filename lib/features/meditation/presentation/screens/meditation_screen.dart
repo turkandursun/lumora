@@ -2,13 +2,11 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/premium_button.dart';
-import '../../../../theme/lumora_palette.dart';
-import '../../../../theme/app_background.dart';
-import '../../../../theme/sakura_home_palette.dart';
+import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../theme/astra_screen_kit.dart';
 
 const _rainAsset = 'audio/rain_loop.mp3';
 
@@ -31,14 +29,14 @@ const _guideEn = [
 
 enum _Stage { setup, running, done }
 
-class MeditationScreen extends StatefulWidget {
+class MeditationScreen extends ConsumerStatefulWidget {
   const MeditationScreen({super.key});
 
   @override
-  State<MeditationScreen> createState() => _MeditationScreenState();
+  ConsumerState<MeditationScreen> createState() => _MeditationScreenState();
 }
 
-class _MeditationScreenState extends State<MeditationScreen>
+class _MeditationScreenState extends ConsumerState<MeditationScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse = AnimationController(
     vsync: this,
@@ -204,10 +202,14 @@ class _MeditationScreenState extends State<MeditationScreen>
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -215,10 +217,11 @@ class _MeditationScreenState extends State<MeditationScreen>
               children: [
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.arrow_back_rounded,
-                        color: SakuraHomePalette.textDeep),
+                  child: AstraCircleIconButton(
+                    icon: Icons.arrow_back_ios_new_rounded,
+                    isDark: isDark,
+                    primaryColor: primary,
+                    onTap: () => Navigator.of(context).maybePop(),
                   ),
                 ),
                 Expanded(
@@ -228,6 +231,8 @@ class _MeditationScreenState extends State<MeditationScreen>
                       _Stage.setup => _SetupView(
                           key: const ValueKey('setup'),
                           isTr: isTr,
+                          isDark: isDark,
+                          primary: primary,
                           minutes: _minutes,
                           soundOn: _soundOn,
                           voiceOn: _voiceOn,
@@ -239,6 +244,8 @@ class _MeditationScreenState extends State<MeditationScreen>
                       _Stage.running => _RunningView(
                           key: const ValueKey('running'),
                           isTr: isTr,
+                          isDark: isDark,
+                          primary: primary,
                           pulse: _pulse,
                           remaining: _remaining,
                           guideText: _guides[_guideIndex],
@@ -247,6 +254,8 @@ class _MeditationScreenState extends State<MeditationScreen>
                       _Stage.done => _DoneView(
                           key: const ValueKey('done'),
                           isTr: isTr,
+                          isDark: isDark,
+                          primary: primary,
                           onDone: () => setState(() => _stage = _Stage.setup),
                         ),
                     },
@@ -261,13 +270,12 @@ class _MeditationScreenState extends State<MeditationScreen>
   }
 }
 
-// On the light background the guidance text needs no shadow.
-TextStyle _shadowed(TextStyle style) => style;
-
 class _SetupView extends StatelessWidget {
   const _SetupView({
     super.key,
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.minutes,
     required this.soundOn,
     required this.voiceOn,
@@ -278,6 +286,8 @@ class _SetupView extends StatelessWidget {
   });
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final int minutes;
   final bool soundOn;
   final bool voiceOn;
@@ -293,17 +303,9 @@ class _SetupView extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 20),
-          Text(
-            isTr ? 'Meditasyon' : 'Meditation',
-            style: _shadowed(AppTheme.displayFont(
-                fontSize: 26, color: SakuraHomePalette.textDeep)),
-          ),
+          Text(isTr ? 'Meditasyon' : 'Meditation', style: AstraKit.heading1(isDark, fontSize: 26)),
           const SizedBox(height: 8),
-          Text(
-            isTr ? 'Ne kadar süre?' : 'How long?',
-            style: _shadowed(AppTheme.bodyFont(
-                fontSize: 15, color: SakuraHomePalette.textMuted)),
-          ),
+          Text(isTr ? 'Ne kadar süre?' : 'How long?', style: AstraKit.mutedText(isDark, fontSize: 15)),
           const SizedBox(height: 20),
           Wrap(
             spacing: 12,
@@ -313,6 +315,8 @@ class _SetupView extends StatelessWidget {
                 _MinutePill(
                   label: isTr ? '$m dk' : '$m min',
                   selected: m == minutes,
+                  isDark: isDark,
+                  primary: primary,
                   onTap: () => onMinutes(m),
                 ),
             ],
@@ -322,6 +326,8 @@ class _SetupView extends StatelessWidget {
             icon: soundOn ? Icons.water_drop_rounded : Icons.water_drop_outlined,
             label: isTr ? 'Yağmur sesi' : 'Rain sound',
             value: soundOn,
+            isDark: isDark,
+            primary: primary,
             onChanged: onToggleSound,
           ),
           const SizedBox(height: 12),
@@ -329,10 +335,12 @@ class _SetupView extends StatelessWidget {
             icon: voiceOn ? Icons.record_voice_over_rounded : Icons.voice_over_off_rounded,
             label: isTr ? 'Sesli rehber' : 'Voice guide',
             value: voiceOn,
+            isDark: isDark,
+            primary: primary,
             onChanged: onToggleVoice,
           ),
           const SizedBox(height: 30),
-          _StartButton(label: isTr ? 'Başla' : 'Begin', onTap: onStart),
+          AstraGoldButton(isDark: isDark, label: isTr ? 'Başla' : 'Begin', icon: Icons.play_arrow_rounded, expand: false, onTap: onStart),
           const SizedBox(height: 20),
         ],
       ),
@@ -341,10 +349,12 @@ class _SetupView extends StatelessWidget {
 }
 
 class _MinutePill extends StatelessWidget {
-  const _MinutePill({required this.label, required this.selected, required this.onTap});
+  const _MinutePill({required this.label, required this.selected, required this.isDark, required this.primary, required this.onTap});
 
   final String label;
   final bool selected;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
@@ -358,23 +368,12 @@ class _MinutePill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: selected
-                ? LumoraPalette.primaryPurple.withValues(alpha: 0.92)
-                : SakuraHomePalette.lavender,
-            border: Border.all(
-              color: selected
-                  ? LumoraPalette.lightPurple
-                  : SakuraHomePalette.branchMauve.withValues(alpha: 0.25),
-              width: 1.2,
-            ),
+            color: selected ? primary.withValues(alpha: 0.85) : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
+            border: Border.all(color: selected ? primary : primary.withValues(alpha: 0.25), width: 1.2),
           ),
           child: Text(
             label,
-            style: AppTheme.bodyFont(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: selected ? Colors.white : SakuraHomePalette.textDeep,
-            ),
+            style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700, color: selected ? const Color(0xFF1A0F00) : null),
           ),
         ),
       ),
@@ -387,12 +386,16 @@ class _ToggleRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.isDark,
+    required this.primary,
     required this.onChanged,
   });
 
   final IconData icon;
   final String label;
   final bool value;
+  final bool isDark;
+  final Color primary;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -402,29 +405,15 @@ class _ToggleRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 2, 10, 2),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: SakuraHomePalette.lavender,
-        border: Border.all(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.25)),
+        color: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
+        border: Border.all(color: primary.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: SakuraHomePalette.blossomPink, size: 18),
+          Icon(icon, color: primary, size: 18),
           const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: AppTheme.bodyFont(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: SakuraHomePalette.textDeep,
-              ),
-            ),
-          ),
-          Switch(
-            value: value,
-            activeColor: LumoraPalette.lightPurple,
-            onChanged: onChanged,
-          ),
+          Expanded(child: Text(label, style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w600))),
+          Switch(value: value, activeThumbColor: primary, onChanged: onChanged),
         ],
       ),
     );
@@ -435,6 +424,8 @@ class _RunningView extends StatelessWidget {
   const _RunningView({
     super.key,
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.pulse,
     required this.remaining,
     required this.guideText,
@@ -442,6 +433,8 @@ class _RunningView extends StatelessWidget {
   });
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final Animation<double> pulse;
   final int remaining;
   final String guideText;
@@ -464,8 +457,7 @@ class _RunningView extends StatelessWidget {
             guideText,
             key: ValueKey(guideText),
             textAlign: TextAlign.center,
-            style: _shadowed(AppTheme.bodyFont(
-                fontSize: 16, color: SakuraHomePalette.textDeep)),
+            style: AstraKit.body(isDark, fontSize: 16, fontWeight: FontWeight.w500),
           ),
         ),
         const SizedBox(height: 36),
@@ -481,15 +473,15 @@ class _RunningView extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.92),
-                    LumoraPalette.accentPink.withValues(alpha: 0.45),
-                    LumoraPalette.primaryPurple.withValues(alpha: 0.0),
+                    (isDark ? Colors.white : primary).withValues(alpha: 0.92),
+                    primary.withValues(alpha: 0.45),
+                    primary.withValues(alpha: 0.0),
                   ],
                   stops: const [0.0, 0.55, 1.0],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: LumoraPalette.lightPurple.withValues(alpha: 0.4 + 0.3 * t),
+                    color: primary.withValues(alpha: 0.4 + 0.3 * t),
                     blurRadius: 40 + t * 24,
                     spreadRadius: 6 + t * 6,
                   ),
@@ -499,24 +491,12 @@ class _RunningView extends StatelessWidget {
           },
         ),
         const SizedBox(height: 36),
-        Text(
-          _time,
-          style: _shadowed(AppTheme.displayFont(
-              fontSize: 34, color: SakuraHomePalette.textDeep)),
-        ),
+        Text(_time, style: AstraKit.heading1(isDark, fontSize: 34)),
         const SizedBox(height: 30),
         TextButton.icon(
           onPressed: onStop,
-          icon: const Icon(Icons.stop_rounded,
-              color: SakuraHomePalette.textMuted),
-          label: Text(
-            isTr ? 'Bitir' : 'End',
-            style: AppTheme.bodyFont(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: SakuraHomePalette.textMuted,
-            ),
-          ),
+          icon: Icon(Icons.stop_rounded, color: AstraKit.muted(isDark)),
+          label: Text(isTr ? 'Bitir' : 'End', style: AstraKit.mutedText(isDark, fontSize: 14, fontWeight: FontWeight.w700)),
         ),
       ],
     );
@@ -524,9 +504,11 @@ class _RunningView extends StatelessWidget {
 }
 
 class _DoneView extends StatelessWidget {
-  const _DoneView({super.key, required this.isTr, required this.onDone});
+  const _DoneView({super.key, required this.isTr, required this.isDark, required this.primary, required this.onDone});
 
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onDone;
 
   @override
@@ -534,43 +516,18 @@ class _DoneView extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.self_improvement_rounded,
-            color: SakuraHomePalette.blossomPink, size: 60),
+        Icon(Icons.self_improvement_rounded, color: primary, size: 60),
         const SizedBox(height: 18),
-        Text(
-          isTr ? 'Tamamlandı 🌸' : 'Complete 🌸',
-          style: _shadowed(AppTheme.displayFont(
-              fontSize: 24, color: SakuraHomePalette.textDeep)),
-        ),
+        Text(isTr ? 'Tamamlandı 🌸' : 'Complete 🌸', style: AstraKit.heading1(isDark, fontSize: 24)),
         const SizedBox(height: 10),
         Text(
-          isTr
-              ? 'Kendine bu anı ayırdığın için teşekkürler.'
-              : 'Thank you for giving yourself this moment.',
+          isTr ? 'Kendine bu anı ayırdığın için teşekkürler.' : 'Thank you for giving yourself this moment.',
           textAlign: TextAlign.center,
-          style: _shadowed(AppTheme.bodyFont(
-              fontSize: 14.5, color: SakuraHomePalette.textMuted)),
+          style: AstraKit.mutedText(isDark, fontSize: 14.5),
         ),
         const SizedBox(height: 30),
-        _StartButton(label: isTr ? 'Bitir' : 'Done', onTap: onDone),
+        AstraGoldButton(isDark: isDark, label: isTr ? 'Bitir' : 'Done', icon: Icons.play_arrow_rounded, expand: false, onTap: onDone),
       ],
-    );
-  }
-}
-
-class _StartButton extends StatelessWidget {
-  const _StartButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return PremiumButton(
-      label: label,
-      icon: Icons.play_arrow_rounded,
-      expand: false,
-      onPressed: onTap,
     );
   }
 }

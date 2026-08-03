@@ -1,44 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
-import 'theme_choice_screen.dart';
 
 /// The branded ASTRA entry screen: the chosen full-screen scene (sunset or
 /// moon, both with the ASTRA wordmark baked in) that the user taps to head
-/// into the login form.
-class AstraLandingScreen extends StatefulWidget {
+/// into the login form. Shares its background image and a Hero tag with
+/// [LoginScreen]/[SignupScreen] so tapping through reads as one continuous
+/// page rather than a jump between two screens.
+class AstraLandingScreen extends ConsumerWidget {
   const AstraLandingScreen({super.key});
 
   @override
-  State<AstraLandingScreen> createState() => _AstraLandingScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final asset = isDark ? 'assets/images/astra_dark.png' : 'assets/images/astra_sun_entry_g3.png';
 
-class _AstraLandingScreenState extends State<AstraLandingScreen> {
-  String _asset = 'assets/images/astra_dark.png';
-
-  @override
-  void initState() {
-    super.initState();
-    astraBackgroundAsset().then((a) {
-      if (mounted) setState(() => _asset = a);
-    });
-  }
-
-  Future<void> _toggleTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    final next = prefs.getString(astraThemeKey) == 'light' ? 'dark' : 'light';
-    await prefs.setString(astraThemeKey, next);
-    if (!mounted) return;
-    setState(() => _asset = next == 'light'
-        ? 'assets/images/astra_sun_entry_g3.png'
-        : 'assets/images/astra_dark.png');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = _asset.contains('dark');
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
@@ -46,7 +26,10 @@ class _AstraLandingScreenState extends State<AstraLandingScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(_asset, fit: BoxFit.cover),
+            Hero(
+              tag: 'astra_bg',
+              child: Image.asset(asset, fit: BoxFit.cover),
+            ),
             // Small theme toggle so the user can flip sunset/moon here too.
             Positioned(
               top: MediaQuery.paddingOf(context).top + 8,
@@ -55,7 +38,9 @@ class _AstraLandingScreenState extends State<AstraLandingScreen> {
                 color: Colors.black.withValues(alpha: 0.28),
                 shape: const CircleBorder(),
                 child: IconButton(
-                  onPressed: _toggleTheme,
+                  onPressed: () => ref
+                      .read(astraThemeProvider.notifier)
+                      .setTheme(isDark ? AstraThemeMode.light : AstraThemeMode.dark),
                   icon: Icon(
                     isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
                     color: Colors.white,

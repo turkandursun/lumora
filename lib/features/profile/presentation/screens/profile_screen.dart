@@ -4,12 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_background.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/sakura_home_palette.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../dreams/presentation/providers/dreams_providers.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
@@ -40,52 +39,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return '';
   }
 
-  Future<void> _editName(bool isTr) async {
+  Future<void> _editName(bool isTr, bool isDark, Color primary) async {
     final controller = TextEditingController(text: _displayName());
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: SakuraHomePalette.cardWhite,
+        backgroundColor: isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: Text(
-          isTr ? 'Takma adın' : 'Your name',
-          style: AppTheme.displayFont(
-              fontSize: 18, color: SakuraHomePalette.textDeep),
-        ),
+        title: Text(isTr ? 'Takma adın' : 'Your name', style: AstraKit.heading2(isDark, fontSize: 18)),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 24,
-          style: AppTheme.bodyFont(
-              fontSize: 15, color: SakuraHomePalette.textDeep),
-          cursorColor: SakuraHomePalette.blossomPink,
+          style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w500),
+          cursorColor: primary,
           decoration: InputDecoration(
             hintText: isTr ? 'İsmini yaz' : 'Type your name',
-            hintStyle: AppTheme.bodyFont(color: SakuraHomePalette.textMuted),
+            hintStyle: AstraKit.mutedText(isDark),
             filled: true,
-            fillColor: SakuraHomePalette.lavender,
+            fillColor: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
+              borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              isTr ? 'Vazgeç' : 'Cancel',
-              style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted),
-            ),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(isDark)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: Text(
-              isTr ? 'Kaydet' : 'Save',
-              style: AppTheme.bodyFont(
-                  color: SakuraHomePalette.blossomPink,
-                  fontWeight: FontWeight.w700),
-            ),
+            child: Text(isTr ? 'Kaydet' : 'Save', style: AstraKit.body(isDark, color: primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -118,36 +104,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Future<void> _restoreNow(bool isTr) async {
+  Future<void> _restoreNow(bool isTr, bool isDark, Color primary) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: SakuraHomePalette.cardWhite,
+        backgroundColor: isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: Text(
-          isTr ? 'Buluttan geri yükle' : 'Restore from cloud',
-          style: AppTheme.displayFont(
-              fontSize: 18, color: SakuraHomePalette.textDeep),
-        ),
+        title: Text(isTr ? 'Buluttan geri yükle' : 'Restore from cloud', style: AstraKit.heading2(isDark, fontSize: 18)),
         content: Text(
           isTr
               ? 'Bu cihazdaki veriler, buluttaki son yedekle değiştirilecek. Devam edilsin mi?'
               : 'Data on this device will be replaced with your latest cloud backup. Continue?',
-          style: AppTheme.bodyFont(
-              fontSize: 14, color: SakuraHomePalette.textMuted),
+          style: AstraKit.mutedText(isDark, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(isTr ? 'Vazgeç' : 'Cancel',
-                style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted)),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(isDark)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(isTr ? 'Geri yükle' : 'Restore',
-                style: AppTheme.bodyFont(
-                    color: SakuraHomePalette.blossomPink,
-                    fontWeight: FontWeight.w700)),
+            child: Text(isTr ? 'Geri yükle' : 'Restore', style: AstraKit.body(isDark, color: primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -190,6 +167,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final l10n = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final hobbies = ref.watch(hobbiesProvider).toList();
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     final visitDays = ref.watch(visitDaysCountProvider).valueOrNull ?? 0;
     final journaledDays =
@@ -210,23 +190,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.profileTitle,
-                  style: AppTheme.displayFont(
-                      fontSize: 24, color: SakuraHomePalette.textDeep),
-                ),
+                Text(l10n.profileTitle, style: AstraKit.heading1(isDark, fontSize: 24)),
                 const SizedBox(height: 18),
                 _ProfileHeaderCard(
                   name: name.isEmpty ? (isTr ? 'Sen' : 'You') : name,
                   subtitle: _memberSince(isTr),
-                  onEdit: () => _editName(isTr),
+                  isDark: isDark,
+                  primary: primary,
+                  onEdit: () => _editName(isTr, isDark, primary),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -236,6 +215,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         icon: Icons.local_fire_department_rounded,
                         value: '$visitDays',
                         label: isTr ? 'Gün serisi' : 'Day streak',
+                        isDark: isDark,
+                        primary: primary,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -244,6 +225,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         icon: Icons.menu_book_rounded,
                         value: '$journaledDays',
                         label: isTr ? 'Günlük' : 'Entries',
+                        isDark: isDark,
+                        primary: primary,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -252,6 +235,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         icon: Icons.wb_sunny_rounded,
                         value: '$moodCount',
                         label: isTr ? 'Ruh hali' : 'Moods',
+                        isDark: isDark,
+                        primary: primary,
                       ),
                     ),
                   ],
@@ -260,63 +245,77 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 _AchievementPreviewCard(
                   reward: reward,
                   isTr: isTr,
+                  isDark: isDark,
+                  primary: primary,
                   onTap: () => context.push(AppRoutes.rewards),
                 ),
                 const SizedBox(height: 16),
                 _HobbiesCard(
                   hobbies: hobbies,
                   isTr: isTr,
+                  isDark: isDark,
+                  primary: primary,
                   onEdit: () => context.push(AppRoutes.hobbies),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   isTr ? 'Ayarlar' : 'Settings',
-                  style: AppTheme.bodyFont(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: SakuraHomePalette.textDeep,
-                  ),
+                  style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
                   icon: Icons.notifications_outlined,
                   label: l10n.profileMenuReminders,
+                  isDark: isDark,
+                  primary: primary,
                   onTap: () => context.push(AppRoutes.reminders),
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
                   icon: Icons.track_changes_outlined,
                   label: l10n.profileMenuGoals,
+                  isDark: isDark,
+                  primary: primary,
                   onTap: () => context.push(AppRoutes.goals),
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
                   icon: Icons.bar_chart_rounded,
                   label: isTr ? 'İstatistikler' : 'Statistics',
+                  isDark: isDark,
+                  primary: primary,
                   onTap: () => context.push(AppRoutes.stats),
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
                   icon: Icons.lock_outline_rounded,
                   label: l10n.profileMenuAppLock,
+                  isDark: isDark,
+                  primary: primary,
                   onTap: () => context.push(AppRoutes.appLock),
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
                   icon: Icons.cloud_upload_rounded,
                   label: isTr ? 'Verilerimi yedekle' : 'Back up my data',
+                  isDark: isDark,
+                  primary: primary,
                   onTap: () => _backupNow(isTr),
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
                   icon: Icons.cloud_download_rounded,
                   label: isTr ? 'Buluttan geri yükle' : 'Restore from cloud',
-                  onTap: () => _restoreNow(isTr),
+                  isDark: isDark,
+                  primary: primary,
+                  onTap: () => _restoreNow(isTr, isDark, primary),
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
                   icon: Icons.logout_rounded,
                   label: l10n.profileMenuLogout,
+                  isDark: isDark,
+                  primary: primary,
                   onTap: () async {
                     await Supabase.instance.client.auth.signOut();
                     if (context.mounted) context.go(AppRoutes.login);
@@ -336,73 +335,53 @@ class _ProfileHeaderCard extends StatelessWidget {
   const _ProfileHeaderCard({
     required this.name,
     required this.subtitle,
+    required this.isDark,
+    required this.primary,
     required this.onEdit,
   });
 
   final String name;
   final String subtitle;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
     final letter = name.isEmpty ? '?' : name.characters.first.toUpperCase();
-    return Container(
-      width: double.infinity,
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.fromLTRB(18, 18, 12, 18),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.22)),
-      ),
+      borderRadius: 22,
       child: Row(
         children: [
           Container(
             width: 58,
             height: 58,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: SakuraHomePalette.ctaGradient,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              gradient: LinearGradient(colors: [primary, primary.withValues(alpha: 0.6)], begin: Alignment.topLeft, end: Alignment.bottomRight),
             ),
-            child: Text(
-              letter,
-              style: AppTheme.displayFont(fontSize: 26, color: Colors.white),
-            ),
+            child: Text(letter, style: AstraKit.heading1(isDark, fontSize: 26).copyWith(color: Colors.white)),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.displayFont(
-                      fontSize: 19, color: SakuraHomePalette.textDeep),
-                ),
+                Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AstraKit.heading2(isDark, fontSize: 19)),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    style: AppTheme.bodyFont(
-                      fontSize: 12.5,
-                      color: SakuraHomePalette.textMuted,
-                    ),
-                  ),
+                  Text(subtitle, style: AstraKit.mutedText(isDark, fontSize: 12.5)),
                 ],
               ],
             ),
           ),
           IconButton(
             onPressed: onEdit,
-            icon: const Icon(Icons.edit_rounded,
-                size: 20, color: SakuraHomePalette.branchMauve),
+            icon: Icon(Icons.edit_rounded, size: 20, color: primary),
           ),
         ],
       ),
@@ -412,40 +391,28 @@ class _ProfileHeaderCard extends StatelessWidget {
 
 /// A small stat tile: an icon, a big number and a caption.
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.icon, required this.value, required this.label});
+  const _StatCard({required this.icon, required this.value, required this.label, required this.isDark, required this.primary});
 
   final IconData icon;
   final String value;
   final String label;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.2)),
-      ),
+      borderRadius: 18,
       child: Column(
         children: [
-          Icon(icon, size: 22, color: SakuraHomePalette.blossomPink),
+          Icon(icon, size: 22, color: primary),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTheme.displayFont(
-                fontSize: 20, color: SakuraHomePalette.textDeep),
-          ),
+          Text(value, style: AstraKit.heading1(isDark, fontSize: 20)),
           const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: AppTheme.bodyFont(
-              fontSize: 11.5,
-              color: SakuraHomePalette.textMuted,
-            ),
-          ),
+          Text(label, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 11.5)),
         ],
       ),
     );
@@ -458,118 +425,93 @@ class _AchievementPreviewCard extends StatelessWidget {
   const _AchievementPreviewCard({
     required this.reward,
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.onTap,
   });
 
   final RewardProgress reward;
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     // Star grows a little with each level (clamped so it always fits).
     final starSize = (26 + reward.level * 2.5).clamp(26.0, 46.0).toDouble();
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: SakuraHomePalette.cardWhite,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-                color: SakuraHomePalette.branchMauve.withValues(alpha: 0.22)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 54,
-                    height: 54,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:
-                          SakuraHomePalette.blossomPink.withValues(alpha: 0.14),
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      padding: EdgeInsets.zero,
+      borderRadius: 22,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: primary.withValues(alpha: 0.16)),
+                      child: Icon(Icons.star_rounded, size: starSize, color: primary),
                     ),
-                    child: Icon(Icons.star_rounded,
-                        size: starSize, color: SakuraHomePalette.blossomPink),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isTr
-                              ? 'Seviye ${reward.level}'
-                              : 'Level ${reward.level}',
-                          style: AppTheme.displayFont(
-                              fontSize: 18, color: SakuraHomePalette.textDeep),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          reward.isMaxLevel
-                              ? (isTr ? 'En yüksek seviye!' : 'Max level!')
-                              : (isTr
-                                  ? 'Sonraki seviyeye ${reward.pointsToNext} puan'
-                                  : '${reward.pointsToNext} pts to next level'),
-                          style: AppTheme.bodyFont(
-                            fontSize: 12.5,
-                            color: SakuraHomePalette.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded,
-                      color: SakuraHomePalette.branchMauve),
-                ],
-              ),
-              const SizedBox(height: 14),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: SizedBox(
-                  height: 9,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      return Stack(
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                              color: SakuraHomePalette.branchMauve
-                                  .withValues(alpha: 0.18)),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 350),
-                            curve: Curves.easeOut,
-                            width: constraints.maxWidth * reward.fraction,
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: SakuraHomePalette.ctaGradient,
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
-                            ),
+                          Text(isTr ? 'Seviye ${reward.level}' : 'Level ${reward.level}', style: AstraKit.heading2(isDark, fontSize: 18)),
+                          const SizedBox(height: 2),
+                          Text(
+                            reward.isMaxLevel
+                                ? (isTr ? 'En yüksek seviye!' : 'Max level!')
+                                : (isTr ? 'Sonraki seviyeye ${reward.pointsToNext} puan' : '${reward.pointsToNext} pts to next level'),
+                            style: AstraKit.mutedText(isDark, fontSize: 12.5),
                           ),
                         ],
-                      );
-                    },
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: AstraKit.muted(isDark)),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: SizedBox(
+                    height: 9,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Stack(
+                          children: [
+                            Container(color: primary.withValues(alpha: 0.16)),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 350),
+                              curve: Curves.easeOut,
+                              width: constraints.maxWidth * reward.fraction,
+                              decoration: BoxDecoration(gradient: LinearGradient(colors: [primary, primary.withValues(alpha: 0.7)])),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                isTr ? '${reward.points} puan' : '${reward.points} points',
-                style: AppTheme.bodyFont(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: SakuraHomePalette.blossomPink,
+                const SizedBox(height: 8),
+                Text(
+                  isTr ? '${reward.points} puan' : '${reward.points} points',
+                  style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w600, color: primary),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -581,47 +523,38 @@ class _HobbiesCard extends StatelessWidget {
   const _HobbiesCard({
     required this.hobbies,
     required this.isTr,
+    required this.isDark,
+    required this.primary,
     required this.onEdit,
   });
 
   final List<String> hobbies;
   final bool isTr;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.fromLTRB(18, 16, 12, 18),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.22)),
-      ),
+      borderRadius: 20,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.interests_rounded,
-                  color: SakuraHomePalette.blossomPink, size: 20),
+              Icon(Icons.interests_rounded, color: primary, size: 20),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  isTr ? 'Hobilerim' : 'My hobbies',
-                  style: AppTheme.bodyFont(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: SakuraHomePalette.textDeep,
-                  ),
-                ),
+                child: Text(isTr ? 'Hobilerim' : 'My hobbies', style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700)),
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
                 onPressed: onEdit,
-                icon: const Icon(Icons.edit_rounded,
-                    size: 18, color: SakuraHomePalette.branchMauve),
+                icon: Icon(Icons.edit_rounded, size: 18, color: primary),
               ),
             ],
           ),
@@ -630,13 +563,8 @@ class _HobbiesCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 8, top: 4),
               child: Text(
-                isTr
-                    ? 'Henüz hobi eklemedin. Eklemek için dokun.'
-                    : "You haven't added hobbies yet. Tap to add.",
-                style: AppTheme.bodyFont(
-                  fontSize: 13,
-                  color: SakuraHomePalette.textMuted,
-                ),
+                isTr ? 'Henüz hobi eklemedin. Eklemek için dokun.' : "You haven't added hobbies yet. Tap to add.",
+                style: AstraKit.mutedText(isDark, fontSize: 13),
               ),
             )
           else
@@ -646,23 +574,13 @@ class _HobbiesCard extends StatelessWidget {
               children: [
                 for (final id in hobbies)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
-                      color: SakuraHomePalette.blossomPink.withValues(alpha: 0.14),
+                      color: primary.withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                          color: SakuraHomePalette.blossomPink
-                              .withValues(alpha: 0.4)),
+                      border: Border.all(color: primary.withValues(alpha: 0.4)),
                     ),
-                    child: Text(
-                      hobbyLabel(id, isTr),
-                      style: AppTheme.bodyFont(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: SakuraHomePalette.textDeep,
-                      ),
-                    ),
+                    child: Text(hobbyLabel(id, isTr), style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w600)),
                   ),
               ],
             ),
@@ -673,46 +591,36 @@ class _HobbiesCard extends StatelessWidget {
 }
 
 class _MenuItem extends StatelessWidget {
-  const _MenuItem({required this.icon, required this.label, required this.onTap});
+  const _MenuItem({required this.icon, required this.label, required this.isDark, required this.primary, required this.onTap});
 
   final IconData icon;
   final String label;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          decoration: BoxDecoration(
-            color: SakuraHomePalette.cardWhite,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-                color: SakuraHomePalette.branchMauve.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: SakuraHomePalette.blossomPink, size: 22),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppTheme.bodyFont(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: SakuraHomePalette.textDeep,
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: SakuraHomePalette.branchMauve,
-              ),
-            ],
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      padding: EdgeInsets.zero,
+      borderRadius: 18,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            child: Row(
+              children: [
+                Icon(icon, color: primary, size: 22),
+                const SizedBox(width: 14),
+                Expanded(child: Text(label, style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w600))),
+                Icon(Icons.chevron_right_rounded, color: AstraKit.muted(isDark)),
+              ],
+            ),
           ),
         ),
       ),

@@ -7,6 +7,10 @@ class JournalEntries extends Table {
   DateTimeColumn get createdAt => dateTime()();
   TextColumn get content => text()();
 
+  /// Optional short heading the user typed for this entry. Local-only for
+  /// now (not synced to Supabase, which has no matching column yet).
+  TextColumn get title => text().nullable()();
+
   /// Absolute path to an attached voice-note recording, if the entry has
   /// one. Null for text-only entries (the common case).
   TextColumn get audioPath => text().nullable()();

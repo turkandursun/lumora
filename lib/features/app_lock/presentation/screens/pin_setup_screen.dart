@@ -3,10 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/lumora_palette.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
 import '../providers/app_lock_providers.dart';
 import '../widgets/pin_keypad.dart';
+
+/// PIN entry stays night-themed regardless of the app's light/dark choice —
+/// same reasoning as the dream journal.
+const _isDark = true;
 
 /// Two-step "create PIN, then confirm it" flow for a 4-6 digit PIN. Pops
 /// `true` once a new PIN has been hashed and persisted via
@@ -72,48 +76,39 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final primary = AstraKit.primary(_isDark);
     return PopScope(
       canPop: true,
       child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: LumoraPalette.backgroundGradient,
-            ),
-          ),
+        backgroundColor: Colors.transparent,
+        body: AstraMountainBackground(
+          isDark: _isDark,
           child: SafeArea(
             child: ResponsiveContent(
               child: Column(
                 children: [
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-                      onPressed: () => Navigator.of(context).maybePop(false),
+                    child: AstraCircleIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      isDark: _isDark,
+                      primaryColor: primary,
+                      onTap: () => Navigator.of(context).maybePop(false),
                     ),
                   ),
                   const Spacer(),
-                  Icon(
-                    Icons.lock_outline_rounded,
-                    color: Colors.white.withValues(alpha: 0.85),
-                    size: 40,
-                  ),
+                  Icon(Icons.lock_outline_rounded, color: primary, size: 40),
                   const SizedBox(height: 20),
                   Text(
                     _isConfirmStep ? l10n.appLockConfirmPinTitle : l10n.appLockCreatePinTitle,
-                    style: LumoraPalette.bodyStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    style: AstraKit.heading2(_isDark, fontSize: 18),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     _mismatch ? l10n.appLockPinMismatchMessage : l10n.appLockPinLengthHint,
-                    style: LumoraPalette.bodyStyle(
-                      fontSize: 13,
-                      color: _mismatch
-                          ? LumoraPalette.accentPink
-                          : Colors.white.withValues(alpha: 0.6),
-                    ),
+                    style: _mismatch
+                        ? const TextStyle(fontSize: 13, color: Color(0xFFE07A7A))
+                        : AstraKit.mutedText(_isDark, fontSize: 13),
                   ),
                   const SizedBox(height: 24),
                   PinDots(filledCount: _current.length, shake: _shake),

@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/database/app_database.dart';
@@ -17,9 +20,44 @@ class JournalEntriesRepository {
   final AppDatabase _db;
   final SupabaseClient _client;
 
+  /// SharedPreferences key holding a JSON map of local entry id → attached
+  /// photo file path. Photos live on-device only (the journal table has no
+  /// photo column yet), so this keeps them associated with their entry.
+  static const _photoPrefsKey = 'journal_entry_photos';
+
+  Future<void> _persistPhotoPath(int localId, String photoPath) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_photoPrefsKey);
+      final map = <String, dynamic>{};
+      if (raw != null && raw.isNotEmpty) {
+        map.addAll(jsonDecode(raw) as Map<String, dynamic>);
+      }
+      map[localId.toString()] = photoPath;
+      await prefs.setString(_photoPrefsKey, jsonEncode(map));
+    } catch (e) {
+      debugPrint('[JournalPhoto] persist failed: $e');
+    }
+  }
+
+  /// Local entry id → photo path map, read by the sealed-journals archive.
+  static Future<Map<String, String>> loadPhotoPaths() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_photoPrefsKey);
+      if (raw == null || raw.isEmpty) return {};
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map((k, v) => MapEntry(k, v.toString()));
+    } catch (_) {
+      return {};
+    }
+  }
+
   Future<void> save(
     String content, {
+    String? title,
     String? audioPath,
+    String? photoPath,
   }) async {
     final user = _client.auth.currentUser;
     final now = DateTime.now();
@@ -52,12 +90,17 @@ class JournalEntriesRepository {
           JournalEntriesCompanion.insert(
             createdAt: now,
             content: content,
+            title: Value(title),
             audioPath: Value(audioPath),
             userId: Value(user?.id),
             supabaseId: Value(cloudId),
           ),
         );
     debugPrint('[JournalSave] insert complete, new row id=$id');
+
+    if (photoPath != null && photoPath.isNotEmpty) {
+      await _persistPhotoPath(id, photoPath);
+    }
   }
 
   Future<void> update(

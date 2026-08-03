@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/services/app_lock_service.dart';
-import '../../../../theme/lumora_palette.dart';
+import '../../../../theme/astra_screen_kit.dart';
+
+/// PIN entry stays night-themed regardless of the app's light/dark choice —
+/// same reasoning as the dream journal.
+final _primary = AstraKit.primary(true);
 
 const int minPinLength = AppLockService.minPinLength;
 const int maxPinLength = AppLockService.maxPinLength;
@@ -29,11 +33,9 @@ class PinDots extends StatelessWidget {
           height: 14,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: filled ? LumoraPalette.primaryPurple : Colors.transparent,
+            color: filled ? _primary : Colors.transparent,
             border: Border.all(
-              color: filled
-                  ? LumoraPalette.primaryPurple
-                  : Colors.white.withValues(alpha: 0.35),
+              color: filled ? _primary : Colors.white.withValues(alpha: 0.35),
               width: 1.6,
             ),
           ),

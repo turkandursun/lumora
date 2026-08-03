@@ -4,11 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/lumora_palette.dart';
-import '../../../../theme/dream_pastel_background.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
 import '../providers/dreams_providers.dart';
+
+/// Dreams stay night-themed regardless of the app's light/dark choice — see
+/// [DreamJournalScreen]'s `_isDark` for the same reasoning.
+const _isDark = true;
+final _primary = AstraKit.primary(_isDark);
 
 /// Full-screen dream entry form: a large free-form text area plus a save
 /// button. Pushed from [DreamJournalScreen]'s "Write a Dream" button.
@@ -55,8 +58,9 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      backgroundColor: LumoraPalette.nightBackground,
-      body: DreamPastelBackground(
+      backgroundColor: Colors.transparent,
+      body: AstraMountainBackground(
+        isDark: _isDark,
         child: SafeArea(
           child: ResponsiveContent(
             child: Column(
@@ -66,14 +70,14 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen> {
                   padding: const EdgeInsets.fromLTRB(8, 4, 16, 4),
                   child: Row(
                     children: [
-                      IconButton(
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                      AstraCircleIconButton(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        isDark: _isDark,
+                        primaryColor: _primary,
+                        onTap: () => Navigator.of(context).maybePop(),
                       ),
-                      Text(
-                        l10n.dreamEntryTitle,
-                        style: AppTheme.displayFont(fontSize: 20, color: Colors.white),
-                      ),
+                      const SizedBox(width: 12),
+                      Text(l10n.dreamEntryTitle, style: AstraKit.heading1(_isDark, fontSize: 20)),
                     ],
                   ),
                 ),
@@ -84,36 +88,21 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.06),
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(
-                                color: _error != null
-                                    ? LumoraPalette.accentPink.withValues(alpha: 0.7)
-                                    : Colors.white.withValues(alpha: 0.14),
-                              ),
-                            ),
+                          child: AstraGlassCard(
+                            isDark: _isDark,
+                            primaryColor: _error != null ? const Color(0xFFE07A7A) : _primary,
                             child: TextField(
                               controller: _controller,
                               maxLines: null,
                               expands: true,
                               textAlignVertical: TextAlignVertical.top,
-                              style: LumoraPalette.bodyStyle(color: Colors.white),
-                              cursorColor: LumoraPalette.lightPurple,
+                              style: AstraKit.body(_isDark),
+                              cursorColor: _primary,
                               decoration: InputDecoration(
                                 border: InputBorder.none,
-                                // Don't inherit the light theme's filled
-                                // softLavender fill — keep the field
-                                // transparent so the dark translucent card
-                                // (and the dream motifs behind it) show
-                                // through and the white text stays readable.
                                 filled: false,
                                 hintText: l10n.dreamEntryPlaceholder,
-                                hintStyle: LumoraPalette.bodyStyle(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                ),
+                                hintStyle: AstraKit.mutedText(_isDark),
                               ),
                               onChanged: (_) {
                                 if (_error != null) setState(() => _error = null);
@@ -123,18 +112,15 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen> {
                         ),
                         if (_error != null) ...[
                           const SizedBox(height: 10),
-                          Text(
-                            _error!,
-                            style: AppTheme.bodyFont(
-                              fontSize: 12.5,
-                              color: LumoraPalette.accentPink,
-                            ),
-                          ),
+                          Text(_error!, style: const TextStyle(fontSize: 12.5, color: Color(0xFFE07A7A))),
                         ],
                         const SizedBox(height: 18),
-                        _SaveButton(
+                        AstraGoldButton(
+                          isDark: _isDark,
                           label: l10n.dreamEntrySaveButton,
-                          isSaving: _isSaving,
+                          isLoading: _isSaving,
+                          enabled: !_isSaving,
+                          height: 56,
                           onTap: _save,
                         ),
                       ],
@@ -143,62 +129,6 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen> {
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SaveButton extends StatelessWidget {
-  const _SaveButton({required this.label, required this.isSaving, required this.onTap});
-
-  final String label;
-  final bool isSaving;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: LumoraPalette.ctaGradient,
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: LumoraPalette.primaryPurple.withValues(alpha: 0.45),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(28),
-          onTap: isSaving ? null : onTap,
-          child: Center(
-            child: isSaving
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.4,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : Text(
-                    label,
-                    style: LumoraPalette.bodyStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
           ),
         ),
       ),

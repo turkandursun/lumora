@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/lumora_palette.dart';
-import '../../../../theme/mood_gradient_background.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../domain/app_section.dart';
 import '../providers/app_lock_providers.dart';
 import '../widgets/section_lock_gate.dart';
 import 'pin_setup_screen.dart';
 import 'pin_verify_screen.dart';
+
+/// PIN screens stay night-themed regardless of the app's light/dark choice
+/// — same reasoning as the dream journal.
+const _isDark = true;
 
 /// Privacy & Security settings — the screen Profile's menu item opens. Lets
 /// the user set a single PIN (one-time setup, changeable afterwards) and
@@ -66,37 +68,37 @@ class AppLockSettingsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final hasPinAsync = ref.watch(hasPinProvider);
     final protectedAsync = ref.watch(protectedSectionsProvider);
+    final primary = AstraKit.primary(_isDark);
 
     final hasPin = hasPinAsync.valueOrNull ?? false;
     final protectedSections = protectedAsync.valueOrNull ?? const <AppSection>{};
     final loading = hasPinAsync.isLoading || protectedAsync.isLoading;
 
     return Scaffold(
-      backgroundColor: LumoraPalette.nightBackground,
-      body: MoodGradientBackground(
+      backgroundColor: Colors.transparent,
+      body: AstraMountainBackground(
+        isDark: _isDark,
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+            padding: const EdgeInsets.fromLTRB(16, 12, 24, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-                      onPressed: () => Navigator.of(context).maybePop(),
+                    AstraCircleIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      isDark: _isDark,
+                      primaryColor: primary,
+                      onTap: () => Navigator.of(context).maybePop(),
                     ),
-                    Text(
-                      l10n.appLockTitle,
-                      style: AppTheme.displayFont(fontSize: 22, color: Colors.white),
-                    ),
+                    const SizedBox(width: 12),
+                    Text(l10n.appLockTitle, style: AstraKit.heading1(_isDark, fontSize: 22)),
                   ],
                 ),
                 const SizedBox(height: 12),
                 if (loading)
-                  const Expanded(
-                    child: Center(child: CircularProgressIndicator(color: Colors.white)),
-                  )
+                  Expanded(child: Center(child: CircularProgressIndicator(color: primary)))
                 else
                   Expanded(
                     child: ListView(
@@ -106,6 +108,7 @@ class AppLockSettingsScreen extends ConsumerWidget {
                         _ActionRow(
                           icon: Icons.password_rounded,
                           label: hasPin ? l10n.appLockChangePinLabel : l10n.appLockSetPinLabel,
+                          primary: primary,
                           onTap: () =>
                               hasPin ? _onChangePin(context, ref) : _onSetPin(context, ref),
                         ),
@@ -113,13 +116,7 @@ class AppLockSettingsScreen extends ConsumerWidget {
                         _SectionHeading(text: l10n.appLockSectionsHeading),
                         if (!hasPin) ...[
                           const SizedBox(height: 8),
-                          Text(
-                            l10n.appLockSectionsHint,
-                            style: AppTheme.bodyFont(
-                              fontSize: 12.5,
-                              color: Colors.white.withValues(alpha: 0.6),
-                            ),
-                          ),
+                          Text(l10n.appLockSectionsHint, style: AstraKit.mutedText(_isDark, fontSize: 12.5)),
                         ],
                         const SizedBox(height: 10),
                         for (final section in _sections) ...[
@@ -128,6 +125,7 @@ class AppLockSettingsScreen extends ConsumerWidget {
                             label: sectionDisplayName(l10n, section),
                             value: protectedSections.contains(section),
                             enabled: hasPin,
+                            primary: primary,
                             onChanged: (value) => _onSectionToggled(ref, section, value),
                           ),
                           const SizedBox(height: 12),
@@ -151,14 +149,7 @@ class _SectionHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: AppTheme.bodyFont(
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        color: Colors.white.withValues(alpha: 0.6),
-      ),
-    );
+    return Text(text, style: AstraKit.mutedText(_isDark, fontSize: 13, fontWeight: FontWeight.w700));
   }
 }
 
@@ -168,6 +159,7 @@ class _ToggleRow extends StatelessWidget {
     required this.label,
     required this.value,
     required this.enabled,
+    required this.primary,
     required this.onChanged,
   });
 
@@ -175,6 +167,7 @@ class _ToggleRow extends StatelessWidget {
   final String label;
   final bool value;
   final bool enabled;
+  final Color primary;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -182,28 +175,17 @@ class _ToggleRow extends StatelessWidget {
     final opacity = enabled ? 1.0 : 0.45;
     return Opacity(
       opacity: opacity,
-      child: Container(
+      child: AstraGlassCard(
+        isDark: _isDark,
+        primaryColor: primary,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-        ),
+        borderRadius: 18,
         child: Row(
           children: [
-            Icon(icon, color: Colors.white.withValues(alpha: 0.85), size: 22),
+            Icon(icon, color: primary, size: 22),
             const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: AppTheme.bodyFont(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
-              ),
-            ),
-            Switch(
-              value: value,
-              activeThumbColor: LumoraPalette.primaryPurple,
-              onChanged: enabled ? onChanged : null,
-            ),
+            Expanded(child: Text(label, style: AstraKit.body(_isDark, fontSize: 15, fontWeight: FontWeight.w600))),
+            Switch(value: value, activeThumbColor: primary, onChanged: enabled ? onChanged : null),
           ],
         ),
       ),
@@ -212,42 +194,35 @@ class _ToggleRow extends StatelessWidget {
 }
 
 class _ActionRow extends StatelessWidget {
-  const _ActionRow({required this.icon, required this.label, required this.onTap});
+  const _ActionRow({required this.icon, required this.label, required this.primary, required this.onTap});
 
   final IconData icon;
   final String label;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.white.withValues(alpha: 0.85), size: 22),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppTheme.bodyFont(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded, color: Colors.white.withValues(alpha: 0.4)),
-            ],
+    return AstraGlassCard(
+      isDark: _isDark,
+      primaryColor: primary,
+      padding: EdgeInsets.zero,
+      borderRadius: 18,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            child: Row(
+              children: [
+                Icon(icon, color: primary, size: 22),
+                const SizedBox(width: 14),
+                Expanded(child: Text(label, style: AstraKit.body(_isDark, fontSize: 15, fontWeight: FontWeight.w600))),
+                Icon(Icons.chevron_right_rounded, color: AstraKit.muted(_isDark)),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,28 +1,31 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../../../../core/router/app_router.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/services/crisis_detection_service.dart';
 import '../../../../theme/crisis_support_sheet.dart';
-import '../../../../theme/gold_glass_theme.dart';
 import '../../../../theme/responsive_content.dart';
 import '../providers/journal_entries_provider.dart';
 import '../providers/journal_streak_provider.dart';
 
 /// Exact replica of the reference screenshot:
 /// Moon background · Date+Title card · Writing card · Voice card ·
-/// Action bar (Fotoğraf / Etiket / Duygu / Hatırlatıcı / Yıldızla) ·
+/// Action bar (Fotoğraf ekle / Etiket / Duygu / Hatırlatıcı) ·
 /// "Günlüğü Mühürle" gold pill.
 class JournalEntryScreen extends ConsumerStatefulWidget {
   const JournalEntryScreen({super.key});
@@ -46,6 +49,11 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
   Timer? _recordingTicker;
   String? _pendingAudioPath;
   String _preSpeechText = '';
+
+  /// Optionally attached photo for this entry (local file path). Kept only in
+  /// the composer for now; persisting photos into the sealed archive needs a
+  /// dedicated database column.
+  String? _pickedPhotoPath;
 
   DateTime _selectedDate = DateTime.now();
 
@@ -255,6 +263,51 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     } catch (_) {}
   }
 
+  Future<void> _pickPhoto() async {
+    try {
+      final picker = ImagePicker();
+      final file = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (file == null) return;
+
+      // Copy out of the picker's temporary cache into app storage so the
+      // photo survives and can be shown later in the sealed archive.
+      var path = file.path;
+      if (!kIsWeb) {
+        try {
+          final dir = await getApplicationDocumentsDirectory();
+          final photoDir = Directory(p.join(dir.path, 'journal_photos'));
+          if (!await photoDir.exists()) {
+            await photoDir.create(recursive: true);
+          }
+          final ext = p.extension(file.path);
+          final dest = p.join(photoDir.path,
+              'photo_${DateTime.now().millisecondsSinceEpoch}$ext');
+          await File(file.path).copy(dest);
+          path = dest;
+        } catch (e) {
+          debugPrint('[Photo] copy failed, using original path: $e');
+        }
+      }
+
+      if (!mounted) return;
+      setState(() => _pickedPhotoPath = path);
+    } catch (e) {
+      debugPrint('[Photo] pick failed: $e');
+      if (!mounted) return;
+      final isTr = Localizations.localeOf(context).languageCode == 'tr';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isTr
+              ? 'Fotoğraf seçilemedi.'
+              : 'Could not pick a photo.'),
+        ),
+      );
+    }
+  }
+
   Future<void> _saveEntry() async {
     final content = _entryController.text.trim();
     if (content.isEmpty) return;
@@ -263,8 +316,14 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       CrisisSupportSheet.show(context);
     }
 
+    final title = _titleController.text.trim();
     final audioPath = _keepVoiceRecording ? _pendingAudioPath : null;
-    await ref.read(journalEntriesRepositoryProvider).save(content, audioPath: audioPath);
+    await ref.read(journalEntriesRepositoryProvider).save(
+          content,
+          title: title.isEmpty ? null : title,
+          audioPath: audioPath,
+          photoPath: _pickedPhotoPath,
+        );
     await ref.read(journalStreakProvider.notifier).recordEntrySaved();
 
     if (!mounted) return;
@@ -273,8 +332,52 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     setState(() {
       _pendingAudioPath = null;
       _keepVoiceRecording = true;
+      _pickedPhotoPath = null;
     });
     FocusScope.of(context).unfocus();
+    _showSealedToast(context);
+  }
+
+  /// Small "Günlüğü Mühürle" confirmation toast, shown briefly after a
+  /// successful save.
+  void _showSealedToast(BuildContext context) {
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final mode = ref.read(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = isDark ? const Color(0xFFE3C264) : const Color(0xFFD4AF37);
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor:
+              isDark ? const Color(0xF01A1233) : const Color(0xF0FFF8EE),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: primary.withValues(alpha: 0.4)),
+          ),
+          margin: const EdgeInsets.fromLTRB(40, 0, 40, 24),
+          duration: const Duration(seconds: 2),
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.lock_rounded, size: 16, color: primary),
+              const SizedBox(width: 8),
+              Text(
+                isTr ? 'Günlük mühürlendi' : 'Journal sealed',
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? const Color(0xFFF6ECD2)
+                      : const Color(0xFF1A1005),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
   }
 
   @override
@@ -282,14 +385,17 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     final mode = ref.watch(astraThemeProvider);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final isDark = mode == AstraThemeMode.dark;
-    final primary = isDark ? AstraGlassTheme.moonPrimary : AstraGlassTheme.sunPrimary;
+    // Gold accent in BOTH themes — the reference's rich, luxurious look:
+    // gold labels, icons, borders, waveform and mic on glass cards.
+    final primary =
+        isDark ? const Color(0xFFE3C264) : const Color(0xFFD4AF37);
 
     final localeStr = Localizations.localeOf(context).toString();
     final dateStr = DateFormat('d MMMM yyyy, EEEE', localeStr).format(_selectedDate);
 
     return Scaffold(
-      body: DynamicAstraBackground(
-        mode: mode,
+      body: _MountainBackground(
+        isDark: isDark,
         child: SafeArea(
           bottom: false,
           child: Column(
@@ -312,16 +418,31 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                               isDark: isDark,
                               onTap: () => Navigator.of(context).maybePop(),
                             ),
-                            _CircleBtn(
-                              icon: Icons.auto_awesome,
-                              primary: primary,
-                              isDark: isDark,
-                              onTap: () {
-                                final next = isDark
-                                    ? AstraThemeMode.light
-                                    : AstraThemeMode.dark;
-                                ref.read(astraThemeProvider.notifier).setTheme(next);
-                              },
+                            Row(
+                              children: [
+                                // Önceki (mühürlü) günlüklere gider.
+                                _CircleBtn(
+                                  icon: Icons.auto_stories_rounded,
+                                  primary: primary,
+                                  isDark: isDark,
+                                  onTap: () =>
+                                      context.push(AppRoutes.sealedJournals),
+                                ),
+                                const SizedBox(width: 10),
+                                _CircleBtn(
+                                  icon: Icons.auto_awesome,
+                                  primary: primary,
+                                  isDark: isDark,
+                                  onTap: () {
+                                    final next = isDark
+                                        ? AstraThemeMode.light
+                                        : AstraThemeMode.dark;
+                                    ref
+                                        .read(astraThemeProvider.notifier)
+                                        .setTheme(next);
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -360,9 +481,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                               dateStr,
                                               style: GoogleFonts.outfit(
                                                 fontSize: 13,
-                                                fontWeight: FontWeight.w600,
+                                                fontWeight: FontWeight.w700,
                                                 color: isDark
-                                                    ? const Color(0xFFEDE0FF)
+                                                    ? const Color(0xFFF6ECD2)
                                                     : const Color(0xFF1A1005),
                                               ),
                                             ),
@@ -405,22 +526,31 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                       controller: _titleController,
                                       style: GoogleFonts.outfit(
                                         fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark
+                                            ? const Color(0xFFF6ECD2)
+                                            : const Color(0xFF1A1005),
                                       ),
                                       cursorColor: primary,
                                       maxLines: 1,
                                       decoration: InputDecoration(
+                                        // Kill the global lavender fill so the
+                                        // glass card shows through (no white box).
+                                        filled: false,
+                                        fillColor: Colors.transparent,
                                         border: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
                                         isCollapsed: true,
+                                        contentPadding: EdgeInsets.zero,
                                         hintText: isTr
                                             ? 'Günün özeti...'
                                             : 'Summary...',
                                         hintStyle: GoogleFonts.outfit(
                                           fontSize: 13,
                                           color: isDark
-                                              ? const Color(0x88C0A8FF)
-                                              : const Color(0x88996600),
+                                              ? const Color(0x99D9B24A)
+                                              : const Color(0x99A07A1E),
                                         ),
                                       ),
                                     ),
@@ -450,14 +580,23 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                   textAlignVertical: TextAlignVertical.top,
                                   style: GoogleFonts.outfit(
                                     fontSize: 16,
-                                    color: Colors.black,
+                                    color: isDark
+                                        ? const Color(0xFFF6ECD2)
+                                        : const Color(0xFF1A1005),
                                     height: 1.5,
-                                    fontWeight: FontWeight.w400,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                   cursorColor: primary,
                                   decoration: InputDecoration(
+                                    // Kill the global lavender fill so the
+                                    // glass card shows through (no white box).
+                                    filled: false,
+                                    fillColor: Colors.transparent,
                                     border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
                                     isCollapsed: true,
+                                    contentPadding: EdgeInsets.zero,
                                     counterText: '',
                                     hintText: isTr
                                         ? 'Bugün aklından geçenleri yaz...'
@@ -465,8 +604,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                     hintStyle: GoogleFonts.outfit(
                                       fontSize: 15,
                                       color: isDark
-                                          ? const Color(0x77C0A8FF)
-                                          : const Color(0x77996633),
+                                          ? const Color(0x99D9B24A)
+                                          : const Color(0x99A07A1E),
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
@@ -494,6 +633,19 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                             ],
                           ),
                         ),
+
+                        // ── Optional attached photo preview
+                        if (_pickedPhotoPath != null) ...[
+                          const SizedBox(height: 12),
+                          _PhotoPreviewCard(
+                            path: _pickedPhotoPath!,
+                            isDark: isDark,
+                            primary: primary,
+                            isTr: isTr,
+                            onRemove: () =>
+                                setState(() => _pickedPhotoPath = null),
+                          ),
+                        ],
 
                         const SizedBox(height: 12),
 
@@ -573,10 +725,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                                   Colors.redAccent,
                                                 ]
                                               : [
-                                                  primary.withValues(alpha: 0.85),
-                                                  isDark
-                                                      ? const Color(0xFF7653D9)
-                                                      : const Color(0xFFB8860B),
+                                                  primary.withValues(alpha: 0.9),
+                                                  const Color(0xFFB8860B),
                                                 ],
                                         ),
                                         boxShadow: [
@@ -627,8 +777,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                       style: GoogleFonts.outfit(
                                           fontSize: 12,
                                           color: isDark
-                                              ? const Color(0xBBC0A8FF)
-                                              : const Color(0xBB665544)),
+                                              ? const Color(0xCCE7D3A0)
+                                              : const Color(0xBB6B5320)),
                                     ),
                                     const Spacer(),
                                     Switch.adaptive(
@@ -676,16 +826,14 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                   16, 12, 16, MediaQuery.of(context).padding.bottom + 16),
                 child: Column(
                   children: [
-                    // Action toolbar
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _ActionBtn(icon: Icons.photo_outlined, label: isTr ? 'Fotoğraf' : 'Photo', primary: primary, isDark: isDark, onTap: () {}),
-                        _ActionBtn(icon: Icons.local_offer_outlined, label: isTr ? 'Etiket ekle' : 'Tag', primary: primary, isDark: isDark, onTap: () {}),
-                        _ActionBtn(icon: Icons.download_outlined, label: isTr ? 'Duygu eki' : 'Mood', primary: primary, isDark: isDark, onTap: () {}),
-                        _ActionBtn(icon: Icons.notifications_none_rounded, label: isTr ? 'Hatırlatıcı' : 'Remind', primary: primary, isDark: isDark, onTap: () {}),
-                        _ActionBtn(icon: Icons.star_border_rounded, label: isTr ? 'Yıldızla' : 'Star', primary: primary, isDark: isDark, onTap: () {}),
-                      ],
+                    // Add-photo chip — glass background so it reads clearly
+                    // against the mountain scene in both themes.
+                    _PhotoChip(
+                      primary: primary,
+                      isDark: isDark,
+                      isTr: isTr,
+                      hasPhoto: _pickedPhotoPath != null,
+                      onTap: _pickPhoto,
                     ),
 
                     const SizedBox(height: 14),
@@ -770,19 +918,146 @@ class _GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0x44231845)
-            : const Color(0x55FFF8EE),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: primary.withValues(alpha: 0.22),
-          width: 1.2,
+    // Frosted glass: a soft blur of the mountain scene behind each card keeps
+    // the writing legible while preserving the premium, airy look. The light
+    // (sun) theme uses a warmer, more opaque fill so dark text stays crisp
+    // over the bright golden scene.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0x59181026)
+                : const Color(0x9EFBF1DD),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: primary.withValues(alpha: 0.40),
+              width: 1.2,
+            ),
+          ),
+          child: child,
         ),
       ),
-      child: child,
+    );
+  }
+}
+
+/// A glass card previewing the photo the user optionally attached to the
+/// entry, with a gold-accented header and a remove (×) button.
+class _PhotoPreviewCard extends StatelessWidget {
+  const _PhotoPreviewCard({
+    required this.path,
+    required this.isDark,
+    required this.primary,
+    required this.isTr,
+    required this.onRemove,
+  });
+
+  final String path;
+  final bool isDark;
+  final Color primary;
+  final bool isTr;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      isDark: isDark,
+      primary: primary,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_awesome, size: 14, color: primary),
+              const SizedBox(width: 6),
+              Text(
+                isTr ? 'Eklenen fotoğraf' : 'Attached photo',
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? const Color(0xFFF6ECD2)
+                      : const Color(0xFF1A1005),
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: onRemove,
+                child: Icon(Icons.close_rounded, size: 18, color: primary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: AspectRatio(
+              aspectRatio: 16 / 10,
+              child: kIsWeb
+                  ? Image.network(path, fit: BoxFit.cover)
+                  : Image.file(File(path), fit: BoxFit.cover),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Full-bleed background for the journal screen: the app's signature mountain
+/// scene (moon over the peaks for the dark theme, sun for the light theme),
+/// shown vividly and crossfading whenever the user switches themes. A gentle
+/// top scrim keeps the app-bar icons readable while the scene stays vivid.
+class _MountainBackground extends StatelessWidget {
+  const _MountainBackground({required this.isDark, required this.child});
+
+  final bool isDark;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = isDark
+        ? 'assets/images/astra_dark_plain.png'
+        : 'assets/images/astra_sun_bg_g5.png';
+    return ColoredBox(
+      color: isDark ? const Color(0xFF0F0B1A) : const Color(0xFFFDF6E9),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 450),
+            child: Image.asset(
+              asset,
+              key: ValueKey(asset),
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+          ),
+          // Softens the busy scene (rocks, rays, foliage) so it reads as an
+          // atmosphere behind the cards rather than competing detail.
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+            child: const SizedBox.expand(),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? const [Color(0x55000000), Color(0x00000000)]
+                    : const [Color(0x1F000000), Color(0x00000000)],
+                stops: const [0.0, 0.30],
+              ),
+            ),
+          ),
+          child,
+        ],
+      ),
     );
   }
 }
@@ -856,42 +1131,72 @@ class _WaveformBars extends StatelessWidget {
   }
 }
 
-// Bottom action toolbar button
-class _ActionBtn extends StatelessWidget {
-  const _ActionBtn({
-    required this.icon,
-    required this.label,
+/// The single "add photo" action above the seal button. Sits on a glass pill
+/// (rather than a bare icon+label) so it stays legible against the bright
+/// sun scene in the light theme, where a plain gold icon used to wash out.
+class _PhotoChip extends StatelessWidget {
+  const _PhotoChip({
     required this.primary,
     required this.isDark,
+    required this.isTr,
+    required this.hasPhoto,
     required this.onTap,
   });
 
-  final IconData icon;
-  final String label;
   final Color primary;
   final bool isDark;
+  final bool isTr;
+  final bool hasPhoto;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 22, color: primary.withValues(alpha: 0.85)),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: GoogleFonts.outfit(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: isDark
-                  ? const Color(0xBBC0A8FF)
-                  : const Color(0xBB664400),
+    return Center(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            color: isDark ? const Color(0x66231845) : const Color(0x88FFF8EE),
+            border: Border.all(
+              color: (hasPhoto ? Colors.greenAccent : primary)
+                  .withValues(alpha: 0.45),
+              width: 1.2,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.10),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                hasPhoto ? Icons.check_circle_rounded : Icons.add_a_photo_rounded,
+                size: 18,
+                color: hasPhoto ? Colors.greenAccent.shade400 : primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                hasPhoto
+                    ? (isTr ? 'Fotoğraf eklendi' : 'Photo added')
+                    : (isTr ? 'Fotoğraf ekle' : 'Add photo'),
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? const Color(0xFFF6ECD2)
+                      : const Color(0xFF1A1005),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

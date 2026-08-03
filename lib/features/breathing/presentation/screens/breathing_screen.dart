@@ -1,14 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/lumora_palette.dart';
-import '../../../../theme/app_background.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
-import '../../../../theme/sakura_home_palette.dart';
 import '../../domain/breathing_pattern.dart';
 
 const _lastModePrefKey = 'breathing_last_mode';
@@ -51,14 +50,14 @@ enum _SessionStage { selectingMode, selectingDuration, running, completed }
 /// need right now, pick a duration, follow an expanding and contracting
 /// orb through that technique's inhale/hold/exhale cycle, and land on a
 /// gentle completion message once the chosen time is up.
-class BreathingScreen extends StatefulWidget {
+class BreathingScreen extends ConsumerStatefulWidget {
   const BreathingScreen({super.key});
 
   @override
-  State<BreathingScreen> createState() => _BreathingScreenState();
+  ConsumerState<BreathingScreen> createState() => _BreathingScreenState();
 }
 
-class _BreathingScreenState extends State<BreathingScreen>
+class _BreathingScreenState extends ConsumerState<BreathingScreen>
     with SingleTickerProviderStateMixin {
   static const _durationOptionsMinutes = [2, 4, 6];
 
@@ -150,20 +149,33 @@ class _BreathingScreenState extends State<BreathingScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: ResponsiveContent(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               child: Column(
                 children: [
-                  Text(
-                    l10n.breathingTitle,
-                    style: AppTheme.displayFont(
-                        fontSize: 24, color: SakuraHomePalette.textDeep),
+                  Row(
+                    children: [
+                      AstraCircleIconButton(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        isDark: isDark,
+                        primaryColor: primary,
+                        onTap: () => Navigator.of(context).maybePop(),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(l10n.breathingTitle, style: AstraKit.heading1(isDark, fontSize: 22)),
+                      ),
+                    ],
                   ),
                   Expanded(
                     child: AnimatedSwitcher(
@@ -172,6 +184,8 @@ class _BreathingScreenState extends State<BreathingScreen>
                         _SessionStage.selectingMode => _ModeSelectorView(
                             key: const ValueKey(_SessionStage.selectingMode),
                             selectedMode: _selectedMode,
+                            isDark: isDark,
+                            primary: primary,
                             onSelected: _selectMode,
                             onNext: _confirmMode,
                           ),
@@ -179,6 +193,8 @@ class _BreathingScreenState extends State<BreathingScreen>
                             key: const ValueKey(_SessionStage.selectingDuration),
                             selectedMinutes: _selectedMinutes,
                             options: _durationOptionsMinutes,
+                            isDark: isDark,
+                            primary: primary,
                             onSelected: (minutes) =>
                                 setState(() => _selectedMinutes = minutes),
                             onStart: _start,
@@ -188,10 +204,14 @@ class _BreathingScreenState extends State<BreathingScreen>
                             breathController: _breathController,
                             pattern: _selectedMode.pattern,
                             remainingSeconds: _remainingSeconds,
+                            isDark: isDark,
+                            primary: primary,
                             onStop: _stop,
                           ),
                         _SessionStage.completed => _CompletedView(
                             key: const ValueKey(_SessionStage.completed),
+                            isDark: isDark,
+                            primary: primary,
                             onContinue: _backToModeSelector,
                           ),
                       },
@@ -214,11 +234,15 @@ class _ModeSelectorView extends StatelessWidget {
   const _ModeSelectorView({
     super.key,
     required this.selectedMode,
+    required this.isDark,
+    required this.primary,
     required this.onSelected,
     required this.onNext,
   });
 
   final BreathingMode selectedMode;
+  final bool isDark;
+  final Color primary;
   final ValueChanged<BreathingMode> onSelected;
   final VoidCallback onNext;
 
@@ -231,11 +255,7 @@ class _ModeSelectorView extends StatelessWidget {
         Text(
           l10n.breathingModePrompt,
           textAlign: TextAlign.center,
-          style: AppTheme.bodyFont(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: SakuraHomePalette.textMuted,
-          ),
+          style: AstraKit.mutedText(isDark, fontSize: 15, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 24),
         Wrap(
@@ -247,22 +267,32 @@ class _ModeSelectorView extends StatelessWidget {
               _ModeCard(
                 mode: mode,
                 isSelected: mode == selectedMode,
+                isDark: isDark,
+                primary: primary,
                 onTap: () => onSelected(mode),
               ),
           ],
         ),
         const SizedBox(height: 40),
-        _GradientPillButton(label: l10n.onboardingNext, onTap: onNext),
+        AstraGoldButton(isDark: isDark, label: l10n.onboardingNext, onTap: onNext),
       ],
     );
   }
 }
 
 class _ModeCard extends StatelessWidget {
-  const _ModeCard({required this.mode, required this.isSelected, required this.onTap});
+  const _ModeCard({
+    required this.mode,
+    required this.isSelected,
+    required this.isDark,
+    required this.primary,
+    required this.onTap,
+  });
 
   final BreathingMode mode;
   final bool isSelected;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
@@ -286,32 +316,22 @@ class _ModeCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
               color: isSelected
-                  ? LumoraPalette.primaryPurple.withValues(alpha: 0.92)
-                  : SakuraHomePalette.lavender,
+                  ? primary.withValues(alpha: 0.22)
+                  : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
               border: Border.all(
-                color: isSelected
-                    ? LumoraPalette.lightPurple
-                    : SakuraHomePalette.branchMauve.withValues(alpha: 0.25),
+                color: isSelected ? primary : primary.withValues(alpha: 0.25),
                 width: 1.2,
               ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(mode.icon,
-                    size: 28,
-                    color: isSelected
-                        ? Colors.white
-                        : SakuraHomePalette.blossomPink),
+                Icon(mode.icon, size: 28, color: primary),
                 const SizedBox(height: 10),
                 Text(
                   label,
                   textAlign: TextAlign.center,
-                  style: AppTheme.bodyFont(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? Colors.white : SakuraHomePalette.textDeep,
-                  ),
+                  style: AstraKit.body(isDark, fontSize: 13, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
                 ),
               ],
             ),
@@ -328,12 +348,16 @@ class _DurationSelectorView extends StatelessWidget {
     super.key,
     required this.selectedMinutes,
     required this.options,
+    required this.isDark,
+    required this.primary,
     required this.onSelected,
     required this.onStart,
   });
 
   final int selectedMinutes;
   final List<int> options;
+  final bool isDark;
+  final Color primary;
   final ValueChanged<int> onSelected;
   final VoidCallback onStart;
 
@@ -343,15 +367,11 @@ class _DurationSelectorView extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const _BreathingOrbPreview(),
+        _BreathingOrbPreview(primary: primary),
         const SizedBox(height: 36),
         Text(
           l10n.breathingDurationPrompt,
-          style: AppTheme.bodyFont(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: SakuraHomePalette.textMuted,
-          ),
+          style: AstraKit.mutedText(isDark, fontSize: 13, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 14),
         Row(
@@ -363,13 +383,15 @@ class _DurationSelectorView extends StatelessWidget {
                 child: _DurationPill(
                   label: l10n.breathingDurationOption(minutes),
                   isSelected: minutes == selectedMinutes,
+                  isDark: isDark,
+                  primary: primary,
                   onTap: () => onSelected(minutes),
                 ),
               ),
           ],
         ),
         const SizedBox(height: 40),
-        _GradientPillButton(label: l10n.breathingStartButton, onTap: onStart),
+        AstraGoldButton(isDark: isDark, label: l10n.breathingStartButton, onTap: onStart, expand: false),
       ],
     );
   }
@@ -379,11 +401,15 @@ class _DurationPill extends StatelessWidget {
   const _DurationPill({
     required this.label,
     required this.isSelected,
+    required this.isDark,
+    required this.primary,
     required this.onTap,
   });
 
   final String label;
   final bool isSelected;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
@@ -405,70 +431,16 @@ class _DurationPill extends StatelessWidget {
               shape: BoxShape.rectangle,
               borderRadius: BorderRadius.circular(999),
               color: isSelected
-                  ? LumoraPalette.primaryPurple.withValues(alpha: 0.92)
-                  : SakuraHomePalette.lavender,
+                  ? primary.withValues(alpha: 0.22)
+                  : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
               border: Border.all(
-                color: isSelected
-                    ? LumoraPalette.lightPurple
-                    : SakuraHomePalette.branchMauve.withValues(alpha: 0.25),
+                color: isSelected ? primary : primary.withValues(alpha: 0.25),
                 width: 1.2,
               ),
             ),
             child: Text(
               label,
-              style: AppTheme.bodyFont(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? Colors.white : SakuraHomePalette.textDeep,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Full-width gradient CTA pill, matching the login/sign-up button style.
-class _GradientPillButton extends StatelessWidget {
-  const _GradientPillButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 56,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: LumoraPalette.ctaGradient,
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: LumoraPalette.primaryPurple.withValues(alpha: 0.45),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(28),
-          onTap: onTap,
-          child: Center(
-            child: Text(
-              label,
-              style: LumoraPalette.bodyStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+              style: AstraKit.body(isDark, fontSize: 14, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
             ),
           ),
         ),
@@ -478,11 +450,13 @@ class _GradientPillButton extends StatelessWidget {
 }
 
 /// Outlined pill used for the "Stop" action during an active session —
-/// quieter than the gradient CTA since ending early isn't the primary path.
+/// quieter than the gold CTA since ending early isn't the primary path.
 class _OutlinePillButton extends StatelessWidget {
-  const _OutlinePillButton({required this.label, required this.onTap});
+  const _OutlinePillButton({required this.label, required this.isDark, required this.primary, required this.onTap});
 
   final String label;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
@@ -496,17 +470,9 @@ class _OutlinePillButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-                color: SakuraHomePalette.branchMauve.withValues(alpha: 0.45)),
+            border: Border.all(color: primary.withValues(alpha: 0.45)),
           ),
-          child: Text(
-            label,
-            style: AppTheme.bodyFont(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: SakuraHomePalette.textDeep,
-            ),
-          ),
+          child: Text(label, style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w600)),
         ),
       ),
     );
@@ -516,11 +482,13 @@ class _OutlinePillButton extends StatelessWidget {
 /// Static, resting-state orb shown behind the duration selector, before a
 /// session starts — same look as the animated orb at its mid-point.
 class _BreathingOrbPreview extends StatelessWidget {
-  const _BreathingOrbPreview();
+  const _BreathingOrbPreview({required this.primary});
+
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
-    return const _BreathingOrb(scale: 0.8);
+    return _BreathingOrb(scale: 0.8, primary: primary);
   }
 }
 
@@ -533,12 +501,16 @@ class _RunningView extends StatefulWidget {
     required this.breathController,
     required this.pattern,
     required this.remainingSeconds,
+    required this.isDark,
+    required this.primary,
     required this.onStop,
   });
 
   final AnimationController breathController;
   final BreathingPattern pattern;
   final int remainingSeconds;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onStop;
 
   @override
@@ -605,17 +577,14 @@ class _RunningViewState extends State<_RunningView> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _BreathingOrb(scale: _scaleFor(t)),
+                _BreathingOrb(scale: _scaleFor(t), primary: widget.primary),
                 const SizedBox(height: 28),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   child: Text(
                     _phaseLabel(l10n, phase),
                     key: ValueKey(phase),
-                    style: AppTheme.displayFont(
-                      fontSize: 22,
-                      color: SakuraHomePalette.textDeep,
-                    ),
+                    style: AstraKit.heading1(widget.isDark, fontSize: 22),
                   ),
                 ),
               ],
@@ -625,14 +594,15 @@ class _RunningViewState extends State<_RunningView> {
         const SizedBox(height: 20),
         Text(
           _formatCountdown(widget.remainingSeconds),
-          style: AppTheme.bodyFont(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: SakuraHomePalette.textMuted,
-          ),
+          style: AstraKit.mutedText(widget.isDark, fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 40),
-        _OutlinePillButton(label: l10n.breathingStopButton, onTap: widget.onStop),
+        _OutlinePillButton(
+          label: l10n.breathingStopButton,
+          isDark: widget.isDark,
+          primary: widget.primary,
+          onTap: widget.onStop,
+        ),
       ],
     );
   }
@@ -640,8 +610,10 @@ class _RunningViewState extends State<_RunningView> {
 
 /// Gentle fade-in completion message shown once the chosen duration is up.
 class _CompletedView extends StatelessWidget {
-  const _CompletedView({super.key, required this.onContinue});
+  const _CompletedView({super.key, required this.isDark, required this.primary, required this.onContinue});
 
+  final bool isDark;
+  final Color primary;
   final VoidCallback onContinue;
 
   @override
@@ -650,62 +622,117 @@ class _CompletedView extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const _BreathingOrb(scale: 0.85),
+        _BreathingOrb(scale: 0.85, primary: primary),
         const SizedBox(height: 32),
         Text(
           l10n.breathingCompletionMessage,
           textAlign: TextAlign.center,
-          style: AppTheme.displayFont(fontSize: 22, color: SakuraHomePalette.textDeep),
+          style: AstraKit.heading1(isDark, fontSize: 22),
         ),
         const SizedBox(height: 40),
-        _OutlinePillButton(
+        AstraGoldButton(
+          isDark: isDark,
           label: l10n.breathingCompletionContinue,
           onTap: onContinue,
+          expand: false,
         ),
       ],
     );
   }
 }
 
-/// The soft glowing orb itself — a purple radial gradient with a wide,
+/// The soft glowing orb itself — a gold radial gradient with a wide,
 /// blurred glow, scaled by [scale] to read as expanding/contracting breath.
+/// Built from layered shadows + an off-center highlight/shading pass so it
+/// reads as a lit sphere rather than a flat tinted circle.
 class _BreathingOrb extends StatelessWidget {
-  const _BreathingOrb({required this.scale});
+  const _BreathingOrb({required this.scale, required this.primary});
 
   final double scale;
+  final Color primary;
   static const _size = 200.0;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: _size,
-      height: _size,
+      width: _size * 1.5,
+      height: _size * 1.5,
       child: Center(
         child: Transform.scale(
           scale: scale,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                center: const Alignment(-0.3, -0.3),
-                colors: [
-                  Color.lerp(
-                    LumoraPalette.warmCream,
-                    LumoraPalette.primaryPurple,
-                    0.35,
-                  )!
-                      .withValues(alpha: 0.95),
-                  LumoraPalette.primaryPurple.withValues(alpha: 0.85),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: LumoraPalette.primaryPurple.withValues(alpha: 0.55),
-                  blurRadius: 60,
-                  spreadRadius: 16,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Wide, soft outer bloom.
+              Container(
+                width: _size * 1.35,
+                height: _size * 1.35,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: primary.withValues(alpha: 0.5), blurRadius: 90, spreadRadius: 6),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              // The sphere itself: white core fading through primary to a
+              // darker shade at the rim, lit from the upper-left.
+              Container(
+                width: _size,
+                height: _size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    center: const Alignment(-0.4, -0.45),
+                    radius: 1.0,
+                    colors: [
+                      Colors.white,
+                      Color.lerp(Colors.white, primary, 0.55)!,
+                      primary,
+                      Color.lerp(primary, Colors.black, 0.4)!,
+                    ],
+                    stops: const [0.0, 0.28, 0.68, 1.0],
+                  ),
+                  boxShadow: [
+                    BoxShadow(color: primary.withValues(alpha: 0.7), blurRadius: 34, spreadRadius: 0),
+                  ],
+                ),
+              ),
+              // Tight specular highlight — the "glassy" glint that sells the
+              // 3D read.
+              Positioned(
+                top: _size * 0.16,
+                left: _size * 0.20,
+                child: Container(
+                  width: _size * 0.26,
+                  height: _size * 0.18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.95),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Faint rim shading at the lower-right to ground the sphere.
+              Container(
+                width: _size,
+                height: _size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    center: const Alignment(0.55, 0.6),
+                    radius: 0.75,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.22),
+                      Colors.black.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

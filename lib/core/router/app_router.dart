@@ -26,6 +26,7 @@ import '../../features/dreams/presentation/screens/new_dream_screen.dart';
 import '../../features/goals/presentation/screens/goals_screen.dart';
 import '../../features/hobbies/presentation/screens/hobbies_screen.dart';
 import '../../features/journal/presentation/screens/journal_entry_screen.dart';
+import '../../features/journal/presentation/screens/sealed_journals_screen.dart';
 import '../../features/onboarding/presentation/screens/luma_onboarding_screen.dart';
 import '../../features/posts/presentation/screens/feed_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -61,6 +62,7 @@ class AppRoutes {
   static const dailyQuestion = '/daily-question';
   static const community = '/community';
   static const journalEntry = '/journal-entry';
+  static const sealedJournals = '/sealed-journals';
   static const calendar = '/calendar';
   static const rewards = '/rewards';
   static const gratitude = '/gratitude';
@@ -110,6 +112,7 @@ const _protectedRoutes = {
   AppRoutes.dailyQuestion,
   AppRoutes.community,
   AppRoutes.journalEntry,
+  AppRoutes.sealedJournals,
   AppRoutes.calendar,
   AppRoutes.rewards,
   AppRoutes.gratitude,
@@ -232,6 +235,13 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => SectionLockGate(
         section: AppSection.journalWriting,
         builder: (_) => const JournalEntryScreen(),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.sealedJournals,
+      builder: (context, state) => SectionLockGate(
+        section: AppSection.journalWriting,
+        builder: (_) => const SealedJournalsScreen(),
       ),
     ),
     GoRoute(

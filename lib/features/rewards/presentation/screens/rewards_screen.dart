@@ -4,10 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../theme/app_background.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/premium_button.dart';
-import '../../../../theme/sakura_home_palette.dart';
+import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../dreams/presentation/providers/dreams_providers.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
@@ -15,8 +13,6 @@ import '../../../journal/presentation/providers/journal_streak_provider.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../data/rewards_seen_repository.dart';
 import '../../domain/rewards.dart';
-
-const _star = Color(0xFFF6B93B);
 
 /// A single achievement badge.
 class _Badge {
@@ -93,9 +89,11 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
     final firstEverVisit = seenLevel == 0 && seenBadges.isEmpty;
     if (firstEverVisit || (!leveledUp && newBadges.isEmpty) || !mounted) return;
 
+    final mode = ref.read(astraThemeProvider);
     _celebrated = true;
     _showCelebration(
       isTr: isTr,
+      isDark: mode == AstraThemeMode.dark,
       level: leveledUp ? data.progress.level : null,
       newBadgeCount: newBadges.length,
     );
@@ -103,6 +101,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
 
   void _showCelebration({
     required bool isTr,
+    required bool isDark,
     required int? level,
     required int newBadgeCount,
   }) {
@@ -110,6 +109,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
       context: context,
       builder: (context) => _CelebrationDialog(
         isTr: isTr,
+        isDark: isDark,
         level: level,
         newBadgeCount: newBadgeCount,
       ),
@@ -144,6 +144,9 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     final journaledDays =
         ref.watch(journalEntryDaysProvider).valueOrNull?.length ?? 0;
@@ -170,66 +173,58 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.arrow_back_rounded,
-                        color: SakuraHomePalette.textDeep),
-                  ),
-                  Text(
-                    isTr ? 'Başarılarım' : 'Achievements',
-                    style: AppTheme.displayFont(
-                      fontSize: 22,
-                      color: SakuraHomePalette.textDeep,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    AstraCircleIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      isDark: isDark,
+                      primaryColor: primary,
+                      onTap: () => Navigator.of(context).maybePop(),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(isTr ? 'Başarılarım' : 'Achievements', style: AstraKit.heading1(isDark, fontSize: 22)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _StarCard(progress: progress, isTr: isTr, isDark: isDark, primary: primary),
+                        const SizedBox(height: 18),
+                        Text(
+                          isTr ? 'Rozetler · $unlocked/${badges.length}' : 'Badges · $unlocked/${badges.length}',
+                          style: AstraKit.heading2(isDark, fontSize: 17),
+                        ),
+                        const SizedBox(height: 12),
+                        GridView.count(
+                          crossAxisCount: 3,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.86,
+                          children: [for (final b in badges) _BadgeCard(badge: b, isDark: isDark, primary: primary)],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _StarCard(progress: progress, isTr: isTr),
-                      const SizedBox(height: 18),
-                      Text(
-                        isTr
-                            ? 'Rozetler · $unlocked/${badges.length}'
-                            : 'Badges · $unlocked/${badges.length}',
-                        style: AppTheme.displayFont(
-                          fontSize: 17,
-                          color: SakuraHomePalette.textDeep,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      GridView.count(
-                        crossAxisCount: 3,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.86,
-                        children: [for (final b in badges) _BadgeCard(badge: b)],
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-        ),
     );
   }
 
@@ -315,16 +310,19 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
 class _CelebrationDialog extends StatelessWidget {
   const _CelebrationDialog({
     required this.isTr,
+    required this.isDark,
     required this.level,
     required this.newBadgeCount,
   });
 
   final bool isTr;
+  final bool isDark;
   final int? level;
   final int newBadgeCount;
 
   @override
   Widget build(BuildContext context) {
+    final primary = AstraKit.primary(isDark);
     final lines = <String>[];
     if (level != null) {
       lines.add(isTr ? 'Seviye $level\'e ulaştın!' : 'You reached level $level!');
@@ -336,9 +334,11 @@ class _CelebrationDialog extends StatelessWidget {
     }
 
     return Dialog(
-      backgroundColor: SakuraHomePalette.cream,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-      child: Padding(
+      backgroundColor: Colors.transparent,
+      child: AstraGlassCard(
+        isDark: isDark,
+        primaryColor: primary,
+        borderRadius: 26,
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -347,37 +347,24 @@ class _CelebrationDialog extends StatelessWidget {
               tween: Tween(begin: 0, end: 1),
               duration: const Duration(milliseconds: 600),
               curve: Curves.elasticOut,
-              builder: (context, t, child) =>
-                  Transform.scale(scale: t, child: child),
-              child: const Icon(Icons.star_rounded, size: 76, color: _star),
+              builder: (context, t, child) => Transform.scale(scale: t, child: child),
+              child: Icon(Icons.star_rounded, size: 76, color: primary),
             ),
             const SizedBox(height: 14),
-            Text(
-              isTr ? 'Tebrikler!' : 'Congratulations!',
-              style: AppTheme.displayFont(
-                fontSize: 22,
-                color: SakuraHomePalette.textDeep,
-              ),
-            ),
+            Text(isTr ? 'Tebrikler!' : 'Congratulations!', style: AstraKit.heading1(isDark, fontSize: 22)),
             const SizedBox(height: 8),
             for (final line in lines)
               Padding(
                 padding: const EdgeInsets.only(bottom: 2),
-                child: Text(
-                  line,
-                  textAlign: TextAlign.center,
-                  style: AppTheme.bodyFont(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: SakuraHomePalette.textMuted,
-                  ),
-                ),
+                child: Text(line, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 14, fontWeight: FontWeight.w600)),
               ),
             const SizedBox(height: 18),
-            PremiumButton(
+            AstraGoldButton(
+              isDark: isDark,
               label: isTr ? 'Harika!' : 'Awesome!',
               icon: Icons.celebration_rounded,
-              onPressed: () => Navigator.of(context).maybePop(),
+              expand: false,
+              onTap: () => Navigator.of(context).maybePop(),
             ),
           ],
         ),
@@ -387,31 +374,20 @@ class _CelebrationDialog extends StatelessWidget {
 }
 
 class _StarCard extends StatelessWidget {
-  const _StarCard({required this.progress, required this.isTr});
+  const _StarCard({required this.progress, required this.isTr, required this.isDark, required this.primary});
 
   final RewardProgress progress;
   final bool isTr;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFFF3D6), Color(0xFFFDE8EF)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _star.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+      borderRadius: 24,
       child: Column(
         children: [
           SizedBox(
@@ -426,34 +402,22 @@ class _StarCard extends StatelessWidget {
                   child: CircularProgressIndicator(
                     value: progress.isMaxLevel ? 1 : progress.fraction,
                     strokeWidth: 9,
-                    backgroundColor: Colors.white.withValues(alpha: 0.7),
-                    valueColor: const AlwaysStoppedAnimation(_star),
+                    backgroundColor: primary.withValues(alpha: 0.16),
+                    valueColor: AlwaysStoppedAnimation(primary),
                   ),
                 ),
-                _GrowingStar(level: progress.level),
+                _GrowingStar(level: progress.level, primary: primary),
               ],
             ),
           ),
           const SizedBox(height: 14),
-          Text(
-            isTr ? 'Seviye ${progress.level}' : 'Level ${progress.level}',
-            style: AppTheme.displayFont(
-              fontSize: 22,
-              color: SakuraHomePalette.textDeep,
-            ),
-          ),
+          Text(isTr ? 'Seviye ${progress.level}' : 'Level ${progress.level}', style: AstraKit.heading1(isDark, fontSize: 22)),
           const SizedBox(height: 4),
           Text(
             progress.isMaxLevel
                 ? (isTr ? 'En yüksek seviye! ${progress.points} puan' : 'Max level! ${progress.points} pts')
-                : (isTr
-                    ? 'Sonraki seviyeye ${progress.pointsToNext} puan'
-                    : '${progress.pointsToNext} pts to next level'),
-            style: AppTheme.bodyFont(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: SakuraHomePalette.textMuted,
-            ),
+                : (isTr ? 'Sonraki seviyeye ${progress.pointsToNext} puan' : '${progress.pointsToNext} pts to next level'),
+            style: AstraKit.mutedText(isDark, fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -465,9 +429,10 @@ class _StarCard extends StatelessWidget {
 /// as the user levels up (which happens by earning achievements), with a
 /// soft pulsing glow and twinkling sparkles.
 class _GrowingStar extends StatefulWidget {
-  const _GrowingStar({required this.level});
+  const _GrowingStar({required this.level, required this.primary});
 
   final int level;
+  final Color primary;
 
   @override
   State<_GrowingStar> createState() => _GrowingStarState();
@@ -496,6 +461,7 @@ class _GrowingStarState extends State<_GrowingStar>
 
   @override
   Widget build(BuildContext context) {
+    final primary = widget.primary;
     // Small at level 1, growing with each level earned.
     final size = (24 + widget.level * 8).clamp(24, 116).toDouble();
     return SizedBox(
@@ -515,7 +481,7 @@ class _GrowingStarState extends State<_GrowingStar>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: _star.withValues(alpha: 0.35 * glow),
+                      color: primary.withValues(alpha: 0.35 * glow),
                       blurRadius: 28,
                       spreadRadius: 4,
                     ),
@@ -528,9 +494,8 @@ class _GrowingStarState extends State<_GrowingStar>
             tween: Tween(begin: 0.3, end: 1),
             duration: const Duration(milliseconds: 850),
             curve: Curves.elasticOut,
-            builder: (context, t, child) =>
-                Transform.scale(scale: t, child: child),
-            child: Icon(Icons.star_rounded, size: size, color: _star),
+            builder: (context, t, child) => Transform.scale(scale: t, child: child),
+            child: Icon(Icons.star_rounded, size: size, color: primary),
           ),
           for (final s in _sparkles)
             Align(
@@ -544,8 +509,7 @@ class _GrowingStarState extends State<_GrowingStar>
                     opacity: 0.25 + 0.75 * tw,
                     child: Transform.scale(
                       scale: 0.7 + 0.3 * tw,
-                      child: Icon(Icons.auto_awesome,
-                          size: s.$2, color: Colors.white),
+                      child: Icon(Icons.auto_awesome, size: s.$2, color: Colors.white),
                     ),
                   );
                 },
@@ -558,26 +522,20 @@ class _GrowingStarState extends State<_GrowingStar>
 }
 
 class _BadgeCard extends StatelessWidget {
-  const _BadgeCard({required this.badge});
+  const _BadgeCard({required this.badge, required this.isDark, required this.primary});
 
   final _Badge badge;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
     final unlocked = badge.unlocked;
-    return Container(
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+      borderRadius: 18,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -590,31 +548,25 @@ class _BadgeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: unlocked
-                      ? const LinearGradient(
+                      ? LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFFFFD98E), _star],
+                          colors: [primary.withValues(alpha: 0.7), primary],
                         )
                       : null,
-                  color: unlocked ? null : SakuraHomePalette.lavender,
+                  color: unlocked ? null : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
                 ),
                 child: Icon(
                   badge.icon,
                   size: 24,
-                  color: unlocked
-                      ? Colors.white
-                      : SakuraHomePalette.textMuted.withValues(alpha: 0.55),
+                  color: unlocked ? const Color(0xFF1A0F00) : AstraKit.muted(isDark).withValues(alpha: 0.7),
                 ),
               ),
               if (!unlocked)
                 Positioned(
                   right: 8,
                   bottom: 6,
-                  child: Icon(
-                    Icons.lock_rounded,
-                    size: 14,
-                    color: SakuraHomePalette.textMuted.withValues(alpha: 0.8),
-                  ),
+                  child: Icon(Icons.lock_rounded, size: 14, color: AstraKit.muted(isDark)),
                 ),
             ],
           ),
@@ -624,13 +576,7 @@ class _BadgeCard extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTheme.bodyFont(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: unlocked
-                  ? SakuraHomePalette.textDeep
-                  : SakuraHomePalette.textMuted,
-            ),
+            style: AstraKit.body(isDark, fontSize: 11, fontWeight: FontWeight.w700, color: unlocked ? null : AstraKit.muted(isDark)),
           ),
         ],
       ),

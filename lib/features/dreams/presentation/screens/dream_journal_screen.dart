@@ -8,15 +8,18 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/services/crisis_detection_service.dart';
 import '../../../../core/services/dream_interpretation_service.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
-import '../../../../theme/lumora_palette.dart';
-import '../../../../theme/dream_pastel_background.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../data/dream_symbol_keywords.dart';
 import '../../data/dreams_repository.dart';
 import '../providers/dreams_providers.dart';
 import 'dream_reflection_screen.dart' show dreamFamiliarPersonLabels, dreamFeelingLabels;
+
+/// Dreams are shown as a night scene regardless of the app's light/dark
+/// theme choice — the moon setting fits the subject either way, and it
+/// keeps this screen from needing a from-scratch bright variant.
+const _isDark = true;
 
 /// A symbol's localized label and its gentle, non-definitive association —
 /// resolved in the presentation layer (which has an [AppLocalizations]
@@ -103,47 +106,50 @@ class DreamJournalScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final dreamsAsync = ref.watch(dreamsStreamProvider);
+    final primary = AstraKit.primary(_isDark);
 
     return Scaffold(
-      backgroundColor: LumoraPalette.nightBackground,
-      body: DreamPastelBackground(
+      backgroundColor: Colors.transparent,
+      body: AstraMountainBackground(
+        isDark: _isDark,
         child: SafeArea(
           child: ResponsiveContent(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 4),
-                  child: Text(
-                    l10n.dreamJournalTitle,
-                    style: AppTheme.displayFont(fontSize: 24, color: Colors.white),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 24, 4),
+                  child: Row(
+                    children: [
+                      AstraCircleIconButton(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        isDark: _isDark,
+                        primaryColor: primary,
+                        onTap: () => Navigator.of(context).maybePop(),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(l10n.dreamJournalTitle, style: AstraKit.heading1(_isDark, fontSize: 24)),
+                    ],
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 18),
-                  child: Text(
-                    l10n.dreamJournalSubtitle,
-                    style: AppTheme.bodyFont(color: Colors.white.withValues(alpha: 0.65)),
-                  ),
+                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 18),
+                  child: Text(l10n.dreamJournalSubtitle, style: AstraKit.mutedText(_isDark)),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
-                  child: _WriteDreamButton(
+                  child: AstraGoldButton(
+                    isDark: _isDark,
                     label: l10n.dreamJournalWriteButton,
                     onTap: () => context.push(AppRoutes.newDream),
                   ),
                 ),
                 Expanded(
                   child: dreamsAsync.when(
-                    data: (dreams) => _DreamListSection(dreams: dreams),
-                    loading: () => const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
+                    data: (dreams) => _DreamListSection(dreams: dreams, primary: primary),
+                    loading: () => Center(child: CircularProgressIndicator(color: primary)),
                     error: (_, __) => Center(
-                      child: Text(
-                        l10n.dreamJournalLoadError,
-                        style: AppTheme.bodyFont(color: Colors.white.withValues(alpha: 0.8)),
-                      ),
+                      child: Text(l10n.dreamJournalLoadError, style: AstraKit.mutedText(_isDark)),
                     ),
                   ),
                 ),
@@ -157,9 +163,10 @@ class DreamJournalScreen extends ConsumerWidget {
 }
 
 class _DreamListSection extends StatelessWidget {
-  const _DreamListSection({required this.dreams});
+  const _DreamListSection({required this.dreams, required this.primary});
 
   final List<DreamRow> dreams;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
@@ -175,14 +182,10 @@ class _DreamListSection extends StatelessWidget {
             children: [
               Text(
                 l10n.dreamJournalListHeader(dreams.length),
-                style: AppTheme.bodyFont(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
+                style: AstraKit.body(_isDark, fontSize: 15, fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: 8),
-              _MoonPhaseIcon(dreamCount: dreams.length),
+              _MoonPhaseIcon(dreamCount: dreams.length, primary: primary),
             ],
           ),
         ),
@@ -192,15 +195,12 @@ class _DreamListSection extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.auto_awesome_rounded, size: 14, color: Colors.white.withValues(alpha: 0.6)),
+                Icon(Icons.auto_awesome_rounded, size: 14, color: primary),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     insight,
-                    style: AppTheme.bodyFont(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ).copyWith(fontStyle: FontStyle.italic),
+                    style: AstraKit.mutedText(_isDark, fontSize: 12).copyWith(fontStyle: FontStyle.italic),
                   ),
                 ),
               ],
@@ -211,17 +211,13 @@ class _DreamListSection extends StatelessWidget {
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(
-                      l10n.dreamJournalEmptyState,
-                      textAlign: TextAlign.center,
-                      style: AppTheme.bodyFont(color: Colors.white.withValues(alpha: 0.6)),
-                    ),
+                    child: Text(l10n.dreamJournalEmptyState, textAlign: TextAlign.center, style: AstraKit.mutedText(_isDark)),
                   ),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(24, 14, 24, 100),
                   itemCount: dreams.length,
-                  itemBuilder: (context, index) => _DreamCard(dream: dreams[index]),
+                  itemBuilder: (context, index) => _DreamCard(dream: dreams[index], primary: primary),
                 ),
         ),
       ],
@@ -230,9 +226,10 @@ class _DreamListSection extends StatelessWidget {
 }
 
 class _DreamCard extends ConsumerStatefulWidget {
-  const _DreamCard({required this.dream});
+  const _DreamCard({required this.dream, required this.primary});
 
   final DreamRow dream;
+  final Color primary;
 
   @override
   ConsumerState<_DreamCard> createState() => _DreamCardState();
@@ -298,6 +295,7 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
   @override
   Widget build(BuildContext context) {
     final dream = widget.dream;
+    final primary = widget.primary;
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     final tags = symbolTagsFor(dream);
@@ -308,106 +306,95 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
     final hasReflectionDetails =
         dream.familiarPerson != null || dream.firstThought != null || dream.lifeConnection != null;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: LumoraPalette.primaryPurple.withValues(alpha: 0.22),
-                ),
-                child: const Icon(Icons.nights_stay_rounded, color: Colors.white, size: 19),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                DateFormat.yMMMd(locale).format(dream.date),
-                style: AppTheme.bodyFont(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 220),
-            crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            firstChild: Text(
-              dream.content,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: AppTheme.bodyFont(fontSize: 13.5, color: Colors.white.withValues(alpha: 0.85)),
-            ),
-            secondChild: Text(
-              dream.content,
-              style: AppTheme.bodyFont(fontSize: 13.5, color: Colors.white.withValues(alpha: 0.85)),
-            ),
-          ),
-          if (tags.isNotEmpty || dream.feelingTag != null) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: AstraGlassCard(
+        isDark: _isDark,
+        primaryColor: primary,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                if (dream.feelingTag != null && feelingLabels[dream.feelingTag] != null)
-                  _FeelingChip(label: feelingLabels[dream.feelingTag]!),
-                for (final tag in tags)
-                  if (symbolCopy[tag] != null) _SymbolChip(symbolKey: tag, copy: symbolCopy[tag]!),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: primary.withValues(alpha: 0.18),
+                    border: Border.all(color: primary.withValues(alpha: 0.4)),
+                  ),
+                  child: Icon(Icons.nights_stay_rounded, color: primary, size: 19),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  DateFormat.yMMMd(locale).format(dream.date),
+                  style: AstraKit.body(_isDark, fontSize: 12.5, fontWeight: FontWeight.w700),
+                ),
               ],
             ),
-          ],
-          if (_expanded && hasReflectionDetails) ...[
-            const SizedBox(height: 14),
-            Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
             const SizedBox(height: 12),
-            if (dream.familiarPerson != null)
-              _ReflectionDetailRow(
-                label: l10n.dreamCardFamiliarPersonLabel,
-                value: familiarPersonLabels[dream.familiarPerson] ?? dream.familiarPerson!,
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 220),
+              crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              firstChild: Text(
+                dream.content,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: AstraKit.body(_isDark, fontSize: 13.5, fontWeight: FontWeight.w500),
               ),
-            if (dream.firstThought != null)
-              _ReflectionDetailRow(label: l10n.dreamCardFirstThoughtLabel, value: dream.firstThought!),
-            if (dream.lifeConnection != null)
-              _ReflectionDetailRow(label: l10n.dreamCardLifeConnectionLabel, value: dream.lifeConnection!),
-          ],
-          if (_expanded) ...[
-            const SizedBox(height: 14),
-            _AiInterpretationSection(
-              interpretation: dream.aiInterpretation,
-              isLoading: _isInterpreting,
-              hasError: _interpretError,
-              onInterpret: _interpret,
+              secondChild: Text(dream.content, style: AstraKit.body(_isDark, fontSize: 13.5, fontWeight: FontWeight.w500)),
             ),
-          ],
-          const SizedBox(height: 4),
-          InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
-            child: Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                _expanded ? l10n.dreamCardShowLess : l10n.dreamCardShowMore,
-                style: LumoraPalette.bodyStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: LumoraPalette.lightPurple,
+            if (tags.isNotEmpty || dream.feelingTag != null) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (dream.feelingTag != null && feelingLabels[dream.feelingTag] != null)
+                    _FeelingChip(label: feelingLabels[dream.feelingTag]!, primary: primary),
+                  for (final tag in tags)
+                    if (symbolCopy[tag] != null) _SymbolChip(symbolKey: tag, copy: symbolCopy[tag]!, primary: primary),
+                ],
+              ),
+            ],
+            if (_expanded && hasReflectionDetails) ...[
+              const SizedBox(height: 14),
+              Divider(color: primary.withValues(alpha: 0.2), height: 1),
+              const SizedBox(height: 12),
+              if (dream.familiarPerson != null)
+                _ReflectionDetailRow(
+                  label: l10n.dreamCardFamiliarPersonLabel,
+                  value: familiarPersonLabels[dream.familiarPerson] ?? dream.familiarPerson!,
+                ),
+              if (dream.firstThought != null)
+                _ReflectionDetailRow(label: l10n.dreamCardFirstThoughtLabel, value: dream.firstThought!),
+              if (dream.lifeConnection != null)
+                _ReflectionDetailRow(label: l10n.dreamCardLifeConnectionLabel, value: dream.lifeConnection!),
+            ],
+            if (_expanded) ...[
+              const SizedBox(height: 14),
+              _AiInterpretationSection(
+                interpretation: dream.aiInterpretation,
+                isLoading: _isInterpreting,
+                hasError: _interpretError,
+                primary: primary,
+                onInterpret: _interpret,
+              ),
+            ],
+            const SizedBox(height: 4),
+            InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  _expanded ? l10n.dreamCardShowLess : l10n.dreamCardShowMore,
+                  style: AstraKit.body(_isDark, fontSize: 12, fontWeight: FontWeight.w700, color: primary),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -416,9 +403,10 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
 /// Non-interactive pill naming the reflection flow's answered feeling —
 /// visually distinct from the tappable symbol chips beside it.
 class _FeelingChip extends StatelessWidget {
-  const _FeelingChip({required this.label});
+  const _FeelingChip({required this.label, required this.primary});
 
   final String label;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
@@ -426,17 +414,10 @@ class _FeelingChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: LumoraPalette.accentPink.withValues(alpha: 0.16),
-        border: Border.all(color: LumoraPalette.accentPink.withValues(alpha: 0.4)),
+        color: primary.withValues(alpha: 0.22),
+        border: Border.all(color: primary.withValues(alpha: 0.5)),
       ),
-      child: Text(
-        label,
-        style: LumoraPalette.bodyStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w700,
-          color: LumoraPalette.accentPink,
-        ),
-      ),
+      child: Text(label, style: AstraKit.body(_isDark, fontSize: 11.5, fontWeight: FontWeight.w700, color: primary)),
     );
   }
 }
@@ -455,19 +436,9 @@ class _ReflectionDetailRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: AppTheme.bodyFont(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Colors.white.withValues(alpha: 0.5),
-            ),
-          ),
+          Text(label, style: AstraKit.label(_isDark, fontSize: 11)),
           const SizedBox(height: 2),
-          Text(
-            value,
-            style: AppTheme.bodyFont(fontSize: 13, color: Colors.white.withValues(alpha: 0.85)),
-          ),
+          Text(value, style: AstraKit.body(_isDark, fontSize: 13, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -485,12 +456,14 @@ class _AiInterpretationSection extends StatelessWidget {
     required this.interpretation,
     required this.isLoading,
     required this.hasError,
+    required this.primary,
     required this.onInterpret,
   });
 
   final String? interpretation;
   final bool isLoading;
   final bool hasError;
+  final Color primary;
   final VoidCallback onInterpret;
 
   @override
@@ -498,7 +471,7 @@ class _AiInterpretationSection extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     if (isLoading) {
-      return _AiLoadingRow(text: l10n.dreamCardInterpretingStatus);
+      return _AiLoadingRow(text: l10n.dreamCardInterpretingStatus, primary: primary);
     }
 
     final hasInterpretation = interpretation != null;
@@ -506,7 +479,7 @@ class _AiInterpretationSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasInterpretation) _AiInsightCard(text: interpretation!, label: l10n.dreamCardAiInsightLabel),
+        if (hasInterpretation) _AiInsightCard(text: interpretation!, label: l10n.dreamCardAiInsightLabel, primary: primary),
         if (hasError) ...[
           if (hasInterpretation) const SizedBox(height: 10),
           _WarmErrorBanner(text: l10n.dreamCardInterpretError),
@@ -514,6 +487,7 @@ class _AiInterpretationSection extends StatelessWidget {
         if (hasInterpretation || hasError) const SizedBox(height: 10),
         _InterpretButton(
           label: hasInterpretation ? l10n.dreamCardReinterpretButton : l10n.dreamCardInterpretButton,
+          primary: primary,
           onTap: onInterpret,
         ),
       ],
@@ -522,28 +496,23 @@ class _AiInterpretationSection extends StatelessWidget {
 }
 
 class _AiLoadingRow extends StatelessWidget {
-  const _AiLoadingRow({required this.text});
+  const _AiLoadingRow({required this.text, required this.primary});
 
   final String text;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(
+        SizedBox(
           width: 14,
           height: 14,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(LumoraPalette.lightPurple),
-          ),
+          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(primary)),
         ),
         const SizedBox(width: 10),
-        Text(
-          text,
-          style: AppTheme.bodyFont(fontSize: 12.5, color: Colors.white.withValues(alpha: 0.65)),
-        ),
+        Text(text, style: AstraKit.mutedText(_isDark, fontSize: 12.5)),
       ],
     );
   }
@@ -553,10 +522,11 @@ class _AiLoadingRow extends StatelessWidget {
 /// distinct from the tappable local symbol chips above it, so it's clear
 /// this line came from an optional AI call rather than the local dictionary.
 class _AiInsightCard extends StatelessWidget {
-  const _AiInsightCard({required this.text, required this.label});
+  const _AiInsightCard({required this.text, required this.label, required this.primary});
 
   final String text;
   final String label;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
@@ -565,31 +535,27 @@ class _AiInsightCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: LumoraPalette.warmCream.withValues(alpha: 0.08),
-        border: Border.all(color: LumoraPalette.warmCream.withValues(alpha: 0.3)),
+        color: primary.withValues(alpha: 0.10),
+        border: Border.all(color: primary.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome_rounded, size: 13, color: LumoraPalette.warmCream),
+              Icon(Icons.auto_awesome_rounded, size: 13, color: primary),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: LumoraPalette.bodyStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: LumoraPalette.warmCream,
-                ).copyWith(letterSpacing: 0.4),
+                style: AstraKit.label(_isDark, fontSize: 10.5).copyWith(letterSpacing: 0.4),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             text,
-            style: AppTheme.bodyFont(fontSize: 13, color: Colors.white.withValues(alpha: 0.88))
-                .copyWith(fontStyle: FontStyle.italic, height: 1.4),
+            style: AstraKit.body(_isDark, fontSize: 13, fontWeight: FontWeight.w500, height: 1.4)
+                .copyWith(fontStyle: FontStyle.italic),
           ),
         ],
       ),
@@ -604,28 +570,22 @@ class _WarmErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const errorColor = Color(0xFFE07A7A);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: LumoraPalette.accentPink.withValues(alpha: 0.14),
+        color: errorColor.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: LumoraPalette.accentPink.withValues(alpha: 0.35)),
+        border: Border.all(color: errorColor.withValues(alpha: 0.4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.spa_outlined, size: 15, color: LumoraPalette.warmCream),
+          const Icon(Icons.spa_outlined, size: 15, color: errorColor),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              text,
-              style: LumoraPalette.bodyStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: LumoraPalette.warmCream,
-              ),
-            ),
+            child: Text(text, style: AstraKit.body(_isDark, fontSize: 12.5, fontWeight: FontWeight.w500)),
           ),
         ],
       ),
@@ -634,9 +594,10 @@ class _WarmErrorBanner extends StatelessWidget {
 }
 
 class _InterpretButton extends StatelessWidget {
-  const _InterpretButton({required this.label, required this.onTap});
+  const _InterpretButton({required this.label, required this.primary, required this.onTap});
 
   final String label;
+  final Color primary;
   final VoidCallback onTap;
 
   @override
@@ -650,22 +611,15 @@ class _InterpretButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            color: LumoraPalette.warmCream.withValues(alpha: 0.12),
-            border: Border.all(color: LumoraPalette.warmCream.withValues(alpha: 0.4)),
+            color: primary.withValues(alpha: 0.12),
+            border: Border.all(color: primary.withValues(alpha: 0.4)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.auto_awesome_rounded, size: 13, color: LumoraPalette.warmCream),
+              Icon(Icons.auto_awesome_rounded, size: 13, color: primary),
               const SizedBox(width: 6),
-              Text(
-                label,
-                style: LumoraPalette.bodyStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: LumoraPalette.warmCream,
-                ),
-              ),
+              Text(label, style: AstraKit.body(_isDark, fontSize: 12, fontWeight: FontWeight.w700, color: primary)),
             ],
           ),
         ),
@@ -677,10 +631,11 @@ class _InterpretButton extends StatelessWidget {
 /// A small tappable tag naming a detected symbol — tapping opens a brief
 /// popover with its gentle association.
 class _SymbolChip extends StatelessWidget {
-  const _SymbolChip({required this.symbolKey, required this.copy});
+  const _SymbolChip({required this.symbolKey, required this.copy, required this.primary});
 
   final String symbolKey;
   final DreamSymbolCopy copy;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
@@ -688,58 +643,40 @@ class _SymbolChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(999),
-        onTap: () => _showSymbolPopover(context, copy),
+        onTap: () => _showSymbolPopover(context, copy, primary),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            color: LumoraPalette.lightPurple.withValues(alpha: 0.16),
-            border: Border.all(color: LumoraPalette.lightPurple.withValues(alpha: 0.4)),
+            color: primary.withValues(alpha: 0.14),
+            border: Border.all(color: primary.withValues(alpha: 0.4)),
           ),
-          child: Text(
-            copy.label,
-            style: LumoraPalette.bodyStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: LumoraPalette.lightPurple,
-            ),
-          ),
+          child: Text(copy.label, style: AstraKit.body(_isDark, fontSize: 11.5, fontWeight: FontWeight.w700, color: primary)),
         ),
       ),
     );
   }
 }
 
-void _showSymbolPopover(BuildContext context, DreamSymbolCopy copy) {
+void _showSymbolPopover(BuildContext context, DreamSymbolCopy copy, Color primary) {
   showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.45),
     builder: (context) => Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Container(
+      child: AstraGlassCard(
+        isDark: _isDark,
+        primaryColor: primary,
+        borderRadius: 20,
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: LumoraPalette.nightBackground,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              copy.label,
-              style: LumoraPalette.bodyStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
-            ),
+            Text(copy.label, style: AstraKit.body(_isDark, fontSize: 15, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
-            Text(
-              copy.description,
-              style: LumoraPalette.bodyStyle(
-                fontSize: 13,
-                color: Colors.white.withValues(alpha: 0.75),
-              ),
-            ),
+            Text(copy.description, style: AstraKit.mutedText(_isDark, fontSize: 13)),
           ],
         ),
       ),
@@ -747,58 +684,14 @@ void _showSymbolPopover(BuildContext context, DreamSymbolCopy copy) {
   );
 }
 
-class _WriteDreamButton extends StatelessWidget {
-  const _WriteDreamButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: const LinearGradient(
-          colors: LumoraPalette.ctaGradient,
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: LumoraPalette.primaryPurple.withValues(alpha: 0.45),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(26),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Center(
-              child: Text(
-                label,
-                style: LumoraPalette.bodyStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Small decorative moon that visually waxes as the dream count grows —
 /// new moon at 0-2 entries, growing crescent at 3-6, half moon at 7-14,
 /// full moon at 15+. Purely charming, not a real feature.
 class _MoonPhaseIcon extends StatelessWidget {
-  const _MoonPhaseIcon({required this.dreamCount});
+  const _MoonPhaseIcon({required this.dreamCount, required this.primary});
 
   final int dreamCount;
+  final Color primary;
 
   double get _litFraction {
     if (dreamCount <= 2) return 0.12;
@@ -812,15 +705,16 @@ class _MoonPhaseIcon extends StatelessWidget {
     return SizedBox(
       width: 18,
       height: 18,
-      child: CustomPaint(painter: _MoonPhasePainter(_litFraction)),
+      child: CustomPaint(painter: _MoonPhasePainter(_litFraction, primary)),
     );
   }
 }
 
 class _MoonPhasePainter extends CustomPainter {
-  const _MoonPhasePainter(this.litFraction);
+  const _MoonPhasePainter(this.litFraction, this.primary);
 
   final double litFraction;
+  final Color primary;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -830,11 +724,11 @@ class _MoonPhasePainter extends CustomPainter {
     final basePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = Colors.white.withValues(alpha: 0.3);
+      ..color = primary.withValues(alpha: 0.35);
     canvas.drawCircle(center, radius - 0.5, basePaint);
 
     canvas.saveLayer(Rect.fromCircle(center: center, radius: radius), Paint());
-    canvas.drawCircle(center, radius, Paint()..color = LumoraPalette.warmCream);
+    canvas.drawCircle(center, radius, Paint()..color = primary);
     if (litFraction < 0.98) {
       final dx = radius * (2 * (1 - litFraction));
       canvas.drawCircle(
@@ -847,5 +741,6 @@ class _MoonPhasePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _MoonPhasePainter oldDelegate) => oldDelegate.litFraction != litFraction;
+  bool shouldRepaint(covariant _MoonPhasePainter oldDelegate) =>
+      oldDelegate.litFraction != litFraction || oldDelegate.primary != primary;
 }

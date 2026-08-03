@@ -5,10 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/lumora_palette.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
 import '../providers/app_lock_providers.dart';
 import '../widgets/pin_keypad.dart';
+
+/// PIN entry stays night-themed regardless of the app's light/dark choice —
+/// same reasoning as the dream journal.
+const _isDark = true;
 
 /// PIN verification screen — used both inline by [SectionLockGate] (as the
 /// "show this instead of the real content" widget, [dismissible] false,
@@ -139,18 +143,14 @@ class _PinVerifyScreenState extends ConsumerState<PinVerifyScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final status = _statusMessage(l10n);
+    final primary = AstraKit.primary(_isDark);
 
     return PopScope(
       canPop: widget.dismissible,
       child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: LumoraPalette.backgroundGradient,
-            ),
-          ),
+        backgroundColor: Colors.transparent,
+        body: AstraMountainBackground(
+          isDark: _isDark,
           child: SafeArea(
             child: ResponsiveContent(
               child: Column(
@@ -158,26 +158,24 @@ class _PinVerifyScreenState extends ConsumerState<PinVerifyScreen> {
                   if (widget.dismissible)
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white),
-                        onPressed: () => Navigator.of(context).maybePop(false),
+                      child: AstraCircleIconButton(
+                        icon: Icons.close_rounded,
+                        isDark: _isDark,
+                        primaryColor: primary,
+                        onTap: () => Navigator.of(context).maybePop(false),
                       ),
                     )
                   else
                     const SizedBox(height: 48),
                   const Spacer(),
-                  Icon(
-                    Icons.lock_outline_rounded,
-                    color: Colors.white.withValues(alpha: 0.85),
-                    size: 40,
-                  ),
+                  Icon(Icons.lock_outline_rounded, color: primary, size: 40),
                   const SizedBox(height: 20),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
                       widget.title,
                       textAlign: TextAlign.center,
-                      style: LumoraPalette.bodyStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      style: AstraKit.heading2(_isDark, fontSize: 18),
                     ),
                   ),
                   if (status != null) ...[
@@ -187,10 +185,7 @@ class _PinVerifyScreenState extends ConsumerState<PinVerifyScreen> {
                       child: Text(
                         status,
                         textAlign: TextAlign.center,
-                        style: LumoraPalette.bodyStyle(
-                          fontSize: 13,
-                          color: LumoraPalette.accentPink,
-                        ),
+                        style: const TextStyle(fontSize: 13, color: Color(0xFFE07A7A)),
                       ),
                     ),
                   ],

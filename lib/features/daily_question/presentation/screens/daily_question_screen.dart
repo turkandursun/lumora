@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/services/crisis_detection_service.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_background.dart';
-import '../../../../theme/app_theme.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
-import '../../../../theme/lumora_palette.dart';
 import '../../../../theme/responsive_content.dart';
-import '../../../../theme/sakura_home_palette.dart';
 import '../../../community/presentation/providers/community_providers.dart';
 import '../../domain/daily_question_bank.dart';
 import '../providers/daily_question_providers.dart';
@@ -32,34 +31,50 @@ class DailyQuestionScreen extends ConsumerWidget {
 
     final todayAnswerAsync = ref.watch(todayDailyQuestionAnswerProvider);
     final historyAsync = ref.watch(dailyQuestionHistoryProvider);
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: ResponsiveContent(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                Text(
-                  l10n.dailyQuestionTitle,
-                  style: AppTheme.displayFont(
-                      fontSize: 24, color: SakuraHomePalette.textDeep),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.dailyQuestionSubtitle,
-                  style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted),
+                Row(
+                  children: [
+                    AstraCircleIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      isDark: isDark,
+                      primaryColor: primary,
+                      onTap: () => Navigator.of(context).maybePop(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(l10n.dailyQuestionTitle, style: AstraKit.heading1(isDark, fontSize: 22)),
+                          Text(l10n.dailyQuestionSubtitle, style: AstraKit.mutedText(isDark)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
-                _TodayQuestionCard(questionText: todayQuestionText),
+                _TodayQuestionCard(questionText: todayQuestionText, isDark: isDark, primary: primary),
                 const SizedBox(height: 16),
                 todayAnswerAsync.when(
                   data: (answer) => answer == null
-                      ? _AnswerButton(
+                      ? AstraGoldButton(
+                          isDark: isDark,
                           label: l10n.dailyQuestionAnswerButton,
                           onTap: () => _openAnswerSheet(
                             context,
+                            isDark: isDark,
                             questionIndex: todayIndex,
                             questionText: todayQuestionText,
                             existing: null,
@@ -67,40 +82,32 @@ class DailyQuestionScreen extends ConsumerWidget {
                         )
                       : _AnsweredState(
                           answer: answer,
+                          isDark: isDark,
+                          primary: primary,
                           onEdit: () => _openAnswerSheet(
                             context,
+                            isDark: isDark,
                             questionIndex: todayIndex,
                             questionText: todayQuestionText,
                             existing: answer,
                           ),
                         ),
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(12),
-                      child: CircularProgressIndicator(
-                        color: SakuraHomePalette.blossomPink),
-                    ),
+                  loading: () => Center(
+                    child: Padding(padding: const EdgeInsets.all(12), child: CircularProgressIndicator(color: primary)),
                   ),
-                  error: (_, __) => Text(
-                    l10n.dailyQuestionLoadError,
-                    style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted),
-                  ),
+                  error: (_, __) => Text(l10n.dailyQuestionLoadError, style: AstraKit.mutedText(isDark)),
                 ),
                 const SizedBox(height: 28),
-                Text(
-                  l10n.dailyQuestionHistoryTitle,
-                  style: AppTheme.bodyFont(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: SakuraHomePalette.textDeep),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(l10n.dailyQuestionHistoryTitle, style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(height: 12),
                 historyAsync.when(
                   data: (rows) => rows.isEmpty
-                      ? Text(
-                          l10n.dailyQuestionHistoryEmpty,
-                          style: AppTheme.bodyFont(
-                              color: SakuraHomePalette.textMuted),
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(l10n.dailyQuestionHistoryEmpty, style: AstraKit.mutedText(isDark)),
                         )
                       : Column(
                           children: [
@@ -108,20 +115,15 @@ class DailyQuestionScreen extends ConsumerWidget {
                               _HistoryTile(
                                 row: row,
                                 questionText: bank[row.questionIndex.clamp(0, bank.length - 1)],
+                                isDark: isDark,
+                                primary: primary,
                               ),
                           ],
                         ),
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(12),
-                      child: CircularProgressIndicator(
-                        color: SakuraHomePalette.blossomPink),
-                    ),
+                  loading: () => Center(
+                    child: Padding(padding: const EdgeInsets.all(12), child: CircularProgressIndicator(color: primary)),
                   ),
-                  error: (_, __) => Text(
-                    l10n.dailyQuestionLoadError,
-                    style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted),
-                  ),
+                  error: (_, __) => Text(l10n.dailyQuestionLoadError, style: AstraKit.mutedText(isDark)),
                 ),
               ],
             ),
@@ -139,6 +141,7 @@ class DailyQuestionScreen extends ConsumerWidget {
 /// the time this runs.
 Future<void> _openAnswerSheet(
   BuildContext context, {
+  required bool isDark,
   required int questionIndex,
   required String questionText,
   required DailyQuestionAnswerRow? existing,
@@ -148,6 +151,7 @@ Future<void> _openAnswerSheet(
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (_) => _AnswerSheet(
+      isDark: isDark,
       questionIndex: questionIndex,
       questionText: questionText,
       existing: existing,
@@ -158,110 +162,60 @@ Future<void> _openAnswerSheet(
   }
 }
 
-/// Luma's small avatar dot beside a speech-bubble-style card holding
-/// today's question — same avatar visual used in Luma's chat sheet header,
-/// scaled up slightly for a standalone card.
+/// Speech-bubble-style card holding today's question.
 class _TodayQuestionCard extends StatelessWidget {
-  const _TodayQuestionCard({required this.questionText});
+  const _TodayQuestionCard({required this.questionText, required this.isDark, required this.primary});
 
   final String questionText;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.22)),
-      ),
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      borderRadius: 22,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  SakuraHomePalette.petalPink,
-                  SakuraHomePalette.blossomPink,
-                ],
-              ),
+              color: primary.withValues(alpha: 0.18),
+              border: Border.all(color: primary.withValues(alpha: 0.4)),
             ),
+            child: Icon(Icons.auto_awesome, color: primary, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: SakuraHomePalette.lavender,
+                color: primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
                 questionText,
-                style: AppTheme.bodyFont(
-                        fontSize: 14.5,
-                        color: SakuraHomePalette.textDeep,
-                        letterSpacing: 0.1)
-                    .copyWith(fontStyle: FontStyle.italic, height: 1.4),
+                style: AstraKit.body(isDark, fontSize: 14.5, fontWeight: FontWeight.w500, height: 1.4)
+                    .copyWith(fontStyle: FontStyle.italic),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AnswerButton extends StatelessWidget {
-  const _AnswerButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: const LinearGradient(
-          colors: SakuraHomePalette.ctaGradient,
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: SakuraHomePalette.blossomPink.withValues(alpha: 0.4),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(26),
-          onTap: onTap,
-          child: Center(
-            child: Text(
-              label,
-              style: LumoraPalette.bodyStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
-            ),
-          ),
-        ),
       ),
     );
   }
 }
 
 class _AnsweredState extends StatelessWidget {
-  const _AnsweredState({required this.answer, required this.onEdit});
+  const _AnsweredState({required this.answer, required this.isDark, required this.primary, required this.onEdit});
 
   final DailyQuestionAnswerRow answer;
+  final bool isDark;
+  final Color primary;
   final VoidCallback onEdit;
 
   @override
@@ -272,45 +226,23 @@ class _AnsweredState extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.check_circle_rounded,
-                color: SakuraHomePalette.blossomPink, size: 18),
+            Icon(Icons.check_circle_rounded, color: primary, size: 18),
             const SizedBox(width: 6),
-            Text(
-              l10n.dailyQuestionAnsweredToday,
-              style: AppTheme.bodyFont(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: SakuraHomePalette.textDeep),
-            ),
+            Text(l10n.dailyQuestionAnsweredToday, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700)),
           ],
         ),
         const SizedBox(height: 10),
-        Container(
-          width: double.infinity,
+        AstraGlassCard(
+          isDark: isDark,
+          primaryColor: primary,
+          borderRadius: 16,
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: SakuraHomePalette.cardWhite,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-                color: SakuraHomePalette.branchMauve.withValues(alpha: 0.22)),
-          ),
-          child: Text(
-            answer.answerText,
-            style: AppTheme.bodyFont(
-                    fontSize: 13.5, color: SakuraHomePalette.textDeep)
-                .copyWith(height: 1.4),
-          ),
+          child: Text(answer.answerText, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500, height: 1.4)),
         ),
         const SizedBox(height: 10),
         InkWell(
           onTap: onEdit,
-          child: Text(
-            l10n.dailyQuestionEditButton,
-            style: LumoraPalette.bodyStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: SakuraHomePalette.blossomPink),
-          ),
+          child: Text(l10n.dailyQuestionEditButton, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700, color: primary)),
         ),
       ],
     );
@@ -318,50 +250,38 @@ class _AnsweredState extends StatelessWidget {
 }
 
 class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({required this.row, required this.questionText});
+  const _HistoryTile({required this.row, required this.questionText, required this.isDark, required this.primary});
 
   final DailyQuestionAnswerRow row;
   final String questionText;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            DateFormat.yMMMd(locale).format(row.date),
-            style: AppTheme.bodyFont(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: SakuraHomePalette.textMuted),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            questionText,
-            style: AppTheme.bodyFont(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: SakuraHomePalette.textDeep),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            row.answerText,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTheme.bodyFont(
-                fontSize: 12.5, color: SakuraHomePalette.textMuted),
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AstraGlassCard(
+        isDark: isDark,
+        primaryColor: primary,
+        borderRadius: 16,
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(DateFormat.yMMMd(locale).format(row.date), style: AstraKit.label(isDark, fontSize: 11)),
+            const SizedBox(height: 6),
+            Text(questionText, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text(
+              row.answerText,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AstraKit.mutedText(isDark, fontSize: 12.5),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -377,11 +297,13 @@ class _AnswerSheetResult {
 
 class _AnswerSheet extends ConsumerStatefulWidget {
   const _AnswerSheet({
+    required this.isDark,
     required this.questionIndex,
     required this.questionText,
     required this.existing,
   });
 
+  final bool isDark;
   final int questionIndex;
   final String questionText;
   final DailyQuestionAnswerRow? existing;
@@ -457,6 +379,8 @@ class _AnswerSheetState extends ConsumerState<_AnswerSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final isDark = widget.isDark;
+    final primary = AstraKit.primary(isDark);
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -464,9 +388,10 @@ class _AnswerSheetState extends ConsumerState<_AnswerSheet> {
         top: false,
         child: Container(
           margin: const EdgeInsets.fromLTRB(0, 40, 0, 0),
-          decoration: const BoxDecoration(
-            color: LumoraPalette.nightBackground,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF15102A) : const Color(0xFFFBF1DD),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(top: BorderSide(color: primary.withValues(alpha: 0.4), width: 1.2)),
           ),
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(22, 12, 22, 22),
@@ -479,7 +404,7 @@ class _AnswerSheetState extends ConsumerState<_AnswerSheet> {
                     width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: primary.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -487,27 +412,36 @@ class _AnswerSheetState extends ConsumerState<_AnswerSheet> {
                 const SizedBox(height: 18),
                 Text(
                   widget.questionText,
-                  style: AppTheme.bodyFont(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)
-                      .copyWith(fontStyle: FontStyle.italic, height: 1.4),
+                  style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w600, height: 1.4)
+                      .copyWith(fontStyle: FontStyle.italic),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _controller,
                   maxLines: 5,
                   minLines: 3,
-                  style: AppTheme.bodyFont(color: Colors.white),
+                  style: AstraKit.body(isDark),
+                  cursorColor: primary,
                   onChanged: (_) {
                     if (_showValidationError) setState(() => _showValidationError = false);
                   },
                   decoration: InputDecoration(
                     hintText: l10n.dailyQuestionInputHint,
-                    hintStyle: AppTheme.bodyFont(color: Colors.white.withValues(alpha: 0.4)),
+                    hintStyle: AstraKit.mutedText(isDark),
                     filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.06),
+                    fillColor: primary.withValues(alpha: 0.08),
                     contentPadding: const EdgeInsets.all(14),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: primary, width: 1.6),
                     ),
                   ),
                 ),
@@ -515,7 +449,7 @@ class _AnswerSheetState extends ConsumerState<_AnswerSheet> {
                   const SizedBox(height: 6),
                   Text(
                     l10n.dailyQuestionValidationEmpty,
-                    style: AppTheme.bodyFont(fontSize: 12, color: LumoraPalette.accentPink),
+                    style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFFE07A7A)),
                   ),
                 ],
                 const SizedBox(height: 16),
@@ -526,82 +460,29 @@ class _AnswerSheetState extends ConsumerState<_AnswerSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            l10n.dailyQuestionShareToggleLabel,
-                            style: AppTheme.bodyFont(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
-                          ),
+                          Text(l10n.dailyQuestionShareToggleLabel, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 2),
-                          Text(
-                            l10n.dailyQuestionShareToggleDesc,
-                            style: AppTheme.bodyFont(fontSize: 11.5, color: Colors.white.withValues(alpha: 0.55)),
-                          ),
+                          Text(l10n.dailyQuestionShareToggleDesc, style: AstraKit.mutedText(isDark, fontSize: 11.5)),
                         ],
                       ),
                     ),
                     Switch(
                       value: _shareToggle,
-                      activeThumbColor: LumoraPalette.primaryPurple,
+                      activeThumbColor: primary,
                       onChanged: _saving ? null : (value) => setState(() => _shareToggle = value),
                     ),
                   ],
                 ),
                 const SizedBox(height: 18),
-                _SaveAnswerButton(
+                AstraGoldButton(
+                  isDark: isDark,
                   label: l10n.dailyQuestionSaveButton,
-                  loading: _saving,
-                  onTap: _saving ? null : _handleSave,
+                  enabled: !_saving,
+                  isLoading: _saving,
+                  onTap: _handleSave,
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SaveAnswerButton extends StatelessWidget {
-  const _SaveAnswerButton({required this.label, required this.onTap, required this.loading});
-
-  final String label;
-  final VoidCallback? onTap;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: const LinearGradient(
-          colors: LumoraPalette.ctaGradient,
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: LumoraPalette.primaryPurple.withValues(alpha: 0.45),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(26),
-          onTap: onTap,
-          child: Center(
-            child: loading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
-                  )
-                : Text(
-                    label,
-                    style: LumoraPalette.bodyStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
-                  ),
           ),
         ),
       ),

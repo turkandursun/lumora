@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/tables/reminders_table.dart';
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_background.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/premium_button.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
-import '../../../../theme/sakura_home_palette.dart';
 import '../../data/reminders_repository.dart';
 import '../providers/reminders_providers.dart';
 import '../widgets/new_reminder_sheet.dart';
@@ -131,40 +130,49 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final remindersAsync = ref.watch(remindersStreamProvider);
+    final mode = ref.watch(astraThemeProvider);
+    final isDark = mode == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: PremiumButton(
+      floatingActionButton: AstraGoldButton(
+        isDark: isDark,
         label: l10n.remindersNewButton,
         icon: Icons.add_rounded,
         expand: false,
-        onPressed: () => NewReminderSheet.show(context),
+        onTap: () => NewReminderSheet.show(context),
       ),
-      body: AppBackground(
+      body: AstraMountainBackground(
+        isDark: isDark,
         child: SafeArea(
           child: ResponsiveContent(
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 4),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      l10n.remindersTitle,
-                      style: AppTheme.displayFont(
-                          fontSize: 24, color: SakuraHomePalette.textDeep),
-                    ),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 24, 4),
+                  child: Row(
+                    children: [
+                      AstraCircleIconButton(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        isDark: isDark,
+                        primaryColor: primary,
+                        onTap: () => Navigator.of(context).maybePop(),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(l10n.remindersTitle, style: AstraKit.heading1(isDark, fontSize: 24)),
+                    ],
                   ),
                 ),
                 TabBar(
                   controller: _tabController,
-                  indicatorColor: SakuraHomePalette.blossomPink,
+                  indicatorColor: primary,
                   indicatorWeight: 3,
-                  labelColor: SakuraHomePalette.textDeep,
-                  unselectedLabelColor: SakuraHomePalette.textMuted,
-                  labelStyle: AppTheme.bodyFont(fontSize: 14, fontWeight: FontWeight.w700),
-                  unselectedLabelStyle: AppTheme.bodyFont(fontSize: 14, fontWeight: FontWeight.w500),
+                  labelColor: AstraKit.ink(isDark),
+                  unselectedLabelColor: AstraKit.muted(isDark),
+                  labelStyle: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w700),
+                  unselectedLabelStyle: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500),
                   tabs: [
                     Tab(text: l10n.remindersTabUpcoming),
                     Tab(text: l10n.remindersTabAll),
@@ -178,20 +186,24 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                       return TabBarView(
                         controller: _tabController,
                         children: [
-                          _ReminderList(reminders: upcoming, emptyText: l10n.remindersEmptyUpcoming),
-                          _ReminderList(reminders: reminders, emptyText: l10n.remindersEmptyAll),
+                          _ReminderList(
+                            reminders: upcoming,
+                            emptyText: l10n.remindersEmptyUpcoming,
+                            isDark: isDark,
+                            primary: primary,
+                          ),
+                          _ReminderList(
+                            reminders: reminders,
+                            emptyText: l10n.remindersEmptyAll,
+                            isDark: isDark,
+                            primary: primary,
+                          ),
                         ],
                       );
                     },
-                    loading: () => const Center(
-                      child: CircularProgressIndicator(
-                          color: SakuraHomePalette.blossomPink),
-                    ),
+                    loading: () => Center(child: CircularProgressIndicator(color: primary)),
                     error: (_, __) => Center(
-                      child: Text(
-                        l10n.remindersLoadError,
-                        style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted),
-                      ),
+                      child: Text(l10n.remindersLoadError, style: AstraKit.mutedText(isDark)),
                     ),
                   ),
                 ),
@@ -205,10 +217,17 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
 }
 
 class _ReminderList extends StatelessWidget {
-  const _ReminderList({required this.reminders, required this.emptyText});
+  const _ReminderList({
+    required this.reminders,
+    required this.emptyText,
+    required this.isDark,
+    required this.primary,
+  });
 
   final List<ReminderRow> reminders;
   final String emptyText;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context) {
@@ -216,84 +235,67 @@ class _ReminderList extends StatelessWidget {
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Text(
-            emptyText,
-            textAlign: TextAlign.center,
-            style: AppTheme.bodyFont(color: SakuraHomePalette.textMuted),
-          ),
+          child: Text(emptyText, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark)),
         ),
       );
     }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
       itemCount: reminders.length,
-      itemBuilder: (context, index) => _ReminderCard(reminder: reminders[index]),
+      itemBuilder: (context, index) =>
+          _ReminderCard(reminder: reminders[index], isDark: isDark, primary: primary),
     );
   }
 }
 
 class _ReminderCard extends ConsumerWidget {
-  const _ReminderCard({required this.reminder});
+  const _ReminderCard({required this.reminder, required this.isDark, required this.primary});
 
   final ReminderRow reminder;
+  final bool isDark;
+  final Color primary;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.22)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: SakuraHomePalette.blossomPink.withValues(alpha: 0.16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: AstraGlassCard(
+        isDark: isDark,
+        primaryColor: primary,
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: primary.withValues(alpha: 0.16),
+                border: Border.all(color: primary.withValues(alpha: 0.35)),
+              ),
+              child: Icon(iconForReminder(reminder.iconKey), color: primary, size: 22),
             ),
-            child: Icon(iconForReminder(reminder.iconKey),
-                color: SakuraHomePalette.blossomPink, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  reminder.title,
-                  style: AppTheme.bodyFont(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: SakuraHomePalette.textDeep,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  frequencyTimeLabel(context, l10n, reminder),
-                  style: AppTheme.bodyFont(
-                    fontSize: 12.5,
-                    color: SakuraHomePalette.textMuted,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(reminder.title, style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text(frequencyTimeLabel(context, l10n, reminder), style: AstraKit.mutedText(isDark, fontSize: 12.5)),
+                ],
+              ),
             ),
-          ),
-          Switch(
-            value: reminder.enabled,
-            activeThumbColor: SakuraHomePalette.blossomPink,
-            onChanged: (value) {
-              final copy = value ? reminderCopyFor(l10n, reminder) : null;
-              ref.read(remindersRepositoryProvider).setEnabled(reminder, value, copy: copy);
-            },
-          ),
-        ],
+            Switch(
+              value: reminder.enabled,
+              activeThumbColor: primary,
+              onChanged: (value) {
+                final copy = value ? reminderCopyFor(l10n, reminder) : null;
+                ref.read(remindersRepositoryProvider).setEnabled(reminder, value, copy: copy);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
