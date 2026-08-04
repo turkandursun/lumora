@@ -6,10 +6,11 @@ import 'package:intl/intl.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/weather_service.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/sakura_home_palette.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../reminders/presentation/providers/reminders_providers.dart';
 import '../providers/weather_provider.dart';
+
+const _gold = Color(0xFFE9C98C);
 
 String _timeOfDayGreeting(AppLocalizations l10n, DateTime now, String? name) {
   final hour = now.hour;
@@ -54,8 +55,7 @@ class HomeHeader extends ConsumerWidget {
                   Flexible(
                     child: Text(
                       _timeOfDayGreeting(l10n, now, firstName),
-                      style: AppTheme.displayFont(fontSize: 22, color: Colors.white)
-                          .copyWith(shadows: const [
+                      style: AstraKit.heading1(true, fontSize: 22).copyWith(shadows: const [
                         Shadow(color: Color(0x99000000), blurRadius: 8, offset: Offset(0, 1)),
                       ]),
                       maxLines: 1,
@@ -63,7 +63,7 @@ class HomeHeader extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Text('🌸', style: TextStyle(fontSize: 18)),
+                  const Icon(Icons.auto_awesome, color: _gold, size: 16),
                 ],
               ),
               const SizedBox(height: 6),
@@ -72,11 +72,7 @@ class HomeHeader extends ConsumerWidget {
                   Flexible(
                     child: Text(
                       dateLabel,
-                      style: AppTheme.bodyFont(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.92),
-                      ).copyWith(shadows: const [
+                      style: AstraKit.body(true, fontSize: 12.5, fontWeight: FontWeight.w600).copyWith(shadows: const [
                         Shadow(color: Color(0x99000000), blurRadius: 6, offset: Offset(0, 1)),
                       ]),
                       maxLines: 1,
@@ -89,7 +85,7 @@ class HomeHeader extends ConsumerWidget {
                     loading: () => const SizedBox(
                       width: 14,
                       height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 1.6),
+                      child: CircularProgressIndicator(strokeWidth: 1.6, color: _gold),
                     ),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
@@ -118,21 +114,18 @@ class _WeatherChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: SakuraHomePalette.petalPink.withValues(alpha: 0.5),
+        color: const Color(0x44231845),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: _gold.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(reading.condition.icon, size: 13, color: const Color(0xFFE8A33D)),
+          Icon(reading.condition.icon, size: 13, color: _gold),
           const SizedBox(width: 4),
           Text(
             reading.roundedTemperature,
-            style: AppTheme.bodyFont(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: SakuraHomePalette.textDeep,
-            ),
+            style: AstraKit.body(true, fontSize: 11.5, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -153,10 +146,8 @@ class _NotificationBell extends StatelessWidget {
       button: true,
       label: l10n.homeNotificationBellLabel,
       child: Material(
-        color: SakuraHomePalette.cardWhite,
-        shape: const CircleBorder(),
-        elevation: 2,
-        shadowColor: SakuraHomePalette.branchMauve.withValues(alpha: 0.2),
+        color: const Color(0x44231845),
+        shape: CircleBorder(side: BorderSide(color: _gold.withValues(alpha: 0.4))),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
@@ -165,11 +156,7 @@ class _NotificationBell extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(
-                  Icons.notifications_none_rounded,
-                  color: SakuraHomePalette.textDeep,
-                  size: 20,
-                ),
+                const Icon(Icons.notifications_none_rounded, color: _gold, size: 20),
                 if (hasUnread)
                   Positioned(
                     top: -1,
@@ -177,10 +164,7 @@ class _NotificationBell extends StatelessWidget {
                     child: Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: SakuraHomePalette.blossomPink,
-                      ),
+                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFEF4444)),
                     ),
                   ),
               ],

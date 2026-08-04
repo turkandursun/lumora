@@ -33,10 +33,10 @@ class AstraKit {
       isDark ? const Color(0xFFF4EEFF) : const Color(0xFF1A1005);
 
   static Color muted(bool isDark) =>
-      isDark ? const Color(0xCCD8C8FF) : const Color(0xCC5A481F);
+      isDark ? const Color(0xCCD8C8FF) : const Color(0xE64A3410);
 
   static Color faint(bool isDark) =>
-      isDark ? const Color(0x99C0A8FF) : const Color(0x99664400);
+      isDark ? const Color(0x99C0A8FF) : const Color(0xB35A420C);
 
   /// Big brand wordmark ("ASTRA") — gold on the dark/moon scene where it has
   /// plenty of contrast; a deep bronze ink on the bright sun scene, where
@@ -56,8 +56,8 @@ class AstraKit {
 
   static TextStyle label(bool isDark, {double fontSize = 12, Color? color}) => GoogleFonts.outfit(
         fontSize: fontSize,
-        fontWeight: FontWeight.w600,
-        color: color ?? primary(isDark),
+        fontWeight: FontWeight.w700,
+        color: color ?? (isDark ? primary(isDark) : const Color(0xFF2A1C04)),
         letterSpacing: 0.3,
       );
 
@@ -153,7 +153,7 @@ class AstraGlassCard extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0x59181026) : const Color(0x9EFBF1DD),
+            color: isDark ? const Color(0x59181026) : const Color(0xF7FCF4E2),
             borderRadius: BorderRadius.circular(borderRadius),
             border: Border.all(color: primary.withValues(alpha: 0.40), width: 1.2),
           ),
@@ -193,7 +193,7 @@ class AstraCircleIconButton extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isDark ? const Color(0x44231845) : const Color(0x55FFF8EE),
+          color: isDark ? const Color(0x44231845) : const Color(0xF2FCF4E2),
           border: Border.all(color: primary.withValues(alpha: 0.3)),
         ),
         child: Icon(icon, size: size * 0.47, color: primary),
@@ -405,7 +405,7 @@ class AstraTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = primaryColor ?? AstraKit.primary(isDark);
-    final fill = isDark ? const Color(0x33231845) : const Color(0x55FFF8EE);
+    final fill = isDark ? const Color(0x33231845) : const Color(0xF2FCF4E2);
 
     OutlineInputBorder border(Color color, [double width = 1.2]) => OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),

@@ -5,9 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/cloud_backup_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/astra_screen_kit.dart';
 import '../../../theme/luma_chat_sheet.dart';
-import '../../../theme/sakura_home_palette.dart';
 import '../../journal/presentation/screens/home_screen.dart';
 import '../../profile/presentation/screens/profile_screen.dart';
 
@@ -86,7 +85,9 @@ class _AppShellState extends ConsumerState<AppShell>
   }
 }
 
-/// Light pastel bottom bar matching Home's own palette, with a raised
+const _gold = Color(0xFFE9C98C);
+
+/// Dark glass bottom bar matching Home's gold-accented cards, with a raised
 /// circular center button for the quick-add action.
 class _ShellBottomNav extends StatelessWidget {
   const _ShellBottomNav({
@@ -110,10 +111,11 @@ class _ShellBottomNav extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
+        color: const Color(0xFF211C30),
+        border: Border(top: BorderSide(color: _gold.withValues(alpha: 0.3))),
         boxShadow: [
           BoxShadow(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.16),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -189,7 +191,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? SakuraHomePalette.blossomPink : SakuraHomePalette.textMuted;
+    final color = isActive ? _gold : AstraKit.muted(true);
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -205,7 +207,8 @@ class _NavItem extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 label,
-                style: AppTheme.bodyFont(
+                style: AstraKit.body(
+                  true,
                   fontSize: 10.5,
                   fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                   color: color,
@@ -243,17 +246,21 @@ class _QuickAddButton extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(colors: SakuraHomePalette.ctaGradient),
+              gradient: const LinearGradient(
+                colors: [Color(0xFFF0D68A), Color(0xFFB8860B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: SakuraHomePalette.blossomPink.withValues(alpha: 0.45),
+                  color: _gold.withValues(alpha: 0.5),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
               ],
-              border: Border.all(color: SakuraHomePalette.cardWhite, width: 3),
+              border: Border.all(color: const Color(0xFF211C30), width: 3),
             ),
-            child: const Icon(Icons.eco_rounded, color: Colors.white, size: 26),
+            child: const Icon(Icons.eco_rounded, color: Color(0xFF1A0F00), size: 26),
           ),
         ),
       ),

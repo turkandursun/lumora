@@ -4,13 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/sakura_home_palette.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../domain/motivational_quote.dart';
 import '../providers/journal_streak_provider.dart';
 import '../providers/quote_favorites_provider.dart';
 
+const _gold = Color(0xFFE9C98C);
 const List<String> _moodEmojis = ['😊', '😌', '😴', '😔', '😟'];
 
 int? _mostCommonMoodLast7(Map<DateTime, int> log) {
@@ -96,19 +96,11 @@ class _MotivationQuoteCarouselState extends ConsumerState<MotivationQuoteCarouse
     final dayQuote = quotes[dailyStartIndex(DateTime.now(), quotes.length)];
     const total = 5;
 
-    return Container(
+    return AstraGlassCard(
+      isDark: true,
+      primaryColor: _gold,
       padding: const EdgeInsets.fromLTRB(20, 18, 16, 14),
-      decoration: BoxDecoration(
-        color: SakuraHomePalette.cardWhite,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: SakuraHomePalette.branchMauve.withValues(alpha: 0.14),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+      borderRadius: 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -157,9 +149,7 @@ class _MotivationQuoteCarouselState extends ConsumerState<MotivationQuoteCarouse
                   width: i == _page ? 16 : 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: i == _page
-                        ? SakuraHomePalette.blossomPink
-                        : SakuraHomePalette.blossomPink.withValues(alpha: 0.25),
+                    color: i == _page ? _gold : _gold.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -193,66 +183,58 @@ class _QuoteSlide extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SlideHeader(
-          icon: Icons.format_quote_rounded,
-          title: l10n.homeQuoteCardTitle,
-        ),
+        _SlideHeader(icon: Icons.format_quote_rounded, title: l10n.homeQuoteCardTitle),
         const SizedBox(height: 8),
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                quote.text,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: AppTheme.bodyFont(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
-                  color: SakuraHomePalette.textDeep,
-                  letterSpacing: 0.1,
-                ).copyWith(height: 1.35),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      quote.text,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AstraKit.body(true, fontSize: 14.5, fontWeight: FontWeight.w600, height: 1.35),
+                    ),
+                    const SizedBox(height: 6),
+                    const SizedBox(
+                      width: 88,
+                      height: 22,
+                      child: CustomPaint(painter: _SunriseLineArtPainter()),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 6),
-              const SizedBox(
-                width: 88,
-                height: 22,
-                child: CustomPaint(painter: _SunriseLineArtPainter()),
-              ),
-            ],
-          ),
-        ),
-        Semantics(
-          button: true,
-          label: isFavorite
-              ? AppLocalizations.of(context).homeQuoteUnfavorite
-              : AppLocalizations.of(context).homeQuoteFavorite,
-          child: Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onToggleFavorite,
-              child: Padding(
-                padding: const EdgeInsets.all(6),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 180),
-                  child: Icon(
-                    isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    key: ValueKey(isFavorite),
-                    color: SakuraHomePalette.blossomPink,
-                    size: 20,
+              Semantics(
+                button: true,
+                label: isFavorite
+                    ? AppLocalizations.of(context).homeQuoteUnfavorite
+                    : AppLocalizations.of(context).homeQuoteFavorite,
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: onToggleFavorite,
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        child: Icon(
+                          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          key: ValueKey(isFavorite),
+                          color: _gold,
+                          size: 20,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-        ),
             ],
           ),
         ),
@@ -277,13 +259,7 @@ class _CarouselArrow extends StatelessWidget {
       radius: 20,
       child: Padding(
         padding: const EdgeInsets.all(4),
-        child: Icon(
-          icon,
-          size: 22,
-          color: enabled
-              ? SakuraHomePalette.blossomPink
-              : SakuraHomePalette.blossomPink.withValues(alpha: 0.3),
-        ),
+        child: Icon(icon, size: 22, color: enabled ? _gold : _gold.withValues(alpha: 0.3)),
       ),
     );
   }
@@ -301,17 +277,10 @@ class _SlideHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: SakuraHomePalette.blossomPink, size: 20),
+        Icon(icon, color: _gold, size: 20),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            title,
-            style: AppTheme.bodyFont(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: SakuraHomePalette.textMuted,
-            ),
-          ),
+          child: Text(title, style: AstraKit.label(true, fontSize: 12.5)),
         ),
       ],
     );
@@ -348,22 +317,12 @@ class _AffirmationSlide extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SlideHeader(
-          icon: Icons.spa_rounded,
-          title: isTr ? 'Günün Olumlaması' : 'Daily Affirmation',
-        ),
+        _SlideHeader(icon: Icons.spa_rounded, title: isTr ? 'Günün Olumlaması' : 'Daily Affirmation'),
         const SizedBox(height: 8),
         Expanded(
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              text,
-              style: AppTheme.bodyFont(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: SakuraHomePalette.textDeep,
-              ).copyWith(height: 1.4),
-            ),
+            child: Text(text, style: AstraKit.body(true, fontSize: 16, fontWeight: FontWeight.w600, height: 1.4)),
           ),
         ),
       ],
@@ -385,36 +344,21 @@ class _QuestionSlide extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SlideHeader(
-            icon: Icons.help_outline_rounded,
-            title: isTr ? 'Günün Sorusu' : 'Daily Question',
-          ),
+          _SlideHeader(icon: Icons.help_outline_rounded, title: isTr ? 'Günün Sorusu' : 'Daily Question'),
           const SizedBox(height: 8),
           Expanded(
             child: Text(
               isTr
                   ? 'Bugün seni en çok ne düşündürdü? Yazmak için dokun.'
                   : "What's been on your mind today? Tap to write.",
-              style: AppTheme.bodyFont(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: SakuraHomePalette.textDeep,
-              ).copyWith(height: 1.35),
+              style: AstraKit.body(true, fontSize: 15, fontWeight: FontWeight.w600, height: 1.35),
             ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(
-                isTr ? 'Cevapla' : 'Answer',
-                style: AppTheme.bodyFont(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: SakuraHomePalette.blossomPink,
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  size: 18, color: SakuraHomePalette.blossomPink),
+              Text(isTr ? 'Cevapla' : 'Answer', style: AstraKit.label(true, fontSize: 12.5)),
+              const Icon(Icons.chevron_right_rounded, size: 18, color: _gold),
             ],
           ),
         ],
@@ -442,22 +386,13 @@ class _StreakStatSlide extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SlideHeader(
-          icon: Icons.local_fire_department_rounded,
-          title: isTr ? 'Bugünkü durumun' : 'Your progress',
-        ),
+        _SlideHeader(icon: Icons.local_fire_department_rounded, title: isTr ? 'Bugünkü durumun' : 'Your progress'),
         const SizedBox(height: 10),
         Text(
           streak > 0
               ? (isTr ? '🔥 $streak gündür yazıyorsun' : '🔥 $streak-day streak')
-              : (isTr
-                  ? 'Bugün yazarak seriyi başlat'
-                  : 'Start a streak by writing today'),
-          style: AppTheme.bodyFont(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: SakuraHomePalette.textDeep,
-          ),
+              : (isTr ? 'Bugün yazarak seriyi başlat' : 'Start a streak by writing today'),
+          style: AstraKit.body(true, fontSize: 15, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         Text(
@@ -468,10 +403,7 @@ class _StreakStatSlide extends StatelessWidget {
               : (isTr
                   ? '${_moodEmojis[mostMood]}  Bu hafta en sık: ${_moodLabel(l10n, mostMood)}'
                   : '${_moodEmojis[mostMood]}  Most common this week: ${_moodLabel(l10n, mostMood)}'),
-          style: AppTheme.bodyFont(
-            fontSize: 13.5,
-            color: SakuraHomePalette.textMuted,
-          ),
+          style: AstraKit.mutedText(true, fontSize: 13.5),
         ),
       ],
     );
@@ -489,10 +421,7 @@ class _ActionsSlide extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SlideHeader(
-          icon: Icons.favorite_rounded,
-          title: isTr ? 'Küçük bir mola?' : 'A little moment?',
-        ),
+        _SlideHeader(icon: Icons.favorite_rounded, title: isTr ? 'Küçük bir mola?' : 'A little moment?'),
         const SizedBox(height: 12),
         Expanded(
           child: Row(
@@ -534,26 +463,23 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: SakuraHomePalette.lavender,
+      color: const Color(0x33231845),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Padding(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _gold.withValues(alpha: 0.3)),
+          ),
           padding: const EdgeInsets.symmetric(vertical: 14),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: SakuraHomePalette.blossomPink, size: 22),
+              Icon(icon, color: _gold, size: 22),
               const SizedBox(height: 6),
-              Text(
-                label,
-                style: AppTheme.bodyFont(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: SakuraHomePalette.textDeep,
-                ),
-              ),
+              Text(label, style: AstraKit.body(true, fontSize: 12.5, fontWeight: FontWeight.w700)),
             ],
           ),
         ),
@@ -569,12 +495,11 @@ class _SunriseLineArtPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final sunPaint = Paint()
-      ..color = SakuraHomePalette.petalPink.withValues(alpha: 0.7);
+    final sunPaint = Paint()..color = _gold.withValues(alpha: 0.8);
     canvas.drawCircle(Offset(size.width * 0.28, size.height * 0.62), 9, sunPaint);
 
     final linePaint = Paint()
-      ..color = SakuraHomePalette.branchMauve.withValues(alpha: 0.55)
+      ..color = _gold.withValues(alpha: 0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6
       ..strokeCap = StrokeCap.round
@@ -590,7 +515,7 @@ class _SunriseLineArtPainter extends CustomPainter {
     canvas.drawPath(mountains, linePaint);
 
     final groundPaint = Paint()
-      ..color = SakuraHomePalette.branchMauve.withValues(alpha: 0.3)
+      ..color = _gold.withValues(alpha: 0.25)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     canvas.drawLine(

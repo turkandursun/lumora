@@ -5,77 +5,58 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/sakura_home_palette.dart';
+import '../../../../theme/astra_screen_kit.dart';
+
+const _gold = Color(0xFFE9C98C);
 
 /// Full-width "Rüya Günlüğü" (Dream Journal) banner, visually distinct from
-/// the 3-column feature grid above it — a deep lavender card with a small
-/// moon-and-stars illustration, routing to the real Dream Journal screen
-/// (PIN-gated via [AppRoutes.dreams] when that section is locked).
+/// the 3-column feature grid above it — a dark glass card with a small
+/// moon-and-stars illustration, routing to the real Dream Journal screen.
 class DreamJournalBanner extends StatelessWidget {
   const DreamJournalBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: () => context.push(AppRoutes.dreams),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFA78BDB), Color(0xFFD8A9E0)],
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: SakuraHomePalette.branchMauve.withValues(alpha: 0.25),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 52,
-                height: 52,
-                child: CustomPaint(painter: _MoonStarsPainter()),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.homeDreamJournalTitle,
-                      style: AppTheme.displayFont(fontSize: 16, color: Colors.white),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      l10n.homeDreamJournalDesc,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.bodyFont(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white.withValues(alpha: 0.88),
-                      ),
-                    ),
-                  ],
+    return AstraGlassCard(
+      isDark: true,
+      primaryColor: _gold,
+      padding: EdgeInsets.zero,
+      borderRadius: 22,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () => context.push(AppRoutes.dreams),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: CustomPaint(painter: _MoonStarsPainter()),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.white.withValues(alpha: 0.85),
-              ),
-            ],
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.homeDreamJournalTitle, style: AstraKit.heading2(true, fontSize: 16)),
+                      const SizedBox(height: 3),
+                      Text(
+                        l10n.homeDreamJournalDesc,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AstraKit.mutedText(true, fontSize: 11.5, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right_rounded, color: _gold),
+              ],
+            ),
           ),
         ),
       ),
