@@ -6,6 +6,7 @@ import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../../dreams/presentation/providers/dreams_providers.dart';
 import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 import '../providers/journal_entries_provider.dart';
 import '../providers/journal_streak_provider.dart';
@@ -39,6 +40,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _didInitialStreakLoad = true;
     ref.read(journalStreakProvider.notifier).refresh();
     ref.read(journalEntriesRepositoryProvider).fetchAndSyncFromSupabase();
+    ref.read(dreamsRepositoryProvider).fetchAndSyncDreamsFromSupabase();
     ref.read(visitDaysCountProvider.notifier).recordAndLoad();
   }
 

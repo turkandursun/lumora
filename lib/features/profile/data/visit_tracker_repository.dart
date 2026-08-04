@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repository for tracking total distinct days the user opened/visited the app.
@@ -7,16 +9,41 @@ class VisitTrackerRepository {
       : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient _client;
+  static const _localLastVisitKey = 'visit_last_date_v1';
 
-  /// Records today's visit if the user hasn't opened the app yet today.
-  /// Increments `visit_days_count` by 1 and updates `last_visit_date` to today.
-  Future<int?> recordVisitIfNewDay() async {
-    final user = _client.auth.currentUser;
-    if (user == null) return null;
-
+  /// Records today's visit using fast local SharedPreferences first.
+  /// Returns `true` instantly if today is a new calendar day visit, or `false` if already visited today.
+  /// Cloud update to Supabase happens asynchronously in the background.
+  Future<bool> recordVisitIfNewDay() async {
     final now = DateTime.now();
     final todayStr =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localLastVisit = prefs.getString(_localLastVisitKey);
+
+      final isNewDay = localLastVisit != todayStr;
+
+      if (isNewDay) {
+        // Immediately update local key so subsequent app opens today return false instantly
+        await prefs.setString(_localLastVisitKey, todayStr);
+
+        // Fire-and-forget cloud sync in the background
+        unawaited(_syncVisitToCloud(todayStr));
+      }
+
+      return isNewDay;
+    } catch (e) {
+      debugPrint('[VisitTracker] Error reading local visit tracker: $e');
+      return false;
+    }
+  }
+
+  /// Background task to sync visit count and last visit date to Supabase.
+  Future<void> _syncVisitToCloud(String todayStr) async {
+    final user = _client.auth.currentUser;
+    if (user == null) return;
 
     try {
       final response = await _client
@@ -26,9 +53,9 @@ class VisitTrackerRepository {
           .maybeSingle();
 
       final currentCount = (response?['visit_days_count'] as int?) ?? 0;
-      final lastVisitDate = response?['last_visit_date'] as String?;
+      final cloudLastVisit = response?['last_visit_date'] as String?;
 
-      if (lastVisitDate != todayStr) {
+      if (cloudLastVisit != todayStr) {
         final newCount = currentCount + 1;
         await _client.from('profiles').update({
           'visit_days_count': newCount,
@@ -37,13 +64,10 @@ class VisitTrackerRepository {
         }).eq('id', user.id);
 
         debugPrint(
-            '[VisitTracker] Recorded visit for $todayStr. New count: $newCount');
-        return newCount;
+            '[VisitTracker] Background synced visit for $todayStr. New count: $newCount');
       }
-      return currentCount;
     } catch (e) {
-      debugPrint('[VisitTracker] Error recording visit: $e');
-      return null;
+      debugPrint('[VisitTracker] Error syncing visit to cloud: $e');
     }
   }
 
