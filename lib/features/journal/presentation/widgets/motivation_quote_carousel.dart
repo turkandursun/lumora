@@ -410,7 +410,7 @@ class _StreakStatSlide extends StatelessWidget {
   }
 }
 
-/// Quick self-care actions: gratitude and a breathing break.
+/// Quick self-care actions: a breathing break.
 class _ActionsSlide extends StatelessWidget {
   const _ActionsSlide({required this.isTr});
 
@@ -426,14 +426,6 @@ class _ActionsSlide extends StatelessWidget {
         Expanded(
           child: Row(
             children: [
-              Expanded(
-                child: _ActionButton(
-                  icon: Icons.volunteer_activism_rounded,
-                  label: isTr ? 'Şükran' : 'Gratitude',
-                  onTap: () => context.push(AppRoutes.gratitude),
-                ),
-              ),
-              const SizedBox(width: 10),
               Expanded(
                 child: _ActionButton(
                   icon: Icons.air_rounded,

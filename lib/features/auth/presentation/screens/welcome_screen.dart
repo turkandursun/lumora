@@ -39,16 +39,51 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1100),
-  )..forward();
+  );
 
   Timer? _timer;
   bool _navigated = false;
+  bool _checkingVisit = true;
   AppMood? _selected;
 
   @override
   void initState() {
     super.initState();
-    ref.read(visitDaysCountProvider.notifier).recordAndLoad();
+    _checkVisitAndInit();
+  }
+
+  Future<void> _checkVisitAndInit() async {
+    // Wait briefly for Supabase currentUser to be ready (prevents guest race conditions)
+    User? user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      for (var i = 0; i < 10; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        user = Supabase.instance.client.auth.currentUser;
+        if (user != null) break;
+      }
+    }
+
+    if (!mounted) return;
+
+    // Check if today's visit is a new calendar day
+    final isNewDay = await ref
+        .read(visitDaysCountProvider.notifier)
+        .recordAndLoad();
+
+    if (!mounted) return;
+
+    if (!isNewDay) {
+      // User has already opened the app today -> bypass mood check-in directly
+      _advance();
+    } else {
+      // First visit of the day -> show mood check-in UI and start animation
+      _controller.forward();
+      if (mounted) {
+        setState(() {
+          _checkingVisit = false;
+        });
+      }
+    }
   }
 
   static const _linesTr = [
@@ -265,6 +300,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
         ? (name == null ? 'Hoş geldin' : 'Hoş geldin, $name')
         : (name == null ? 'Welcome' : 'Welcome, $name');
     final line = isTr ? _linesTr[_lineIndex] : _linesEn[_lineIndex];
+
+    if (_checkingVisit) {
+      return Scaffold(
+        body: AstraMountainBackground(
+          isDark: isDark,
+          child: const SizedBox.expand(),
+        ),
+      );
+    }
 
     return Scaffold(
       body: AstraMountainBackground(

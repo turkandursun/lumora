@@ -362,14 +362,6 @@
   "@homeFeatureRemindersDesc": {
     "description": "One-line description for the Reminders card in the home feature grid."
   },
-  "homeFeatureGratitudeTitle": "Gratitude Journal",
-  "@homeFeatureGratitudeTitle": {
-    "description": "Title for the Gratitude Journal card in the home feature grid; not built yet, routes to the shared coming-soon screen."
-  },
-  "homeFeatureGratitudeDesc": "What you're grateful for today",
-  "@homeFeatureGratitudeDesc": {
-    "description": "One-line description for the Gratitude Journal card in the home feature grid."
-  },
   "homeFeatureLetterTitle": "Letter to Future Self",
   "@homeFeatureLetterTitle": {
     "description": "Title for the Letter to Future Self card in the home feature grid; not built yet, routes to the shared coming-soon screen."
@@ -793,14 +785,6 @@
   "reminderBreathingBreakBody": "Take a moment to breathe — your body will thank you",
   "@reminderBreathingBreakBody": {
     "description": "Warm notification body for the 'breathing break' starter reminder."
-  },
-  "reminderGratitudeMomentTitle": "Gratitude Moment",
-  "@reminderGratitudeMomentTitle": {
-    "description": "Title of the seeded 'gratitude moment' starter reminder."
-  },
-  "reminderGratitudeMomentBody": "What's one small thing you're grateful for today?",
-  "@reminderGratitudeMomentBody": {
-    "description": "Warm notification body for the 'gratitude moment' starter reminder."
   },
   "reminderWeeklyReflectionTitle": "Weekly Reflection",
   "@reminderWeeklyReflectionTitle": {

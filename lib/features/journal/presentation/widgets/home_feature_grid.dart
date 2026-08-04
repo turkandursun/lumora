@@ -5,9 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../../theme/luma_chat_sheet.dart';
-import '../../../../theme/sakura_home_palette.dart';
-import '../../../shell/presentation/widgets/feature_coming_soon_screen.dart';
 
 /// One tappable card in the Home feature grid.
 class HomeFeatureItem {
@@ -28,19 +25,12 @@ class HomeFeatureItem {
   final int badgeCount;
 }
 
-/// The eleven feature shortcuts shown directly on Home, in display order.
+/// The feature shortcuts shown directly on Home, in display order.
 List<HomeFeatureItem> homeFeatureItems(
   BuildContext context,
   WidgetRef ref,
   AppLocalizations l10n,
 ) {
-  void openComingSoon(IconData icon, String title) {
-    context.push(
-      AppRoutes.featureComingSoon,
-      extra: FeatureComingSoonArgs(icon: icon, title: title),
-    );
-  }
-
   final isTr = Localizations.localeOf(context).languageCode == 'tr';
 
   return [
@@ -90,25 +80,6 @@ List<HomeFeatureItem> homeFeatureItems(
       description: l10n.homeFeatureBreathingDesc,
       primaryIcon: Icons.air_rounded,
       onTap: () => context.push(AppRoutes.breathing),
-    ),
-    HomeFeatureItem(
-      title: l10n.homeFeatureAiChatTitle,
-      description: l10n.homeFeatureAiChatDesc,
-      primaryIcon: Icons.chat_bubble_rounded,
-      accentIcon: Icons.auto_awesome_rounded,
-      onTap: () => LumaChatSheet.show(context),
-    ),
-    HomeFeatureItem(
-      title: l10n.homeFeatureGoalsTitle,
-      description: l10n.homeFeatureGoalsDesc,
-      primaryIcon: Icons.track_changes_rounded,
-      onTap: () => context.push(AppRoutes.goals),
-    ),
-    HomeFeatureItem(
-      title: l10n.homeFeatureGratitudeTitle,
-      description: l10n.homeFeatureGratitudeDesc,
-      primaryIcon: Icons.volunteer_activism_rounded,
-      onTap: () => context.push(AppRoutes.gratitude),
     ),
     HomeFeatureItem(
       title: l10n.homeFeatureLetterTitle,
@@ -316,72 +287,3 @@ class _SparkleDivider extends StatelessWidget {
   }
 }
 
-/// A primary filled icon on a soft pastel duotone circle, with a small
-/// accent glyph tucked in its corner and an optional numeric badge.
-class _FeatureIconBadge extends StatelessWidget {
-  const _FeatureIconBadge({required this.item, required this.gradient});
-
-  final HomeFeatureItem item;
-  final List<Color> gradient;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: gradient,
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Icon(item.primaryIcon, color: Colors.white, size: 18),
-          ),
-          if (item.accentIcon != null)
-            Positioned(
-              top: -2,
-              right: -2,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: SakuraHomePalette.cardWhite,
-                ),
-                child: Icon(item.accentIcon, color: gradient.first, size: 10),
-              ),
-            ),
-          if (item.badgeCount > 0)
-            Positioned(
-              top: -4,
-              right: -6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: SakuraHomePalette.cardWhite, width: 1.5),
-                ),
-                child: Text(
-                  item.badgeCount > 9 ? '9+' : '${item.badgeCount}',
-                  style: const TextStyle(
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}

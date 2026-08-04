@@ -7,7 +7,6 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../dreams/presentation/providers/dreams_providers.dart';
-import '../../../gratitude/presentation/providers/gratitude_providers.dart';
 import '../../../journal/presentation/providers/journal_entries_provider.dart';
 import '../../../letters/presentation/providers/letter_providers.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
@@ -41,7 +40,6 @@ class StatsScreen extends ConsumerWidget {
     final streak = ref.watch(visitDaysCountProvider).valueOrNull ?? 0;
     final dreams = ref.watch(dreamsStreamProvider).valueOrNull?.length ?? 0;
     final moodLog = ref.watch(moodLogProvider);
-    final gratitudeCount = ref.watch(gratitudeProvider).length;
     final lettersCount = ref.watch(lettersProvider).length;
     final contents = ref.watch(allJournalEntriesProvider).valueOrNull
             ?.map((e) => e.content)
@@ -91,7 +89,6 @@ class StatsScreen extends ConsumerWidget {
                         streak: streak,
                         dreams: dreams,
                         moods: moodLog.length,
-                        gratitude: gratitudeCount,
                         letters: lettersCount,
                       ),
                       const SizedBox(height: 12),
@@ -124,7 +121,6 @@ class _OverviewCard extends StatelessWidget {
     required this.streak,
     required this.dreams,
     required this.moods,
-    required this.gratitude,
     required this.letters,
   });
 
@@ -135,7 +131,6 @@ class _OverviewCard extends StatelessWidget {
   final int streak;
   final int dreams;
   final int moods;
-  final int gratitude;
   final int letters;
 
   @override
@@ -145,7 +140,6 @@ class _OverviewCard extends StatelessWidget {
       _StatTile(icon: Icons.local_fire_department_rounded, primary: primary, isDark: isDark, value: '$streak', label: isTr ? 'gün seri' : 'day streak'),
       _StatTile(icon: Icons.nights_stay_rounded, primary: primary, isDark: isDark, value: '$dreams', label: isTr ? 'rüya' : 'dreams'),
       _StatTile(icon: Icons.insights_rounded, primary: primary, isDark: isDark, value: '$moods', label: isTr ? 'ruh hali' : 'moods'),
-      _StatTile(icon: Icons.volunteer_activism_rounded, primary: primary, isDark: isDark, value: '$gratitude', label: isTr ? 'şükran' : 'gratitude'),
       _StatTile(icon: Icons.mail_rounded, primary: primary, isDark: isDark, value: '$letters', label: isTr ? 'mektup' : 'letters'),
     ];
 

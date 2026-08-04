@@ -12,17 +12,18 @@ class VisitTrackerNotifier extends StateNotifier<AsyncValue<int>> {
 
   final VisitTrackerRepository _repository;
 
-  Future<void> recordAndLoad() async {
+  Future<bool> recordAndLoad() async {
     try {
-      final count = await _repository.recordVisitIfNewDay();
-      if (count != null) {
+      final isNewDay = await _repository.recordVisitIfNewDay();
+      _repository.fetchVisitDaysCount().then((count) {
         state = AsyncValue.data(count);
-      } else {
-        final fetched = await _repository.fetchVisitDaysCount();
-        state = AsyncValue.data(fetched);
-      }
+      }).catchError((e, st) {
+        state = AsyncValue.error(e, st as StackTrace);
+      });
+      return isNewDay;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      return false;
     }
   }
 }

@@ -5,14 +5,13 @@ import 'tables/activities_table.dart';
 import 'tables/daily_questions_table.dart';
 import 'tables/dreams_table.dart';
 import 'tables/goals_table.dart';
-import 'tables/gratitude_entries_table.dart';
 import 'tables/journal_entries_table.dart';
 import 'tables/reminders_table.dart';
 
 part 'app_database.g.dart';
 
 /// The app's local offline-first database: [Reminders], [Goals], [Dreams],
-/// [JournalEntries] (Home's writing area), [DailyQuestionAnswers], [GratitudeEntries], and [Activities].
+/// [JournalEntries] (Home's writing area), [DailyQuestionAnswers], and [Activities].
 ///
 /// The connection is platform-conditional under the hood: `drift_flutter`
 /// picks a native sqlite3 connection on Android/iOS/desktop and a
@@ -25,7 +24,6 @@ part 'app_database.g.dart';
   Dreams,
   JournalEntries,
   DailyQuestionAnswers,
-  GratitudeEntries,
   Activities,
 ])
 class AppDatabase extends _$AppDatabase {
@@ -109,9 +107,6 @@ class AppDatabase extends _$AppDatabase {
             if (!await _hasColumn('dreams', 'supabase_id')) {
               await m.addColumn(dreams, dreams.supabaseId);
             }
-          }
-          if (from < 13 && !await _hasTable('gratitude_entries')) {
-            await m.createTable(gratitudeEntries);
           }
           if (from < 14 && !await _hasTable('activities')) {
             await m.createTable(activities);

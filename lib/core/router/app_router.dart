@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../features/gratitude/presentation/screens/gratitude_screen.dart';
 import '../../features/letters/presentation/screens/letters_screen.dart';
 import '../../features/meditation/presentation/screens/meditation_screen.dart';
 
@@ -61,7 +60,6 @@ class AppRoutes {
   static const sealedJournals = '/sealed-journals';
   static const calendar = '/calendar';
   static const rewards = '/rewards';
-  static const gratitude = '/gratitude';
   static const letters = '/letters';
   static const stats = '/stats';
   static const aiQuestions = '/ai-questions';
@@ -110,7 +108,6 @@ const _protectedRoutes = {
   AppRoutes.sealedJournals,
   AppRoutes.calendar,
   AppRoutes.rewards,
-  AppRoutes.gratitude,
   AppRoutes.letters,
   AppRoutes.stats,
   AppRoutes.aiQuestions,
@@ -227,10 +224,6 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.rewards,
       builder: (context, state) => const RewardsScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.gratitude,
-      builder: (context, state) => const GratitudeScreen(),
     ),
     GoRoute(
       path: AppRoutes.letters,
