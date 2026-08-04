@@ -38,7 +38,6 @@ class CloudBackupService {
     'rewards_seen_badges_v1',
     'rewards_seen_level_v1',
     'favorite_quote_ids',
-    'gratitude_v1',
     'hobbies_v1',
     'hobbies_onboarded_v1',
     'letters_v1',

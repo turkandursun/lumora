@@ -6,7 +6,6 @@ import '../../features/calendar/presentation/providers/calendar_providers.dart';
 import '../../features/daily_question/presentation/providers/daily_question_providers.dart';
 import '../../features/dreams/presentation/providers/dreams_providers.dart';
 import '../../features/goals/presentation/providers/goals_providers.dart';
-import '../../features/gratitude/presentation/providers/gratitude_providers.dart';
 import '../../features/hobbies/presentation/providers/hobbies_providers.dart';
 import '../../features/journal/presentation/providers/journal_entries_provider.dart';
 import '../../features/journal/presentation/providers/journal_streak_provider.dart';
@@ -30,7 +29,6 @@ void invalidateUserProviders(WidgetRef ref) {
   ref.invalidate(dreamsStreamProvider);
   ref.invalidate(periodDaysProvider);
   ref.invalidate(symptomsProvider);
-  ref.invalidate(gratitudeProvider);
   ref.invalidate(lettersProvider);
   ref.invalidate(remindersStreamProvider);
   ref.invalidate(todayDailyQuestionAnswerProvider);
@@ -45,7 +43,6 @@ Future<void> clearLocalUserData(WidgetRef ref) async {
     await ref.read(journalEntriesRepositoryProvider).deleteAll();
     await ref.read(goalsRepositoryProvider).deleteAll();
     await ref.read(dreamsRepositoryProvider).deleteAll();
-    await ref.read(gratitudeRepositoryProvider).deleteAll();
     await ref.read(activityRepositoryProvider).deleteAll();
     await ref.read(remindersRepositoryProvider).deleteAll();
     debugPrint('[AuthListener] Successfully cleared local user database tables');

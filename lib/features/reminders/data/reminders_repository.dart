@@ -18,14 +18,13 @@ class ReminderCopy {
   final String body;
 }
 
-/// Icon keys for the four seeded starter reminders — also used to look up
+/// Icon keys for the starter reminders — also used to look up
 /// each one's [ReminderCopy] in the presentation layer.
 class DefaultReminderIconKeys {
   DefaultReminderIconKeys._();
 
   static const morningJournal = 'sun';
   static const breathingBreak = 'breathing';
-  static const gratitudeMoment = 'heart';
   static const weeklyReflection = 'reflection';
 }
 
@@ -35,6 +34,7 @@ const customReminderIconKey = 'custom';
 
 const _seededPrefKey = 'reminders_seeded';
 const _defaultDisabledFixPrefKey = 'reminders_default_disabled_fix_v1';
+const _gratitudeCleanupPrefKey = 'reminders_gratitude_cleanup_v1';
 
 /// Owns reminder persistence (via [AppDatabase]) and keeps
 /// [NotificationService] in sync with it: enabling a reminder schedules its
@@ -60,7 +60,7 @@ class RemindersRepository {
     return (_db.select(_db.reminders)..where((t) => t.userId.equals(user.id))).watch();
   }
 
-  /// Inserts the four starter reminders exactly once, ever (tracked via a
+  /// Inserts the starter reminders exactly once, ever (tracked via a
   /// [SharedPreferences] flag, so manually deleting them all later doesn't
   /// bring them back). Toggled OFF (enabled = false) by default.
   Future<void> ensureSeeded(Map<String, ReminderCopy> defaultCopy) async {
@@ -83,14 +83,6 @@ class RemindersRepository {
         frequency: ReminderFrequency.daily,
         weekday: null,
         hour: 12,
-        minute: 0,
-      ),
-      (
-        title: defaultCopy[DefaultReminderIconKeys.gratitudeMoment]!.title,
-        iconKey: DefaultReminderIconKeys.gratitudeMoment,
-        frequency: ReminderFrequency.daily,
-        weekday: null,
-        hour: 21,
         minute: 0,
       ),
       (
@@ -147,6 +139,38 @@ class RemindersRepository {
     }
 
     await prefs.setBool(_seededPrefKey, true);
+  }
+
+  /// One-time cleanup for legacy devices: deletes any existing seeded "Şükran Anı"
+  /// (gratitude) reminders from local Drift database and Supabase.
+  Future<void> cleanupGratitudeReminders() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_gratitudeCleanupPrefKey) ?? false) return;
+
+      final rows = await (_db.select(_db.reminders)
+            ..where((t) => t.iconKey.equals('heart')))
+          .get();
+
+      for (final row in rows) {
+        if (row.enabled) {
+          await _notifications.cancel(row.id);
+        }
+        if (row.supabaseId != null && _client.auth.currentUser != null) {
+          try {
+            await _client.from('reminders').delete().eq('id', row.supabaseId!);
+          } catch (e) {
+            debugPrint('[RemindersSync] Error deleting gratitude reminder from Supabase: $e');
+          }
+        }
+        await (_db.delete(_db.reminders)..where((t) => t.id.equals(row.id))).go();
+      }
+
+      await prefs.setBool(_gratitudeCleanupPrefKey, true);
+      debugPrint('[RemindersSync] One-time cleanup: removed legacy gratitude reminders.');
+    } catch (e) {
+      debugPrint('[RemindersSync] Error running gratitude reminders cleanup: $e');
+    }
   }
 
   /// Uploads any local reminders that do not have a [supabaseId] to Supabase (e.g. seeded while logged out, or legacy rows).
@@ -206,7 +230,6 @@ class RemindersRepository {
       const defaultKeys = [
         DefaultReminderIconKeys.morningJournal,
         DefaultReminderIconKeys.breathingBreak,
-        DefaultReminderIconKeys.gratitudeMoment,
         DefaultReminderIconKeys.weeklyReflection,
       ];
 

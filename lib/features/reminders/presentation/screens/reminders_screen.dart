@@ -13,7 +13,7 @@ import '../../data/reminders_repository.dart';
 import '../providers/reminders_providers.dart';
 import '../widgets/new_reminder_sheet.dart';
 
-/// Localized title + notification body for each of the four seeded starter
+/// Localized title + notification body for each of the seeded starter
 /// reminders, keyed by [DefaultReminderIconKeys]. Lives in the presentation
 /// layer since it needs [AppLocalizations]; the repository stays free of
 /// any localization concerns.
@@ -26,17 +26,13 @@ Map<String, ReminderCopy> defaultReminderCopy(AppLocalizations l10n) => {
         title: l10n.reminderBreathingBreakTitle,
         body: l10n.reminderBreathingBreakBody,
       ),
-      DefaultReminderIconKeys.gratitudeMoment: ReminderCopy(
-        title: l10n.reminderGratitudeMomentTitle,
-        body: l10n.reminderGratitudeMomentBody,
-      ),
       DefaultReminderIconKeys.weeklyReflection: ReminderCopy(
         title: l10n.reminderWeeklyReflectionTitle,
         body: l10n.reminderWeeklyReflectionBody,
       ),
     };
 
-/// The notification copy for [reminder] — one of the four seeded defaults
+/// The notification copy for [reminder] — one of the seeded defaults
 /// if its icon key matches, otherwise a generic body paired with whatever
 /// title the user gave their own custom reminder.
 ReminderCopy reminderCopyFor(AppLocalizations l10n, ReminderRow reminder) {
@@ -50,8 +46,6 @@ IconData iconForReminder(String iconKey) {
       return Icons.wb_sunny_outlined;
     case DefaultReminderIconKeys.breathingBreak:
       return Icons.air_rounded;
-    case DefaultReminderIconKeys.gratitudeMoment:
-      return Icons.favorite_outline;
     case DefaultReminderIconKeys.weeklyReflection:
       return Icons.auto_awesome_outlined;
     default:
@@ -126,6 +120,7 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
     ref.read(notificationServiceProvider).requestPermission();
     ref.read(remindersRepositoryProvider).ensureSeeded(copy);
     ref.read(remindersRepositoryProvider).fixLegacyDefaultRemindersDisabled();
+    ref.read(remindersRepositoryProvider).cleanupGratitudeReminders();
     ref.read(remindersRepositoryProvider).syncUnsyncedRemindersToCloud();
     ref.read(remindersRepositoryProvider).fetchAndSyncFromSupabase(copy);
   }
