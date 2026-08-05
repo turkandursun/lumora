@@ -9,25 +9,31 @@ class VisitTrackerRepository {
       : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient _client;
-  static const _localLastVisitKey = 'visit_last_date_v1';
 
   /// Records today's visit using fast local SharedPreferences first.
   /// Returns `true` instantly if today is a new calendar day visit, or `false` if already visited today.
   /// Cloud update to Supabase happens asynchronously in the background.
   Future<bool> recordVisitIfNewDay() async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      debugPrint('[VisitTracker] Guest or unauthenticated user, skipping visit record');
+      return false;
+    }
+
+    final userKey = 'visit_last_date_v1_${user.id}';
     final now = DateTime.now();
     final todayStr =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final localLastVisit = prefs.getString(_localLastVisitKey);
+      final localLastVisit = prefs.getString(userKey);
 
       final isNewDay = localLastVisit != todayStr;
 
       if (isNewDay) {
         // Immediately update local key so subsequent app opens today return false instantly
-        await prefs.setString(_localLastVisitKey, todayStr);
+        await prefs.setString(userKey, todayStr);
 
         // Fire-and-forget cloud sync in the background
         unawaited(_syncVisitToCloud(todayStr));

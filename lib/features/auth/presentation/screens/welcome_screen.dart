@@ -36,14 +36,12 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  );
+  AnimationController? _controller;
 
   Timer? _timer;
   bool _navigated = false;
   bool _checkingVisit = true;
+  bool _visitChecked = false;
   AppMood? _selected;
 
   @override
@@ -53,6 +51,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   }
 
   Future<void> _checkVisitAndInit() async {
+    if (_visitChecked) return;
+    _visitChecked = true;
+
     // Wait briefly for Supabase currentUser to be ready (prevents guest race conditions)
     User? user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
@@ -65,10 +66,16 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
 
     if (!mounted) return;
 
-    // Check if today's visit is a new calendar day
+    if (user == null) {
+      // Guest or unauthenticated user -> skip visit recording and advance
+      _advance();
+      return;
+    }
+
+    // Check if today's visit is a new calendar day for this user
     final isNewDay = await ref
         .read(visitDaysCountProvider.notifier)
-        .recordAndLoad();
+        .recordVisitIfNewDay();
 
     if (!mounted) return;
 
@@ -76,8 +83,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       // User has already opened the app today -> bypass mood check-in directly
       _advance();
     } else {
-      // First visit of the day -> show mood check-in UI and start animation
-      _controller.forward();
+      // First visit of the day -> instantiate controller, show mood check-in UI and start animation
+      _controller = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 1100),
+      );
+      _controller!.forward();
       if (mounted) {
         setState(() {
           _checkingVisit = false;
@@ -104,7 +115,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   @override
   void dispose() {
     _timer?.cancel();
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -181,9 +192,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   }
 
   Widget _staggered(int order, Widget child) {
+    if (_controller == null) return child;
     final start = (0.28 + order * 0.11).clamp(0.0, 0.85);
     final anim = CurvedAnimation(
-      parent: _controller,
+      parent: _controller!,
       curve: Interval(start, (start + 0.4).clamp(0.0, 1.0),
           curve: Curves.easeOutBack),
     );
@@ -301,7 +313,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
         : (name == null ? 'Welcome' : 'Welcome, $name');
     final line = isTr ? _linesTr[_lineIndex] : _linesEn[_lineIndex];
 
-    if (_checkingVisit) {
+    if (_checkingVisit || _controller == null) {
       return Scaffold(
         body: AstraMountainBackground(
           isDark: isDark,
@@ -319,7 +331,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: FadeTransition(
                 opacity:
-                    CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+                    CurvedAnimation(parent: _controller!, curve: Curves.easeOut),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
