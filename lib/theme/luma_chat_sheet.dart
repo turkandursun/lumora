@@ -184,10 +184,16 @@ class _LumaStar extends StatefulWidget {
 
 class _LumaStarState extends State<_LumaStar>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _twinkle = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1700),
-  )..repeat(reverse: true);
+  late final AnimationController _twinkle;
+
+  @override
+  void initState() {
+    super.initState();
+    _twinkle = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1700),
+    )..repeat(reverse: true);
+  }
 
   @override
   void dispose() {

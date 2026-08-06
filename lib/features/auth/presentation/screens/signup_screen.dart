@@ -52,14 +52,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   String? _formError;
   StreamSubscription<supabase.AuthState>? _authStateSubscription;
 
-  late final AnimationController _entrance = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..forward();
+  late final AnimationController _entrance;
 
   @override
   void initState() {
     super.initState();
+    _entrance = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
     // Google sign-in redirects the whole page away on web, so this screen's
     // own await never resumes there — instead we listen for the session
     // Supabase detects once the browser returns (or, on native, once the

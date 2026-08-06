@@ -440,10 +440,16 @@ class _GrowingStar extends StatefulWidget {
 
 class _GrowingStarState extends State<_GrowingStar>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _twinkle = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1600),
-  )..repeat(reverse: true);
+  late final AnimationController _twinkle;
+
+  @override
+  void initState() {
+    super.initState();
+    _twinkle = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+  }
 
   // (alignment, icon size, phase offset) for each sparkle.
   static const List<(Alignment, double, double)> _sparkles = [
