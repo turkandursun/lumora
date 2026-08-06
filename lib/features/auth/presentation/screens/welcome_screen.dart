@@ -45,6 +45,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   Timer? _timer;
   bool _navigated = false;
   bool _checkingVisit = true;
+  bool _visitChecked = false;
   AppMood? _selected;
 
   /// Records the last calendar day the mood check-in was shown, so it appears
@@ -63,6 +64,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   }
 
   Future<void> _checkVisitAndInit() async {
+    if (_visitChecked) return;
+    _visitChecked = true;
+
     // Wait briefly for Supabase currentUser to be ready (prevents guest race conditions)
     User? user = Supabase.instance.client.auth.currentUser;
     if (user == null) {

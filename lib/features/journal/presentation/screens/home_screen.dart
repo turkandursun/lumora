@@ -41,7 +41,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.read(journalStreakProvider.notifier).refresh();
     ref.read(journalEntriesRepositoryProvider).fetchAndSyncFromSupabase();
     ref.read(dreamsRepositoryProvider).fetchAndSyncDreamsFromSupabase();
-    ref.read(visitDaysCountProvider.notifier).recordAndLoad();
+    ref.read(visitDaysCountProvider.notifier).load();
   }
 
   String? get _userFirstName {

@@ -48,20 +48,7 @@ List<HomeFeatureItem> homeFeatureItems(
       accentIcon: Icons.groups_rounded,
       onTap: () => context.push(AppRoutes.activities),
     ),
-    HomeFeatureItem(
-      title: isTr ? 'Başarılarım' : 'Achievements',
-      description: isTr ? 'Yıldız & rozetler' : 'Star & badges',
-      primaryIcon: Icons.star_rounded,
-      accentIcon: Icons.emoji_events_rounded,
-      onTap: () => context.push(AppRoutes.rewards),
-    ),
-    HomeFeatureItem(
-      title: l10n.homeFeatureJournalTitle,
-      description: l10n.homeFeatureJournalDesc,
-      primaryIcon: Icons.menu_book_rounded,
-      accentIcon: Icons.edit_rounded,
-      onTap: () => context.push(AppRoutes.journalEntry),
-    ),
+
     HomeFeatureItem(
       title: l10n.homeFeatureAiQuestionsTitle,
       description: l10n.homeFeatureAiQuestionsDesc,

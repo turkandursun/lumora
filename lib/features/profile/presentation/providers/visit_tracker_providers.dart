@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/visit_tracker_repository.dart';
 
@@ -7,19 +9,29 @@ final visitTrackerRepositoryProvider = Provider<VisitTrackerRepository>((ref) {
 
 class VisitTrackerNotifier extends StateNotifier<AsyncValue<int>> {
   VisitTrackerNotifier(this._repository) : super(const AsyncValue.loading()) {
-    recordAndLoad();
+    load();
   }
 
   final VisitTrackerRepository _repository;
 
-  Future<bool> recordAndLoad() async {
+  /// Loads current visit_days_count into state without recording/writing any visit flags.
+  Future<void> load() async {
+    try {
+      final count = await _repository.fetchVisitDaysCount();
+      state = AsyncValue.data(count);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  /// Explicitly called by WelcomeScreen on app launch / login.
+  /// Records today's visit if it's a new day, updates count if recorded, and returns boolean.
+  Future<bool> recordVisitIfNewDay() async {
     try {
       final isNewDay = await _repository.recordVisitIfNewDay();
-      _repository.fetchVisitDaysCount().then((count) {
-        state = AsyncValue.data(count);
-      }).catchError((e, st) {
-        state = AsyncValue.error(e, st as StackTrace);
-      });
+      if (isNewDay) {
+        unawaited(load());
+      }
       return isNewDay;
     } catch (e, st) {
       state = AsyncValue.error(e, st);

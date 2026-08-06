@@ -1,341 +1,147 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../../core/database/app_database.dart';
-import '../../../../core/database/tables/goals_table.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
-import '../../../../theme/mood_gradients.dart';
-import '../../../../theme/mood_theme_provider.dart';
-import '../../../goals/presentation/providers/goals_providers.dart';
-import '../../../mood/presentation/providers/mood_providers.dart';
-import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 
 const _gold = Color(0xFFE9C98C);
 
-extension _MoodEmoji on AppMood {
-  String get emoji {
-    switch (this) {
-      case AppMood.happy:
-        return '😊';
-      case AppMood.calm:
-        return '😌';
-      case AppMood.tired:
-        return '😴';
-      case AppMood.sad:
-        return '😔';
-      case AppMood.anxious:
-        return '😟';
-    }
-  }
+/// Gentle, inviting prompts encouraging the user to write down their thoughts.
+const _promptsTr = [
+  'Bugün zihninden neler geçiyor? Hislerini kaleme al...',
+  'Bugün kendini nasıl hissediyorsun? Birkaç cümle yaz...',
+  'İç dünyana küçük bir yolculuk yap, günlüğünü doldur...',
+  'Bugün seni gülümseten ya da düşündüren ne oldu?',
+];
 
-  String label(AppLocalizations l10n) {
-    switch (this) {
-      case AppMood.happy:
-        return l10n.moodHappy;
-      case AppMood.calm:
-        return l10n.moodCalm;
-      case AppMood.tired:
-        return l10n.moodTired;
-      case AppMood.sad:
-        return l10n.moodSad;
-      case AppMood.anxious:
-        return l10n.moodAnxious;
-    }
-  }
-}
+const _promptsEn = [
+  "What's on your mind today? Write down your feelings...",
+  'How are you feeling today? Put down a few sentences...',
+  'Take a small journey inside yourself and write a note...',
+  'What made you smile or pause to think today?',
+];
 
-/// A short, rotating gentle self-care nudge — rotates by hour of day so it
-/// changes through the day without needing any backing state.
-String _selfCareNudge(AppLocalizations l10n) {
-  final nudges = [
-    l10n.homeSelfCareNudge1,
-    l10n.homeSelfCareNudge2,
-    l10n.homeSelfCareNudge3,
-    l10n.homeSelfCareNudge4,
-  ];
-  return nudges[DateTime.now().hour % nudges.length];
-}
-
-/// Today's goal completion, as a 0-1 fraction — averaged across daily-
-/// frequency goals if any exist (falling back to every goal) so the tile
-/// reads as "today", not a monthly reading target.
-double _todayGoalFraction(List<GoalRow> goals) {
-  if (goals.isEmpty) return 0;
-  final daily = goals.where((g) => g.frequency == GoalFrequency.daily).toList();
-  final source = daily.isNotEmpty ? daily : goals;
-  final total = source.fold<double>(
-    0,
-    (sum, g) => sum + (g.target == 0 ? 0 : g.progress / g.target).clamp(0, 1),
-  );
-  return (total / source.length).clamp(0, 1);
-}
-
-/// The four-tile stats card near the top of Home: journaling streak, mood
-/// check-in, today's goal progress, and a rotating self-care nudge.
+/// The main Journal Writing hero card on Home, positioned right between the
+/// motivation quote carousel and the dream journal banner.
 class HomeStatsRow extends ConsumerWidget {
   const HomeStatsRow({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final visitDays = ref.watch(visitDaysCountProvider).valueOrNull ?? 0;
-    final mood = ref.watch(moodThemeProvider);
-    final goalsAsync = ref.watch(goalsStreamProvider);
-    final goalFraction = goalsAsync.maybeWhen(
-      data: _todayGoalFraction,
-      orElse: () => 0.0,
-    );
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    const isDark = true;
+
+    // Rotate prompt gently by hour of day
+    final promptIndex = DateTime.now().hour % _promptsTr.length;
+    final promptText = isTr ? _promptsTr[promptIndex] : _promptsEn[promptIndex];
 
     return AstraGlassCard(
-      isDark: true,
+      isDark: isDark,
       primaryColor: _gold,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      borderRadius: 22,
-      child: IntrinsicHeight(
-        child: Row(
-          children: [
-            Expanded(child: _StreakTile(streakDays: visitDays, l10n: l10n)),
-            const _TileDivider(),
-            Expanded(child: _MoodTile(mood: mood, l10n: l10n)),
-            const _TileDivider(),
-            Expanded(child: _GoalTile(fraction: goalFraction, l10n: l10n)),
-            const _TileDivider(),
-            Expanded(child: _SelfCareTile(text: _selfCareNudge(l10n))),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TileDivider extends StatelessWidget {
-  const _TileDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: VerticalDivider(width: 1, thickness: 1, color: _gold.withValues(alpha: 0.25)),
-    );
-  }
-}
-
-class _StreakTile extends StatelessWidget {
-  const _StreakTile({required this.streakDays, required this.l10n});
-
-  final int streakDays;
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.local_fire_department_rounded, color: _gold, size: 20),
-          const SizedBox(height: 6),
-          Text('$streakDays', style: AstraKit.heading1(true, fontSize: 18)),
-          Text(l10n.homeStatStreakLabel, style: AstraKit.label(true, fontSize: 10.5)),
-          const SizedBox(height: 2),
-          Text(
-            l10n.homeStatStreakSubtext,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AstraKit.mutedText(true, fontSize: 9.5),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MoodTile extends ConsumerWidget {
-  const _MoodTile({required this.mood, required this.l10n});
-
-  final AppMood? mood;
-  final AppLocalizations l10n;
-
-  void _openMoodPicker(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => _MoodPickerSheet(
-        selected: mood,
-        onSelected: (m) {
-          ref.read(moodThemeProvider.notifier).state = m;
-          ref
-              .read(moodLogProvider.notifier)
-              .setForDay(DateTime.now(), AppMood.values.indexOf(m));
-          Navigator.of(sheetContext).pop();
-        },
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () => _openMoodPicker(context, ref),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(mood?.emoji ?? '🙂', style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 6),
-            Row(
+      padding: EdgeInsets.zero,
+      borderRadius: 24,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => context.push(AppRoutes.journalEntry),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Row(
               children: [
-                Flexible(
-                  child: Text(
-                    mood?.label(l10n) ?? l10n.homeStatMoodUnset,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AstraKit.heading2(true, fontSize: 13),
+                // Glowing pencil/book emblem
+                Container(
+                  width: 52,
+                  height: 52,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        _gold,
+                        _gold.withValues(alpha: 0.65),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _gold.withValues(alpha: 0.35),
+                        blurRadius: 14,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.edit_note_rounded,
+                    size: 28,
+                    color: Color(0xFF15102A),
                   ),
                 ),
-                const Icon(Icons.expand_more_rounded, size: 15, color: _gold),
+                const SizedBox(width: 16),
+                // Title + Inviting Prompt Subtitle
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            l10n.homeFeatureJournalTitle,
+                            style: AstraKit.heading2(isDark, fontSize: 17.5),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text('✨', style: TextStyle(fontSize: 14)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        promptText,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AstraKit.mutedText(isDark, fontSize: 12.5),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Action Arrow Button / Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _gold.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: _gold.withValues(alpha: 0.45)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        isTr ? 'Yaz' : 'Write',
+                        style: AstraKit.body(
+                          isDark,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: _gold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 11,
+                        color: _gold,
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            Text(l10n.homeStatMoodLabel, style: AstraKit.label(true, fontSize: 10.5)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MoodPickerSheet extends StatelessWidget {
-  const _MoodPickerSheet({required this.selected, required this.onSelected});
-
-  final AppMood? selected;
-  final ValueChanged<AppMood> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return SafeArea(
-      child: Container(
-        margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        decoration: BoxDecoration(
-          color: const Color(0xFF15102A),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: _gold.withValues(alpha: 0.35)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.homeMoodPickerTitle, style: AstraKit.heading2(true, fontSize: 17)),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                for (final mood in AppMood.values)
-                  _MoodPickerOption(mood: mood, isSelected: mood == selected, onTap: () => onSelected(mood)),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MoodPickerOption extends StatelessWidget {
-  const _MoodPickerOption({required this.mood, required this.isSelected, required this.onTap});
-
-  final AppMood mood;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isSelected ? _gold.withValues(alpha: 0.25) : const Color(0x33231845),
-              border: Border.all(color: isSelected ? _gold : Colors.transparent, width: 1.6),
-            ),
-            child: Text(mood.emoji, style: const TextStyle(fontSize: 22)),
           ),
-          const SizedBox(height: 6),
-          Text(mood.label(l10n), style: AstraKit.body(true, fontSize: 10.5, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-}
-
-class _GoalTile extends StatelessWidget {
-  const _GoalTile({required this.fraction, required this.l10n});
-
-  final double fraction;
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final percent = (fraction * 100).round();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.track_changes_rounded, color: _gold, size: 20),
-          const SizedBox(height: 6),
-          Text('$percent%', style: AstraKit.heading1(true, fontSize: 18)),
-          Text(l10n.homeStatGoalLabel, style: AstraKit.label(true, fontSize: 10.5)),
-          const SizedBox(height: 5),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: fraction,
-              minHeight: 5,
-              backgroundColor: _gold.withValues(alpha: 0.18),
-              valueColor: const AlwaysStoppedAnimation(_gold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SelfCareTile extends StatelessWidget {
-  const _SelfCareTile({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.favorite_rounded, color: _gold, size: 20),
-          const SizedBox(height: 6),
-          Text(l10n.homeStatSelfCareLabel, style: AstraKit.label(true, fontSize: 10.5)),
-          const SizedBox(height: 2),
-          Text(
-            text,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: AstraKit.mutedText(true, fontSize: 9.5),
-          ),
-        ],
+        ),
       ),
     );
   }
