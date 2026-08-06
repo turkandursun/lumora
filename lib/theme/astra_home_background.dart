@@ -42,9 +42,8 @@ class _AstraHomeBackgroundState extends State<AstraHomeBackground> {
           Image.asset(_asset!, fit: BoxFit.cover, alignment: Alignment.topCenter)
         else
           const ColoredBox(color: Color(0xFFF3EBFB)),
-        // Keep the scene vivid; only darken the top a touch so the white
-        // greeting stays legible. The white cards below carry their own
-        // contrast against the photo.
+        // Keep the scene vivid; only darken the top a touch so the greeting
+        // stays legible. The translucent cards below carry their own contrast.
         const DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(

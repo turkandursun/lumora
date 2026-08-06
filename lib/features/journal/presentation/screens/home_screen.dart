@@ -79,6 +79,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 22),
                   HomeFeatureGrid(
                     items: homeFeatureItems(context, ref, l10n),
+                    isDark: isDark,
                   ),
                 ],
               ),

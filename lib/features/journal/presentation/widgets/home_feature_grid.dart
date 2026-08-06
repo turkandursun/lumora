@@ -105,9 +105,10 @@ const _iconGradients = [
 
 /// A responsive 3-column grid of soft pastel illustrated feature cards.
 class HomeFeatureGrid extends StatelessWidget {
-  const HomeFeatureGrid({super.key, required this.items});
+  const HomeFeatureGrid({super.key, required this.items, required this.isDark});
 
   final List<HomeFeatureItem> items;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -124,6 +125,7 @@ class HomeFeatureGrid extends StatelessWidget {
       itemBuilder: (context, index) => _FeatureCard(
         item: items[index],
         gradient: _iconGradients[index % _iconGradients.length],
+        isDark: isDark,
       ),
     );
   }
@@ -132,26 +134,39 @@ class HomeFeatureGrid extends StatelessWidget {
 /// A large, image-style feature card: a soft gradient panel with a big
 /// ghosted icon and the title + description overlaid at the bottom.
 class _FeatureCard extends StatelessWidget {
-  const _FeatureCard({required this.item, required this.gradient});
+  const _FeatureCard(
+      {required this.item, required this.gradient, required this.isDark});
 
   final HomeFeatureItem item;
   final List<Color> gradient;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    const gold = Color(0xFFE9C98C);
-    const shadow = [
-      Shadow(color: Color(0x77000000), blurRadius: 6, offset: Offset(0, 1)),
-    ];
+    // Theme-aware to match the app's frosted-glass cards: a dark translucent
+    // panel with gold text on the moon scene, a light cream panel with deep
+    // brown text on the bright sun scene (never gold text — it washes out).
+    final gold = isDark ? const Color(0xFFE9C98C) : const Color(0xFF8A5A16);
+    final panelColor = isDark
+        ? const Color(0xFF3E3C4A).withValues(alpha: 0.78)
+        : const Color(0x8FFBF1DC);
+    final titleColor = isDark ? gold : const Color(0xFF231402);
+    final descColor = isDark
+        ? Colors.white.withValues(alpha: 0.92)
+        : const Color(0xDE4A3208);
+    final shadow = isDark
+        ? const [
+            Shadow(color: Color(0x77000000), blurRadius: 6, offset: Offset(0, 1)),
+          ]
+        : const <Shadow>[];
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        // A single, more opaque grey glass panel for every card.
-        color: const Color(0xFF3E3C4A).withValues(alpha: 0.78),
+        color: panelColor,
         border: Border.all(color: gold.withValues(alpha: 0.5), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
+            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.08),
             blurRadius: 14,
             offset: const Offset(0, 7),
           ),
@@ -219,7 +234,7 @@ class _FeatureCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.displayFont(
                         fontSize: 17,
-                        color: gold,
+                        color: titleColor,
                       ).copyWith(shadows: shadow),
                     ),
                     const SizedBox(height: 2),
@@ -230,11 +245,11 @@ class _FeatureCard extends StatelessWidget {
                       style: AppTheme.bodyFont(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
-                        color: Colors.white.withValues(alpha: 0.92),
+                        color: descColor,
                       ).copyWith(shadows: shadow),
                     ),
                     const SizedBox(height: 9),
-                    const _SparkleDivider(gold: gold),
+                    _SparkleDivider(gold: gold),
                   ],
                 ),
               ),

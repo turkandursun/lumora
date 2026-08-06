@@ -498,10 +498,16 @@ class _MountainBackground extends StatelessWidget {
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 450),
+            layoutBuilder: (current, previous) => Stack(
+              fit: StackFit.expand,
+              children: [...previous, if (current != null) current],
+            ),
             child: Image.asset(
               asset,
               key: ValueKey(asset),
               fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
               alignment: Alignment.topCenter,
               errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),

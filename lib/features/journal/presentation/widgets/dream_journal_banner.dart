@@ -1,26 +1,30 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 
 const _gold = Color(0xFFE9C98C);
 
-/// Full-width "Rüya Günlüğü" (Dream Journal) banner, visually distinct from
-/// the 3-column feature grid above it — a dark glass card with a small
-/// moon-and-stars illustration, routing to the real Dream Journal screen.
-class DreamJournalBanner extends StatelessWidget {
+/// Full-width "Rüya Günlüğü" (Dream Journal) banner — a frosted glass card with
+/// a small moon-and-stars illustration, theme-aware so it matches the rest of
+/// the home cards (dark glass on the moon scene, light glass on the sun scene).
+class DreamJournalBanner extends ConsumerWidget {
   const DreamJournalBanner({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
+    final accent = isDark ? _gold : AstraKit.primary(false);
     return AstraGlassCard(
-      isDark: true,
-      primaryColor: _gold,
+      isDark: isDark,
+      primaryColor: accent,
       padding: EdgeInsets.zero,
       borderRadius: 22,
       child: Material(
@@ -32,29 +36,29 @@ class DreamJournalBanner extends StatelessWidget {
             padding: const EdgeInsets.all(18),
             child: Row(
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 52,
                   height: 52,
-                  child: CustomPaint(painter: _MoonStarsPainter()),
+                  child: CustomPaint(painter: _MoonStarsPainter(isDark: isDark)),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.homeDreamJournalTitle, style: AstraKit.heading2(true, fontSize: 16)),
+                      Text(l10n.homeDreamJournalTitle, style: AstraKit.heading2(isDark, fontSize: 16)),
                       const SizedBox(height: 3),
                       Text(
                         l10n.homeDreamJournalDesc,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: AstraKit.mutedText(true, fontSize: 11.5, fontWeight: FontWeight.w500),
+                        style: AstraKit.mutedText(isDark, fontSize: 11.5, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.chevron_right_rounded, color: _gold),
+                Icon(Icons.chevron_right_rounded, color: accent),
               ],
             ),
           ),
@@ -65,11 +69,21 @@ class DreamJournalBanner extends StatelessWidget {
 }
 
 class _MoonStarsPainter extends CustomPainter {
-  const _MoonStarsPainter();
+  const _MoonStarsPainter({required this.isDark});
+
+  final bool isDark;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final moonPaint = Paint()..color = const Color(0xFFFFF4D6).withValues(alpha: 0.95);
+    // A pale moon on the dark scene; a deep bronze one on the light scene so it
+    // stays visible on the light frosted card.
+    final moonColor = isDark
+        ? const Color(0xFFFFF4D6).withValues(alpha: 0.95)
+        : const Color(0xFF95610F);
+    final starColor = isDark
+        ? Colors.white.withValues(alpha: 0.9)
+        : const Color(0xCC7A4E12);
+    final moonPaint = Paint()..color = moonColor;
     final moonCenter = Offset(size.width * 0.42, size.height * 0.48);
     canvas.drawCircle(moonCenter, size.width * 0.32, moonPaint);
 
@@ -84,7 +98,7 @@ class _MoonStarsPainter extends CustomPainter {
     );
     canvas.restore();
 
-    final starPaint = Paint()..color = Colors.white.withValues(alpha: 0.9);
+    final starPaint = Paint()..color = starColor;
     _star(canvas, Offset(size.width * 0.82, size.height * 0.22), 3.2, starPaint);
     _star(canvas, Offset(size.width * 0.9, size.height * 0.55), 2.2, starPaint);
     _star(canvas, Offset(size.width * 0.68, size.height * 0.85), 2.6, starPaint);
@@ -108,5 +122,6 @@ class _MoonStarsPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _MoonStarsPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }

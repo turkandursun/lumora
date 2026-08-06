@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
@@ -32,7 +33,12 @@ class HomeStatsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    const isDark = true;
+    final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
+    // Warm gold on the moon scene, deep bronze on the bright sun scene.
+    final accent = isDark ? _gold : AstraKit.primary(false);
+    // Contrasting icon colour inside the accent emblem.
+    final emblemIcon =
+        isDark ? const Color(0xFF15102A) : const Color(0xFFFFF6E4);
 
     // Rotate prompt gently by hour of day
     final promptIndex = DateTime.now().hour % _promptsTr.length;
@@ -40,7 +46,7 @@ class HomeStatsRow extends ConsumerWidget {
 
     return AstraGlassCard(
       isDark: isDark,
-      primaryColor: _gold,
+      primaryColor: accent,
       padding: EdgeInsets.zero,
       borderRadius: 24,
       child: Material(
@@ -62,24 +68,24 @@ class HomeStatsRow extends ConsumerWidget {
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        _gold,
-                        _gold.withValues(alpha: 0.65),
+                        accent,
+                        accent.withValues(alpha: 0.65),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: _gold.withValues(alpha: 0.35),
+                        color: accent.withValues(alpha: 0.35),
                         blurRadius: 14,
                         spreadRadius: 1,
                       ),
                     ],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.edit_note_rounded,
                     size: 28,
-                    color: Color(0xFF15102A),
+                    color: emblemIcon,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -113,9 +119,9 @@ class HomeStatsRow extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _gold.withValues(alpha: 0.16),
+                    color: accent.withValues(alpha: isDark ? 0.16 : 0.14),
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: _gold.withValues(alpha: 0.45)),
+                    border: Border.all(color: accent.withValues(alpha: 0.45)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -126,14 +132,14 @@ class HomeStatsRow extends ConsumerWidget {
                           isDark,
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          color: _gold,
+                          color: accent,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(
+                      Icon(
                         Icons.arrow_forward_ios_rounded,
                         size: 11,
-                        color: _gold,
+                        color: accent,
                       ),
                     ],
                   ),

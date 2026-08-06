@@ -17,7 +17,7 @@ class AstraKit {
   /// look so every screen (besides the ASTRA-branded auth flow, which is
   /// always gold — see [gold]) shares one consistent, theme-aware accent.
   static Color primary(bool isDark) =>
-      isDark ? const Color(0xFFC084FC) : const Color(0xFFD4AF37);
+      isDark ? const Color(0xFFC084FC) : const Color(0xFF95610F);
 
   /// Always-gold accent, regardless of theme — reserved for the ASTRA
   /// login/signup screens so their branded moon-and-gold look never
@@ -25,27 +25,28 @@ class AstraKit {
   static Color gold(bool isDark) =>
       isDark ? const Color(0xFFE3C264) : const Color(0xFFD4AF37);
 
-  /// Primary reading color for headings and body text on glass cards.
+  // Reading colours: warm light on the dark/moon glass, deep brown on the
+  // light/sun glass (never yellow/gold text — it washes out on the bright sun
+  // scene). Both give strong contrast on their translucent frosted cards.
   static Color ink(bool isDark) =>
-      isDark ? const Color(0xFFF6ECD2) : const Color(0xFF1A1005);
+      isDark ? const Color(0xFFF6ECD2) : const Color(0xFF2A1B06);
 
   static Color heading(bool isDark) =>
-      isDark ? const Color(0xFFF4EEFF) : const Color(0xFF1A1005);
+      isDark ? const Color(0xFFF4EEFF) : const Color(0xFF231402);
 
   static Color muted(bool isDark) =>
-      isDark ? const Color(0xCCD8C8FF) : const Color(0xE64A3410);
+      isDark ? const Color(0xCCD8C8FF) : const Color(0xDE4A3208);
 
   static Color faint(bool isDark) =>
-      isDark ? const Color(0x99C0A8FF) : const Color(0xB35A420C);
+      isDark ? const Color(0x99C0A8FF) : const Color(0xAA5A420C);
 
-  /// Big brand wordmark ("ASTRA") — gold on the dark/moon scene where it has
-  /// plenty of contrast; a deep bronze ink on the bright sun scene, where
-  /// literal gold-on-gold would wash out.
+  /// Big brand wordmark ("ASTRA") — gold on the dark/moon scene; a deep bronze
+  /// on the bright sun scene, where literal gold would wash out.
   static TextStyle wordmark(bool isDark, {double fontSize = 44}) => GoogleFonts.playfairDisplay(
         fontSize: fontSize,
         fontWeight: FontWeight.w700,
         letterSpacing: 2,
-        color: isDark ? gold(isDark) : const Color(0xFF6B4A12),
+        color: isDark ? gold(isDark) : const Color(0xFF5C3E0E),
       );
 
   static TextStyle heading1(bool isDark, {double fontSize = 22, FontWeight fontWeight = FontWeight.w700}) =>
@@ -57,7 +58,7 @@ class AstraKit {
   static TextStyle label(bool isDark, {double fontSize = 12, Color? color}) => GoogleFonts.outfit(
         fontSize: fontSize,
         fontWeight: FontWeight.w700,
-        color: color ?? (isDark ? primary(isDark) : const Color(0xFF2A1C04)),
+        color: color ?? (isDark ? primary(isDark) : const Color(0xFF5C3E0E)),
         letterSpacing: 0.3,
       );
 
@@ -91,20 +92,31 @@ class AstraMountainBackground extends StatelessWidget {
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 450),
+            // Force each frame to fill the whole area — without an explicit size
+            // AnimatedSwitcher lets the image shrink to its own aspect, leaving
+            // grey bands at the top and bottom.
+            layoutBuilder: (current, previous) => Stack(
+              fit: StackFit.expand,
+              children: [...previous, if (current != null) current],
+            ),
             child: Image.asset(
               asset,
               key: ValueKey(asset),
               fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
               alignment: Alignment.topCenter,
               errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
           ),
-          // A light mist over the scene — enough to keep it from competing
-          // with the UI, without hiding it behind heavy blur.
+          // A soft mist over the scene — keeps it from competing with the UI
+          // without hiding it, so the sun scene stays bright and airy.
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
             child: const SizedBox.expand(),
           ),
+          // Only a gentle top scrim so status-bar text/greeting stays legible;
+          // the sun scene otherwise keeps its brightness.
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -112,7 +124,7 @@ class AstraMountainBackground extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: isDark
                     ? const [Color(0x55000000), Color(0x00000000)]
-                    : const [Color(0x1F000000), Color(0x00000000)],
+                    : const [Color(0x2E000000), Color(0x00000000)],
                 stops: const [0.0, 0.30],
               ),
             ),
@@ -153,9 +165,14 @@ class AstraGlassCard extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0x59181026) : const Color(0xF7FCF4E2),
+            // Translucent frosted glass in both themes: a dark tint on the moon
+            // scene, a light cream tint on the bright sun scene — the blurred
+            // scene shows softly through either.
+            color: isDark ? const Color(0x59181026) : const Color(0x8FFBF1DC),
             borderRadius: BorderRadius.circular(borderRadius),
-            border: Border.all(color: primary.withValues(alpha: 0.40), width: 1.2),
+            border: Border.all(
+                color: primary.withValues(alpha: isDark ? 0.40 : 0.55),
+                width: 1.2),
           ),
           child: child,
         ),
@@ -405,7 +422,9 @@ class AstraTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = primaryColor ?? AstraKit.primary(isDark);
-    final fill = isDark ? const Color(0x33231845) : const Color(0xF2FCF4E2);
+    // Translucent glass field in both themes: dark tint on the moon scene, a
+    // light cream tint on the bright sun scene.
+    final fill = isDark ? const Color(0x33231845) : const Color(0x73FBF1DC);
 
     OutlineInputBorder border(Color color, [double width = 1.2]) => OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
