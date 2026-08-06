@@ -139,30 +139,26 @@ Deno.serve(async (req) => {
       ? `${contextLines.join("\n")}\n\nThe dream: ${dreamText}`
       : `The dream: ${dreamText}`;
 
-    const geminiResponse = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: SYSTEM_PROMPTS[language] }],
-        },
-        contents: [
-          { role: "user", parts: [{ text: userContent }] },
-        ],
-        generationConfig: {
-          // gemini-2.5-flash thinks by default, and thinking tokens are
-          // drawn from this same budget — 512 was tight enough that the
-          // internal scratchpad could crowd out the actual reply, leaving
-          // a truncated fragment. A generous budget avoids that without
-          // depending on a thinkingConfig shape this model rejects.
-          maxOutputTokens: 1536,
-          temperature: 0.7,
-        },
-      }),
+    const geminiResponse = await callGeminiWithRetry({
+      system_instruction: {
+        parts: [{ text: SYSTEM_PROMPTS[language] }],
+      },
+      contents: [
+        { role: "user", parts: [{ text: userContent }] },
+      ],
+      generationConfig: {
+        // gemini-2.5-flash thinks by default, and thinking tokens are
+        // drawn from this same budget — 512 was tight enough that the
+        // internal scratchpad could crowd out the actual reply, leaving
+        // a truncated fragment. A generous budget avoids that without
+        // depending on a thinkingConfig shape this model rejects.
+        maxOutputTokens: 1536,
+        temperature: 0.7,
+      },
     });
 
     if (!geminiResponse.ok) {
-      console.error("gemini error", await geminiResponse.text());
+      console.error("gemini error", geminiResponse.status, await geminiResponse.text());
       return jsonResponse({ error: "internal_error" }, 502);
     }
 
@@ -191,4 +187,41 @@ function jsonResponse(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+// Gemini's free tier occasionally answers a perfectly valid request with a
+// transient 503 ("model overloaded") or 429 — Google-side load, not a real
+// failure. Without this, a single blip surfaced to the user as a hard
+// "connection lost". Retry those (and other 5xx) a few times with a short
+// exponential backoff before giving up. A non-retryable status (e.g. 400/403
+// bad key) returns immediately so we don't waste time on it.
+async function callGeminiWithRetry(payload: unknown): Promise<Response> {
+  const retryableStatuses = new Set([429, 500, 502, 503, 504]);
+  const backoffsMs = [400, 1200, 2500];
+  let lastResponse: Response | null = null;
+
+  for (let attempt = 0; attempt <= backoffsMs.length; attempt++) {
+    try {
+      const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (response.ok || !retryableStatuses.has(response.status)) {
+        return response;
+      }
+      lastResponse = response;
+      console.warn(`gemini transient ${response.status}, attempt ${attempt + 1}`);
+    } catch (error) {
+      console.warn("gemini fetch failed, attempt", attempt + 1, error);
+    }
+    if (attempt < backoffsMs.length) {
+      await new Promise((r) => setTimeout(r, backoffsMs[attempt]));
+    }
+  }
+
+  // Exhausted retries — hand back the last real response so the caller logs
+  // its status/body, or a synthetic 503 if every attempt threw.
+  return lastResponse ??
+    new Response(JSON.stringify({ error: "gemini_unreachable" }), { status: 503 });
 }

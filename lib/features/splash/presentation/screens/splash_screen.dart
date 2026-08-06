@@ -50,7 +50,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       await ref.read(cloudBackupServiceProvider).syncOnStartup();
       if (!mounted) return;
     }
-    context.go(hasSession ? AppRoutes.home : AppRoutes.login);
+    // Route logged-in users through the mood check-in. It gates itself to the
+    // first app entry of each calendar day, so on later opens the same day it
+    // silently forwards to home.
+    context.go(hasSession ? AppRoutes.welcome : AppRoutes.login);
   }
 
   @override

@@ -23,7 +23,6 @@ import '../../features/goals/presentation/screens/goals_screen.dart';
 import '../../features/hobbies/presentation/screens/hobbies_screen.dart';
 import '../../features/journal/presentation/screens/journal_entry_screen.dart';
 import '../../features/journal/presentation/screens/sealed_journals_screen.dart';
-import '../../features/onboarding/presentation/screens/luma_onboarding_screen.dart';
 import '../../features/posts/presentation/screens/feed_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/reminders/presentation/screens/reminders_screen.dart';
@@ -42,7 +41,6 @@ class AppRoutes {
   static const themeChoice = '/theme-choice';
   static const astraLanding = '/astra-landing';
   static const onboarding = '/onboarding';
-  static const lumaOnboarding = '/luma-onboarding';
   static const login = '/login';
   static const signup = '/signup';
   static const welcome = '/welcome';
@@ -146,10 +144,6 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.onboarding,
       builder: (context, state) =>
           OnboardingScreen(isNewSignup: (state.extra as bool?) ?? false),
-    ),
-    GoRoute(
-      path: AppRoutes.lumaOnboarding,
-      builder: (context, state) => const LumaOnboardingScreen(),
     ),
     GoRoute(
       path: AppRoutes.login,
