@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -52,10 +53,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
   String _preSpeechText = '';
   JournalEntryRow? _editingEntry;
 
-  /// Optionally attached photo for this entry (local file path). Kept only in
-  /// the composer for now; persisting photos into the sealed archive needs a
-  /// dedicated database column.
+  /// Optionally attached photo for this entry (local file path or web bytes).
   String? _pickedPhotoPath;
+  Uint8List? _pickedPhotoBytes;
 
   DateTime _selectedDate = DateTime.now();
 
@@ -225,10 +225,15 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       );
       if (file == null) return;
 
-      // Copy out of the picker's temporary cache into app storage so the
-      // photo survives and can be shown later in the sealed archive.
-      var path = file.path;
-      if (!kIsWeb) {
+      if (kIsWeb) {
+        final bytes = await file.readAsBytes();
+        if (!mounted) return;
+        setState(() {
+          _pickedPhotoBytes = bytes;
+          _pickedPhotoPath = file.name;
+        });
+      } else {
+        var path = file.path;
         try {
           final dir = await getApplicationDocumentsDirectory();
           final photoDir = Directory(p.join(dir.path, 'journal_photos'));
@@ -243,10 +248,13 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
         } catch (e) {
           debugPrint('[Photo] copy failed, using original path: $e');
         }
-      }
 
-      if (!mounted) return;
-      setState(() => _pickedPhotoPath = path);
+        if (!mounted) return;
+        setState(() {
+          _pickedPhotoBytes = null;
+          _pickedPhotoPath = path;
+        });
+      }
     } catch (e) {
       debugPrint('[Photo] pick failed: $e');
       if (!mounted) return;
@@ -283,6 +291,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
             content,
             title: title.isEmpty ? null : title,
             photoPath: _pickedPhotoPath,
+            photoBytes: _pickedPhotoBytes,
           );
       await ref.read(journalStreakProvider.notifier).recordEntrySaved();
       // Auto-advance the "journal" goal when a new entry is written.
@@ -297,6 +306,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     _titleController.clear();
     setState(() {
       _pickedPhotoPath = null;
+      _pickedPhotoBytes = null;
       _editingEntry = null;
     });
     FocusScope.of(context).unfocus();
@@ -604,11 +614,14 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                           const SizedBox(height: 12),
                           _PhotoPreviewCard(
                             path: _pickedPhotoPath!,
+                            bytes: _pickedPhotoBytes,
                             isDark: isDark,
                             primary: primary,
                             isTr: isTr,
-                            onRemove: () =>
-                                setState(() => _pickedPhotoPath = null),
+                            onRemove: () => setState(() {
+                              _pickedPhotoPath = null;
+                              _pickedPhotoBytes = null;
+                            }),
                           ),
                         ],
 
@@ -876,6 +889,7 @@ class _GlassCard extends StatelessWidget {
 class _PhotoPreviewCard extends StatelessWidget {
   const _PhotoPreviewCard({
     required this.path,
+    this.bytes,
     required this.isDark,
     required this.primary,
     required this.isTr,
@@ -883,6 +897,7 @@ class _PhotoPreviewCard extends StatelessWidget {
   });
 
   final String path;
+  final Uint8List? bytes;
   final bool isDark;
   final Color primary;
   final bool isTr;
@@ -922,9 +937,9 @@ class _PhotoPreviewCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             child: AspectRatio(
               aspectRatio: 16 / 10,
-              child: kIsWeb
-                  ? Image.network(path, fit: BoxFit.cover)
-                  : Image.file(File(path), fit: BoxFit.cover),
+              child: kIsWeb && bytes != null
+                  ? Image.memory(bytes!, fit: BoxFit.cover)
+                  : Image.file(File(path), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
             ),
           ),
         ],

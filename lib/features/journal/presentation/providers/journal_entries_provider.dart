@@ -21,10 +21,3 @@ final allJournalEntriesProvider = StreamProvider<List<JournalEntryRow>>((ref) {
   repo.fetchAndSyncFromSupabase();
   return repo.watchAll();
 });
-
-/// Local entry id → attached photo path, for the sealed-journals archive.
-/// Re-reads whenever the entry list changes so a freshly sealed photo shows.
-final journalPhotoPathsProvider = FutureProvider<Map<String, String>>((ref) {
-  ref.watch(allJournalEntriesProvider);
-  return JournalEntriesRepository.loadPhotoPaths();
-});

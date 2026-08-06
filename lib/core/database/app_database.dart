@@ -23,7 +23,7 @@ part 'app_database.g.dart';
   Reminders,
   Goals,
   Dreams,
-  JournalEntries,
+  JournalEntries, // includes photoUrl column
   DailyQuestionAnswers,
   Activities,
   Letters,
@@ -34,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -123,6 +123,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 16 && !await _hasTable('letters')) {
             await m.createTable(letters);
+          }
+          if (from < 17 && !await _hasColumn('journal_entries', 'photo_url')) {
+            await m.addColumn(journalEntries, journalEntries.photoUrl);
           }
         },
       );

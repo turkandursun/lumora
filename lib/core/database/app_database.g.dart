@@ -1695,6 +1695,12 @@ class $JournalEntriesTable extends JournalEntries
   late final GeneratedColumn<String> audioPath = GeneratedColumn<String>(
       'audio_path', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _photoUrlMeta =
+      const VerificationMeta('photoUrl');
+  @override
+  late final GeneratedColumn<String> photoUrl = GeneratedColumn<String>(
+      'photo_url', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
   @override
   late final GeneratedColumn<String> userId = GeneratedColumn<String>(
@@ -1708,7 +1714,7 @@ class $JournalEntriesTable extends JournalEntries
       type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns =>
-      [id, createdAt, content, title, audioPath, userId, supabaseId];
+      [id, createdAt, content, title, audioPath, photoUrl, userId, supabaseId];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1742,6 +1748,10 @@ class $JournalEntriesTable extends JournalEntries
       context.handle(_audioPathMeta,
           audioPath.isAcceptableOrUnknown(data['audio_path']!, _audioPathMeta));
     }
+    if (data.containsKey('photo_url')) {
+      context.handle(_photoUrlMeta,
+          photoUrl.isAcceptableOrUnknown(data['photo_url']!, _photoUrlMeta));
+    }
     if (data.containsKey('user_id')) {
       context.handle(_userIdMeta,
           userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
@@ -1771,6 +1781,8 @@ class $JournalEntriesTable extends JournalEntries
           .read(DriftSqlType.string, data['${effectivePrefix}title']),
       audioPath: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}audio_path']),
+      photoUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}photo_url']),
       userId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
       supabaseId: attachedDatabase.typeMapping
@@ -1789,13 +1801,15 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
   final DateTime createdAt;
   final String content;
 
-  /// Optional short heading the user typed for this entry. Local-only for
-  /// now (not synced to Supabase, which has no matching column yet).
+  /// Optional short heading the user typed for this entry.
   final String? title;
 
   /// Absolute path to an attached voice-note recording, if the entry has
   /// one. Null for text-only entries (the common case).
   final String? audioPath;
+
+  /// Remote signed URL or local path to an attached photo.
+  final String? photoUrl;
 
   /// ID of the Supabase user who owns this entry.
   final String? userId;
@@ -1808,6 +1822,7 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       required this.content,
       this.title,
       this.audioPath,
+      this.photoUrl,
       this.userId,
       this.supabaseId});
   @override
@@ -1821,6 +1836,9 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
     }
     if (!nullToAbsent || audioPath != null) {
       map['audio_path'] = Variable<String>(audioPath);
+    }
+    if (!nullToAbsent || photoUrl != null) {
+      map['photo_url'] = Variable<String>(photoUrl);
     }
     if (!nullToAbsent || userId != null) {
       map['user_id'] = Variable<String>(userId);
@@ -1841,6 +1859,9 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       audioPath: audioPath == null && nullToAbsent
           ? const Value.absent()
           : Value(audioPath),
+      photoUrl: photoUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photoUrl),
       userId:
           userId == null && nullToAbsent ? const Value.absent() : Value(userId),
       supabaseId: supabaseId == null && nullToAbsent
@@ -1858,6 +1879,7 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       content: serializer.fromJson<String>(json['content']),
       title: serializer.fromJson<String?>(json['title']),
       audioPath: serializer.fromJson<String?>(json['audioPath']),
+      photoUrl: serializer.fromJson<String?>(json['photoUrl']),
       userId: serializer.fromJson<String?>(json['userId']),
       supabaseId: serializer.fromJson<String?>(json['supabaseId']),
     );
@@ -1871,6 +1893,7 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       'content': serializer.toJson<String>(content),
       'title': serializer.toJson<String?>(title),
       'audioPath': serializer.toJson<String?>(audioPath),
+      'photoUrl': serializer.toJson<String?>(photoUrl),
       'userId': serializer.toJson<String?>(userId),
       'supabaseId': serializer.toJson<String?>(supabaseId),
     };
@@ -1882,6 +1905,7 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
           String? content,
           Value<String?> title = const Value.absent(),
           Value<String?> audioPath = const Value.absent(),
+          Value<String?> photoUrl = const Value.absent(),
           Value<String?> userId = const Value.absent(),
           Value<String?> supabaseId = const Value.absent()}) =>
       JournalEntryRow(
@@ -1890,6 +1914,7 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
         content: content ?? this.content,
         title: title.present ? title.value : this.title,
         audioPath: audioPath.present ? audioPath.value : this.audioPath,
+        photoUrl: photoUrl.present ? photoUrl.value : this.photoUrl,
         userId: userId.present ? userId.value : this.userId,
         supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
       );
@@ -1900,6 +1925,7 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       content: data.content.present ? data.content.value : this.content,
       title: data.title.present ? data.title.value : this.title,
       audioPath: data.audioPath.present ? data.audioPath.value : this.audioPath,
+      photoUrl: data.photoUrl.present ? data.photoUrl.value : this.photoUrl,
       userId: data.userId.present ? data.userId.value : this.userId,
       supabaseId:
           data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
@@ -1914,6 +1940,7 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
           ..write('content: $content, ')
           ..write('title: $title, ')
           ..write('audioPath: $audioPath, ')
+          ..write('photoUrl: $photoUrl, ')
           ..write('userId: $userId, ')
           ..write('supabaseId: $supabaseId')
           ..write(')'))
@@ -1921,8 +1948,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, createdAt, content, title, audioPath, userId, supabaseId);
+  int get hashCode => Object.hash(
+      id, createdAt, content, title, audioPath, photoUrl, userId, supabaseId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1932,6 +1959,7 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
           other.content == this.content &&
           other.title == this.title &&
           other.audioPath == this.audioPath &&
+          other.photoUrl == this.photoUrl &&
           other.userId == this.userId &&
           other.supabaseId == this.supabaseId);
 }
@@ -1942,6 +1970,7 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
   final Value<String> content;
   final Value<String?> title;
   final Value<String?> audioPath;
+  final Value<String?> photoUrl;
   final Value<String?> userId;
   final Value<String?> supabaseId;
   const JournalEntriesCompanion({
@@ -1950,6 +1979,7 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     this.content = const Value.absent(),
     this.title = const Value.absent(),
     this.audioPath = const Value.absent(),
+    this.photoUrl = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
   });
@@ -1959,6 +1989,7 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     required String content,
     this.title = const Value.absent(),
     this.audioPath = const Value.absent(),
+    this.photoUrl = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
   })  : createdAt = Value(createdAt),
@@ -1969,6 +2000,7 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     Expression<String>? content,
     Expression<String>? title,
     Expression<String>? audioPath,
+    Expression<String>? photoUrl,
     Expression<String>? userId,
     Expression<String>? supabaseId,
   }) {
@@ -1978,6 +2010,7 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
       if (content != null) 'content': content,
       if (title != null) 'title': title,
       if (audioPath != null) 'audio_path': audioPath,
+      if (photoUrl != null) 'photo_url': photoUrl,
       if (userId != null) 'user_id': userId,
       if (supabaseId != null) 'supabase_id': supabaseId,
     });
@@ -1989,6 +2022,7 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
       Value<String>? content,
       Value<String?>? title,
       Value<String?>? audioPath,
+      Value<String?>? photoUrl,
       Value<String?>? userId,
       Value<String?>? supabaseId}) {
     return JournalEntriesCompanion(
@@ -1997,6 +2031,7 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
       content: content ?? this.content,
       title: title ?? this.title,
       audioPath: audioPath ?? this.audioPath,
+      photoUrl: photoUrl ?? this.photoUrl,
       userId: userId ?? this.userId,
       supabaseId: supabaseId ?? this.supabaseId,
     );
@@ -2020,6 +2055,9 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     if (audioPath.present) {
       map['audio_path'] = Variable<String>(audioPath.value);
     }
+    if (photoUrl.present) {
+      map['photo_url'] = Variable<String>(photoUrl.value);
+    }
     if (userId.present) {
       map['user_id'] = Variable<String>(userId.value);
     }
@@ -2037,6 +2075,7 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
           ..write('content: $content, ')
           ..write('title: $title, ')
           ..write('audioPath: $audioPath, ')
+          ..write('photoUrl: $photoUrl, ')
           ..write('userId: $userId, ')
           ..write('supabaseId: $supabaseId')
           ..write(')'))
@@ -4077,6 +4116,7 @@ typedef $$JournalEntriesTableCreateCompanionBuilder = JournalEntriesCompanion
   required String content,
   Value<String?> title,
   Value<String?> audioPath,
+  Value<String?> photoUrl,
   Value<String?> userId,
   Value<String?> supabaseId,
 });
@@ -4087,6 +4127,7 @@ typedef $$JournalEntriesTableUpdateCompanionBuilder = JournalEntriesCompanion
   Value<String> content,
   Value<String?> title,
   Value<String?> audioPath,
+  Value<String?> photoUrl,
   Value<String?> userId,
   Value<String?> supabaseId,
 });
@@ -4114,6 +4155,9 @@ class $$JournalEntriesTableFilterComposer
 
   ColumnFilters<String> get audioPath => $composableBuilder(
       column: $table.audioPath, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get photoUrl => $composableBuilder(
+      column: $table.photoUrl, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get userId => $composableBuilder(
       column: $table.userId, builder: (column) => ColumnFilters(column));
@@ -4146,6 +4190,9 @@ class $$JournalEntriesTableOrderingComposer
   ColumnOrderings<String> get audioPath => $composableBuilder(
       column: $table.audioPath, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get photoUrl => $composableBuilder(
+      column: $table.photoUrl, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get userId => $composableBuilder(
       column: $table.userId, builder: (column) => ColumnOrderings(column));
 
@@ -4176,6 +4223,9 @@ class $$JournalEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get audioPath =>
       $composableBuilder(column: $table.audioPath, builder: (column) => column);
+
+  GeneratedColumn<String> get photoUrl =>
+      $composableBuilder(column: $table.photoUrl, builder: (column) => column);
 
   GeneratedColumn<String> get userId =>
       $composableBuilder(column: $table.userId, builder: (column) => column);
@@ -4216,6 +4266,7 @@ class $$JournalEntriesTableTableManager extends RootTableManager<
             Value<String> content = const Value.absent(),
             Value<String?> title = const Value.absent(),
             Value<String?> audioPath = const Value.absent(),
+            Value<String?> photoUrl = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
           }) =>
@@ -4225,6 +4276,7 @@ class $$JournalEntriesTableTableManager extends RootTableManager<
             content: content,
             title: title,
             audioPath: audioPath,
+            photoUrl: photoUrl,
             userId: userId,
             supabaseId: supabaseId,
           ),
@@ -4234,6 +4286,7 @@ class $$JournalEntriesTableTableManager extends RootTableManager<
             required String content,
             Value<String?> title = const Value.absent(),
             Value<String?> audioPath = const Value.absent(),
+            Value<String?> photoUrl = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
           }) =>
@@ -4243,6 +4296,7 @@ class $$JournalEntriesTableTableManager extends RootTableManager<
             content: content,
             title: title,
             audioPath: audioPath,
+            photoUrl: photoUrl,
             userId: userId,
             supabaseId: supabaseId,
           ),
