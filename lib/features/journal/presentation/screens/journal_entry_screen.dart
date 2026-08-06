@@ -85,7 +85,15 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     try {
       _sttInitialized = await _stt.initialize(
         onError: (v) => debugPrint('[STT] error: $v'),
-        onStatus: (v) => debugPrint('[STT] status: $v'),
+        onStatus: (v) {
+          debugPrint('[STT] status: $v');
+          // The recognizer stops itself after a pause; keep the mic button and
+          // waveform in sync instead of leaving them stuck in "listening".
+          if ((v == 'notListening' || v == 'done') &&
+              _isListeningAndRecording) {
+            _stopVoiceSession();
+          }
+        },
       );
       if (mounted) setState(() {});
     } catch (e) {
@@ -627,19 +635,13 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                           : const Color(0xFF1A1005),
                                     ),
                                   ),
-                                  if (pendingAudioPath != null) ...[
-                                    const Spacer(),
-                                    Icon(Icons.check_circle,
-                                        size: 16,
-                                        color: Colors.greenAccent.withValues(alpha: 0.9)),
-                                  ],
                                 ],
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 isTr
-                                    ? 'Düşüncelerini sesinle kaydedebilirsin.'
-                                    : 'You can record your thoughts with your voice.',
+                                    ? 'Konuşarak yazabilirsin; söylediklerin metne dönüşür.'
+                                    : 'Speak to write — your words become text.',
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
                                   color: isDark
@@ -718,37 +720,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                   ),
                                 ],
                               ),
-
-                              // Recording toggle if audio saved
-                              if (_pendingAudioPath != null) ...[
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Icon(Icons.graphic_eq,
-                                        size: 14, color: primary),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      isTr
-                                          ? 'Ses kaydı saklansın mı?'
-                                          : 'Keep voice recording?',
-                                      style: GoogleFonts.outfit(
-                                          fontSize: 12,
-                                          color: isDark
-                                              ? const Color(0xCCE7D3A0)
-                                              : const Color(0xBB6B5320)),
-                                    ),
-                                    const Spacer(),
-                                    Switch.adaptive(
-                                      value: _keepVoiceRecording,
-                                      activeThumbColor: primary,
-                                      onChanged: (val) {
-                                        setState(() => _keepVoiceRecording = val);
-                                        if (!val) _removePendingAudio();
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -846,8 +817,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       ),
     );
   }
-
-  String? get pendingAudioPath => _pendingAudioPath;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
