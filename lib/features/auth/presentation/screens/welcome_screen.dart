@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
@@ -15,6 +14,7 @@ import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/mood_gradients.dart';
 import '../../../../theme/mood_theme_provider.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
+import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 
 /// Mood accent colours — shared with the calendar via [moodSymbolColors], so a
 /// day's mood reads identically everywhere. NOT changed here on purpose.
@@ -48,11 +48,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   bool _visitChecked = false;
   AppMood? _selected;
 
-  /// Records the last calendar day the mood check-in was shown, so it appears
-  /// only on the first app entry of each day (independent of the visit-day
-  /// streak counter, which several other screens also record).
-  static const _moodCheckinDateKey = 'mood_checkin_last_date_v1';
-
   @override
   void initState() {
     super.initState();
@@ -79,29 +74,30 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
 
     if (!mounted) return;
 
-    // The mood check-in is a once-a-day moment: only the first app entry of a
-    // new calendar day shows it; later opens the same day forward straight to
-    // the app. New sign-ups always see it (then continue to the hobbies step).
-    final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-    final todayStr =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final alreadyShownToday = prefs.getString(_moodCheckinDateKey) == todayStr;
+    if (user == null) {
+      // Guest or unauthenticated user -> skip visit recording and advance
+      _advance();
+      return;
+    }
+
+    // Check if today's visit is a new calendar day for this specific user
+    final isNewDay = await ref
+        .read(visitDaysCountProvider.notifier)
+        .recordVisitIfNewDay();
 
     if (!mounted) return;
 
-    if (alreadyShownToday && !widget.isNewSignup) {
-      // Already checked in today -> bypass mood check-in directly.
+    if (!isNewDay && !widget.isNewSignup) {
+      // User has already opened the app today -> bypass mood check-in directly
       _advance();
     } else {
-      // First visit of the day -> mark it now (so repeated opens today skip
-      // it), then show the mood check-in UI and start the animation.
-      await prefs.setString(_moodCheckinDateKey, todayStr);
-      if (!mounted) return;
+      // First visit of the day (or new sign up) -> show mood check-in UI and start animation
       _controller.forward();
-      setState(() {
-        _checkingVisit = false;
-      });
+      if (mounted) {
+        setState(() {
+          _checkingVisit = false;
+        });
+      }
     }
   }
 

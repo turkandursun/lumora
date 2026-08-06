@@ -6,12 +6,13 @@ import 'tables/daily_questions_table.dart';
 import 'tables/dreams_table.dart';
 import 'tables/goals_table.dart';
 import 'tables/journal_entries_table.dart';
+import 'tables/letters_table.dart';
 import 'tables/reminders_table.dart';
 
 part 'app_database.g.dart';
 
 /// The app's local offline-first database: [Reminders], [Goals], [Dreams],
-/// [JournalEntries] (Home's writing area), [DailyQuestionAnswers], and [Activities].
+/// [JournalEntries] (Home's writing area), [DailyQuestionAnswers], [Activities], and [Letters].
 ///
 /// The connection is platform-conditional under the hood: `drift_flutter`
 /// picks a native sqlite3 connection on Android/iOS/desktop and a
@@ -25,6 +26,7 @@ part 'app_database.g.dart';
   JournalEntries,
   DailyQuestionAnswers,
   Activities,
+  Letters,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -32,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -118,6 +120,9 @@ class AppDatabase extends _$AppDatabase {
             if (!await _hasColumn('reminders', 'supabase_id')) {
               await m.addColumn(reminders, reminders.supabaseId);
             }
+          }
+          if (from < 16 && !await _hasTable('letters')) {
+            await m.createTable(letters);
           }
         },
       );

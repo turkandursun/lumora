@@ -12,7 +12,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../../../core/database/app_database.dart';
@@ -42,16 +41,14 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     with TickerProviderStateMixin {
   final _entryController = TextEditingController();
   final _titleController = TextEditingController();
-  final _recorder = AudioRecorder();
   final _stt = stt.SpeechToText();
 
   bool _sttInitialized = false;
+  // True while a voice-typing (speech-to-text) session is active. Audio note
+  // recording was removed — voice input only dictates into the text field.
   bool _isListeningAndRecording = false;
-  bool _keepVoiceRecording = true;
 
-  Duration _recordingElapsed = Duration.zero;
   Timer? _recordingTicker;
-  String? _pendingAudioPath;
   String _preSpeechText = '';
   JournalEntryRow? _editingEntry;
 
@@ -102,7 +99,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     _entryController.dispose();
     _titleController.dispose();
     _recordingTicker?.cancel();
-    _recorder.dispose();
     _stt.stop();
     _waveController.dispose();
     super.dispose();
@@ -129,53 +125,20 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
   }
 
   Future<void> _startVoiceSession() async {
-    bool hasPermission;
-    try {
-      hasPermission = await _recorder.hasPermission();
-    } catch (_) {
-      hasPermission = false;
-    }
-
-    if (!hasPermission) {
+    // Voice input is dictation only (speech-to-text) — no audio recording — so
+    // the recognizer has sole use of the microphone and transcription works.
+    if (!_sttInitialized) await _initSpeechToText();
+    if (!_sttInitialized) {
       if (!mounted) return;
+      final isTr = Localizations.localeOf(context).languageCode == 'tr';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mikrofon izni gerekli.')),
+        SnackBar(
+          content: Text(isTr
+              ? 'Konuşma tanıma kullanılamıyor. Mikrofon iznini kontrol et.'
+              : 'Speech recognition unavailable. Check microphone permission.'),
+        ),
       );
       return;
-    }
-
-    if (!_sttInitialized) await _initSpeechToText();
-
-    try {
-      if (kIsWeb) {
-        await _recorder.start(
-          const RecordConfig(encoder: AudioEncoder.opus),
-          path: 'entry_${DateTime.now().millisecondsSinceEpoch}.webm',
-        );
-      } else {
-        final dir = await getApplicationDocumentsDirectory();
-        final voiceDir = Directory(p.join(dir.path, 'voice_notes'));
-        if (!await voiceDir.exists()) await voiceDir.create(recursive: true);
-        const candidates = [AudioEncoder.aacLc, AudioEncoder.opus, AudioEncoder.wav];
-        var encoder = AudioEncoder.aacLc;
-        for (final c in candidates) {
-          if (await _recorder.isEncoderSupported(c)) {
-            encoder = c;
-            break;
-          }
-        }
-        final ext = encoder == AudioEncoder.opus
-            ? 'ogg'
-            : encoder == AudioEncoder.wav
-                ? 'wav'
-                : 'm4a';
-        await _recorder.start(
-          RecordConfig(encoder: encoder),
-          path: p.join(voiceDir.path, 'entry_${DateTime.now().millisecondsSinceEpoch}.$ext'),
-        );
-      }
-    } catch (e) {
-      debugPrint('[VoiceNote] recorder start failed: $e');
     }
 
     _preSpeechText = _entryController.text;
@@ -183,7 +146,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       _preSpeechText += ' ';
     }
 
-    if (_sttInitialized && mounted) {
+    if (mounted) {
       final isTr = Localizations.localeOf(context).languageCode == 'tr';
       try {
         await _stt.listen(
@@ -197,8 +160,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
             if (!mounted) return;
             setState(() {
               _entryController.text = _preSpeechText + result.recognizedWords;
-              _entryController.selection =
-                  TextSelection.fromPosition(TextPosition(offset: _entryController.text.length));
+              _entryController.selection = TextSelection.fromPosition(
+                  TextPosition(offset: _entryController.text.length));
             });
           },
         );
@@ -207,16 +170,13 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       }
     }
 
-    // Animate waveform
+    // Animate waveform while listening.
     _waveController.repeat(reverse: true);
 
-    final startedAt = DateTime.now();
     _recordingTicker?.cancel();
     _recordingTicker = Timer.periodic(const Duration(milliseconds: 200), (_) {
       if (!mounted) return;
       setState(() {
-        _recordingElapsed = DateTime.now().difference(startedAt);
-        // Randomly shift bar heights for live waveform effect
         for (var i = 0; i < _barHeights.length; i++) {
           _barHeights[i] = 0.15 + math.Random().nextDouble() * 0.85;
         }
@@ -225,9 +185,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
 
     setState(() {
       _isListeningAndRecording = true;
-      _recordingElapsed = Duration.zero;
-      _pendingAudioPath = null;
-      _keepVoiceRecording = true;
     });
   }
 
@@ -236,10 +193,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     _recordingTicker = null;
     _waveController.stop();
 
-    String? audioPath;
-    try {
-      audioPath = await _recorder.stop();
-    } catch (_) {}
     try {
       await _stt.stop();
     } catch (_) {}
@@ -252,20 +205,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     if (!mounted) return;
     setState(() {
       _isListeningAndRecording = false;
-      _pendingAudioPath = audioPath;
     });
-  }
-
-  Future<void> _removePendingAudio() async {
-    final path = _pendingAudioPath;
-    setState(() {
-      _pendingAudioPath = null;
-      _keepVoiceRecording = false;
-    });
-    if (path == null) return;
-    try {
-      await File(path).delete();
-    } catch (_) {}
   }
 
   Future<void> _pickPhoto() async {
@@ -322,19 +262,18 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     }
 
     final title = _titleController.text.trim();
-    final audioPath = _keepVoiceRecording ? _pendingAudioPath : null;
     if (_editingEntry != null) {
       await ref.read(journalEntriesRepositoryProvider).update(
         _editingEntry!.id,
         content: content,
-        audioPath: audioPath,
+        // Preserve any audio note saved before this feature was removed.
+        audioPath: _editingEntry!.audioPath,
         supabaseId: _editingEntry!.supabaseId,
       );
     } else {
       await ref.read(journalEntriesRepositoryProvider).save(
             content,
             title: title.isEmpty ? null : title,
-            audioPath: audioPath,
             photoPath: _pickedPhotoPath,
           );
       await ref.read(journalStreakProvider.notifier).recordEntrySaved();
@@ -349,8 +288,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     _entryController.clear();
     _titleController.clear();
     setState(() {
-      _pendingAudioPath = null;
-      _keepVoiceRecording = true;
       _pickedPhotoPath = null;
       _editingEntry = null;
     });
