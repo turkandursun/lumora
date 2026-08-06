@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../theme/app_theme.dart';
@@ -35,7 +36,11 @@ class _ThemeChoiceScreenState extends State<ThemeChoiceScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(astraThemeKey, _dark ? 'dark' : 'light');
     if (!mounted) return;
-    context.go(AppRoutes.splash);
+    // Go straight to the entry screen (no splash loading page in between) so
+    // the shared 'astra_bg' Hero makes it read as one continuous screen where
+    // only the sign-in box appears over the same scene.
+    final hasSession = Supabase.instance.client.auth.currentSession != null;
+    context.go(hasSession ? AppRoutes.welcome : AppRoutes.login);
   }
 
   @override
@@ -48,14 +53,19 @@ class _ThemeChoiceScreenState extends State<ThemeChoiceScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 450),
-              child: Image.asset(
-                _dark
-                    ? 'assets/images/astra_dark.png'
-                    : 'assets/images/astra_sun_entry_g3.png',
-                key: ValueKey(_dark),
-                fit: BoxFit.cover,
+            // Shared background element with the login / signup screens, so the
+            // transition looks like the same scene with only the box appearing.
+            Hero(
+              tag: 'astra_bg',
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 450),
+                child: Image.asset(
+                  _dark
+                      ? 'assets/images/astra_dark.png'
+                      : 'assets/images/astra_sun_entry_g3.png',
+                  key: ValueKey(_dark),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             Container(color: Colors.black.withValues(alpha: 0.14)),

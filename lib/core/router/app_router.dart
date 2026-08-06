@@ -10,6 +10,7 @@ import '../../features/meditation/presentation/screens/meditation_screen.dart';
 import '../../features/activities/presentation/screens/activities_screen.dart';
 import '../../features/ai_questions/presentation/screens/ai_questions_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/name_entry_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/breathing/presentation/screens/breathing_screen.dart';
@@ -43,6 +44,7 @@ class AppRoutes {
   static const onboarding = '/onboarding';
   static const login = '/login';
   static const signup = '/signup';
+  static const nameEntry = '/name-entry';
   static const welcome = '/welcome';
   static const home = '/home';
   static const reminders = '/reminders';
@@ -152,6 +154,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.signup,
       builder: (context, state) => const SignupScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.nameEntry,
+      builder: (context, state) => const NameEntryScreen(),
     ),
     GoRoute(
       path: AppRoutes.welcome,
