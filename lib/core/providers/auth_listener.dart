@@ -45,6 +45,7 @@ Future<void> clearLocalUserData(WidgetRef ref) async {
     await ref.read(dreamsRepositoryProvider).deleteAll();
     await ref.read(activityRepositoryProvider).deleteAll();
     await ref.read(remindersRepositoryProvider).deleteAll();
+    await ref.read(letterRepositoryProvider).deleteAll();
     debugPrint('[AuthListener] Successfully cleared local user database tables');
   } catch (e) {
     debugPrint('[AuthListener] Error clearing local user database tables: $e');

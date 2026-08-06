@@ -1,19 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/providers/database_provider.dart';
 import '../../data/letter_repository.dart';
 
 final letterRepositoryProvider = Provider<LetterRepository>((ref) {
-  return LetterRepository();
+  return LetterRepository(database: ref.watch(appDatabaseProvider));
 });
 
 class LettersNotifier extends StateNotifier<List<Letter>> {
   LettersNotifier(this._repo) : super(const []) {
-    _load();
+    refresh();
   }
 
   final LetterRepository _repo;
 
-  Future<void> _load() async {
+  Future<void> refresh() async {
+    state = await _repo.load();
+    await _repo.fetchAndSyncFromSupabase();
     state = await _repo.load();
   }
 
@@ -22,23 +25,17 @@ class LettersNotifier extends StateNotifier<List<Letter>> {
     required String body,
     required DateTime openAt,
   }) async {
-    final letter = Letter(
-      id: DateTime.now().millisecondsSinceEpoch,
-      createdAt: DateTime.now(),
+    await _repo.save(
+      title: title,
+      body: body,
       openAt: openAt,
-      title: title.trim(),
-      body: body.trim(),
     );
-    final next = [letter, ...state]
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    state = next;
-    await _repo.save(next);
+    state = await _repo.load();
   }
 
-  Future<void> delete(int id) async {
-    final next = state.where((l) => l.id != id).toList();
-    state = next;
-    await _repo.save(next);
+  Future<void> delete(int id, {String? supabaseId}) async {
+    await _repo.delete(id, supabaseId: supabaseId);
+    state = await _repo.load();
   }
 }
 

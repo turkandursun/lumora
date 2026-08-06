@@ -21,6 +21,14 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
       DateTime.now().add(const Duration(days: 30));
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(lettersProvider.notifier).refresh();
+    });
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _bodyController.dispose();
@@ -59,6 +67,41 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(isTr ? 'Mektup mühürlendi 💌' : 'Letter sealed 💌')),
     );
+  }
+
+  Future<void> _confirmDelete(Letter letter) async {
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(isTr ? 'Mektubu Sil' : 'Delete Letter'),
+        content: Text(
+          isTr
+              ? 'Bu mektubu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'
+              : 'Are you sure you want to delete this letter? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(isTr ? 'Sil' : 'Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await ref.read(lettersProvider.notifier).delete(letter.id, supabaseId: letter.supabaseId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isTr ? 'Mektup silindi' : 'Letter deleted')),
+        );
+      }
+    }
   }
 
   void _openLetter(Letter letter, String locale, bool isDark, Color primary) {
@@ -149,6 +192,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
                           isDark: isDark,
                           primary: primary,
                           onOpen: () => _openLetter(letter, locale, isDark, primary),
+                          onDelete: () => _confirmDelete(letter),
                         ),
                     ],
                   ),
@@ -271,6 +315,7 @@ class _LetterCard extends StatelessWidget {
     required this.isDark,
     required this.primary,
     required this.onOpen,
+    required this.onDelete,
   });
 
   final Letter letter;
@@ -279,6 +324,7 @@ class _LetterCard extends StatelessWidget {
   final bool isDark;
   final Color primary;
   final VoidCallback onOpen;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +347,7 @@ class _LetterCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             onTap: unlocked ? onOpen : null,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
               child: Row(
                 children: [
                   Icon(
@@ -325,7 +371,15 @@ class _LetterCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (unlocked) Icon(Icons.chevron_right_rounded, color: AstraKit.muted(isDark)),
+                  if (unlocked) ...[
+                    Icon(Icons.chevron_right_rounded, color: AstraKit.muted(isDark)),
+                    const SizedBox(width: 4),
+                  ],
+                  IconButton(
+                    icon: Icon(Icons.delete_outline_rounded, size: 20, color: AstraKit.muted(isDark)),
+                    onPressed: onDelete,
+                    tooltip: isTr ? 'Mektubu Sil' : 'Delete Letter',
+                  ),
                 ],
               ),
             ),

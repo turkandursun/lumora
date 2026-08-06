@@ -2925,6 +2925,379 @@ class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
   }
 }
 
+class $LettersTable extends Letters with TableInfo<$LettersTable, LetterRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LettersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _openAtMeta = const VerificationMeta('openAt');
+  @override
+  late final GeneratedColumn<DateTime> openAt = GeneratedColumn<DateTime>(
+      'open_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+      'body', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _supabaseIdMeta =
+      const VerificationMeta('supabaseId');
+  @override
+  late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
+      'supabase_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, createdAt, openAt, title, body, userId, supabaseId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'letters';
+  @override
+  VerificationContext validateIntegrity(Insertable<LetterRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('open_at')) {
+      context.handle(_openAtMeta,
+          openAt.isAcceptableOrUnknown(data['open_at']!, _openAtMeta));
+    } else if (isInserting) {
+      context.missing(_openAtMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+          _bodyMeta, body.isAcceptableOrUnknown(data['body']!, _bodyMeta));
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    }
+    if (data.containsKey('supabase_id')) {
+      context.handle(
+          _supabaseIdMeta,
+          supabaseId.isAcceptableOrUnknown(
+              data['supabase_id']!, _supabaseIdMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LetterRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LetterRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      openAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}open_at'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      body: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}body'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
+      supabaseId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
+    );
+  }
+
+  @override
+  $LettersTable createAlias(String alias) {
+    return $LettersTable(attachedDatabase, alias);
+  }
+}
+
+class LetterRow extends DataClass implements Insertable<LetterRow> {
+  final int id;
+  final DateTime createdAt;
+  final DateTime openAt;
+  final String title;
+  final String body;
+  final String? userId;
+  final String? supabaseId;
+  const LetterRow(
+      {required this.id,
+      required this.createdAt,
+      required this.openAt,
+      required this.title,
+      required this.body,
+      this.userId,
+      this.supabaseId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['open_at'] = Variable<DateTime>(openAt);
+    map['title'] = Variable<String>(title);
+    map['body'] = Variable<String>(body);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    if (!nullToAbsent || supabaseId != null) {
+      map['supabase_id'] = Variable<String>(supabaseId);
+    }
+    return map;
+  }
+
+  LettersCompanion toCompanion(bool nullToAbsent) {
+    return LettersCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      openAt: Value(openAt),
+      title: Value(title),
+      body: Value(body),
+      userId:
+          userId == null && nullToAbsent ? const Value.absent() : Value(userId),
+      supabaseId: supabaseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supabaseId),
+    );
+  }
+
+  factory LetterRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LetterRow(
+      id: serializer.fromJson<int>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      openAt: serializer.fromJson<DateTime>(json['openAt']),
+      title: serializer.fromJson<String>(json['title']),
+      body: serializer.fromJson<String>(json['body']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      supabaseId: serializer.fromJson<String?>(json['supabaseId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'openAt': serializer.toJson<DateTime>(openAt),
+      'title': serializer.toJson<String>(title),
+      'body': serializer.toJson<String>(body),
+      'userId': serializer.toJson<String?>(userId),
+      'supabaseId': serializer.toJson<String?>(supabaseId),
+    };
+  }
+
+  LetterRow copyWith(
+          {int? id,
+          DateTime? createdAt,
+          DateTime? openAt,
+          String? title,
+          String? body,
+          Value<String?> userId = const Value.absent(),
+          Value<String?> supabaseId = const Value.absent()}) =>
+      LetterRow(
+        id: id ?? this.id,
+        createdAt: createdAt ?? this.createdAt,
+        openAt: openAt ?? this.openAt,
+        title: title ?? this.title,
+        body: body ?? this.body,
+        userId: userId.present ? userId.value : this.userId,
+        supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
+      );
+  LetterRow copyWithCompanion(LettersCompanion data) {
+    return LetterRow(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      openAt: data.openAt.present ? data.openAt.value : this.openAt,
+      title: data.title.present ? data.title.value : this.title,
+      body: data.body.present ? data.body.value : this.body,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      supabaseId:
+          data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LetterRow(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('openAt: $openAt, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, createdAt, openAt, title, body, userId, supabaseId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LetterRow &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.openAt == this.openAt &&
+          other.title == this.title &&
+          other.body == this.body &&
+          other.userId == this.userId &&
+          other.supabaseId == this.supabaseId);
+}
+
+class LettersCompanion extends UpdateCompanion<LetterRow> {
+  final Value<int> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> openAt;
+  final Value<String> title;
+  final Value<String> body;
+  final Value<String?> userId;
+  final Value<String?> supabaseId;
+  const LettersCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.openAt = const Value.absent(),
+    this.title = const Value.absent(),
+    this.body = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
+  });
+  LettersCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime openAt,
+    required String title,
+    required String body,
+    this.userId = const Value.absent(),
+    this.supabaseId = const Value.absent(),
+  })  : createdAt = Value(createdAt),
+        openAt = Value(openAt),
+        title = Value(title),
+        body = Value(body);
+  static Insertable<LetterRow> custom({
+    Expression<int>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? openAt,
+    Expression<String>? title,
+    Expression<String>? body,
+    Expression<String>? userId,
+    Expression<String>? supabaseId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (openAt != null) 'open_at': openAt,
+      if (title != null) 'title': title,
+      if (body != null) 'body': body,
+      if (userId != null) 'user_id': userId,
+      if (supabaseId != null) 'supabase_id': supabaseId,
+    });
+  }
+
+  LettersCompanion copyWith(
+      {Value<int>? id,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? openAt,
+      Value<String>? title,
+      Value<String>? body,
+      Value<String?>? userId,
+      Value<String?>? supabaseId}) {
+    return LettersCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      openAt: openAt ?? this.openAt,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      userId: userId ?? this.userId,
+      supabaseId: supabaseId ?? this.supabaseId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (openAt.present) {
+      map['open_at'] = Variable<DateTime>(openAt.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (supabaseId.present) {
+      map['supabase_id'] = Variable<String>(supabaseId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LettersCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('openAt: $openAt, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('userId: $userId, ')
+          ..write('supabaseId: $supabaseId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2935,6 +3308,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DailyQuestionAnswersTable dailyQuestionAnswers =
       $DailyQuestionAnswersTable(this);
   late final $ActivitiesTable activities = $ActivitiesTable(this);
+  late final $LettersTable letters = $LettersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2945,7 +3319,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         dreams,
         journalEntries,
         dailyQuestionAnswers,
-        activities
+        activities,
+        letters
       ];
 }
 
@@ -4323,6 +4698,195 @@ typedef $$ActivitiesTableProcessedTableManager = ProcessedTableManager<
     (ActivityRow, BaseReferences<_$AppDatabase, $ActivitiesTable, ActivityRow>),
     ActivityRow,
     PrefetchHooks Function()>;
+typedef $$LettersTableCreateCompanionBuilder = LettersCompanion Function({
+  Value<int> id,
+  required DateTime createdAt,
+  required DateTime openAt,
+  required String title,
+  required String body,
+  Value<String?> userId,
+  Value<String?> supabaseId,
+});
+typedef $$LettersTableUpdateCompanionBuilder = LettersCompanion Function({
+  Value<int> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> openAt,
+  Value<String> title,
+  Value<String> body,
+  Value<String?> userId,
+  Value<String?> supabaseId,
+});
+
+class $$LettersTableFilterComposer
+    extends Composer<_$AppDatabase, $LettersTable> {
+  $$LettersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get openAt => $composableBuilder(
+      column: $table.openAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get body => $composableBuilder(
+      column: $table.body, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnFilters(column));
+}
+
+class $$LettersTableOrderingComposer
+    extends Composer<_$AppDatabase, $LettersTable> {
+  $$LettersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get openAt => $composableBuilder(
+      column: $table.openAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get body => $composableBuilder(
+      column: $table.body, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
+}
+
+class $$LettersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LettersTable> {
+  $$LettersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get openAt =>
+      $composableBuilder(column: $table.openAt, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get supabaseId => $composableBuilder(
+      column: $table.supabaseId, builder: (column) => column);
+}
+
+class $$LettersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $LettersTable,
+    LetterRow,
+    $$LettersTableFilterComposer,
+    $$LettersTableOrderingComposer,
+    $$LettersTableAnnotationComposer,
+    $$LettersTableCreateCompanionBuilder,
+    $$LettersTableUpdateCompanionBuilder,
+    (LetterRow, BaseReferences<_$AppDatabase, $LettersTable, LetterRow>),
+    LetterRow,
+    PrefetchHooks Function()> {
+  $$LettersTableTableManager(_$AppDatabase db, $LettersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LettersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LettersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LettersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> openAt = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String> body = const Value.absent(),
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
+          }) =>
+              LettersCompanion(
+            id: id,
+            createdAt: createdAt,
+            openAt: openAt,
+            title: title,
+            body: body,
+            userId: userId,
+            supabaseId: supabaseId,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime openAt,
+            required String title,
+            required String body,
+            Value<String?> userId = const Value.absent(),
+            Value<String?> supabaseId = const Value.absent(),
+          }) =>
+              LettersCompanion.insert(
+            id: id,
+            createdAt: createdAt,
+            openAt: openAt,
+            title: title,
+            body: body,
+            userId: userId,
+            supabaseId: supabaseId,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$LettersTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $LettersTable,
+    LetterRow,
+    $$LettersTableFilterComposer,
+    $$LettersTableOrderingComposer,
+    $$LettersTableAnnotationComposer,
+    $$LettersTableCreateCompanionBuilder,
+    $$LettersTableUpdateCompanionBuilder,
+    (LetterRow, BaseReferences<_$AppDatabase, $LettersTable, LetterRow>),
+    LetterRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4339,4 +4903,6 @@ class $AppDatabaseManager {
       $$DailyQuestionAnswersTableTableManager(_db, _db.dailyQuestionAnswers);
   $$ActivitiesTableTableManager get activities =>
       $$ActivitiesTableTableManager(_db, _db.activities);
+  $$LettersTableTableManager get letters =>
+      $$LettersTableTableManager(_db, _db.letters);
 }
