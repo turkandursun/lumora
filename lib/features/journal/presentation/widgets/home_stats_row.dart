@@ -7,8 +7,6 @@ import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 
-const _gold = Color(0xFFE9C98C);
-
 /// Gentle, inviting prompts encouraging the user to write down their thoughts.
 const _promptsTr = [
   'Bugün zihninden neler geçiyor? Hislerini kaleme al...',
@@ -34,11 +32,12 @@ class HomeStatsRow extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    // Warm gold on the moon scene, deep bronze on the bright sun scene.
-    final accent = isDark ? _gold : AstraKit.primary(false);
+    // The app's theme accent, matching Profile: lavender on the moon scene,
+    // gold on the bright sun scene.
+    final accent = AstraKit.primary(isDark);
     // Contrasting icon colour inside the accent emblem.
     final emblemIcon =
-        isDark ? const Color(0xFF15102A) : const Color(0xFFFFF6E4);
+        isDark ? const Color(0xFF1A1030) : const Color(0xFFFFF6E4);
 
     // Rotate prompt gently by hour of day
     final promptIndex = DateTime.now().hour % _promptsTr.length;

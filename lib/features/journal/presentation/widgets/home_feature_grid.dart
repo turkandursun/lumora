@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
+import '../../../../theme/astra_screen_kit.dart';
 
 /// One tappable card in the Home feature grid.
 class HomeFeatureItem {
@@ -92,18 +92,9 @@ List<HomeFeatureItem> homeFeatureItems(
   ];
 }
 
-/// Rich mid-pastel duotone gradients rotated across the feature cards, deep
-/// enough that white text and a frosted glass badge read cleanly on top.
-const _iconGradients = [
-  [Color(0xFFF178B6), Color(0xFFF9A8D4)], // pink
-  [Color(0xFF9B84E6), Color(0xFFC3B0F2)], // lavender
-  [Color(0xFF5FBFA0), Color(0xFF93D9C4)], // mint
-  [Color(0xFFEF9A6B), Color(0xFFF7BE95)], // peach
-  [Color(0xFF6FA8E0), Color(0xFF9FC7F0)], // sky
-  [Color(0xFFE8859B), Color(0xFFF4B0C0)], // rose
-];
-
-/// A responsive 3-column grid of soft pastel illustrated feature cards.
+/// A responsive 2-column grid of frosted glass feature cards — the exact same
+/// [AstraGlassCard] look as the Journal Writing and Dream Journal cards above,
+/// so the whole Home page reads as one cohesive surface with no visual break.
 class HomeFeatureGrid extends StatelessWidget {
   const HomeFeatureGrid({super.key, required this.items, required this.isDark});
 
@@ -124,64 +115,40 @@ class HomeFeatureGrid extends StatelessWidget {
       ),
       itemBuilder: (context, index) => _FeatureCard(
         item: items[index],
-        gradient: _iconGradients[index % _iconGradients.length],
         isDark: isDark,
       ),
     );
   }
 }
 
-/// A large, image-style feature card: a soft gradient panel with a big
-/// ghosted icon and the title + description overlaid at the bottom.
+/// A feature shortcut card: the shared frosted glass card with an outlined
+/// accent icon in the top-right corner and the title + description at the
+/// bottom — identical fill, border, blur and text colours to the other Home
+/// cards.
 class _FeatureCard extends StatelessWidget {
-  const _FeatureCard(
-      {required this.item, required this.gradient, required this.isDark});
+  const _FeatureCard({required this.item, required this.isDark});
 
   final HomeFeatureItem item;
-  final List<Color> gradient;
   final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    // Theme-aware to match the app's frosted-glass cards: a dark translucent
-    // panel with gold text on the moon scene, a light cream panel with deep
-    // brown text on the bright sun scene (never gold text — it washes out).
-    final gold = isDark ? const Color(0xFFE9C98C) : const Color(0xFF8A5A16);
-    final panelColor = isDark
-        ? const Color(0xFF3E3C4A).withValues(alpha: 0.78)
-        : const Color(0x8FFBF1DC);
-    final titleColor = isDark ? gold : const Color(0xFF231402);
-    final descColor = isDark
-        ? Colors.white.withValues(alpha: 0.92)
-        : const Color(0xDE4A3208);
-    final shadow = isDark
-        ? const [
-            Shadow(color: Color(0x77000000), blurRadius: 6, offset: Offset(0, 1)),
-          ]
-        : const <Shadow>[];
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: panelColor,
-        border: Border.all(color: gold.withValues(alpha: 0.5), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.08),
-            blurRadius: 14,
-            offset: const Offset(0, 7),
-          ),
-        ],
-      ),
+    final accent = AstraKit.primary(isDark);
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: accent,
+      padding: EdgeInsets.zero,
+      borderRadius: 20,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: item.onTap,
-          splashColor: Colors.white.withValues(alpha: 0.14),
+          splashColor: accent.withValues(alpha: 0.14),
           child: Stack(
             children: [
-              // Outlined icon circle in the top-right corner.
+              // Outlined accent icon circle in the top-right corner.
               Positioned(
                 right: 12,
                 top: 12,
@@ -191,11 +158,11 @@ class _FeatureCard extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: accent.withValues(alpha: 0.14),
                     border: Border.all(
-                        color: gold.withValues(alpha: 0.6), width: 1.2),
+                        color: accent.withValues(alpha: 0.4), width: 1.2),
                   ),
-                  child: Icon(item.primaryIcon, size: 20, color: gold),
+                  child: Icon(item.primaryIcon, size: 20, color: accent),
                 ),
               ),
               if (item.badgeCount > 0)
@@ -232,24 +199,17 @@ class _FeatureCard extends StatelessWidget {
                       item.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTheme.displayFont(
-                        fontSize: 17,
-                        color: titleColor,
-                      ).copyWith(shadows: shadow),
+                      style: AstraKit.heading2(isDark, fontSize: 16.5),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
                       item.description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTheme.bodyFont(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        color: descColor,
-                      ).copyWith(shadows: shadow),
+                      style: AstraKit.mutedText(isDark, fontSize: 11.5),
                     ),
                     const SizedBox(height: 9),
-                    _SparkleDivider(gold: gold),
+                    _SparkleDivider(accent: accent),
                   ],
                 ),
               ),
@@ -264,14 +224,14 @@ class _FeatureCard extends StatelessWidget {
 /// A hairline divider with a small diamond sparkle in the middle, echoing
 /// the ornamental line under each card's title.
 class _SparkleDivider extends StatelessWidget {
-  const _SparkleDivider({required this.gold});
+  const _SparkleDivider({required this.accent});
 
-  final Color gold;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
     Widget line() => Expanded(
-          child: Container(height: 1, color: gold.withValues(alpha: 0.35)),
+          child: Container(height: 1, color: accent.withValues(alpha: 0.35)),
         );
     return Row(
       children: [
@@ -280,7 +240,7 @@ class _SparkleDivider extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 7),
           child: Transform.rotate(
             angle: 0.785398,
-            child: Container(width: 5, height: 5, color: gold),
+            child: Container(width: 5, height: 5, color: accent),
           ),
         ),
         line(),

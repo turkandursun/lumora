@@ -87,10 +87,13 @@ class _AppShellState extends ConsumerState<AppShell>
   }
 }
 
-const _gold = Color(0xFFE9C98C);
+// The whole bar uses the app's lavender theme accent, matching the Profile
+// screen — including the raised leaf quick-add button.
+const _lavender = Color(0xFFC084FC);
+const _lavenderDeep = Color(0xFF8B5CF6);
 
-/// Dark glass bottom bar matching Home's gold-accented cards, with a raised
-/// circular center button for the quick-add action.
+/// Dark glass bottom bar matching Home's cards, with a raised circular center
+/// button for the quick-add action.
 class _ShellBottomNav extends StatelessWidget {
   const _ShellBottomNav({
     required this.active,
@@ -114,7 +117,7 @@ class _ShellBottomNav extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0xFF211C30),
-        border: Border(top: BorderSide(color: _gold.withValues(alpha: 0.3))),
+        border: Border(top: BorderSide(color: _lavender.withValues(alpha: 0.3))),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -193,7 +196,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? _gold : AstraKit.muted(true);
+    final color = isActive ? _lavender : AstraKit.muted(true);
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -249,20 +252,20 @@ class _QuickAddButton extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
-                colors: [Color(0xFFF0D68A), Color(0xFFB8860B)],
+                colors: [_lavender, _lavenderDeep],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: _gold.withValues(alpha: 0.5),
+                  color: _lavender.withValues(alpha: 0.5),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
               ],
               border: Border.all(color: const Color(0xFF211C30), width: 3),
             ),
-            child: const Icon(Icons.eco_rounded, color: Color(0xFF1A0F00), size: 26),
+            child: const Icon(Icons.eco_rounded, color: Colors.white, size: 26),
           ),
         ),
       ),

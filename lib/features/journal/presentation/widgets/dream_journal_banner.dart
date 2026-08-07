@@ -9,8 +9,6 @@ import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 
-const _gold = Color(0xFFE9C98C);
-
 /// Full-width "Rüya Günlüğü" (Dream Journal) banner — a frosted glass card with
 /// a small moon-and-stars illustration, theme-aware so it matches the rest of
 /// the home cards (dark glass on the moon scene, light glass on the sun scene).
@@ -21,7 +19,7 @@ class DreamJournalBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final accent = isDark ? _gold : AstraKit.primary(false);
+    final accent = AstraKit.primary(isDark);
     return AstraGlassCard(
       isDark: isDark,
       primaryColor: accent,

@@ -10,7 +10,8 @@ import '../../../../theme/astra_screen_kit.dart';
 import '../../../reminders/presentation/providers/reminders_providers.dart';
 import '../providers/weather_provider.dart';
 
-const _gold = Color(0xFFE9C98C);
+// The app's lavender theme accent, matching the Profile screen.
+const _accent = Color(0xFFC084FC);
 
 String _timeOfDayGreeting(AppLocalizations l10n, DateTime now, String? name) {
   final hour = now.hour;
@@ -63,7 +64,7 @@ class HomeHeader extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Icon(Icons.auto_awesome, color: _gold, size: 16),
+                  const Icon(Icons.auto_awesome, color: _accent, size: 16),
                 ],
               ),
               const SizedBox(height: 6),
@@ -85,7 +86,7 @@ class HomeHeader extends ConsumerWidget {
                     loading: () => const SizedBox(
                       width: 14,
                       height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 1.6, color: _gold),
+                      child: CircularProgressIndicator(strokeWidth: 1.6, color: _accent),
                     ),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
@@ -116,12 +117,12 @@ class _WeatherChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0x44231845),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: _gold.withValues(alpha: 0.5)),
+        border: Border.all(color: _accent.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(reading.condition.icon, size: 13, color: _gold),
+          Icon(reading.condition.icon, size: 13, color: _accent),
           const SizedBox(width: 4),
           Text(
             reading.roundedTemperature,
@@ -147,7 +148,7 @@ class _NotificationBell extends StatelessWidget {
       label: l10n.homeNotificationBellLabel,
       child: Material(
         color: const Color(0x44231845),
-        shape: CircleBorder(side: BorderSide(color: _gold.withValues(alpha: 0.4))),
+        shape: CircleBorder(side: BorderSide(color: _accent.withValues(alpha: 0.4))),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
@@ -156,7 +157,7 @@ class _NotificationBell extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(Icons.notifications_none_rounded, color: _gold, size: 20),
+                const Icon(Icons.notifications_none_rounded, color: _accent, size: 20),
                 if (hasUnread)
                   Positioned(
                     top: -1,

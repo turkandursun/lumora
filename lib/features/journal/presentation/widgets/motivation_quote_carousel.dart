@@ -11,12 +11,12 @@ import '../../domain/motivational_quote.dart';
 import '../providers/journal_streak_provider.dart';
 import '../providers/quote_favorites_provider.dart';
 
-const _gold = Color(0xFFE9C98C);
 const List<String> _moodEmojis = ['😊', '😌', '😴', '😔', '😟'];
 
-/// Accent used across this card's slides: warm gold on the moon scene, deep
-/// bronze on the bright sun scene (never yellow text/icons — it washes out).
-Color _accent(bool isDark) => isDark ? _gold : AstraKit.primary(false);
+/// Accent used across this card's slides — the app's theme accent, matching the
+/// Profile screen: soft lavender on the moon scene, gold on the bright sun
+/// scene.
+Color _accent(bool isDark) => AstraKit.primary(isDark);
 
 int? _mostCommonMoodLast7(Map<DateTime, int> log) {
   final today = DateTime.now();
