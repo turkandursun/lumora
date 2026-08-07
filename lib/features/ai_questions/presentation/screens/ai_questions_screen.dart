@@ -1,53 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/database/app_database.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/services/ai_service.dart';
+import '../../../../core/services/daily_ai_questions_service.dart';
 import '../../../../theme/astra_screen_kit.dart';
-
-const int _questionCount = 5;
-
-const List<(String, List<String>)> _questionsTr = [
-  ('Bugün enerjin nasıl?', ['Yüksek', 'Orta', 'Düşük', 'İnişli çıkışlı']),
-  (
-    'Son günlerde en çok hangi duyguyu yaşadın?',
-    ['Mutluluk', 'Huzur', 'Kaygı', 'Üzüntü', 'Yorgunluk']
-  ),
-  ('Kendine ne kadar zaman ayırabildin?', ['Bolca', 'Biraz', 'Neredeyse hiç']),
-  ('Uykun nasıldı?', ['İyi', 'İdare eder', 'Kötü']),
-  (
-    'Şu an en çok neye ihtiyacın var?',
-    ['Dinlenmeye', 'Konuşmaya', 'Motivasyona', 'Anlaşılmaya']
-  ),
-  ('Bugün kendine karşı nasıldın?', ['Şefkatli', 'Nötr', 'Sert']),
-  ('Zihnin bugün nasıl?', ['Sakin', 'Dağınık', 'Yoğun', 'Yorgun']),
-  ('Bugün insanlarla ne kadar bağ kurdun?', ['Çok', 'Biraz', 'Yalnızdım']),
-  ('Bedenin bugün nasıl hissediyor?', ['Dinç', 'İdare eder', 'Gergin', 'Yorgun']),
-  ('Bugünü bir kelimeyle anlatsan?', ['Güzel', 'Sıradan', 'Zor', 'Karışık']),
-  ('Stres seviyen bugün nasıl?', ['Düşük', 'Orta', 'Yüksek']),
-  ('Yarına dair ne hissediyorsun?', ['Umutlu', 'Nötr', 'Endişeli']),
-];
-
-const List<(String, List<String>)> _questionsEn = [
-  ('How is your energy today?', ['High', 'Medium', 'Low', 'Up and down']),
-  (
-    'Which emotion have you felt most lately?',
-    ['Happiness', 'Calm', 'Anxiety', 'Sadness', 'Tiredness']
-  ),
-  ('How much time did you make for yourself?', ['Plenty', 'A little', 'Almost none']),
-  ('How was your sleep?', ['Good', 'Okay', 'Poor']),
-  (
-    'What do you need most right now?',
-    ['Rest', 'To talk', 'Motivation', 'To be understood']
-  ),
-  ('How were you toward yourself today?', ['Kind', 'Neutral', 'Harsh']),
-  ('How is your mind today?', ['Calm', 'Scattered', 'Busy', 'Tired']),
-  ('How connected did you feel with people today?', ['A lot', 'A little', 'I felt alone']),
-  ('How does your body feel today?', ['Fresh', 'Okay', 'Tense', 'Tired']),
-  ('If you described today in one word?', ['Nice', 'Ordinary', 'Hard', 'Mixed']),
-  ('How is your stress today?', ['Low', 'Medium', 'High']),
-  ('How do you feel about tomorrow?', ['Hopeful', 'Neutral', 'Anxious']),
-];
+import '../../../../theme/mood_gradients.dart';
+import '../../../dreams/presentation/providers/dreams_providers.dart';
+import '../../../journal/presentation/providers/journal_entries_provider.dart';
+import '../../../mood/presentation/providers/mood_providers.dart';
 
 class AiQuestionsScreen extends ConsumerStatefulWidget {
   const AiQuestionsScreen({super.key});
@@ -57,27 +19,105 @@ class AiQuestionsScreen extends ConsumerStatefulWidget {
 }
 
 class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
-  // A fresh random subset of questions each time the screen opens.
-  late final List<int> _order =
-      (List<int>.generate(_questionsTr.length, (i) => i)..shuffle())
-          .take(_questionCount)
-          .toList();
-  final List<int?> _selected = List<int?>.filled(_questionCount, null);
+  List<String> _questions = const [];
+  List<String> _answers = const [];
+  bool _questionsRequested = false;
+  bool _questionsLoading = true;
+  String? _questionsError;
   bool _loading = false;
   String? _analysis;
 
-  bool get _allAnswered => _selected.every((e) => e != null);
+  bool get _hasAnswer => _answers.any((answer) => answer.trim().isNotEmpty);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_questionsRequested) return;
+    _questionsRequested = true;
+    _loadQuestions();
+  }
+
+  Future<void> _loadQuestions() async {
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    setState(() {
+      _questionsLoading = true;
+      _questionsError = null;
+    });
+
+    try {
+      List<JournalEntryRow> journals = const [];
+      List<DreamRow> dreams = const [];
+      try {
+        journals = await ref.read(recentJournalEntriesProvider.future);
+      } catch (_) {}
+      try {
+        dreams = await ref.read(dreamsStreamProvider.future);
+      } catch (_) {}
+      if (!mounted) return;
+
+      final moodLog = ref.read(moodLogProvider);
+      MapEntry<DateTime, int>? latestMood;
+      for (final entry in moodLog.entries) {
+        if (latestMood == null || entry.key.isAfter(latestMood.key)) {
+          latestMood = entry;
+        }
+      }
+
+      final questions = await DailyAiQuestionsService().fetchQuestions(
+        language: isTr ? 'tr' : 'en',
+        recentMood: latestMood == null
+            ? null
+            : _moodLabel(latestMood.value, isTr: isTr),
+        recentJournalSnippet:
+            journals.isEmpty ? null : _snippet(journals.first.content),
+        recentDreamSnippet:
+            dreams.isEmpty ? null : _snippet(dreams.first.content),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _questions = questions;
+        _answers = List<String>.filled(questions.length, '');
+        _questionsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _questionsLoading = false;
+        _questionsError = isTr
+            ? 'Bugünün soruları şu anda yüklenemedi. İnternet bağlantını kontrol edip tekrar deneyebilirsin.'
+            : "Today's questions couldn't be loaded. Check your connection and try again.";
+      });
+    }
+  }
+
+  static String _snippet(String text) {
+    final trimmed = text.trim();
+    return String.fromCharCodes(trimmed.runes.take(200));
+  }
+
+  static String _moodLabel(int index, {required bool isTr}) {
+    if (index < 0 || index >= AppMood.values.length) return index.toString();
+    final mood = AppMood.values[index];
+    if (!isTr) return mood.name;
+    return switch (mood) {
+      AppMood.happy => 'Mutlu',
+      AppMood.calm => 'Sakin',
+      AppMood.tired => 'Yorgun',
+      AppMood.sad => 'Üzgün',
+      AppMood.anxious => 'Kaygılı',
+    };
+  }
 
   Future<void> _analyze() async {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final qs = isTr ? _questionsTr : _questionsEn;
     final lines = <String>[];
-    for (var i = 0; i < _order.length; i++) {
-      final sel = _selected[i];
-      if (sel != null) {
-        lines.add('${qs[_order[i]].$1} -> ${qs[_order[i]].$2[sel]}');
-      }
+    for (var i = 0; i < _questions.length; i++) {
+      final answer = _answers[i].trim();
+      if (answer.isEmpty) continue;
+      lines.add('${_questions[i]} -> $answer');
     }
+    if (lines.isEmpty) return;
     final summary = lines.join('\n');
 
     setState(() {
@@ -113,7 +153,6 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final qs = isTr ? _questionsTr : _questionsEn;
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
     final primary = AstraKit.primary(isDark);
@@ -155,28 +194,48 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      for (var i = 0; i < _order.length; i++) ...[
-                        _QuestionCard(
-                          index: i,
-                          question: qs[_order[i]].$1,
-                          options: qs[_order[i]].$2,
-                          selected: _selected[i],
+                      if (_questionsLoading)
+                        _QuestionsLoadingCard(
+                          isTr: isTr,
                           isDark: isDark,
                           primary: primary,
-                          onSelect: (opt) => setState(() => _selected[i] = opt),
+                        )
+                      else if (_questionsError != null)
+                        _QuestionsErrorCard(
+                          message: _questionsError!,
+                          isTr: isTr,
+                          isDark: isDark,
+                          primary: primary,
+                          onRetry: _loadQuestions,
+                        )
+                      else ...[
+                        for (var i = 0; i < _questions.length; i++) ...[
+                          _QuestionCard(
+                            index: i,
+                            question: _questions[i],
+                            isTr: isTr,
+                            isDark: isDark,
+                            primary: primary,
+                            onChanged: (answer) =>
+                                setState(() => _answers[i] = answer),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        AstraGoldButton(
+                          isDark: isDark,
+                          label: _loading
+                              ? (isTr
+                                  ? 'Analiz ediliyor...'
+                                  : 'Analyzing...')
+                              : (isTr
+                                  ? 'Luma ile analiz et'
+                                  : 'Analyze with Luma'),
+                          icon: Icons.auto_awesome,
+                          isLoading: _loading,
+                          enabled: _hasAnswer && !_loading,
+                          onTap: _analyze,
                         ),
-                        const SizedBox(height: 12),
                       ],
-                      AstraGoldButton(
-                        isDark: isDark,
-                        label: _loading
-                            ? (isTr ? 'Analiz ediliyor...' : 'Analyzing...')
-                            : (isTr ? 'Luma ile analiz et' : 'Analyze with Luma'),
-                        icon: Icons.auto_awesome,
-                        isLoading: _loading,
-                        enabled: _allAnswered && !_loading,
-                        onTap: _analyze,
-                      ),
                       if (_analysis != null) ...[
                         const SizedBox(height: 14),
                         _AnalysisCard(isTr: isTr, text: _analysis!, isDark: isDark, primary: primary),
@@ -198,20 +257,18 @@ class _QuestionCard extends StatelessWidget {
   const _QuestionCard({
     required this.index,
     required this.question,
-    required this.options,
-    required this.selected,
+    required this.isTr,
     required this.isDark,
     required this.primary,
-    required this.onSelect,
+    required this.onChanged,
   });
 
   final int index;
   final String question;
-  final List<String> options;
-  final int? selected;
+  final bool isTr;
   final bool isDark;
   final Color primary;
-  final ValueChanged<int> onSelect;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -223,23 +280,131 @@ class _QuestionCard extends StatelessWidget {
         children: [
           Text('${index + 1}. $question', style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (var o = 0; o < options.length; o++)
-                ChoiceChip(
-                  label: Text(options[o]),
-                  labelStyle: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w600,
-                      color: selected == o ? const Color(0xFF1A0F00) : null),
-                  showCheckmark: false,
-                  backgroundColor: isDark ? const Color(0x33231845) : const Color(0x66FFF8EE),
-                  selectedColor: primary,
-                  side: BorderSide(color: primary.withValues(alpha: 0.35)),
-                  selected: selected == o,
-                  onSelected: (_) => onSelect(o),
+          TextField(
+            minLines: 2,
+            maxLines: 4,
+            textInputAction: TextInputAction.newline,
+            onChanged: onChanged,
+            style: AstraKit.body(
+              isDark,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              hintText: isTr ? 'Cevabını yaz...' : 'Write your answer...',
+              hintStyle: AstraKit.mutedText(isDark, fontSize: 13),
+              filled: true,
+              fillColor: isDark
+                  ? const Color(0x33231845)
+                  : const Color(0x73FBF1DC),
+              contentPadding: const EdgeInsets.all(14),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: primary.withValues(alpha: 0.35),
                 ),
-            ],
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: primary, width: 1.4),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuestionsLoadingCard extends StatelessWidget {
+  const _QuestionsLoadingCard({
+    required this.isTr,
+    required this.isDark,
+    required this.primary,
+  });
+
+  final bool isTr;
+  final bool isDark;
+  final Color primary;
+
+  @override
+  Widget build(BuildContext context) {
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 22),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.4,
+                color: primary,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              isTr
+                  ? 'Luma bugünün sorularını hazırlıyor...'
+                  : "Luma is preparing today's questions...",
+              textAlign: TextAlign.center,
+              style: AstraKit.mutedText(isDark, fontSize: 13.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuestionsErrorCard extends StatelessWidget {
+  const _QuestionsErrorCard({
+    required this.message,
+    required this.isTr,
+    required this.isDark,
+    required this.primary,
+    required this.onRetry,
+  });
+
+  final String message;
+  final bool isTr;
+  final bool isDark;
+  final Color primary;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      child: Column(
+        children: [
+          Icon(Icons.cloud_off_rounded, color: primary, size: 28),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AstraKit.body(
+              isDark,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: Icon(Icons.refresh_rounded, color: primary),
+            label: Text(
+              isTr ? 'Tekrar dene' : 'Try again',
+              style: AstraKit.body(
+                isDark,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: primary,
+              ),
+            ),
           ),
         ],
       ),
