@@ -59,12 +59,20 @@ class _ThemeChoiceScreenState extends State<ThemeChoiceScreen> {
               tag: 'astra_bg',
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 450),
+                // Force each frame to fill the whole screen — without this the
+                // image shrinks to its aspect ratio, leaving grey top/bottom bands.
+                layoutBuilder: (current, previous) => Stack(
+                  fit: StackFit.expand,
+                  children: [...previous, if (current != null) current],
+                ),
                 child: Image.asset(
                   _dark
                       ? 'assets/images/astra_dark.png'
                       : 'assets/images/astra_sun_entry_g3.png',
                   key: ValueKey(_dark),
                   fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
                 ),
               ),
             ),

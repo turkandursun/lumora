@@ -282,6 +282,9 @@ class DynamicAstraBackground extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
+                // Moon: a deep dark veil. Sun: a light, airy wash that keeps the
+                // scene bright and visible through the translucent glass cards
+                // (heavier veils made the sun theme look dark/opaque).
                 colors: isDark
                     ? [
                         const Color(0x77160F2C),
@@ -289,9 +292,9 @@ class DynamicAstraBackground extends StatelessWidget {
                         const Color(0xF40B0718),
                       ]
                     : [
-                        const Color(0xB8FFFBF3),
-                        const Color(0xDDFCF3DF),
-                        const Color(0xF4FAF0D4),
+                        const Color(0x33FFFBF3),
+                        const Color(0x1FFCF3DF),
+                        const Color(0x4DFAF0D4),
                       ],
               ),
             ),

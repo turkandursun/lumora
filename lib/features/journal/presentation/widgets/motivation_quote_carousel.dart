@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
@@ -12,6 +13,10 @@ import '../providers/quote_favorites_provider.dart';
 
 const _gold = Color(0xFFE9C98C);
 const List<String> _moodEmojis = ['😊', '😌', '😴', '😔', '😟'];
+
+/// Accent used across this card's slides: warm gold on the moon scene, deep
+/// bronze on the bright sun scene (never yellow text/icons — it washes out).
+Color _accent(bool isDark) => isDark ? _gold : AstraKit.primary(false);
 
 int? _mostCommonMoodLast7(Map<DateTime, int> log) {
   final today = DateTime.now();
@@ -95,10 +100,12 @@ class _MotivationQuoteCarouselState extends ConsumerState<MotivationQuoteCarouse
     final moodLog = ref.watch(moodLogProvider);
     final dayQuote = quotes[dailyStartIndex(DateTime.now(), quotes.length)];
     const total = 5;
+    final themeDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
+    final accent = _accent(themeDark);
 
     return AstraGlassCard(
-      isDark: true,
-      primaryColor: _gold,
+      isDark: themeDark,
+      primaryColor: accent,
       padding: const EdgeInsets.fromLTRB(20, 18, 16, 14),
       borderRadius: 24,
       child: Column(
@@ -114,6 +121,7 @@ class _MotivationQuoteCarouselState extends ConsumerState<MotivationQuoteCarouse
                 switch (index) {
                   case 0:
                     return _QuoteSlide(
+                      isDark: themeDark,
                       quote: dayQuote,
                       isFavorite: favorites.contains(dayQuote.id),
                       onToggleFavorite: () => ref
@@ -121,14 +129,17 @@ class _MotivationQuoteCarouselState extends ConsumerState<MotivationQuoteCarouse
                           .toggle(dayQuote.id),
                     );
                   case 1:
-                    return _AffirmationSlide(isTr: isTr);
+                    return _AffirmationSlide(isDark: themeDark, isTr: isTr);
                   case 2:
-                    return _QuestionSlide(isTr: isTr);
+                    return _QuestionSlide(isDark: themeDark, isTr: isTr);
                   case 3:
                     return _StreakStatSlide(
-                        isTr: isTr, streak: streak, moodLog: moodLog);
+                        isDark: themeDark,
+                        isTr: isTr,
+                        streak: streak,
+                        moodLog: moodLog);
                   default:
-                    return _ActionsSlide(isTr: isTr);
+                    return _ActionsSlide(isDark: themeDark, isTr: isTr);
                 }
               },
             ),
@@ -138,6 +149,7 @@ class _MotivationQuoteCarouselState extends ConsumerState<MotivationQuoteCarouse
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _CarouselArrow(
+                isDark: themeDark,
                 icon: Icons.chevron_left_rounded,
                 onTap: _page > 0 ? () => _go(_page - 1) : null,
               ),
@@ -149,12 +161,13 @@ class _MotivationQuoteCarouselState extends ConsumerState<MotivationQuoteCarouse
                   width: i == _page ? 16 : 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: i == _page ? _gold : _gold.withValues(alpha: 0.25),
+                    color: i == _page ? accent : accent.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
               const SizedBox(width: 4),
               _CarouselArrow(
+                isDark: themeDark,
                 icon: Icons.chevron_right_rounded,
                 onTap: _page < total - 1 ? () => _go(_page + 1) : null,
               ),
@@ -168,11 +181,13 @@ class _MotivationQuoteCarouselState extends ConsumerState<MotivationQuoteCarouse
 
 class _QuoteSlide extends StatelessWidget {
   const _QuoteSlide({
+    required this.isDark,
     required this.quote,
     required this.isFavorite,
     required this.onToggleFavorite,
   });
 
+  final bool isDark;
   final MotivationalQuote quote;
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
@@ -183,7 +198,10 @@ class _QuoteSlide extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SlideHeader(icon: Icons.format_quote_rounded, title: l10n.homeQuoteCardTitle),
+        _SlideHeader(
+            isDark: isDark,
+            icon: Icons.format_quote_rounded,
+            title: l10n.homeQuoteCardTitle),
         const SizedBox(height: 8),
         Expanded(
           child: Row(
@@ -198,13 +216,14 @@ class _QuoteSlide extends StatelessWidget {
                       quote.text,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: AstraKit.body(true, fontSize: 14.5, fontWeight: FontWeight.w600, height: 1.35),
+                      style: AstraKit.body(isDark, fontSize: 14.5, fontWeight: FontWeight.w600, height: 1.35),
                     ),
                     const SizedBox(height: 6),
-                    const SizedBox(
+                    SizedBox(
                       width: 88,
                       height: 22,
-                      child: CustomPaint(painter: _SunriseLineArtPainter()),
+                      child: CustomPaint(
+                          painter: _SunriseLineArtPainter(isDark: isDark)),
                     ),
                   ],
                 ),
@@ -227,7 +246,7 @@ class _QuoteSlide extends StatelessWidget {
                         child: Icon(
                           isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                           key: ValueKey(isFavorite),
-                          color: _gold,
+                          color: _accent(isDark),
                           size: 20,
                         ),
                       ),
@@ -246,20 +265,25 @@ class _QuoteSlide extends StatelessWidget {
 /// Small tappable arrow for stepping through the deck (in addition to
 /// swiping) — handy on desktop/emulator where dragging is fiddly.
 class _CarouselArrow extends StatelessWidget {
-  const _CarouselArrow({required this.icon, required this.onTap});
+  const _CarouselArrow(
+      {required this.isDark, required this.icon, required this.onTap});
 
+  final bool isDark;
   final IconData icon;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
+    final accent = _accent(isDark);
     return InkResponse(
       onTap: onTap,
       radius: 20,
       child: Padding(
         padding: const EdgeInsets.all(4),
-        child: Icon(icon, size: 22, color: enabled ? _gold : _gold.withValues(alpha: 0.3)),
+        child: Icon(icon,
+            size: 22,
+            color: enabled ? accent : accent.withValues(alpha: 0.3)),
       ),
     );
   }
@@ -268,8 +292,10 @@ class _CarouselArrow extends StatelessWidget {
 /// Shared little header (icon + title) shown at the top of each card in the
 /// swipeable daily deck.
 class _SlideHeader extends StatelessWidget {
-  const _SlideHeader({required this.icon, required this.title});
+  const _SlideHeader(
+      {required this.isDark, required this.icon, required this.title});
 
+  final bool isDark;
   final IconData icon;
   final String title;
 
@@ -277,10 +303,10 @@ class _SlideHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: _gold, size: 20),
+        Icon(icon, color: _accent(isDark), size: 20),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(title, style: AstraKit.label(true, fontSize: 12.5)),
+          child: Text(title, style: AstraKit.label(isDark, fontSize: 12.5)),
         ),
       ],
     );
@@ -289,8 +315,9 @@ class _SlideHeader extends StatelessWidget {
 
 /// Daily affirmation card.
 class _AffirmationSlide extends StatelessWidget {
-  const _AffirmationSlide({required this.isTr});
+  const _AffirmationSlide({required this.isDark, required this.isTr});
 
+  final bool isDark;
   final bool isTr;
 
   static const _tr = [
@@ -317,12 +344,12 @@ class _AffirmationSlide extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SlideHeader(icon: Icons.spa_rounded, title: isTr ? 'Günün Olumlaması' : 'Daily Affirmation'),
+        _SlideHeader(isDark: isDark, icon: Icons.spa_rounded, title: isTr ? 'Günün Olumlaması' : 'Daily Affirmation'),
         const SizedBox(height: 8),
         Expanded(
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Text(text, style: AstraKit.body(true, fontSize: 16, fontWeight: FontWeight.w600, height: 1.4)),
+            child: Text(text, style: AstraKit.body(isDark, fontSize: 16, fontWeight: FontWeight.w600, height: 1.4)),
           ),
         ),
       ],
@@ -332,8 +359,9 @@ class _AffirmationSlide extends StatelessWidget {
 
 /// A prompt that opens the daily question screen.
 class _QuestionSlide extends StatelessWidget {
-  const _QuestionSlide({required this.isTr});
+  const _QuestionSlide({required this.isDark, required this.isTr});
 
+  final bool isDark;
   final bool isTr;
 
   @override
@@ -344,21 +372,21 @@ class _QuestionSlide extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SlideHeader(icon: Icons.help_outline_rounded, title: isTr ? 'Günün Sorusu' : 'Daily Question'),
+          _SlideHeader(isDark: isDark, icon: Icons.help_outline_rounded, title: isTr ? 'Günün Sorusu' : 'Daily Question'),
           const SizedBox(height: 8),
           Expanded(
             child: Text(
               isTr
                   ? 'Bugün seni en çok ne düşündürdü? Yazmak için dokun.'
                   : "What's been on your mind today? Tap to write.",
-              style: AstraKit.body(true, fontSize: 15, fontWeight: FontWeight.w600, height: 1.35),
+              style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w600, height: 1.35),
             ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(isTr ? 'Cevapla' : 'Answer', style: AstraKit.label(true, fontSize: 12.5)),
-              const Icon(Icons.chevron_right_rounded, size: 18, color: _gold),
+              Text(isTr ? 'Cevapla' : 'Answer', style: AstraKit.label(isDark, fontSize: 12.5)),
+              Icon(Icons.chevron_right_rounded, size: 18, color: _accent(isDark)),
             ],
           ),
         ],
@@ -370,11 +398,13 @@ class _QuestionSlide extends StatelessWidget {
 /// A live "your progress" card: journaling streak + most common recent mood.
 class _StreakStatSlide extends StatelessWidget {
   const _StreakStatSlide({
+    required this.isDark,
     required this.isTr,
     required this.streak,
     required this.moodLog,
   });
 
+  final bool isDark;
   final bool isTr;
   final int streak;
   final Map<DateTime, int> moodLog;
@@ -386,13 +416,13 @@ class _StreakStatSlide extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SlideHeader(icon: Icons.local_fire_department_rounded, title: isTr ? 'Bugünkü durumun' : 'Your progress'),
+        _SlideHeader(isDark: isDark, icon: Icons.local_fire_department_rounded, title: isTr ? 'Bugünkü durumun' : 'Your progress'),
         const SizedBox(height: 10),
         Text(
           streak > 0
               ? (isTr ? '🔥 $streak gündür yazıyorsun' : '🔥 $streak-day streak')
               : (isTr ? 'Bugün yazarak seriyi başlat' : 'Start a streak by writing today'),
-          style: AstraKit.body(true, fontSize: 15, fontWeight: FontWeight.w700),
+          style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         Text(
@@ -403,7 +433,7 @@ class _StreakStatSlide extends StatelessWidget {
               : (isTr
                   ? '${_moodEmojis[mostMood]}  Bu hafta en sık: ${_moodLabel(l10n, mostMood)}'
                   : '${_moodEmojis[mostMood]}  Most common this week: ${_moodLabel(l10n, mostMood)}'),
-          style: AstraKit.mutedText(true, fontSize: 13.5),
+          style: AstraKit.mutedText(isDark, fontSize: 13.5),
         ),
       ],
     );
@@ -412,8 +442,9 @@ class _StreakStatSlide extends StatelessWidget {
 
 /// Quick self-care actions: a breathing break.
 class _ActionsSlide extends StatelessWidget {
-  const _ActionsSlide({required this.isTr});
+  const _ActionsSlide({required this.isDark, required this.isTr});
 
+  final bool isDark;
   final bool isTr;
 
   @override
@@ -421,13 +452,14 @@ class _ActionsSlide extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SlideHeader(icon: Icons.favorite_rounded, title: isTr ? 'Küçük bir mola?' : 'A little moment?'),
+        _SlideHeader(isDark: isDark, icon: Icons.favorite_rounded, title: isTr ? 'Küçük bir mola?' : 'A little moment?'),
         const SizedBox(height: 12),
         Expanded(
           child: Row(
             children: [
               Expanded(
                 child: _ActionButton(
+                  isDark: isDark,
                   icon: Icons.air_rounded,
                   label: isTr ? 'Nefes' : 'Breathe',
                   onTap: () => context.push(AppRoutes.breathing),
@@ -443,19 +475,22 @@ class _ActionsSlide extends StatelessWidget {
 
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
+    required this.isDark,
     required this.icon,
     required this.label,
     required this.onTap,
   });
 
+  final bool isDark;
   final IconData icon;
   final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final accent = _accent(isDark);
     return Material(
-      color: const Color(0x33231845),
+      color: isDark ? const Color(0x33231845) : const Color(0x59FBECCB),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -463,15 +498,15 @@ class _ActionButton extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _gold.withValues(alpha: 0.3)),
+            border: Border.all(color: accent.withValues(alpha: 0.35)),
           ),
           padding: const EdgeInsets.symmetric(vertical: 14),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: _gold, size: 22),
+              Icon(icon, color: accent, size: 22),
               const SizedBox(height: 6),
-              Text(label, style: AstraKit.body(true, fontSize: 12.5, fontWeight: FontWeight.w700)),
+              Text(label, style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w700)),
             ],
           ),
         ),
@@ -483,15 +518,18 @@ class _ActionButton extends StatelessWidget {
 /// A tiny soft-line illustration of a mountain range with a rising sun —
 /// purely decorative, tucked under each quote's text.
 class _SunriseLineArtPainter extends CustomPainter {
-  const _SunriseLineArtPainter();
+  const _SunriseLineArtPainter({required this.isDark});
+
+  final bool isDark;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final sunPaint = Paint()..color = _gold.withValues(alpha: 0.8);
+    final art = _accent(isDark);
+    final sunPaint = Paint()..color = art.withValues(alpha: 0.8);
     canvas.drawCircle(Offset(size.width * 0.28, size.height * 0.62), 9, sunPaint);
 
     final linePaint = Paint()
-      ..color = _gold.withValues(alpha: 0.45)
+      ..color = art.withValues(alpha: 0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6
       ..strokeCap = StrokeCap.round
@@ -507,7 +545,7 @@ class _SunriseLineArtPainter extends CustomPainter {
     canvas.drawPath(mountains, linePaint);
 
     final groundPaint = Paint()
-      ..color = _gold.withValues(alpha: 0.25)
+      ..color = art.withValues(alpha: 0.25)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     canvas.drawLine(
@@ -518,5 +556,6 @@ class _SunriseLineArtPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SunriseLineArtPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }
