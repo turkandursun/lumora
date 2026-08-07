@@ -14,9 +14,11 @@ import '../../features/letters/presentation/providers/letter_providers.dart';
 import '../../features/mood/presentation/providers/mood_providers.dart';
 import '../../features/profile/presentation/providers/visit_tracker_providers.dart';
 import '../../features/reminders/presentation/providers/reminders_providers.dart';
+import 'astra_theme_provider.dart';
 
 /// Invalidate all user-specific Riverpod providers on auth change (signedIn, signedOut).
 void invalidateUserProviders(WidgetRef ref) {
+  ref.invalidate(astraThemeProvider);
   ref.invalidate(hobbiesProvider);
   ref.invalidate(journalStreakProvider);
   ref.invalidate(visitDaysCountProvider);
