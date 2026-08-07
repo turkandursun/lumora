@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/astra_theme_provider.dart';
 import '../../../core/providers/cloud_backup_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -64,6 +65,7 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
     final screens = [
       const HomeScreen(),
       const ProfileScreen(),
@@ -76,6 +78,7 @@ class _AppShellState extends ConsumerState<AppShell>
         children: screens,
       ),
       bottomNavigationBar: _ShellBottomNav(
+        isDark: isDark,
         active: _active,
         onHome: () => setState(() => _active = _ActiveTab.home),
         onStats: () => context.push(AppRoutes.stats),
@@ -87,15 +90,19 @@ class _AppShellState extends ConsumerState<AppShell>
   }
 }
 
-// The whole bar uses the app's lavender theme accent, matching the Profile
-// screen — including the raised leaf quick-add button.
+/// The bar follows the app theme: a deep violet surface with a lavender accent
+/// on the dark/moon theme, a warm cream surface with a gold accent on the
+/// light/sun theme — so it never sits as a dark slab on the bright scene.
+const _barDark = Color(0xFF211C30);
+const _barLight = Color(0xFFF6EAD3);
 const _lavender = Color(0xFFC084FC);
 const _lavenderDeep = Color(0xFF8B5CF6);
 
-/// Dark glass bottom bar matching Home's cards, with a raised circular center
+/// Theme-aware bottom bar matching Home's cards, with a raised circular center
 /// button for the quick-add action.
 class _ShellBottomNav extends StatelessWidget {
   const _ShellBottomNav({
+    required this.isDark,
     required this.active,
     required this.onHome,
     required this.onStats,
@@ -104,6 +111,7 @@ class _ShellBottomNav extends StatelessWidget {
     required this.onProfile,
   });
 
+  final bool isDark;
   final _ActiveTab active;
   final VoidCallback onHome;
   final VoidCallback onStats;
@@ -114,13 +122,15 @@ class _ShellBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final barColor = isDark ? _barDark : _barLight;
+    final accent = AstraKit.primary(isDark);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFF211C30),
-        border: Border(top: BorderSide(color: _lavender.withValues(alpha: 0.3))),
+        color: barColor,
+        border: Border(top: BorderSide(color: accent.withValues(alpha: isDark ? 0.3 : 0.45))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -141,6 +151,8 @@ class _ShellBottomNav extends StatelessWidget {
                     filledIcon: Icons.home_rounded,
                     label: l10n.shellTabHome,
                     isActive: active == _ActiveTab.home,
+                    isDark: isDark,
+                    accent: accent,
                     onTap: onHome,
                   ),
                   _NavItem(
@@ -148,6 +160,8 @@ class _ShellBottomNav extends StatelessWidget {
                     filledIcon: Icons.bar_chart_rounded,
                     label: l10n.shellTabStats,
                     isActive: false,
+                    isDark: isDark,
+                    accent: accent,
                     onTap: onStats,
                   ),
                   const SizedBox(width: 56),
@@ -156,6 +170,8 @@ class _ShellBottomNav extends StatelessWidget {
                     filledIcon: Icons.smart_toy_rounded,
                     label: l10n.shellTabAi,
                     isActive: false,
+                    isDark: isDark,
+                    accent: accent,
                     onTap: onAi,
                   ),
                   _NavItem(
@@ -163,13 +179,20 @@ class _ShellBottomNav extends StatelessWidget {
                     filledIcon: Icons.person_rounded,
                     label: l10n.shellTabProfile,
                     isActive: active == _ActiveTab.profile,
+                    isDark: isDark,
+                    accent: accent,
                     onTap: onProfile,
                   ),
                 ],
               ),
               Positioned(
                 top: -20,
-                child: _QuickAddButton(label: l10n.shellTabQuickAdd, onTap: onQuickAdd),
+                child: _QuickAddButton(
+                  label: l10n.shellTabQuickAdd,
+                  isDark: isDark,
+                  barColor: barColor,
+                  onTap: onQuickAdd,
+                ),
               ),
             ],
           ),
@@ -185,6 +208,8 @@ class _NavItem extends StatelessWidget {
     required this.filledIcon,
     required this.label,
     required this.isActive,
+    required this.isDark,
+    required this.accent,
     required this.onTap,
   });
 
@@ -192,11 +217,13 @@ class _NavItem extends StatelessWidget {
   final IconData filledIcon;
   final String label;
   final bool isActive;
+  final bool isDark;
+  final Color accent;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? _lavender : AstraKit.muted(true);
+    final color = isActive ? accent : AstraKit.muted(isDark);
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -213,7 +240,7 @@ class _NavItem extends StatelessWidget {
               Text(
                 label,
                 style: AstraKit.body(
-                  true,
+                  isDark,
                   fontSize: 10.5,
                   fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                   color: color,
@@ -230,13 +257,26 @@ class _NavItem extends StatelessWidget {
 /// The raised, elevated center button — a distinct circular FAB-style
 /// quick-add action, floating above the rest of the bar.
 class _QuickAddButton extends StatelessWidget {
-  const _QuickAddButton({required this.label, required this.onTap});
+  const _QuickAddButton({
+    required this.label,
+    required this.isDark,
+    required this.barColor,
+    required this.onTap,
+  });
 
   final String label;
+  final bool isDark;
+  final Color barColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    // Lavender pill on the dark theme, gold on the light theme — matching the
+    // rest of the interface's theme accent.
+    final gradient = isDark
+        ? const [_lavender, _lavenderDeep]
+        : const [Color(0xFFF0D68A), Color(0xFFB8860B)];
+    final glow = isDark ? _lavender : const Color(0xFFD4AF37);
     return Semantics(
       button: true,
       label: label,
@@ -251,21 +291,26 @@ class _QuickAddButton extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [_lavender, _lavenderDeep],
+              gradient: LinearGradient(
+                colors: gradient,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: _lavender.withValues(alpha: 0.5),
+                  color: glow.withValues(alpha: 0.5),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
               ],
-              border: Border.all(color: const Color(0xFF211C30), width: 3),
+              // Ring in the bar's own colour so the button reads as lifted off it.
+              border: Border.all(color: barColor, width: 3),
             ),
-            child: const Icon(Icons.eco_rounded, color: Colors.white, size: 26),
+            child: Icon(
+              Icons.eco_rounded,
+              color: isDark ? Colors.white : const Color(0xFF1A0F00),
+              size: 26,
+            ),
           ),
         ),
       ),
