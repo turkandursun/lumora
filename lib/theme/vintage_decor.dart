@@ -281,7 +281,7 @@ class _OrnamentPainter extends CustomPainter {
       ..color = VintagePalette.line
       ..strokeWidth = 1
       ..strokeCap = StrokeCap.round;
-    final gap = 16.0;
+    const gap = 16.0;
     // Left and right rules with a small arrow tail.
     canvas.drawLine(Offset(0, midY), Offset(size.width / 2 - gap, midY), linePaint);
     canvas.drawLine(Offset(size.width / 2 + gap, midY), Offset(size.width, midY), linePaint);

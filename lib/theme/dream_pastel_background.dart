@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/auth/presentation/widgets/lumora_auth_decor.dart';
 import '../features/theme_choice/presentation/screens/theme_choice_screen.dart';
-import 'lumora_palette.dart';
 
 /// A soft, pastel "dream sky" background shared across the dream-journal
 /// screens.
@@ -85,29 +84,6 @@ class _DreamPastelBackgroundState extends State<DreamPastelBackground> {
         const Positioned(top: 118, right: 46, child: Butterfly()),
         if (widget.child != null) widget.child!,
       ],
-    );
-  }
-}
-
-/// A soft pink radial glow that gives the dream sky its dreamy, pastel
-/// lift — offset to the upper-left so it reads as ambient light rather
-/// than a spotlight, and low-alpha so it never washes out the text.
-class _DreamGlow extends StatelessWidget {
-  const _DreamGlow();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: RadialGradient(
-          center: const Alignment(-0.3, -0.5),
-          radius: 1.2,
-          colors: [
-            LumoraPalette.softPink.withValues(alpha: 0.28),
-            LumoraPalette.accentPink.withValues(alpha: 0.0),
-          ],
-        ),
-      ),
     );
   }
 }

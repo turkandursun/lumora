@@ -152,11 +152,11 @@ class _DayNightToggle extends StatelessWidget {
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 250),
                 opacity: dark ? 1 : 0,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 16),
+                child: const Padding(
+                  padding: EdgeInsets.only(right: 16),
                   child: Stack(
                     alignment: Alignment.centerRight,
-                    children: const [
+                    children: [
                       Align(
                         alignment: Alignment.centerRight,
                         child: Icon(Icons.nightlight_round,

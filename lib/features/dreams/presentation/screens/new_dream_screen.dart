@@ -6,16 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
 import '../providers/dreams_providers.dart';
-
-/// Dreams stay night-themed regardless of the app's light/dark choice — see
-/// [DreamJournalScreen]'s `_isDark` for the same reasoning.
-const _isDark = true;
-final _primary = AstraKit.primary(_isDark);
 
 /// Full-screen dream entry form: a large free-form text area, a voice-to-
 /// text panel (same dictation flow as the journal writing screen, minus the
@@ -159,10 +155,12 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AstraMountainBackground(
-        isDark: _isDark,
+        isDark: isDark,
         child: SafeArea(
           child: ResponsiveContent(
             child: Column(
@@ -174,12 +172,12 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                     children: [
                       AstraCircleIconButton(
                         icon: Icons.arrow_back_ios_new_rounded,
-                        isDark: _isDark,
-                        primaryColor: _primary,
+                        isDark: isDark,
+                        primaryColor: primary,
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(l10n.dreamEntryTitle, style: AstraKit.heading1(_isDark, fontSize: 20)),
+                      Text(l10n.dreamEntryTitle, style: AstraKit.heading1(isDark, fontSize: 20)),
                     ],
                   ),
                 ),
@@ -192,20 +190,20 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                         SizedBox(
                           height: 220,
                           child: AstraGlassCard(
-                            isDark: _isDark,
-                            primaryColor: _error != null ? const Color(0xFFE07A7A) : _primary,
+                            isDark: isDark,
+                            primaryColor: _error != null ? const Color(0xFFE07A7A) : primary,
                             child: TextField(
                               controller: _controller,
                               maxLines: null,
                               expands: true,
                               textAlignVertical: TextAlignVertical.top,
-                              style: AstraKit.body(_isDark),
-                              cursorColor: _primary,
+                              style: AstraKit.body(isDark),
+                              cursorColor: primary,
                               decoration: InputDecoration(
                                 border: InputBorder.none,
                                 filled: false,
                                 hintText: l10n.dreamEntryPlaceholder,
-                                hintStyle: AstraKit.mutedText(_isDark),
+                                hintStyle: AstraKit.mutedText(isDark),
                               ),
                               onChanged: (_) {
                                 if (_error != null) setState(() => _error = null);
@@ -222,18 +220,18 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                         // ── Voice panel — same dictation flow as the
                         // journal writing screen.
                         AstraGlassCard(
-                          isDark: _isDark,
-                          primaryColor: _primary,
+                          isDark: isDark,
+                          primaryColor: primary,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.auto_awesome, size: 14, color: _primary),
+                                  Icon(Icons.auto_awesome, size: 14, color: primary),
                                   const SizedBox(width: 6),
                                   Text(
                                     isTr ? 'Sesle yaz' : 'Voice type',
-                                    style: AstraKit.body(_isDark, fontSize: 14, fontWeight: FontWeight.w700),
+                                    style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w700),
                                   ),
                                 ],
                               ),
@@ -242,7 +240,7 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                                 isTr
                                     ? 'Rüyanı sesinle anlatabilirsin.'
                                     : 'You can describe your dream with your voice.',
-                                style: AstraKit.mutedText(_isDark, fontSize: 12),
+                                style: AstraKit.mutedText(isDark, fontSize: 12),
                               ),
                               const SizedBox(height: 16),
                               Row(
@@ -252,7 +250,7 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                                   _WaveformBars(
                                     heights: _barHeights.sublist(0, 7),
                                     active: _isListening,
-                                    primary: _primary,
+                                    primary: primary,
                                     mirrored: true,
                                   ),
                                   const SizedBox(width: 12),
@@ -267,11 +265,11 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                                         gradient: RadialGradient(
                                           colors: _isListening
                                               ? [Colors.redAccent.shade100, Colors.redAccent]
-                                              : [_primary.withValues(alpha: 0.9), const Color(0xFFB8860B)],
+                                              : [primary.withValues(alpha: 0.95), primary.withValues(alpha: 0.6)],
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: (_isListening ? Colors.redAccent : _primary)
+                                            color: (_isListening ? Colors.redAccent : primary)
                                                 .withValues(alpha: 0.55),
                                             blurRadius: 18,
                                             spreadRadius: 2,
@@ -289,7 +287,7 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                                   _WaveformBars(
                                     heights: _barHeights.sublist(8),
                                     active: _isListening,
-                                    primary: _primary,
+                                    primary: primary,
                                     mirrored: false,
                                   ),
                                 ],
@@ -300,7 +298,7 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
 
                         const SizedBox(height: 18),
                         AstraGoldButton(
-                          isDark: _isDark,
+                          isDark: isDark,
                           label: l10n.dreamEntrySaveButton,
                           isLoading: _isSaving,
                           enabled: !_isSaving,

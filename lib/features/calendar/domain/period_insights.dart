@@ -73,8 +73,7 @@ PeriodInsights computePeriodInsights(Set<DateTime> days, {DateTime? now}) {
     }
   }
 
-  final daysUntil =
-      predictedNext == null ? null : predictedNext.difference(today).inDays;
+  final daysUntil = predictedNext?.difference(today).inDays;
 
   return PeriodInsights(
     periodsTracked: starts.length,

@@ -19,6 +19,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/services/crisis_detection_service.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
 
@@ -121,7 +122,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.dark(
-            primary: Color(0xFFD4AF37),
+            primary: Color(0xFFC084FC),
             onPrimary: Colors.black,
             surface: Color(0xFF1A1233),
           ),
@@ -319,7 +320,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final mode = ref.read(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = isDark ? const Color(0xFFE3C264) : const Color(0xFFD4AF37);
+    final primary = AstraKit.primary(isDark);
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -360,10 +361,10 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     final mode = ref.watch(astraThemeProvider);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final isDark = mode == AstraThemeMode.dark;
-    // Gold accent in BOTH themes — the reference's rich, luxurious look:
-    // gold labels, icons, borders, waveform and mic on glass cards.
-    final primary =
-        isDark ? const Color(0xFFE3C264) : const Color(0xFFD4AF37);
+    // The app's theme accent, matching the home page: soft lavender on the
+    // dark/moon theme, gold on the light/sun theme — flows through the labels,
+    // icons, borders, waveform and mic on the glass cards.
+    final primary = AstraKit.primary(isDark);
 
     final localeStr = Localizations.localeOf(context).toString();
     final dateStr = DateFormat('d MMMM yyyy, EEEE', localeStr).format(_selectedDate);
@@ -697,8 +698,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                                   Colors.redAccent,
                                                 ]
                                               : [
-                                                  primary.withValues(alpha: 0.9),
-                                                  const Color(0xFFB8860B),
+                                                  primary.withValues(alpha: 0.95),
+                                                  primary.withValues(alpha: 0.6),
                                                 ],
                                         ),
                                         boxShadow: [
@@ -1169,9 +1170,11 @@ class _SealButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Lavender pill on the dark theme (matching the home page's accent), gold
+    // on the light theme.
     final gradient = isDark
         ? const LinearGradient(
-            colors: [Color(0xFFD4B860), Color(0xFFB89030), Color(0xFF8A6A10)],
+            colors: [Color(0xFFC9A7F5), Color(0xFF9B6FE0), Color(0xFF7C4DB8)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           )
@@ -1193,10 +1196,9 @@ class _SealButton extends StatelessWidget {
             gradient: enabled
                 ? gradient
                 : LinearGradient(
-                    colors: [
-                      const Color(0x44D4AF37),
-                      const Color(0x22B8860B),
-                    ],
+                    colors: isDark
+                        ? [const Color(0x44C084FC), const Color(0x228B5CF6)]
+                        : [const Color(0x44D4AF37), const Color(0x22B8860B)],
                   ),
             boxShadow: enabled
                 ? [
@@ -1219,9 +1221,9 @@ class _SealButton extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: Colors.black.withValues(alpha: 0.18),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.local_florist_rounded,
-                  color: Colors.black87,
+                  color: isDark ? Colors.white : Colors.black87,
                   size: 20,
                 ),
               ),
@@ -1236,7 +1238,7 @@ class _SealButton extends StatelessWidget {
                       style: GoogleFonts.playfairDisplay(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A0F00),
+                        color: isDark ? Colors.white : const Color(0xFF1A0F00),
                       ),
                     ),
                     Text(
@@ -1246,13 +1248,13 @@ class _SealButton extends StatelessWidget {
                       style: GoogleFonts.outfit(
                         fontSize: 11,
                         fontWeight: FontWeight.w400,
-                        color: const Color(0x99331100),
+                        color: isDark ? Colors.white70 : const Color(0x99331100),
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.auto_awesome, color: Color(0xFF1A0F00), size: 18),
+              Icon(Icons.auto_awesome, color: isDark ? Colors.white : const Color(0xFF1A0F00), size: 18),
               const SizedBox(width: 18),
             ],
           ),

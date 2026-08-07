@@ -2,15 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../data/dream_reflection_options.dart';
 import '../providers/dreams_providers.dart';
-
-/// Dreams stay night-themed regardless of the app's light/dark choice — see
-/// [DreamJournalScreen]'s `_isDark` for the same reasoning.
-const _isDark = true;
 
 /// Localized chip labels for the reflection flow's quick-select questions,
 /// keyed by [DreamFeelingKeys] / [DreamFamiliarPersonKeys]. Shared with
@@ -106,19 +103,20 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
     final isLastPage = _page.round() == _pageCount - 1;
-    final pages = _buildPages(l10n);
-    final primary = AstraKit.primary(_isDark);
+    final pages = _buildPages(l10n, isDark);
+    final primary = AstraKit.primary(isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AstraMountainBackground(
-        isDark: _isDark,
+        isDark: isDark,
         child: SafeArea(
           child: ResponsiveContent(
             child: Column(
               children: [
-                _buildSkipRow(l10n),
+                _buildSkipRow(l10n, isDark),
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
@@ -126,9 +124,9 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
                     itemBuilder: (context, index) => _buildAnimatedPage(index, pages[index]),
                   ),
                 ),
-                _buildDots(primary),
+                _buildDots(primary, isDark),
                 const SizedBox(height: 28),
-                _buildActionButton(l10n, isLastPage),
+                _buildActionButton(l10n, isLastPage, isDark),
                 const SizedBox(height: 24),
               ],
             ),
@@ -138,43 +136,51 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
     );
   }
 
-  List<Widget> _buildPages(AppLocalizations l10n) {
+  List<Widget> _buildPages(AppLocalizations l10n, bool isDark) {
     final feelingLabels = dreamFeelingLabels(l10n);
     final familiarPersonLabels = dreamFamiliarPersonLabels(l10n);
 
     return [
       _ReflectionQuestionPage(
         question: l10n.dreamReflectionFeelingQuestion,
+        isDark: isDark,
         child: _ChoiceChips(
           options: DreamFeelingKeys.values,
           labels: feelingLabels,
           selected: _feeling,
+          isDark: isDark,
           onSelected: (key) => setState(() => _feeling = _feeling == key ? null : key),
         ),
       ),
       _ReflectionQuestionPage(
         question: l10n.dreamReflectionFamiliarPersonQuestion,
+        isDark: isDark,
         child: _ChoiceChips(
           options: DreamFamiliarPersonKeys.values,
           labels: familiarPersonLabels,
           selected: _familiarPerson,
+          isDark: isDark,
           onSelected: (key) => setState(() => _familiarPerson = _familiarPerson == key ? null : key),
         ),
       ),
       _ReflectionQuestionPage(
         question: l10n.dreamReflectionFirstThoughtQuestion,
+        isDark: isDark,
         child: _ReflectionTextField(
           key: const Key('dreamReflectionFirstThoughtField'),
           controller: _firstThoughtController,
           hint: l10n.dreamReflectionTextFieldHint,
+          isDark: isDark,
         ),
       ),
       _ReflectionQuestionPage(
         question: l10n.dreamReflectionLifeConnectionQuestion,
+        isDark: isDark,
         child: _ReflectionTextField(
           key: const Key('dreamReflectionLifeConnectionField'),
           controller: _lifeConnectionController,
           hint: l10n.dreamReflectionTextFieldHint,
+          isDark: isDark,
         ),
       ),
     ];
@@ -193,7 +199,7 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
     );
   }
 
-  Widget _buildSkipRow(AppLocalizations l10n) {
+  Widget _buildSkipRow(AppLocalizations l10n, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(right: 8, top: 4),
       child: Row(
@@ -203,7 +209,7 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
             onPressed: _isSaving ? null : _finish,
             child: Text(
               l10n.dreamReflectionSkipButton,
-              style: AstraKit.mutedText(_isDark, fontSize: 14, fontWeight: FontWeight.w600),
+              style: AstraKit.mutedText(isDark, fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -211,7 +217,7 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
     );
   }
 
-  Widget _buildDots(Color primary) {
+  Widget _buildDots(Color primary, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(_pageCount, (index) {
@@ -225,18 +231,18 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
           height: 8,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
-            color: isActive ? primary : AstraKit.muted(_isDark).withValues(alpha: 0.3),
+            color: isActive ? primary : AstraKit.muted(isDark).withValues(alpha: 0.3),
           ),
         );
       }),
     );
   }
 
-  Widget _buildActionButton(AppLocalizations l10n, bool isLastPage) {
+  Widget _buildActionButton(AppLocalizations l10n, bool isLastPage, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 28),
       child: AstraGoldButton(
-        isDark: _isDark,
+        isDark: isDark,
         height: 56,
         isLoading: _isSaving,
         enabled: !_isSaving,
@@ -251,10 +257,11 @@ class _DreamReflectionScreenState extends ConsumerState<DreamReflectionScreen> {
 /// (choice chips or a text field) it's paired with — centered like each
 /// onboarding beat.
 class _ReflectionQuestionPage extends StatelessWidget {
-  const _ReflectionQuestionPage({required this.question, required this.child});
+  const _ReflectionQuestionPage({required this.question, required this.child, required this.isDark});
 
   final String question;
   final Widget child;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +270,7 @@ class _ReflectionQuestionPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(question, textAlign: TextAlign.center, style: AstraKit.heading1(_isDark, fontSize: 22)),
+          Text(question, textAlign: TextAlign.center, style: AstraKit.heading1(isDark, fontSize: 22)),
           const SizedBox(height: 28),
           child,
         ],
@@ -279,12 +286,14 @@ class _ChoiceChips extends StatelessWidget {
     required this.options,
     required this.labels,
     required this.selected,
+    required this.isDark,
     required this.onSelected,
   });
 
   final List<String> options;
   final Map<String, String> labels;
   final String? selected;
+  final bool isDark;
   final ValueChanged<String> onSelected;
 
   @override
@@ -298,6 +307,7 @@ class _ChoiceChips extends StatelessWidget {
           _ChoiceChip(
             label: labels[option] ?? option,
             isSelected: option == selected,
+            isDark: isDark,
             onTap: () => onSelected(option),
           ),
       ],
@@ -306,15 +316,16 @@ class _ChoiceChips extends StatelessWidget {
 }
 
 class _ChoiceChip extends StatelessWidget {
-  const _ChoiceChip({required this.label, required this.isSelected, required this.onTap});
+  const _ChoiceChip({required this.label, required this.isSelected, required this.isDark, required this.onTap});
 
   final String label;
   final bool isSelected;
+  final bool isDark;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final primary = AstraKit.primary(_isDark);
+    final primary = AstraKit.primary(isDark);
     return Semantics(
       selected: isSelected,
       button: true,
@@ -329,12 +340,14 @@ class _ChoiceChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              color: isSelected ? primary.withValues(alpha: 0.85) : const Color(0x33231845),
+              color: isSelected
+                  ? primary.withValues(alpha: 0.85)
+                  : (isDark ? const Color(0x33231845) : const Color(0x99FBF1DD)),
               border: Border.all(color: isSelected ? primary : primary.withValues(alpha: 0.25), width: 1.1),
             ),
             child: Text(
               label,
-              style: AstraKit.body(_isDark, fontSize: 13.5, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
+              style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
             ),
           ),
         ),
@@ -344,16 +357,17 @@ class _ChoiceChip extends StatelessWidget {
 }
 
 class _ReflectionTextField extends StatelessWidget {
-  const _ReflectionTextField({super.key, required this.controller, required this.hint});
+  const _ReflectionTextField({super.key, required this.controller, required this.hint, required this.isDark});
 
   final TextEditingController controller;
   final String hint;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final primary = AstraKit.primary(_isDark);
+    final primary = AstraKit.primary(isDark);
     return AstraGlassCard(
-      isDark: _isDark,
+      isDark: isDark,
       primaryColor: primary,
       padding: const EdgeInsets.all(4),
       borderRadius: 18,
@@ -361,7 +375,7 @@ class _ReflectionTextField extends StatelessWidget {
         controller: controller,
         maxLines: 3,
         minLines: 3,
-        style: AstraKit.body(_isDark),
+        style: AstraKit.body(isDark),
         cursorColor: primary,
         textAlign: TextAlign.center,
         decoration: InputDecoration(
@@ -369,7 +383,7 @@ class _ReflectionTextField extends StatelessWidget {
           filled: false,
           contentPadding: const EdgeInsets.all(14),
           hintText: hint,
-          hintStyle: AstraKit.mutedText(_isDark, fontSize: 13),
+          hintStyle: AstraKit.mutedText(isDark, fontSize: 13),
         ),
       ),
     );

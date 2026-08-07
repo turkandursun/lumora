@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
+import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/crisis_detection_service.dart';
 import '../../../../core/services/dream_interpretation_service.dart';
@@ -15,11 +16,6 @@ import '../../data/dream_symbol_keywords.dart';
 import '../../data/dreams_repository.dart';
 import '../providers/dreams_providers.dart';
 import 'dream_reflection_screen.dart' show dreamFamiliarPersonLabels, dreamFeelingLabels;
-
-/// Dreams are shown as a night scene regardless of the app's light/dark
-/// theme choice — the moon setting fits the subject either way, and it
-/// keeps this screen from needing a from-scratch bright variant.
-const _isDark = true;
 
 /// A symbol's localized label and its gentle, non-definitive association —
 /// resolved in the presentation layer (which has an [AppLocalizations]
@@ -121,12 +117,13 @@ class _DreamJournalScreenState extends ConsumerState<DreamJournalScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final dreamsAsync = ref.watch(dreamsStreamProvider);
-    final primary = AstraKit.primary(_isDark);
+    final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
+    final primary = AstraKit.primary(isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AstraMountainBackground(
-        isDark: _isDark,
+        isDark: isDark,
         child: SafeArea(
           child: ResponsiveContent(
             child: Column(
@@ -138,33 +135,33 @@ class _DreamJournalScreenState extends ConsumerState<DreamJournalScreen> {
                     children: [
                       AstraCircleIconButton(
                         icon: Icons.arrow_back_ios_new_rounded,
-                        isDark: _isDark,
+                        isDark: isDark,
                         primaryColor: primary,
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(l10n.dreamJournalTitle, style: AstraKit.heading1(_isDark, fontSize: 24)),
+                      Text(l10n.dreamJournalTitle, style: AstraKit.heading1(isDark, fontSize: 24)),
                     ],
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 4, 24, 18),
-                  child: Text(l10n.dreamJournalSubtitle, style: AstraKit.mutedText(_isDark)),
+                  child: Text(l10n.dreamJournalSubtitle, style: AstraKit.mutedText(isDark)),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
                   child: AstraGoldButton(
-                    isDark: _isDark,
+                    isDark: isDark,
                     label: l10n.dreamJournalWriteButton,
                     onTap: () => context.push(AppRoutes.newDream),
                   ),
                 ),
                 Expanded(
                   child: dreamsAsync.when(
-                    data: (dreams) => _DreamListSection(dreams: dreams, primary: primary),
+                    data: (dreams) => _DreamListSection(dreams: dreams, primary: primary, isDark: isDark),
                     loading: () => Center(child: CircularProgressIndicator(color: primary)),
                     error: (_, __) => Center(
-                      child: Text(l10n.dreamJournalLoadError, style: AstraKit.mutedText(_isDark)),
+                      child: Text(l10n.dreamJournalLoadError, style: AstraKit.mutedText(isDark)),
                     ),
                   ),
                 ),
@@ -178,10 +175,11 @@ class _DreamJournalScreenState extends ConsumerState<DreamJournalScreen> {
 }
 
 class _DreamListSection extends StatelessWidget {
-  const _DreamListSection({required this.dreams, required this.primary});
+  const _DreamListSection({required this.dreams, required this.primary, required this.isDark});
 
   final List<DreamRow> dreams;
   final Color primary;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +195,7 @@ class _DreamListSection extends StatelessWidget {
             children: [
               Text(
                 l10n.dreamJournalListHeader(dreams.length),
-                style: AstraKit.body(_isDark, fontSize: 15, fontWeight: FontWeight.w700),
+                style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: 8),
               _MoonPhaseIcon(dreamCount: dreams.length, primary: primary),
@@ -215,7 +213,7 @@ class _DreamListSection extends StatelessWidget {
                 Expanded(
                   child: Text(
                     insight,
-                    style: AstraKit.mutedText(_isDark, fontSize: 12).copyWith(fontStyle: FontStyle.italic),
+                    style: AstraKit.mutedText(isDark, fontSize: 12).copyWith(fontStyle: FontStyle.italic),
                   ),
                 ),
               ],
@@ -226,13 +224,13 @@ class _DreamListSection extends StatelessWidget {
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(l10n.dreamJournalEmptyState, textAlign: TextAlign.center, style: AstraKit.mutedText(_isDark)),
+                    child: Text(l10n.dreamJournalEmptyState, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark)),
                   ),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(24, 14, 24, 100),
                   itemCount: dreams.length,
-                  itemBuilder: (context, index) => _DreamCard(dream: dreams[index], primary: primary),
+                  itemBuilder: (context, index) => _DreamCard(dream: dreams[index], primary: primary, isDark: isDark),
                 ),
         ),
       ],
@@ -241,10 +239,11 @@ class _DreamListSection extends StatelessWidget {
 }
 
 class _DreamCard extends ConsumerStatefulWidget {
-  const _DreamCard({required this.dream, required this.primary});
+  const _DreamCard({required this.dream, required this.primary, required this.isDark});
 
   final DreamRow dream;
   final Color primary;
+  final bool isDark;
 
   @override
   ConsumerState<_DreamCard> createState() => _DreamCardState();
@@ -309,34 +308,35 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
 
   Future<void> _confirmDelete(BuildContext context) async {
     final dream = widget.dream;
+    final isDark = widget.isDark;
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
 
     const errorColor = Color(0xFFE07A7A);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF15102A),
+        backgroundColor: isDark ? const Color(0xFF15102A) : const Color(0xFFFFF8EE),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: AstraKit.primary(_isDark).withValues(alpha: 0.3)),
+          side: BorderSide(color: AstraKit.primary(isDark).withValues(alpha: 0.3)),
         ),
-        title: Text(isTr ? 'Rüyayı Sil' : 'Delete Dream', style: AstraKit.heading2(_isDark, fontSize: 18)),
+        title: Text(isTr ? 'Rüyayı Sil' : 'Delete Dream', style: AstraKit.heading2(isDark, fontSize: 18)),
         content: Text(
           isTr
               ? 'Bu rüya kaydını silmek istediğine emin misin?'
               : 'Are you sure you want to delete this dream entry?',
-          style: AstraKit.mutedText(_isDark, fontSize: 14),
+          style: AstraKit.mutedText(isDark, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(_isDark)),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(isDark)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               isTr ? 'Sil' : 'Delete',
-              style: AstraKit.body(_isDark, fontSize: 14, fontWeight: FontWeight.w700, color: errorColor),
+              style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w700, color: errorColor),
             ),
           ),
         ],
@@ -355,6 +355,7 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
   Widget build(BuildContext context) {
     final dream = widget.dream;
     final primary = widget.primary;
+    final isDark = widget.isDark;
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     final tags = symbolTagsFor(dream);
@@ -368,7 +369,7 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: AstraGlassCard(
-        isDark: _isDark,
+        isDark: isDark,
         primaryColor: primary,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,11 +389,11 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
                 const SizedBox(width: 12),
                 Text(
                   DateFormat.yMMMd(locale).format(dream.date),
-                  style: AstraKit.body(_isDark, fontSize: 12.5, fontWeight: FontWeight.w700),
+                  style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w700),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: Icon(Icons.delete_outline_rounded, color: AstraKit.muted(_isDark), size: 20),
+                  icon: Icon(Icons.delete_outline_rounded, color: AstraKit.muted(isDark), size: 20),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   tooltip: Localizations.localeOf(context).languageCode == 'tr' ? 'Sil' : 'Delete',
@@ -408,9 +409,9 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
                 dream.content,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: AstraKit.body(_isDark, fontSize: 13.5, fontWeight: FontWeight.w500),
+                style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500),
               ),
-              secondChild: Text(dream.content, style: AstraKit.body(_isDark, fontSize: 13.5, fontWeight: FontWeight.w500)),
+              secondChild: Text(dream.content, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500)),
             ),
             if (tags.isNotEmpty || dream.feelingTag != null) ...[
               const SizedBox(height: 12),
@@ -419,9 +420,9 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
                 runSpacing: 8,
                 children: [
                   if (dream.feelingTag != null && feelingLabels[dream.feelingTag] != null)
-                    _FeelingChip(label: feelingLabels[dream.feelingTag]!, primary: primary),
+                    _FeelingChip(label: feelingLabels[dream.feelingTag]!, primary: primary, isDark: isDark),
                   for (final tag in tags)
-                    if (symbolCopy[tag] != null) _SymbolChip(symbolKey: tag, copy: symbolCopy[tag]!, primary: primary),
+                    if (symbolCopy[tag] != null) _SymbolChip(symbolKey: tag, copy: symbolCopy[tag]!, primary: primary, isDark: isDark),
                 ],
               ),
             ],
@@ -433,11 +434,12 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
                 _ReflectionDetailRow(
                   label: l10n.dreamCardFamiliarPersonLabel,
                   value: familiarPersonLabels[dream.familiarPerson] ?? dream.familiarPerson!,
+                  isDark: isDark,
                 ),
               if (dream.firstThought != null)
-                _ReflectionDetailRow(label: l10n.dreamCardFirstThoughtLabel, value: dream.firstThought!),
+                _ReflectionDetailRow(label: l10n.dreamCardFirstThoughtLabel, value: dream.firstThought!, isDark: isDark),
               if (dream.lifeConnection != null)
-                _ReflectionDetailRow(label: l10n.dreamCardLifeConnectionLabel, value: dream.lifeConnection!),
+                _ReflectionDetailRow(label: l10n.dreamCardLifeConnectionLabel, value: dream.lifeConnection!, isDark: isDark),
             ],
             if (_expanded) ...[
               const SizedBox(height: 14),
@@ -446,6 +448,7 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
                 isLoading: _isInterpreting,
                 hasError: _interpretError,
                 primary: primary,
+                isDark: isDark,
                 onInterpret: _interpret,
               ),
             ],
@@ -456,7 +459,7 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
                   _expanded ? l10n.dreamCardShowLess : l10n.dreamCardShowMore,
-                  style: AstraKit.body(_isDark, fontSize: 12, fontWeight: FontWeight.w700, color: primary),
+                  style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w700, color: primary),
                 ),
               ),
             ),
@@ -470,10 +473,11 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
 /// Non-interactive pill naming the reflection flow's answered feeling —
 /// visually distinct from the tappable symbol chips beside it.
 class _FeelingChip extends StatelessWidget {
-  const _FeelingChip({required this.label, required this.primary});
+  const _FeelingChip({required this.label, required this.primary, required this.isDark});
 
   final String label;
   final Color primary;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -484,17 +488,18 @@ class _FeelingChip extends StatelessWidget {
         color: primary.withValues(alpha: 0.22),
         border: Border.all(color: primary.withValues(alpha: 0.5)),
       ),
-      child: Text(label, style: AstraKit.body(_isDark, fontSize: 11.5, fontWeight: FontWeight.w700, color: primary)),
+      child: Text(label, style: AstraKit.body(isDark, fontSize: 11.5, fontWeight: FontWeight.w700, color: primary)),
     );
   }
 }
 
 /// A labeled reflection answer shown only once a dream card is expanded.
 class _ReflectionDetailRow extends StatelessWidget {
-  const _ReflectionDetailRow({required this.label, required this.value});
+  const _ReflectionDetailRow({required this.label, required this.value, required this.isDark});
 
   final String label;
   final String value;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -503,9 +508,9 @@ class _ReflectionDetailRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AstraKit.label(_isDark, fontSize: 11)),
+          Text(label, style: AstraKit.label(isDark, fontSize: 11)),
           const SizedBox(height: 2),
-          Text(value, style: AstraKit.body(_isDark, fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(value, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -524,6 +529,7 @@ class _AiInterpretationSection extends StatelessWidget {
     required this.isLoading,
     required this.hasError,
     required this.primary,
+    required this.isDark,
     required this.onInterpret,
   });
 
@@ -531,6 +537,7 @@ class _AiInterpretationSection extends StatelessWidget {
   final bool isLoading;
   final bool hasError;
   final Color primary;
+  final bool isDark;
   final VoidCallback onInterpret;
 
   @override
@@ -538,7 +545,7 @@ class _AiInterpretationSection extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     if (isLoading) {
-      return _AiLoadingRow(text: l10n.dreamCardInterpretingStatus, primary: primary);
+      return _AiLoadingRow(text: l10n.dreamCardInterpretingStatus, primary: primary, isDark: isDark);
     }
 
     final hasInterpretation = interpretation != null;
@@ -546,15 +553,16 @@ class _AiInterpretationSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasInterpretation) _AiInsightCard(text: interpretation!, label: l10n.dreamCardAiInsightLabel, primary: primary),
+        if (hasInterpretation) _AiInsightCard(text: interpretation!, label: l10n.dreamCardAiInsightLabel, primary: primary, isDark: isDark),
         if (hasError) ...[
           if (hasInterpretation) const SizedBox(height: 10),
-          _WarmErrorBanner(text: l10n.dreamCardInterpretError),
+          _WarmErrorBanner(text: l10n.dreamCardInterpretError, isDark: isDark),
         ],
         if (hasInterpretation || hasError) const SizedBox(height: 10),
         _InterpretButton(
           label: hasInterpretation ? l10n.dreamCardReinterpretButton : l10n.dreamCardInterpretButton,
           primary: primary,
+          isDark: isDark,
           onTap: onInterpret,
         ),
       ],
@@ -563,10 +571,11 @@ class _AiInterpretationSection extends StatelessWidget {
 }
 
 class _AiLoadingRow extends StatelessWidget {
-  const _AiLoadingRow({required this.text, required this.primary});
+  const _AiLoadingRow({required this.text, required this.primary, required this.isDark});
 
   final String text;
   final Color primary;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -579,7 +588,7 @@ class _AiLoadingRow extends StatelessWidget {
           child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(primary)),
         ),
         const SizedBox(width: 10),
-        Text(text, style: AstraKit.mutedText(_isDark, fontSize: 12.5)),
+        Text(text, style: AstraKit.mutedText(isDark, fontSize: 12.5)),
       ],
     );
   }
@@ -589,11 +598,12 @@ class _AiLoadingRow extends StatelessWidget {
 /// distinct from the tappable local symbol chips above it, so it's clear
 /// this line came from an optional AI call rather than the local dictionary.
 class _AiInsightCard extends StatelessWidget {
-  const _AiInsightCard({required this.text, required this.label, required this.primary});
+  const _AiInsightCard({required this.text, required this.label, required this.primary, required this.isDark});
 
   final String text;
   final String label;
   final Color primary;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -614,14 +624,14 @@ class _AiInsightCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: AstraKit.label(_isDark, fontSize: 10.5).copyWith(letterSpacing: 0.4),
+                style: AstraKit.label(isDark, fontSize: 10.5).copyWith(letterSpacing: 0.4),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             text,
-            style: AstraKit.body(_isDark, fontSize: 13, fontWeight: FontWeight.w500, height: 1.4)
+            style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w500, height: 1.4)
                 .copyWith(fontStyle: FontStyle.italic),
           ),
         ],
@@ -631,9 +641,10 @@ class _AiInsightCard extends StatelessWidget {
 }
 
 class _WarmErrorBanner extends StatelessWidget {
-  const _WarmErrorBanner({required this.text});
+  const _WarmErrorBanner({required this.text, required this.isDark});
 
   final String text;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -652,7 +663,7 @@ class _WarmErrorBanner extends StatelessWidget {
           const Icon(Icons.spa_outlined, size: 15, color: errorColor),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(text, style: AstraKit.body(_isDark, fontSize: 12.5, fontWeight: FontWeight.w500)),
+            child: Text(text, style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w500)),
           ),
         ],
       ),
@@ -661,10 +672,11 @@ class _WarmErrorBanner extends StatelessWidget {
 }
 
 class _InterpretButton extends StatelessWidget {
-  const _InterpretButton({required this.label, required this.primary, required this.onTap});
+  const _InterpretButton({required this.label, required this.primary, required this.isDark, required this.onTap});
 
   final String label;
   final Color primary;
+  final bool isDark;
   final VoidCallback onTap;
 
   @override
@@ -686,7 +698,7 @@ class _InterpretButton extends StatelessWidget {
             children: [
               Icon(Icons.auto_awesome_rounded, size: 13, color: primary),
               const SizedBox(width: 6),
-              Text(label, style: AstraKit.body(_isDark, fontSize: 12, fontWeight: FontWeight.w700, color: primary)),
+              Text(label, style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w700, color: primary)),
             ],
           ),
         ),
@@ -698,11 +710,12 @@ class _InterpretButton extends StatelessWidget {
 /// A small tappable tag naming a detected symbol — tapping opens a brief
 /// popover with its gentle association.
 class _SymbolChip extends StatelessWidget {
-  const _SymbolChip({required this.symbolKey, required this.copy, required this.primary});
+  const _SymbolChip({required this.symbolKey, required this.copy, required this.primary, required this.isDark});
 
   final String symbolKey;
   final DreamSymbolCopy copy;
   final Color primary;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -710,7 +723,7 @@ class _SymbolChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(999),
-        onTap: () => _showSymbolPopover(context, copy, primary),
+        onTap: () => _showSymbolPopover(context, copy, primary, isDark),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
@@ -718,14 +731,14 @@ class _SymbolChip extends StatelessWidget {
             color: primary.withValues(alpha: 0.14),
             border: Border.all(color: primary.withValues(alpha: 0.4)),
           ),
-          child: Text(copy.label, style: AstraKit.body(_isDark, fontSize: 11.5, fontWeight: FontWeight.w700, color: primary)),
+          child: Text(copy.label, style: AstraKit.body(isDark, fontSize: 11.5, fontWeight: FontWeight.w700, color: primary)),
         ),
       ),
     );
   }
 }
 
-void _showSymbolPopover(BuildContext context, DreamSymbolCopy copy, Color primary) {
+void _showSymbolPopover(BuildContext context, DreamSymbolCopy copy, Color primary, bool isDark) {
   showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.45),
@@ -733,7 +746,7 @@ void _showSymbolPopover(BuildContext context, DreamSymbolCopy copy, Color primar
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 40),
       child: AstraGlassCard(
-        isDark: _isDark,
+        isDark: isDark,
         primaryColor: primary,
         borderRadius: 20,
         padding: const EdgeInsets.all(20),
@@ -741,9 +754,9 @@ void _showSymbolPopover(BuildContext context, DreamSymbolCopy copy, Color primar
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(copy.label, style: AstraKit.body(_isDark, fontSize: 15, fontWeight: FontWeight.w700)),
+            Text(copy.label, style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
-            Text(copy.description, style: AstraKit.mutedText(_isDark, fontSize: 13)),
+            Text(copy.description, style: AstraKit.mutedText(isDark, fontSize: 13)),
           ],
         ),
       ),
