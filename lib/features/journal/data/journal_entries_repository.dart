@@ -1,11 +1,14 @@
-import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/database/app_database.dart';
+
+const _journalBucket = 'journal-photos';
 
 /// Owns persistence for journal entries written in Home's writing area.
 /// Keeps local Drift SQLite as the primary source of truth while backing up
@@ -15,42 +18,19 @@ class JournalEntriesRepository {
     required AppDatabase database,
     SupabaseClient? supabaseClient,
   })  : _db = database,
-        _client = supabaseClient ?? Supabase.instance.client;
+        _client = supabaseClient ?? Supabase.instance.client {
+    _clearLegacyPhotoPrefs();
+  }
 
   final AppDatabase _db;
   final SupabaseClient _client;
 
-  /// SharedPreferences key holding a JSON map of local entry id → attached
-  /// photo file path. Photos live on-device only (the journal table has no
-  /// photo column yet), so this keeps them associated with their entry.
-  static const _photoPrefsKey = 'journal_entry_photos';
-
-  Future<void> _persistPhotoPath(int localId, String photoPath) async {
+  /// Clears old invalid SharedPreferences blob URL entries if any exist.
+  Future<void> _clearLegacyPhotoPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_photoPrefsKey);
-      final map = <String, dynamic>{};
-      if (raw != null && raw.isNotEmpty) {
-        map.addAll(jsonDecode(raw) as Map<String, dynamic>);
-      }
-      map[localId.toString()] = photoPath;
-      await prefs.setString(_photoPrefsKey, jsonEncode(map));
-    } catch (e) {
-      debugPrint('[JournalPhoto] persist failed: $e');
-    }
-  }
-
-  /// Local entry id → photo path map, read by the sealed-journals archive.
-  static Future<Map<String, String>> loadPhotoPaths() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_photoPrefsKey);
-      if (raw == null || raw.isEmpty) return {};
-      final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      return decoded.map((k, v) => MapEntry(k, v.toString()));
-    } catch (_) {
-      return {};
-    }
+      await prefs.remove('journal_entry_photos');
+    } catch (_) {}
   }
 
   Future<void> save(
@@ -58,10 +38,50 @@ class JournalEntriesRepository {
     String? title,
     String? audioPath,
     String? photoPath,
+    Uint8List? photoBytes,
   }) async {
     final user = _client.auth.currentUser;
     final now = DateTime.now();
     debugPrint('[JournalSave] about to insert content="$content"');
+
+    String? photoUrl;
+    if (user != null && (photoBytes != null || photoPath != null)) {
+      try {
+        Uint8List? bytes = photoBytes;
+        String fileExt = 'jpg';
+
+        if (bytes == null && photoPath != null && !kIsWeb) {
+          final file = File(photoPath);
+          if (await file.exists()) {
+            bytes = await file.readAsBytes();
+            final ext = p.extension(photoPath).replaceAll('.', '');
+            if (ext.isNotEmpty) fileExt = ext;
+          }
+        }
+
+        if (bytes != null && bytes.isNotEmpty) {
+          final storagePath =
+              '${user.id}/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+
+          await _client.storage.from(_journalBucket).uploadBinary(
+                storagePath,
+                bytes,
+                fileOptions: FileOptions(
+                  contentType: 'image/${fileExt == 'jpg' ? 'jpeg' : fileExt}',
+                  upsert: true,
+                ),
+              );
+
+          final signedUrlResponse = await _client.storage
+              .from(_journalBucket)
+              .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+          photoUrl = signedUrlResponse;
+          debugPrint('[JournalSync] Uploaded photo to Supabase Storage, signedUrl=$photoUrl');
+        }
+      } catch (e) {
+        debugPrint('[JournalSync] Error uploading journal photo to Storage: $e');
+      }
+    }
 
     String? cloudId;
     if (user != null) {
@@ -73,8 +93,14 @@ class JournalEntriesRepository {
           'created_at': createdIso,
           'updated_at': createdIso,
         };
+        if (title != null && title.isNotEmpty) {
+          data['title'] = title;
+        }
         if (audioPath != null) {
           data['audio_path'] = audioPath;
+        }
+        if (photoUrl != null) {
+          data['photo_url'] = photoUrl;
         }
 
         final insertedRow =
@@ -92,21 +118,19 @@ class JournalEntriesRepository {
             content: content,
             title: Value(title),
             audioPath: Value(audioPath),
+            photoUrl: Value(photoUrl),
             userId: Value(user?.id),
             supabaseId: Value(cloudId),
           ),
         );
     debugPrint('[JournalSave] insert complete, new row id=$id');
-
-    if (photoPath != null && photoPath.isNotEmpty) {
-      await _persistPhotoPath(id, photoPath);
-    }
   }
 
   Future<void> update(
     int localId, {
     required String content,
     String? audioPath,
+    String? photoUrl,
     String? supabaseId,
   }) async {
     final user = _client.auth.currentUser;
@@ -119,6 +143,7 @@ class JournalEntriesRepository {
         JournalEntriesCompanion(
           content: Value(content),
           audioPath: Value(audioPath),
+          photoUrl: Value(photoUrl),
         ),
       );
     } else {
@@ -126,12 +151,13 @@ class JournalEntriesRepository {
         JournalEntriesCompanion(
           content: Value(content),
           audioPath: Value(audioPath),
+          photoUrl: Value(photoUrl),
         ),
       );
     }
 
     try {
-      if (user != null) {
+      if (user != null && supabaseId != null) {
         final nowIso = DateTime.now().toIso8601String();
         final data = <String, dynamic>{
           'content': content,
@@ -140,15 +166,16 @@ class JournalEntriesRepository {
         if (audioPath != null) {
           data['audio_path'] = audioPath;
         }
-
-        if (supabaseId != null) {
-          await _client
-              .from('journal_entries')
-              .update(data)
-              .eq('id', supabaseId)
-              .eq('user_id', user.id);
-          debugPrint('[JournalSync] Successfully updated entry in Supabase');
+        if (photoUrl != null) {
+          data['photo_url'] = photoUrl;
         }
+
+        await _client
+            .from('journal_entries')
+            .update(data)
+            .eq('id', supabaseId)
+            .eq('user_id', user.id);
+        debugPrint('[JournalSync] Successfully updated entry in Supabase');
       }
     } catch (e) {
       debugPrint('[JournalSync] Error updating Supabase: $e');
@@ -230,9 +257,26 @@ class JournalEntriesRepository {
 
       // Insert cloud entries that are missing locally
       for (final cloudId in cloudMap.keys) {
+        final row = cloudMap[cloudId]!;
+        var photoUrl = row['photo_url'] as String?;
+
+        if (photoUrl != null && photoUrl.contains('/object/public/$_journalBucket/')) {
+          final storagePath = photoUrl.split('/object/public/$_journalBucket/').last;
+          try {
+            final signedUrl = await _client.storage
+                .from(_journalBucket)
+                .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+            photoUrl = signedUrl;
+            row['photo_url'] = photoUrl;
+            await _client.from('journal_entries').update({'photo_url': photoUrl}).eq('id', cloudId);
+          } catch (e) {
+            debugPrint('[JournalSync] Error healing photoUrl for cloudId=$cloudId: $e');
+          }
+        }
+
         if (!localSupabaseIdMap.containsKey(cloudId)) {
-          final row = cloudMap[cloudId]!;
           final content = row['content'] as String?;
+          final title = row['title'] as String?;
           final createdAtStr = row['created_at'] as String?;
           final audioPath = row['audio_path'] as String?;
           if (content == null || content.isEmpty) continue;
@@ -245,12 +289,20 @@ class JournalEntriesRepository {
                 JournalEntriesCompanion.insert(
                   createdAt: createdAt,
                   content: content,
+                  title: Value(title),
                   audioPath: Value(audioPath),
+                  photoUrl: Value(photoUrl),
                   userId: Value(user.id),
                   supabaseId: Value(cloudId),
                 ),
               );
           debugPrint('[JournalSync] Inserted cloud entry locally, cloudId=$cloudId');
+        } else {
+          final localRow = localSupabaseIdMap[cloudId]!;
+          if (localRow.photoUrl != photoUrl) {
+            await (_db.update(_db.journalEntries)..where((t) => t.id.equals(localRow.id)))
+                .write(JournalEntriesCompanion(photoUrl: Value(photoUrl)));
+          }
         }
       }
     } catch (e) {

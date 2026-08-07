@@ -433,18 +433,9 @@ class AuthDisclaimerBanner extends StatefulWidget {
 
 class _AuthDisclaimerBannerState extends State<AuthDisclaimerBanner>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 450),
-  );
-  late final Animation<double> _fade = CurvedAnimation(
-    parent: _controller,
-    curve: Curves.easeOut,
-  );
-  late final Animation<Offset> _slide = Tween<Offset>(
-    begin: const Offset(0, 0.6),
-    end: Offset.zero,
-  ).animate(_fade);
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
 
   Timer? _dismissTimer;
   bool _visible = true;
@@ -452,6 +443,18 @@ class _AuthDisclaimerBannerState extends State<AuthDisclaimerBanner>
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+    _fade = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.6),
+      end: Offset.zero,
+    ).animate(_fade);
     _controller.forward();
     // ~450ms in + ~3.3s hold + ~450ms out ≈ 3–4s on screen.
     _dismissTimer = Timer(const Duration(milliseconds: 3300), () async {

@@ -40,10 +40,7 @@ class MeditationScreen extends ConsumerStatefulWidget {
 
 class _MeditationScreenState extends ConsumerState<MeditationScreen>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 5),
-  )..repeat(reverse: true);
+  AnimationController? _pulse;
 
   final AudioPlayer _player = AudioPlayer();
   final FlutterTts _tts = FlutterTts();
@@ -67,6 +64,10 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
   @override
   void initState() {
     super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat(reverse: true);
     _player.setReleaseMode(ReleaseMode.loop);
     // Bring the rain back up once each spoken line finishes.
     _tts.setCompletionHandler(() {
@@ -79,7 +80,7 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
   @override
   void dispose() {
     _timer?.cancel();
-    _pulse.dispose();
+    _pulse?.dispose();
     _safe(() => _player.dispose());
     _safe(() => _tts.stop());
     super.dispose();
@@ -253,7 +254,7 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
                           isTr: isTr,
                           isDark: isDark,
                           primary: primary,
-                          pulse: _pulse,
+                          pulse: _pulse!,
                           remaining: _remaining,
                           guideText: _guides[_guideIndex],
                           onStop: _stop,

@@ -181,26 +181,31 @@ class FallingPetalsLayer extends StatefulWidget {
 class _FallingPetalsLayerState extends State<FallingPetalsLayer>
     with SingleTickerProviderStateMixin {
   // A long, slow loop — petals drift calmly rather than snowing down.
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 26),
-  )..repeat();
+  late final AnimationController _controller;
 
-  late final List<_FallingPetal> _petals = List.generate(widget.petalCount, (
-    i,
-  ) {
-    final rnd = Random(widget.seed * 1000 + i);
-    return _FallingPetal(
-      dx: rnd.nextDouble(),
-      phase: rnd.nextDouble(),
-      speed: 0.65 + rnd.nextDouble() * 0.5,
-      swayAmplitude: 10 + rnd.nextDouble() * 18,
-      swayFrequency: 0.6 + rnd.nextDouble() * 0.8,
-      size: 5 + rnd.nextDouble() * 5,
-      spin: (rnd.nextBool() ? 1 : -1) * (0.3 + rnd.nextDouble() * 0.6),
-      opacity: 0.3 + rnd.nextDouble() * 0.35,
-    );
-  });
+  late final List<_FallingPetal> _petals;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 26),
+    )..repeat();
+    _petals = List.generate(widget.petalCount, (i) {
+      final rnd = Random(widget.seed * 1000 + i);
+      return _FallingPetal(
+        dx: rnd.nextDouble(),
+        phase: rnd.nextDouble(),
+        speed: 0.65 + rnd.nextDouble() * 0.5,
+        swayAmplitude: 10 + rnd.nextDouble() * 18,
+        swayFrequency: 0.6 + rnd.nextDouble() * 0.8,
+        size: 5 + rnd.nextDouble() * 5,
+        spin: (rnd.nextBool() ? 1 : -1) * (0.3 + rnd.nextDouble() * 0.6),
+        opacity: 0.3 + rnd.nextDouble() * 0.35,
+      );
+    });
+  }
 
   @override
   void dispose() {
@@ -311,18 +316,20 @@ class WalkingFigure extends StatefulWidget {
 
 class _WalkingFigureState extends State<WalkingFigure>
     with TickerProviderStateMixin {
-  // Drives the walk-cycle pose (legs/arms). Duration is overridden once the
-  // composition loads, in [_onCompositionLoaded], to slow the built-in cycle
-  // down to a calm pace without touching the source JSON.
-  late final AnimationController _cycleController = AnimationController(
-    vsync: this,
-  );
+  late final AnimationController _cycleController;
+  late final AnimationController _paceController;
 
-  // Drives the figure's slow pace across the screen and back — a gentle
-  // ping-pong rather than a hard loop-and-snap.
-  late final AnimationController _paceController =
-      AnimationController(vsync: this, duration: const Duration(seconds: 22))
-        ..repeat(reverse: true);
+  @override
+  void initState() {
+    super.initState();
+    _cycleController = AnimationController(
+      vsync: this,
+    );
+    _paceController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 22),
+    )..repeat(reverse: true);
+  }
 
   void _onCompositionLoaded(LottieComposition composition) {
     // The authored walk cycle is a brisk 2s; roughly triple it so the pace

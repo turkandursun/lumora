@@ -46,14 +46,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   String? _formError;
   StreamSubscription<supabase.AuthState>? _authStateSubscription;
 
-  late final AnimationController _entrance = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..forward();
+  late final AnimationController _entrance;
 
   @override
   void initState() {
     super.initState();
+    _entrance = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
     _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange
         .listen((state) {
       if (state.event == AuthChangeEvent.signedIn) {

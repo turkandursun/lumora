@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'dart:ui' show ImageFilter;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,8 +27,6 @@ class SealedJournalsScreen extends ConsumerWidget {
         isDark ? const Color(0xFFE3C264) : const Color(0xFFD4AF37);
     final localeStr = Localizations.localeOf(context).toString();
     final entriesAsync = ref.watch(allJournalEntriesProvider);
-    final photoPaths =
-        ref.watch(journalPhotoPathsProvider).valueOrNull ?? const {};
 
     return Scaffold(
       body: _MountainBackground(
@@ -144,7 +140,6 @@ class SealedJournalsScreen extends ConsumerWidget {
                                   isDark: isDark,
                                   primary: primary,
                                   localeStr: localeStr,
-                                  photoPath: photoPaths[entry.id.toString()],
                                 ),
                               const SizedBox(height: 10),
                             ],
@@ -250,14 +245,12 @@ class _EntryCard extends StatelessWidget {
     required this.isDark,
     required this.primary,
     required this.localeStr,
-    this.photoPath,
   });
 
   final JournalEntryRow entry;
   final bool isDark;
   final Color primary;
   final String localeStr;
-  final String? photoPath;
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +258,8 @@ class _EntryCard extends StatelessWidget {
     final hasTitle = entry.title != null && entry.title!.trim().isNotEmpty;
     final hasText = entry.content.trim().isNotEmpty;
     final hasAudio = entry.audioPath != null && entry.audioPath!.isNotEmpty;
-    final hasPhoto = photoPath != null && photoPath!.isNotEmpty;
+    final photoUrl = entry.photoUrl;
+    final hasPhoto = photoUrl != null && photoUrl.trim().isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -321,13 +315,11 @@ class _EntryCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 child: AspectRatio(
                   aspectRatio: 16 / 10,
-                  child: kIsWeb
-                      ? Image.network(photoPath!, fit: BoxFit.cover)
-                      : Image.file(
-                          File(photoPath!),
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                        ),
+                  child: Image.network(
+                    photoUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
                 ),
               ),
             ],
