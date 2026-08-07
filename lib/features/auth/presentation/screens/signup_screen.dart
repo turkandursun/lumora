@@ -49,6 +49,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isGoogleSubmitting = false;
+  bool _isGoogleSignInFlow = false;
   String? _formError;
   StreamSubscription<supabase.AuthState>? _authStateSubscription;
 
@@ -67,7 +68,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     // system browser hands control back to the running app).
     _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange
         .listen((state) {
-      if (state.event == AuthChangeEvent.signedIn) {
+      if (_isGoogleSignInFlow && state.event == AuthChangeEvent.signedIn) {
+        _isGoogleSignInFlow = false;
         _routeAfterGoogleSignIn();
       }
     });
@@ -123,10 +125,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
   Future<void> _onGoogleSignInPressed() async {
     FocusScope.of(context).unfocus();
-    setState(() => _isGoogleSubmitting = true);
-    await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    setState(() {
+      _isGoogleSubmitting = true;
+      _isGoogleSignInFlow = true;
+    });
+    final launched =
+        await ref.read(authControllerProvider.notifier).signInWithGoogle();
     if (!mounted) return;
-    setState(() => _isGoogleSubmitting = false);
+    setState(() {
+      _isGoogleSubmitting = false;
+      if (!launched) _isGoogleSignInFlow = false;
+    });
   }
 
   /// Google sign-in from the sign-up screen is treated as a new signup: run

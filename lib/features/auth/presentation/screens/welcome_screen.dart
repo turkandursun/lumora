@@ -320,6 +320,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       return Scaffold(
         body: AstraMountainBackground(
           isDark: isDark,
+          useEntryScene: true,
           child: const SizedBox.expand(),
         ),
       );
@@ -328,6 +329,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     return Scaffold(
       body: AstraMountainBackground(
         isDark: isDark,
+        useEntryScene: true,
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(

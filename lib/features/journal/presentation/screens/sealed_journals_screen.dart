@@ -481,8 +481,8 @@ class _MountainBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final asset = isDark
-        ? 'assets/images/astra_dark_plain.png'
-        : 'assets/images/astra_sun_bg_g5.png';
+        ? 'assets/images/app_theme_dark.jpeg'
+        : 'assets/images/app_theme_light.jpeg';
     return ColoredBox(
       color: isDark ? const Color(0xFF0F0B1A) : const Color(0xFFFDF6E9),
       child: Stack(
@@ -490,12 +490,16 @@ class _MountainBackground extends StatelessWidget {
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 450),
-            child: Image.asset(
-              asset,
+            child: SizedBox.expand(
               key: ValueKey(asset),
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              child: Image.asset(
+                asset,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
           ),
           // Softens the busy scene (rocks, rays, foliage) so it reads as an

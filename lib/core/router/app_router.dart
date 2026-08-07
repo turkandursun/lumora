@@ -33,13 +33,11 @@ import '../../features/stats/presentation/screens/stats_screen.dart';
 import '../../features/shell/presentation/widgets/feature_coming_soon_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/theme_choice/presentation/screens/astra_landing_screen.dart';
-import '../../features/theme_choice/presentation/screens/theme_choice_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
 
   static const splash = '/splash';
-  static const themeChoice = '/theme-choice';
   static const astraLanding = '/astra-landing';
   static const onboarding = '/onboarding';
   static const login = '/login';
@@ -133,10 +131,6 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.splash,
       builder: (context, state) => const SplashScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.themeChoice,
-      builder: (context, state) => const ThemeChoiceScreen(),
     ),
     GoRoute(
       path: AppRoutes.astraLanding,

@@ -130,21 +130,24 @@ class AuthController extends StateNotifier<AuthState> {
   /// (see the login/sign up screens), which fires once Supabase detects
   /// the returning session, whether the app reloaded (web) or stayed
   /// alive (native).
-  Future<void> signInWithGoogle() async {
+  Future<bool> signInWithGoogle() async {
     state = state.copyWith(status: AuthStatus.submitting);
     try {
       await _client.auth.signInWithOAuth(OAuthProvider.google);
       state = state.copyWith(status: AuthStatus.idle);
+      return true;
     } on AuthException catch (_) {
       state = state.copyWith(
         status: AuthStatus.error,
         failureReason: AuthFailureReason.unknown,
       );
+      return false;
     } catch (_) {
       state = state.copyWith(
         status: AuthStatus.error,
         failureReason: AuthFailureReason.unknown,
       );
+      return false;
     }
   }
 

@@ -69,6 +69,8 @@ class _AppShellState extends ConsumerState<AppShell>
       const ProfileScreen(),
     ];
     return Scaffold(
+      extendBody: true,
+      backgroundColor: Colors.transparent,
       body: IndexedStack(
         index: _active == _ActiveTab.home ? 0 : 1,
         children: screens,

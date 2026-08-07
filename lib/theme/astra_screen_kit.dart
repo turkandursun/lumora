@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Shared building blocks for the app's premium "Astra" look — the gold
@@ -74,29 +75,56 @@ class AstraKit {
 /// stay legible. Identical to the journal screens' background so switching
 /// screens never shows a background "jump".
 class AstraMountainBackground extends StatelessWidget {
-  const AstraMountainBackground({super.key, required this.isDark, required this.child});
+  const AstraMountainBackground({
+    super.key,
+    required this.isDark,
+    required this.child,
+    this.useEntryScene = false,
+  });
 
   final bool isDark;
   final Widget child;
 
+  /// Keeps the original ASTRA moon/sun artwork in the pre-home journey.
+  /// All authenticated in-app screens use the calmer, more readable theme
+  /// artwork supplied for the main application experience.
+  final bool useEntryScene;
+
   @override
   Widget build(BuildContext context) {
-    final asset = isDark
-        ? 'assets/images/astra_dark_plain.png'
-        : 'assets/images/astra_sun_bg_g5.png';
-    return ColoredBox(
-      color: isDark ? const Color(0xFF0F0B1A) : const Color(0xFFFDF6E9),
-      child: Stack(
+    final asset = useEntryScene
+        ? (isDark
+            ? 'assets/images/astra_dark_plain.png'
+            : 'assets/images/astra_sun_bg_g5.png')
+        : (isDark
+            ? 'assets/images/app_theme_dark.jpeg'
+            : 'assets/images/app_theme_light.jpeg');
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
+      ),
+      child: ColoredBox(
+        color: isDark ? const Color(0xFF0F0B1A) : const Color(0xFFFDF6E9),
+        child: Stack(
         fit: StackFit.expand,
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 450),
-            child: Image.asset(
-              asset,
+            child: SizedBox.expand(
               key: ValueKey(asset),
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              child: Image.asset(
+                asset,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
           ),
           // A light mist over the scene — enough to keep it from competing
@@ -119,6 +147,7 @@ class AstraMountainBackground extends StatelessWidget {
           ),
           child,
         ],
+      ),
       ),
     );
   }

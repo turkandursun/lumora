@@ -3,11 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../features/theme_choice/presentation/screens/theme_choice_screen.dart';
 import '../../../../theme/app_theme.dart';
 
 /// Shown on app start. Decides whether to route to onboarding (first
@@ -29,18 +26,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _decideNextRoute() async {
-    final results = await Future.wait([
-      SharedPreferences.getInstance(),
-      Future<void>.delayed(const Duration(milliseconds: 900)),
-    ]);
-    final prefs = results[0] as SharedPreferences;
+    await Future<void>.delayed(const Duration(milliseconds: 900));
 
     if (!mounted) return;
-    // Very first thing: let the user pick a light/dark ASTRA theme.
-    if (prefs.getString(astraThemeKey) == null) {
-      context.go(AppRoutes.themeChoice);
-      return;
-    }
     // The storytelling onboarding now comes *after* login/sign-up, so the
     // splash no longer gates on it here.
     final hasSession = Supabase.instance.client.auth.currentSession != null;
