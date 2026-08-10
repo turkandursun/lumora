@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -138,6 +138,21 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 19 && !await _hasTable('quote_favorites')) {
             await m.createTable(quoteFavorites);
+          }
+          if (from < 20 && await _hasTable('reminders')) {
+            if (!await _hasColumn('reminders', 'default_key')) {
+              await m.addColumn(reminders, reminders.defaultKey);
+            }
+            await customStatement('''
+              UPDATE reminders
+              SET default_key = CASE icon_key
+                WHEN 'sun' THEN 'morning_journal'
+                WHEN 'breathing' THEN 'breathing_break'
+                WHEN 'reflection' THEN 'weekly_reflection'
+              END
+              WHERE default_key IS NULL
+                AND icon_key IN ('sun', 'breathing', 'reflection')
+            ''');
           }
         },
       );

@@ -72,6 +72,12 @@ class $RemindersTable extends Reminders
   late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
       'supabase_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _defaultKeyMeta =
+      const VerificationMeta('defaultKey');
+  @override
+  late final GeneratedColumn<String> defaultKey = GeneratedColumn<String>(
+      'default_key', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -83,7 +89,8 @@ class $RemindersTable extends Reminders
         minute,
         enabled,
         userId,
-        supabaseId
+        supabaseId,
+        defaultKey
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -140,6 +147,12 @@ class $RemindersTable extends Reminders
           supabaseId.isAcceptableOrUnknown(
               data['supabase_id']!, _supabaseIdMeta));
     }
+    if (data.containsKey('default_key')) {
+      context.handle(
+          _defaultKeyMeta,
+          defaultKey.isAcceptableOrUnknown(
+              data['default_key']!, _defaultKeyMeta));
+    }
     return context;
   }
 
@@ -170,6 +183,8 @@ class $RemindersTable extends Reminders
           .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
       supabaseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
+      defaultKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}default_key']),
     );
   }
 
@@ -197,6 +212,7 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
   final bool enabled;
   final String? userId;
   final String? supabaseId;
+  final String? defaultKey;
   const ReminderRow(
       {required this.id,
       required this.title,
@@ -207,7 +223,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       required this.minute,
       required this.enabled,
       this.userId,
-      this.supabaseId});
+      this.supabaseId,
+      this.defaultKey});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -230,6 +247,9 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
     if (!nullToAbsent || supabaseId != null) {
       map['supabase_id'] = Variable<String>(supabaseId);
     }
+    if (!nullToAbsent || defaultKey != null) {
+      map['default_key'] = Variable<String>(defaultKey);
+    }
     return map;
   }
 
@@ -250,6 +270,9 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       supabaseId: supabaseId == null && nullToAbsent
           ? const Value.absent()
           : Value(supabaseId),
+      defaultKey: defaultKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultKey),
     );
   }
 
@@ -268,6 +291,7 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       enabled: serializer.fromJson<bool>(json['enabled']),
       userId: serializer.fromJson<String?>(json['userId']),
       supabaseId: serializer.fromJson<String?>(json['supabaseId']),
+      defaultKey: serializer.fromJson<String?>(json['defaultKey']),
     );
   }
   @override
@@ -285,6 +309,7 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       'enabled': serializer.toJson<bool>(enabled),
       'userId': serializer.toJson<String?>(userId),
       'supabaseId': serializer.toJson<String?>(supabaseId),
+      'defaultKey': serializer.toJson<String?>(defaultKey),
     };
   }
 
@@ -298,7 +323,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
           int? minute,
           bool? enabled,
           Value<String?> userId = const Value.absent(),
-          Value<String?> supabaseId = const Value.absent()}) =>
+          Value<String?> supabaseId = const Value.absent(),
+          Value<String?> defaultKey = const Value.absent()}) =>
       ReminderRow(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -310,6 +336,7 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
         enabled: enabled ?? this.enabled,
         userId: userId.present ? userId.value : this.userId,
         supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
+        defaultKey: defaultKey.present ? defaultKey.value : this.defaultKey,
       );
   ReminderRow copyWithCompanion(RemindersCompanion data) {
     return ReminderRow(
@@ -324,6 +351,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       userId: data.userId.present ? data.userId.value : this.userId,
       supabaseId:
           data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+      defaultKey:
+          data.defaultKey.present ? data.defaultKey.value : this.defaultKey,
     );
   }
 
@@ -339,14 +368,15 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
           ..write('minute: $minute, ')
           ..write('enabled: $enabled, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('defaultKey: $defaultKey')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, title, iconKey, frequency, weekday, hour,
-      minute, enabled, userId, supabaseId);
+      minute, enabled, userId, supabaseId, defaultKey);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -360,7 +390,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
           other.minute == this.minute &&
           other.enabled == this.enabled &&
           other.userId == this.userId &&
-          other.supabaseId == this.supabaseId);
+          other.supabaseId == this.supabaseId &&
+          other.defaultKey == this.defaultKey);
 }
 
 class RemindersCompanion extends UpdateCompanion<ReminderRow> {
@@ -374,6 +405,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
   final Value<bool> enabled;
   final Value<String?> userId;
   final Value<String?> supabaseId;
+  final Value<String?> defaultKey;
   const RemindersCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -385,6 +417,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     this.enabled = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.defaultKey = const Value.absent(),
   });
   RemindersCompanion.insert({
     this.id = const Value.absent(),
@@ -397,6 +430,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     this.enabled = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.defaultKey = const Value.absent(),
   })  : title = Value(title),
         iconKey = Value(iconKey),
         frequency = Value(frequency),
@@ -413,6 +447,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     Expression<bool>? enabled,
     Expression<String>? userId,
     Expression<String>? supabaseId,
+    Expression<String>? defaultKey,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -425,6 +460,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
       if (enabled != null) 'enabled': enabled,
       if (userId != null) 'user_id': userId,
       if (supabaseId != null) 'supabase_id': supabaseId,
+      if (defaultKey != null) 'default_key': defaultKey,
     });
   }
 
@@ -438,7 +474,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
       Value<int>? minute,
       Value<bool>? enabled,
       Value<String?>? userId,
-      Value<String?>? supabaseId}) {
+      Value<String?>? supabaseId,
+      Value<String?>? defaultKey}) {
     return RemindersCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -450,6 +487,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
       enabled: enabled ?? this.enabled,
       userId: userId ?? this.userId,
       supabaseId: supabaseId ?? this.supabaseId,
+      defaultKey: defaultKey ?? this.defaultKey,
     );
   }
 
@@ -487,6 +525,9 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     if (supabaseId.present) {
       map['supabase_id'] = Variable<String>(supabaseId.value);
     }
+    if (defaultKey.present) {
+      map['default_key'] = Variable<String>(defaultKey.value);
+    }
     return map;
   }
 
@@ -502,7 +543,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
           ..write('minute: $minute, ')
           ..write('enabled: $enabled, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('defaultKey: $defaultKey')
           ..write(')'))
         .toString();
   }
@@ -4121,6 +4163,7 @@ typedef $$RemindersTableCreateCompanionBuilder = RemindersCompanion Function({
   Value<bool> enabled,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String?> defaultKey,
 });
 typedef $$RemindersTableUpdateCompanionBuilder = RemindersCompanion Function({
   Value<int> id,
@@ -4133,6 +4176,7 @@ typedef $$RemindersTableUpdateCompanionBuilder = RemindersCompanion Function({
   Value<bool> enabled,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String?> defaultKey,
 });
 
 class $$RemindersTableFilterComposer
@@ -4175,6 +4219,9 @@ class $$RemindersTableFilterComposer
 
   ColumnFilters<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get defaultKey => $composableBuilder(
+      column: $table.defaultKey, builder: (column) => ColumnFilters(column));
 }
 
 class $$RemindersTableOrderingComposer
@@ -4215,6 +4262,9 @@ class $$RemindersTableOrderingComposer
 
   ColumnOrderings<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get defaultKey => $composableBuilder(
+      column: $table.defaultKey, builder: (column) => ColumnOrderings(column));
 }
 
 class $$RemindersTableAnnotationComposer
@@ -4255,6 +4305,9 @@ class $$RemindersTableAnnotationComposer
 
   GeneratedColumn<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => column);
+
+  GeneratedColumn<String> get defaultKey => $composableBuilder(
+      column: $table.defaultKey, builder: (column) => column);
 }
 
 class $$RemindersTableTableManager extends RootTableManager<
@@ -4290,6 +4343,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             Value<bool> enabled = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String?> defaultKey = const Value.absent(),
           }) =>
               RemindersCompanion(
             id: id,
@@ -4302,6 +4356,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             enabled: enabled,
             userId: userId,
             supabaseId: supabaseId,
+            defaultKey: defaultKey,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -4314,6 +4369,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             Value<bool> enabled = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String?> defaultKey = const Value.absent(),
           }) =>
               RemindersCompanion.insert(
             id: id,
@@ -4326,6 +4382,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             enabled: enabled,
             userId: userId,
             supabaseId: supabaseId,
+            defaultKey: defaultKey,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -35,6 +35,11 @@ class CloudBackupService {
   static const _dedicatedSyncTables = <String>{
     'quotes',
     'quote_favorites',
+    'reminders',
+  };
+
+  static const _dedicatedSyncPrefsKeys = <String>{
+    'reminders_seeded',
   };
 
   /// No longer exported, but still cleared between accounts and accepted from
@@ -62,7 +67,6 @@ class CloudBackupService {
     'journal_streak_last_entry_date',
     'onboarding_completed',
     'goals_seeded',
-    'reminders_seeded',
   ];
 
   String? get _userId => _client.auth.currentUser?.id;
@@ -166,6 +170,7 @@ class CloudBackupService {
         final meta = entry.value;
         if (meta is! Map) continue;
         final key = entry.key.toString();
+        if (_dedicatedSyncPrefsKeys.contains(key)) continue;
         final t = meta['t'];
         final v = meta['v'];
         switch (t) {
@@ -256,7 +261,11 @@ class CloudBackupService {
       await _db.customStatement('DELETE FROM "$table"');
     }
     final prefs = await SharedPreferences.getInstance();
-    for (final key in {..._prefsKeys, ..._legacyRestoreOnlyPrefsKeys}) {
+    for (final key in {
+      ..._prefsKeys,
+      ..._legacyRestoreOnlyPrefsKeys,
+      ..._dedicatedSyncPrefsKeys,
+    }) {
       await prefs.remove(key);
     }
   }

@@ -25,4 +25,5 @@ class Reminders extends Table {
 
   TextColumn get userId => text().nullable()();
   TextColumn get supabaseId => text().nullable()();
+  TextColumn get defaultKey => text().nullable()();
 }
