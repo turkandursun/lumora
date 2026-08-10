@@ -54,6 +54,18 @@ class _LumoraAppState extends ConsumerState<LumoraApp> {
       routerConfig: appRouter,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      // Follow the phone's language automatically: use the device locale when
+      // we have a translation for it, otherwise fall back to English.
+      localeResolutionCallback: (deviceLocale, supported) {
+        if (deviceLocale != null) {
+          for (final locale in supported) {
+            if (locale.languageCode == deviceLocale.languageCode) {
+              return locale;
+            }
+          }
+        }
+        return const Locale('en');
+      },
     );
   }
 }

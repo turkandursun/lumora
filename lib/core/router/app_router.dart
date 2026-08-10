@@ -34,8 +34,12 @@ import '../../features/stats/presentation/screens/stats_screen.dart';
 import '../../features/shell/presentation/widgets/feature_coming_soon_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/theme_choice/presentation/screens/astra_landing_screen.dart';
+<<<<<<< HEAD
 import '../../features/wellbeing/presentation/screens/focus_timer_screen.dart';
 import '../../features/wellbeing/presentation/screens/sos_calm_screen.dart';
+=======
+import '../../features/export/presentation/screens/export_screen.dart';
+>>>>>>> 8249828 (dil desteği yenilendi ve dışarı aktarım eklendi)
 
 class AppRoutes {
   AppRoutes._();
@@ -69,9 +73,13 @@ class AppRoutes {
   static const hobbiesOnboarding = '/hobbies-onboarding';
   static const activities = '/activities';
   static const feed = '/feed';
+<<<<<<< HEAD
   static const calm = '/calm';
   static const focusTimer = '/focus';
   static const favorites = '/favorites';
+=======
+  static const exportData = '/export';
+>>>>>>> 8249828 (dil desteği yenilendi ve dışarı aktarım eklendi)
 }
 
 /// Bridges Supabase's auth-state stream to a [Listenable] so [GoRouter] can
@@ -203,6 +211,10 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.featureComingSoon,
       builder: (context, state) =>
           FeatureComingSoonScreen(args: state.extra! as FeatureComingSoonArgs),
+    ),
+    GoRoute(
+      path: AppRoutes.exportData,
+      builder: (context, state) => const ExportScreen(),
     ),
     GoRoute(
       path: AppRoutes.dailyQuestion,
