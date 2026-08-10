@@ -30,6 +30,19 @@ class CloudBackupService {
   /// re-login of the same account.
   static const _lastUserKey = 'cloud_last_user_id';
 
+  /// These tables have their own dedicated cloud synchronization and must not
+  /// be restored from a potentially stale generic snapshot.
+  static const _dedicatedSyncTables = <String>{
+    'quotes',
+    'quote_favorites',
+  };
+
+  /// No longer exported, but still cleared between accounts and accepted from
+  /// old snapshots so the one-time quote-favorite migration can consume it.
+  static const _legacyRestoreOnlyPrefsKeys = <String>{
+    'favorite_quote_ids',
+  };
+
   /// The SharedPreferences keys that hold real user data worth syncing.
   /// Deliberately excludes device-only/security keys (app-lock PIN, ambient
   /// sound toggle) which should stay on the device.
@@ -37,7 +50,6 @@ class CloudBackupService {
     'activities_v1',
     'rewards_seen_badges_v1',
     'rewards_seen_level_v1',
-    'favorite_quote_ids',
     'hobbies_v1',
     'hobbies_onboarded_v1',
     'letters_v1',
@@ -77,7 +89,7 @@ class CloudBackupService {
     }
 
     final dbMap = <String, dynamic>{};
-    for (final table in await _tableNames()) {
+    for (final table in await _tableNames(forBackup: true)) {
       final rows = await _db.customSelect('SELECT * FROM "$table"').get();
       dbMap[table] = rows.map((r) => r.data).toList();
     }
@@ -85,14 +97,18 @@ class CloudBackupService {
     return {'version': 1, 'prefs': prefsMap, 'db': dbMap};
   }
 
-  Future<List<String>> _tableNames() async {
+  Future<List<String>> _tableNames({bool forBackup = false}) async {
     final rows = await _db
         .customSelect(
           "SELECT name FROM sqlite_master WHERE type='table' "
           "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'drift_%'",
         )
         .get();
-    return rows.map((r) => r.data['name'] as String).toList();
+    final names = rows.map((r) => r.data['name'] as String);
+    return (forBackup
+            ? names.where((name) => !_dedicatedSyncTables.contains(name))
+            : names)
+        .toList();
   }
 
   // ---- Backup / restore ---------------------------------------------------
@@ -144,6 +160,7 @@ class CloudBackupService {
     // Restore SharedPreferences.
     final prefs = await SharedPreferences.getInstance();
     final prefsMap = data['prefs'];
+    var restoredLegacyQuoteFavorites = false;
     if (prefsMap is Map) {
       for (final entry in prefsMap.entries) {
         final meta = entry.value;
@@ -156,6 +173,9 @@ class CloudBackupService {
             if (v is List) {
               await prefs.setStringList(
                   key, v.map((e) => e.toString()).toList());
+              if (key == 'favorite_quote_ids') {
+                restoredLegacyQuoteFavorites = true;
+              }
             }
             break;
           case 'b':
@@ -172,11 +192,14 @@ class CloudBackupService {
         }
       }
     }
+    if (restoredLegacyQuoteFavorites) {
+      await prefs.remove('quote_favorites_migrated_v1_$uid');
+    }
 
     // Restore Drift tables: clear each, then re-insert its rows.
     final dbMap = data['db'];
     if (dbMap is Map) {
-      final existing = (await _tableNames()).toSet();
+      final existing = (await _tableNames(forBackup: true)).toSet();
       for (final entry in dbMap.entries) {
         final table = entry.key.toString();
         if (!existing.contains(table)) continue;
@@ -229,10 +252,11 @@ class CloudBackupService {
   /// data leaks between accounts sharing the same device.
   Future<void> _clearLocalData() async {
     for (final table in await _tableNames()) {
+      if (table == 'quotes') continue;
       await _db.customStatement('DELETE FROM "$table"');
     }
     final prefs = await SharedPreferences.getInstance();
-    for (final key in _prefsKeys) {
+    for (final key in {..._prefsKeys, ..._legacyRestoreOnlyPrefsKeys}) {
       await prefs.remove(key);
     }
   }
