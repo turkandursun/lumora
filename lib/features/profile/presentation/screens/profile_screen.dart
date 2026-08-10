@@ -278,6 +278,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 _MenuItem(
+                  icon: Icons.favorite_border_rounded,
+                  label: isTr ? 'Favorilerim' : 'My favorites',
+                  isDark: isDark,
+                  primary: primary,
+                  onTap: () => context.push(AppRoutes.favorites),
+                ),
+                const SizedBox(height: 12),
+                _MenuItem(
                   icon: Icons.track_changes_outlined,
                   label: l10n.profileMenuGoals,
                   isDark: isDark,

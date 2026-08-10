@@ -22,6 +22,7 @@ import '../../features/dreams/presentation/screens/dream_reflection_screen.dart'
 import '../../features/dreams/presentation/screens/new_dream_screen.dart';
 import '../../features/goals/presentation/screens/goals_screen.dart';
 import '../../features/hobbies/presentation/screens/hobbies_screen.dart';
+import '../../features/journal/presentation/screens/favorites_screen.dart';
 import '../../features/journal/presentation/screens/journal_entry_screen.dart';
 import '../../features/journal/presentation/screens/sealed_journals_screen.dart';
 import '../../features/posts/presentation/screens/feed_screen.dart';
@@ -33,6 +34,8 @@ import '../../features/stats/presentation/screens/stats_screen.dart';
 import '../../features/shell/presentation/widgets/feature_coming_soon_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/theme_choice/presentation/screens/astra_landing_screen.dart';
+import '../../features/wellbeing/presentation/screens/focus_timer_screen.dart';
+import '../../features/wellbeing/presentation/screens/sos_calm_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -66,6 +69,9 @@ class AppRoutes {
   static const hobbiesOnboarding = '/hobbies-onboarding';
   static const activities = '/activities';
   static const feed = '/feed';
+  static const calm = '/calm';
+  static const focusTimer = '/focus';
+  static const favorites = '/favorites';
 }
 
 /// Bridges Supabase's auth-state stream to a [Listenable] so [GoRouter] can
@@ -114,6 +120,9 @@ const _protectedRoutes = {
   AppRoutes.hobbiesOnboarding,
   AppRoutes.activities,
   AppRoutes.feed,
+  AppRoutes.calm,
+  AppRoutes.focusTimer,
+  AppRoutes.favorites,
 };
 
 final GoRouter appRouter = GoRouter(
@@ -250,6 +259,18 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.feed,
       builder: (context, state) => const FeedScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.calm,
+      builder: (context, state) => const SosCalmScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.focusTimer,
+      builder: (context, state) => const FocusTimerScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.favorites,
+      builder: (context, state) => const FavoritesScreen(),
     ),
   ],
 );
