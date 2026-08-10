@@ -278,30 +278,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       CrisisSupportSheet.show(context);
     }
 
-
-    final title = _titleController.text.trim();
-    if (_editingEntry != null) {
-      await ref.read(journalEntriesRepositoryProvider).update(
-        _editingEntry!.id,
-        content: content,
-        // Preserve any audio note saved before this feature was removed.
-        audioPath: _editingEntry!.audioPath,
-        supabaseId: _editingEntry!.supabaseId,
-      );
-    } else {
-      await ref.read(journalEntriesRepositoryProvider).save(
-            content,
-            title: title.isEmpty ? null : title,
-            photoPath: _pickedPhotoPath,
-            photoBytes: _pickedPhotoBytes,
-          );
-      await ref.read(journalStreakProvider.notifier).recordEntrySaved();
-      // Auto-advance the "journal" goal when a new entry is written.
-      await ref
-          .read(goalsRepositoryProvider)
-          .incrementByIconKey(DefaultGoalIconKeys.journal, 10);
-      ref.read(goalStreakProvider.notifier).refresh();
-    }
     if (!mounted) return;
     _entryController.clear();
     _titleController.clear();

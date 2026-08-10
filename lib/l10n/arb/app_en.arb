@@ -1367,95 +1367,185 @@
     "description": "Error message shown if reading the Daily Question data from local storage fails."
   },
   "dailyQuestion1": "What are three things you're grateful for right now?",
-  "@dailyQuestion1": { "description": "Daily Question bank entry 1 of 45." },
+  "@dailyQuestion1": {
+    "description": "Daily Question bank entry 1 of 45."
+  },
   "dailyQuestion2": "What made you smile today?",
-  "@dailyQuestion2": { "description": "Daily Question bank entry 2 of 45." },
+  "@dailyQuestion2": {
+    "description": "Daily Question bank entry 2 of 45."
+  },
   "dailyQuestion3": "What's one act of kindness you showed yourself this week?",
-  "@dailyQuestion3": { "description": "Daily Question bank entry 3 of 45." },
+  "@dailyQuestion3": {
+    "description": "Daily Question bank entry 3 of 45."
+  },
   "dailyQuestion4": "What's something you learned about yourself recently?",
-  "@dailyQuestion4": { "description": "Daily Question bank entry 4 of 45." },
+  "@dailyQuestion4": {
+    "description": "Daily Question bank entry 4 of 45."
+  },
   "dailyQuestion5": "What's one small thing you've been putting off that you could do today?",
-  "@dailyQuestion5": { "description": "Daily Question bank entry 5 of 45." },
+  "@dailyQuestion5": {
+    "description": "Daily Question bank entry 5 of 45."
+  },
   "dailyQuestion6": "Who is someone you're thankful to have in your life, and why?",
-  "@dailyQuestion6": { "description": "Daily Question bank entry 6 of 45." },
+  "@dailyQuestion6": {
+    "description": "Daily Question bank entry 6 of 45."
+  },
   "dailyQuestion7": "What's a little moment from today you'd like to remember?",
-  "@dailyQuestion7": { "description": "Daily Question bank entry 7 of 45." },
+  "@dailyQuestion7": {
+    "description": "Daily Question bank entry 7 of 45."
+  },
   "dailyQuestion8": "How are you really feeling right now, underneath the surface?",
-  "@dailyQuestion8": { "description": "Daily Question bank entry 8 of 45." },
+  "@dailyQuestion8": {
+    "description": "Daily Question bank entry 8 of 45."
+  },
   "dailyQuestion9": "What's one habit you'd like to gently work on?",
-  "@dailyQuestion9": { "description": "Daily Question bank entry 9 of 45." },
+  "@dailyQuestion9": {
+    "description": "Daily Question bank entry 9 of 45."
+  },
   "dailyQuestion10": "What's a fear you'd like to feel a little braver about?",
-  "@dailyQuestion10": { "description": "Daily Question bank entry 10 of 45." },
+  "@dailyQuestion10": {
+    "description": "Daily Question bank entry 10 of 45."
+  },
   "dailyQuestion11": "What's something about your body you're grateful for today?",
-  "@dailyQuestion11": { "description": "Daily Question bank entry 11 of 45." },
+  "@dailyQuestion11": {
+    "description": "Daily Question bank entry 11 of 45."
+  },
   "dailyQuestion12": "What song or sound lifted your mood recently?",
-  "@dailyQuestion12": { "description": "Daily Question bank entry 12 of 45." },
+  "@dailyQuestion12": {
+    "description": "Daily Question bank entry 12 of 45."
+  },
   "dailyQuestion13": "What do you need more of in your life right now?",
-  "@dailyQuestion13": { "description": "Daily Question bank entry 13 of 45." },
+  "@dailyQuestion13": {
+    "description": "Daily Question bank entry 13 of 45."
+  },
   "dailyQuestion14": "What's a mistake that taught you something valuable?",
-  "@dailyQuestion14": { "description": "Daily Question bank entry 14 of 45." },
+  "@dailyQuestion14": {
+    "description": "Daily Question bank entry 14 of 45."
+  },
   "dailyQuestion15": "Is there a conversation you've been avoiding? What's holding you back?",
-  "@dailyQuestion15": { "description": "Daily Question bank entry 15 of 45." },
+  "@dailyQuestion15": {
+    "description": "Daily Question bank entry 15 of 45."
+  },
   "dailyQuestion16": "What part of today are you thankful you got to experience?",
-  "@dailyQuestion16": { "description": "Daily Question bank entry 16 of 45." },
+  "@dailyQuestion16": {
+    "description": "Daily Question bank entry 16 of 45."
+  },
   "dailyQuestion17": "What's something small that made today easier?",
-  "@dailyQuestion17": { "description": "Daily Question bank entry 17 of 45." },
+  "@dailyQuestion17": {
+    "description": "Daily Question bank entry 17 of 45."
+  },
   "dailyQuestion18": "When did you last feel truly at peace?",
-  "@dailyQuestion18": { "description": "Daily Question bank entry 18 of 45." },
+  "@dailyQuestion18": {
+    "description": "Daily Question bank entry 18 of 45."
+  },
   "dailyQuestion19": "What's one way you've grown in the past year?",
-  "@dailyQuestion19": { "description": "Daily Question bank entry 19 of 45." },
+  "@dailyQuestion19": {
+    "description": "Daily Question bank entry 19 of 45."
+  },
   "dailyQuestion20": "What's one boundary you could practice setting this week?",
-  "@dailyQuestion20": { "description": "Daily Question bank entry 20 of 45." },
+  "@dailyQuestion20": {
+    "description": "Daily Question bank entry 20 of 45."
+  },
   "dailyQuestion21": "What's a comfort in your daily life you sometimes take for granted?",
-  "@dailyQuestion21": { "description": "Daily Question bank entry 21 of 45." },
+  "@dailyQuestion21": {
+    "description": "Daily Question bank entry 21 of 45."
+  },
   "dailyQuestion22": "What made you laugh recently?",
-  "@dailyQuestion22": { "description": "Daily Question bank entry 22 of 45." },
+  "@dailyQuestion22": {
+    "description": "Daily Question bank entry 22 of 45."
+  },
   "dailyQuestion23": "What does \"rest\" look like for you right now?",
-  "@dailyQuestion23": { "description": "Daily Question bank entry 23 of 45." },
+  "@dailyQuestion23": {
+    "description": "Daily Question bank entry 23 of 45."
+  },
   "dailyQuestion24": "What's a skill you'd love to get better at?",
-  "@dailyQuestion24": { "description": "Daily Question bank entry 24 of 45." },
+  "@dailyQuestion24": {
+    "description": "Daily Question bank entry 24 of 45."
+  },
   "dailyQuestion25": "What's something you'd try if you weren't afraid of failing?",
-  "@dailyQuestion25": { "description": "Daily Question bank entry 25 of 45." },
+  "@dailyQuestion25": {
+    "description": "Daily Question bank entry 25 of 45."
+  },
   "dailyQuestion26": "Who taught you something important without even realizing it?",
-  "@dailyQuestion26": { "description": "Daily Question bank entry 26 of 45." },
+  "@dailyQuestion26": {
+    "description": "Daily Question bank entry 26 of 45."
+  },
   "dailyQuestion27": "What's a small pleasure you enjoyed today?",
-  "@dailyQuestion27": { "description": "Daily Question bank entry 27 of 45." },
+  "@dailyQuestion27": {
+    "description": "Daily Question bank entry 27 of 45."
+  },
   "dailyQuestion28": "What are you carrying today that you could set down, even briefly?",
-  "@dailyQuestion28": { "description": "Daily Question bank entry 28 of 45." },
+  "@dailyQuestion28": {
+    "description": "Daily Question bank entry 28 of 45."
+  },
   "dailyQuestion29": "What's one thing you did differently than you would have a year ago?",
-  "@dailyQuestion29": { "description": "Daily Question bank entry 29 of 45." },
+  "@dailyQuestion29": {
+    "description": "Daily Question bank entry 29 of 45."
+  },
   "dailyQuestion30": "What's one kind thing you could say to yourself right now?",
-  "@dailyQuestion30": { "description": "Daily Question bank entry 30 of 45." },
+  "@dailyQuestion30": {
+    "description": "Daily Question bank entry 30 of 45."
+  },
   "dailyQuestion31": "What's a place that makes you feel grateful just thinking about it?",
-  "@dailyQuestion31": { "description": "Daily Question bank entry 31 of 45." },
+  "@dailyQuestion31": {
+    "description": "Daily Question bank entry 31 of 45."
+  },
   "dailyQuestion32": "What's something you're looking forward to this week?",
-  "@dailyQuestion32": { "description": "Daily Question bank entry 32 of 45." },
+  "@dailyQuestion32": {
+    "description": "Daily Question bank entry 32 of 45."
+  },
   "dailyQuestion33": "What does your inner voice sound like today — gentle or harsh?",
-  "@dailyQuestion33": { "description": "Daily Question bank entry 33 of 45." },
+  "@dailyQuestion33": {
+    "description": "Daily Question bank entry 33 of 45."
+  },
   "dailyQuestion34": "What's a challenge that made you stronger?",
-  "@dailyQuestion34": { "description": "Daily Question bank entry 34 of 45." },
+  "@dailyQuestion34": {
+    "description": "Daily Question bank entry 34 of 45."
+  },
   "dailyQuestion35": "What's one thing you could forgive yourself for today?",
-  "@dailyQuestion35": { "description": "Daily Question bank entry 35 of 45." },
+  "@dailyQuestion35": {
+    "description": "Daily Question bank entry 35 of 45."
+  },
   "dailyQuestion36": "What's a simple pleasure — food, weather, a texture — you appreciated today?",
-  "@dailyQuestion36": { "description": "Daily Question bank entry 36 of 45." },
+  "@dailyQuestion36": {
+    "description": "Daily Question bank entry 36 of 45."
+  },
   "dailyQuestion37": "What's the best part of your morning today?",
-  "@dailyQuestion37": { "description": "Daily Question bank entry 37 of 45." },
+  "@dailyQuestion37": {
+    "description": "Daily Question bank entry 37 of 45."
+  },
   "dailyQuestion38": "What's one feeling you've been avoiding sitting with?",
-  "@dailyQuestion38": { "description": "Daily Question bank entry 38 of 45." },
+  "@dailyQuestion38": {
+    "description": "Daily Question bank entry 38 of 45."
+  },
   "dailyQuestion39": "What would you tell yourself from a year ago?",
-  "@dailyQuestion39": { "description": "Daily Question bank entry 39 of 45." },
+  "@dailyQuestion39": {
+    "description": "Daily Question bank entry 39 of 45."
+  },
   "dailyQuestion40": "What's a small risk that could open a new door for you?",
-  "@dailyQuestion40": { "description": "Daily Question bank entry 40 of 45." },
+  "@dailyQuestion40": {
+    "description": "Daily Question bank entry 40 of 45."
+  },
   "dailyQuestion41": "What's something your past self would be proud you kept going with?",
-  "@dailyQuestion41": { "description": "Daily Question bank entry 41 of 45." },
+  "@dailyQuestion41": {
+    "description": "Daily Question bank entry 41 of 45."
+  },
   "dailyQuestion42": "What made today feel a little lighter?",
-  "@dailyQuestion42": { "description": "Daily Question bank entry 42 of 45." },
+  "@dailyQuestion42": {
+    "description": "Daily Question bank entry 42 of 45."
+  },
   "dailyQuestion43": "If today had a color, what would it be and why?",
-  "@dailyQuestion43": { "description": "Daily Question bank entry 43 of 45." },
+  "@dailyQuestion43": {
+    "description": "Daily Question bank entry 43 of 45."
+  },
   "dailyQuestion44": "What's one thing you're better at than you give yourself credit for?",
-  "@dailyQuestion44": { "description": "Daily Question bank entry 44 of 45." },
+  "@dailyQuestion44": {
+    "description": "Daily Question bank entry 44 of 45."
+  },
   "dailyQuestion45": "What's one thing you could do this week purely because it brings you joy?",
-  "@dailyQuestion45": { "description": "Daily Question bank entry 45 of 45." },
+  "@dailyQuestion45": {
+    "description": "Daily Question bank entry 45 of 45."
+  },
   "communityTitle": "Safe Space Community",
   "@communityTitle": {
     "description": "Heading at the top of the Safe Space Community feed screen."
@@ -1508,53 +1598,128 @@
   "@communityRelativeTimeMinutes": {
     "description": "Relative timestamp shown on a community feed entry shared less than an hour ago.",
     "placeholders": {
-      "minutes": { "type": "int", "example": "5" }
+      "minutes": {
+        "type": "int",
+        "example": "5"
+      }
     }
   },
   "communityRelativeTimeHours": "{hours}h ago",
   "@communityRelativeTimeHours": {
     "description": "Relative timestamp shown on a community feed entry shared less than a day ago.",
     "placeholders": {
-      "hours": { "type": "int", "example": "2" }
+      "hours": {
+        "type": "int",
+        "example": "2"
+      }
     }
   },
   "communityRelativeTimeDays": "{days}d ago",
   "@communityRelativeTimeDays": {
     "description": "Relative timestamp shown on a community feed entry shared a day or more ago.",
     "placeholders": {
-      "days": { "type": "int", "example": "3" }
+      "days": {
+        "type": "int",
+        "example": "3"
+      }
     }
   },
   "communityAdjective1": "Quiet",
-  "@communityAdjective1": { "description": "Adjective option 1 of 8 used to generate a user's anonymous community display name." },
+  "@communityAdjective1": {
+    "description": "Adjective option 1 of 8 used to generate a user's anonymous community display name."
+  },
   "communityAdjective2": "Kind",
-  "@communityAdjective2": { "description": "Adjective option 2 of 8 used to generate a user's anonymous community display name." },
+  "@communityAdjective2": {
+    "description": "Adjective option 2 of 8 used to generate a user's anonymous community display name."
+  },
   "communityAdjective3": "Calm",
-  "@communityAdjective3": { "description": "Adjective option 3 of 8 used to generate a user's anonymous community display name." },
+  "@communityAdjective3": {
+    "description": "Adjective option 3 of 8 used to generate a user's anonymous community display name."
+  },
   "communityAdjective4": "Brave",
-  "@communityAdjective4": { "description": "Adjective option 4 of 8 used to generate a user's anonymous community display name." },
+  "@communityAdjective4": {
+    "description": "Adjective option 4 of 8 used to generate a user's anonymous community display name."
+  },
   "communityAdjective5": "Hopeful",
-  "@communityAdjective5": { "description": "Adjective option 5 of 8 used to generate a user's anonymous community display name." },
+  "@communityAdjective5": {
+    "description": "Adjective option 5 of 8 used to generate a user's anonymous community display name."
+  },
   "communityAdjective6": "Gentle",
-  "@communityAdjective6": { "description": "Adjective option 6 of 8 used to generate a user's anonymous community display name." },
+  "@communityAdjective6": {
+    "description": "Adjective option 6 of 8 used to generate a user's anonymous community display name."
+  },
   "communityAdjective7": "Cheerful",
-  "@communityAdjective7": { "description": "Adjective option 7 of 8 used to generate a user's anonymous community display name." },
+  "@communityAdjective7": {
+    "description": "Adjective option 7 of 8 used to generate a user's anonymous community display name."
+  },
   "communityAdjective8": "Curious",
-  "@communityAdjective8": { "description": "Adjective option 8 of 8 used to generate a user's anonymous community display name." },
+  "@communityAdjective8": {
+    "description": "Adjective option 8 of 8 used to generate a user's anonymous community display name."
+  },
   "communityNoun1": "Star",
-  "@communityNoun1": { "description": "Noun option 1 of 8 used to generate a user's anonymous community display name." },
+  "@communityNoun1": {
+    "description": "Noun option 1 of 8 used to generate a user's anonymous community display name."
+  },
   "communityNoun2": "Butterfly",
-  "@communityNoun2": { "description": "Noun option 2 of 8 used to generate a user's anonymous community display name." },
+  "@communityNoun2": {
+    "description": "Noun option 2 of 8 used to generate a user's anonymous community display name."
+  },
   "communityNoun3": "Moon",
-  "@communityNoun3": { "description": "Noun option 3 of 8 used to generate a user's anonymous community display name." },
+  "@communityNoun3": {
+    "description": "Noun option 3 of 8 used to generate a user's anonymous community display name."
+  },
   "communityNoun4": "Cloud",
-  "@communityNoun4": { "description": "Noun option 4 of 8 used to generate a user's anonymous community display name." },
+  "@communityNoun4": {
+    "description": "Noun option 4 of 8 used to generate a user's anonymous community display name."
+  },
   "communityNoun5": "Blossom",
-  "@communityNoun5": { "description": "Noun option 5 of 8 used to generate a user's anonymous community display name." },
+  "@communityNoun5": {
+    "description": "Noun option 5 of 8 used to generate a user's anonymous community display name."
+  },
   "communityNoun6": "Breeze",
-  "@communityNoun6": { "description": "Noun option 6 of 8 used to generate a user's anonymous community display name." },
+  "@communityNoun6": {
+    "description": "Noun option 6 of 8 used to generate a user's anonymous community display name."
+  },
   "communityNoun7": "Wave",
-  "@communityNoun7": { "description": "Noun option 7 of 8 used to generate a user's anonymous community display name." },
+  "@communityNoun7": {
+    "description": "Noun option 7 of 8 used to generate a user's anonymous community display name."
+  },
   "communityNoun8": "Bird",
-  "@communityNoun8": { "description": "Noun option 8 of 8 used to generate a user's anonymous community display name." }
+  "@communityNoun8": {
+    "description": "Noun option 8 of 8 used to generate a user's anonymous community display name."
+  },
+  "exportTitle": "Export your journal",
+  "exportIntro": "Choose a date range and download a PDF archive of your journal, dreams, letters and mood history.",
+  "exportStartLabel": "From",
+  "exportEndLabel": "To",
+  "exportButton": "Export as PDF",
+  "exportGenerating": "Preparing…",
+  "exportEmptyRange": "No entries in the selected range.",
+  "exportError": "Something went wrong while exporting. Please try again.",
+  "exportDocumentTitle": "{name}'s ASTRA journal",
+  "@exportDocumentTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "exportDocumentTitleNoName": "My ASTRA journal",
+  "exportGeneratedOn": "Generated on {date}",
+  "@exportGeneratedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "exportSectionJournal": "Journal",
+  "exportSectionDreams": "Dreams",
+  "exportSectionLetters": "Letters to the future",
+  "exportSectionMood": "Mood overview",
+  "exportSectionEmpty": "No entries in this range.",
+  "exportUntitled": "Untitled",
+  "exportMoodDays": "days",
+  "exportLetterOpens": "Opens",
+  "exportProfileTile": "Export as PDF"
 }
