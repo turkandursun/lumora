@@ -40,11 +40,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
+        onCreate: (m) async {
+          await m.createAll();
+          await _createJournalEntriesCloudIdentityIndex();
+        },
         onUpgrade: (m, from, to) async {
           // Each step below checks the actual on-disk schema before applying,
           // rather than trusting `from`/`user_version` alone. That pragma is
@@ -219,8 +222,37 @@ class AppDatabase extends _$AppDatabase {
             // Creating it here would fail on the duplicate starter artifacts
             // this version is responsible for merging without data loss.
           }
+          if (from < 23 && await _hasTable('journal_entries')) {
+            // Cloud-backed duplicates are local cache artifacts. Keep the
+            // newest local row for each exact user + Supabase UUID identity;
+            // null IDs are deliberately untouched because similar text/date
+            // values are not proof that two local journals are the same.
+            await customStatement('''
+              DELETE FROM journal_entries
+              WHERE user_id IS NOT NULL
+                AND supabase_id IS NOT NULL
+                AND id NOT IN (
+                  SELECT MAX(id)
+                  FROM journal_entries
+                  WHERE user_id IS NOT NULL
+                    AND supabase_id IS NOT NULL
+                  GROUP BY user_id, supabase_id
+                )
+            ''');
+            await _createJournalEntriesCloudIdentityIndex();
+          }
         },
       );
+
+  Future<void> _createJournalEntriesCloudIdentityIndex() {
+    return customStatement('''
+      CREATE UNIQUE INDEX IF NOT EXISTS
+        journal_entries_user_cloud_unique
+      ON journal_entries(user_id, supabase_id)
+      WHERE user_id IS NOT NULL
+        AND supabase_id IS NOT NULL
+    ''');
+  }
 
   Future<bool> _hasTable(String name) async {
     final result = await customSelect(
