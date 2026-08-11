@@ -1721,5 +1721,25 @@
   "exportUntitled": "Untitled",
   "exportMoodDays": "days",
   "exportLetterOpens": "Opens",
-  "exportProfileTile": "Export as PDF"
+  "exportProfileTile": "Export as PDF",
+  "communityTabToday": "Today",
+  "communityTabFeed": "Feed",
+  "communityComposerHint": "Share a thought, anonymously…",
+  "communityComposerButton": "Share",
+  "communityPostEmpty": "No posts yet — share the first gentle thought.",
+  "communityRepliesTitle": "Replies",
+  "communityReplyHint": "Write a kind reply…",
+  "communityReplyCountLabel": "{count} replies",
+  "communityRepliesEmpty": "No replies yet — be the first kind voice.",
+  "communityModerationContact": "Let's keep this space anonymous — no phone numbers, links or contact info.",
+  "communityModerationHarmful": "Let's keep this space kind — please rephrase.",
+  "communityModerationEmpty": "Write something first.",
+  "@communityReplyCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeStreakBannerTitle": "Daily streak"
 }

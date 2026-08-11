@@ -414,5 +414,18 @@
   "exportUntitled": "Sin título",
   "exportMoodDays": "días",
   "exportLetterOpens": "Se abre",
-  "exportProfileTile": "Exportar como PDF"
+  "exportProfileTile": "Exportar como PDF",
+  "communityTabToday": "Hoy",
+  "communityTabFeed": "Feed",
+  "communityComposerHint": "Comparte un pensamiento, de forma anónima…",
+  "communityComposerButton": "Compartir",
+  "communityPostEmpty": "Aún no hay publicaciones: comparte el primer pensamiento amable.",
+  "communityRepliesTitle": "Respuestas",
+  "communityReplyHint": "Escribe una respuesta amable…",
+  "communityReplyCountLabel": "{count} respuestas",
+  "communityRepliesEmpty": "Aún no hay respuestas: sé la primera voz amable.",
+  "communityModerationContact": "Mantengamos este espacio anónimo: sin números de teléfono, enlaces ni datos de contacto.",
+  "communityModerationHarmful": "Mantengamos este espacio amable: reformúlalo, por favor.",
+  "communityModerationEmpty": "Escribe algo primero.",
+  "homeStreakBannerTitle": "Racha diaria"
 }

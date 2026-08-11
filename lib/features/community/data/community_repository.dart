@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../domain/anonymous_name_generator.dart';
+import '../domain/community_post.dart';
 import '../domain/community_share.dart';
 
 /// Failure signal for [CommunityRepository] calls — kept string-free so the
@@ -91,6 +92,115 @@ class CommunityRepository {
   Future<void> reportShare(String shareId) async {
     try {
       await _client.rpc('report_daily_question_share', params: {'share_id': shareId});
+    } catch (_) {
+      throw const CommunityShareException();
+    }
+  }
+
+  // ─────────────────── Free-form community feed ───────────────────
+
+  static const _postsView = 'community_posts_view';
+  static const _postsTable = 'community_posts';
+  static const _reactionsTable = 'community_post_reactions';
+  static const _repliesTable = 'community_post_replies';
+
+  /// The most recent free-form posts (non-flagged), newest first.
+  Future<List<CommunityPost>> fetchPosts({int limit = 50}) async {
+    try {
+      final rows = await _client
+          .from(_postsView)
+          .select()
+          .order('created_at', ascending: false)
+          .limit(limit);
+      return (rows as List)
+          .map((r) => CommunityPost.fromJson(r as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      throw const CommunityShareException();
+    }
+  }
+
+  /// Publishes a new anonymous post.
+  Future<void> createPost(String body, AppLocalizations l10n) async {
+    try {
+      final displayName = await ensureDisplayName(l10n);
+      await _client.from(_postsTable).insert({
+        'display_name': displayName,
+        'body': body,
+      });
+    } catch (_) {
+      throw const CommunityShareException();
+    }
+  }
+
+  /// Adds or removes the current user's [kind] ('heart' | 'hug') reaction.
+  Future<void> toggleReaction({
+    required String postId,
+    required String kind,
+    required bool isOn,
+  }) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      if (isOn) {
+        await _client
+            .from(_reactionsTable)
+            .delete()
+            .eq('post_id', postId)
+            .eq('kind', kind)
+            .eq('user_id', uid);
+      } else {
+        await _client
+            .from(_reactionsTable)
+            .insert({'post_id': postId, 'kind': kind});
+      }
+    } catch (_) {
+      throw const CommunityShareException();
+    }
+  }
+
+  Future<void> reportPost(String postId) async {
+    try {
+      await _client.rpc('report_community_post', params: {'post_id': postId});
+    } catch (_) {
+      throw const CommunityShareException();
+    }
+  }
+
+  /// Non-flagged replies for [postId], oldest first (conversational order).
+  Future<List<CommunityReply>> fetchReplies(String postId) async {
+    try {
+      final rows = await _client
+          .from(_repliesTable)
+          .select('id, display_name, body, created_at')
+          .eq('post_id', postId)
+          .eq('is_flagged', false)
+          .order('created_at', ascending: true);
+      return (rows as List)
+          .map((r) => CommunityReply.fromJson(r as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      throw const CommunityShareException();
+    }
+  }
+
+  Future<void> createReply(
+      String postId, String body, AppLocalizations l10n) async {
+    try {
+      final displayName = await ensureDisplayName(l10n);
+      await _client.from(_repliesTable).insert({
+        'post_id': postId,
+        'display_name': displayName,
+        'body': body,
+      });
+    } catch (_) {
+      throw const CommunityShareException();
+    }
+  }
+
+  Future<void> reportReply(String replyId) async {
+    try {
+      await _client.rpc('report_community_reply', params: {'reply_id': replyId});
     } catch (_) {
       throw const CommunityShareException();
     }

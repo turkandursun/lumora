@@ -278,6 +278,46 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       CrisisSupportSheet.show(context);
     }
 
+    final title = _titleController.text.trim();
+    final repo = ref.read(journalEntriesRepositoryProvider);
+    final editing = _editingEntry;
+
+    // Actually persist the entry (locally + cloud). Without this the write area
+    // would only show the "sealed" toast and clear itself, losing the text.
+    try {
+      if (editing != null) {
+        await repo.update(
+          editing.id,
+          content: content,
+          photoUrl: editing.photoUrl,
+          supabaseId: editing.supabaseId,
+        );
+      } else {
+        await repo.save(
+          content,
+          title: title.isEmpty ? null : title,
+          photoPath: _pickedPhotoPath,
+          photoBytes: _pickedPhotoBytes,
+        );
+        // Auto-advance the journaling goal + streak on a new entry.
+        await ref
+            .read(goalsRepositoryProvider)
+            .incrementByIconKey(DefaultGoalIconKeys.journal, 10);
+        ref.read(goalStreakProvider.notifier).refresh();
+      }
+    } catch (e) {
+      debugPrint('[JournalSave] failed: $e');
+      if (!mounted) return;
+      final isTr = Localizations.localeOf(context).languageCode == 'tr';
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(
+              isTr ? 'Kaydedilemedi, tekrar dene' : 'Could not save, try again'),
+        ));
+      return;
+    }
+
     if (!mounted) return;
     _entryController.clear();
     _titleController.clear();

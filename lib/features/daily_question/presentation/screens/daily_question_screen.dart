@@ -10,6 +10,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../../community/domain/content_moderation.dart';
 import '../../../community/presentation/providers/community_providers.dart';
 import '../../domain/daily_question_bank.dart';
 import '../providers/daily_question_providers.dart';
@@ -331,9 +332,27 @@ class _AnswerSheetState extends ConsumerState<_AnswerSheet> {
       return;
     }
 
+    final l10n = AppLocalizations.of(context);
+
+    // If this answer will be shared publicly, run it through the same content
+    // filter as free-form community posts (no phone numbers, links, contact
+    // info or hurtful language). Private-only answers are never filtered.
+    if (_shareToggle) {
+      final issue = ContentModeration.check(text);
+      if (issue == ModerationIssue.contact || issue == ModerationIssue.harmful) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(
+            content: Text(issue == ModerationIssue.contact
+                ? l10n.communityModerationContact
+                : l10n.communityModerationHarmful),
+          ));
+        return;
+      }
+    }
+
     setState(() => _saving = true);
 
-    final l10n = AppLocalizations.of(context);
     final dailyRepo = ref.read(dailyQuestionRepositoryProvider);
     final communityRepo = ref.read(communityRepositoryProvider);
     final today = DateTime.now();

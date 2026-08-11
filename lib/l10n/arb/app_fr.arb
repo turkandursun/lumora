@@ -414,5 +414,18 @@
   "exportUntitled": "Sans titre",
   "exportMoodDays": "jours",
   "exportLetterOpens": "S'ouvre",
-  "exportProfileTile": "Exporter en PDF"
+  "exportProfileTile": "Exporter en PDF",
+  "communityTabToday": "Aujourd'hui",
+  "communityTabFeed": "Fil",
+  "communityComposerHint": "Partage une pensée, anonymement…",
+  "communityComposerButton": "Partager",
+  "communityPostEmpty": "Pas encore de publications — partage la première pensée bienveillante.",
+  "communityRepliesTitle": "Réponses",
+  "communityReplyHint": "Écris une réponse bienveillante…",
+  "communityReplyCountLabel": "{count} réponses",
+  "communityRepliesEmpty": "Pas encore de réponses — sois la première voix bienveillante.",
+  "communityModerationContact": "Gardons cet espace anonyme — pas de numéros, de liens ni de coordonnées.",
+  "communityModerationHarmful": "Gardons cet espace bienveillant — reformule, s'il te plaît.",
+  "communityModerationEmpty": "Écris d'abord quelque chose.",
+  "homeStreakBannerTitle": "Série quotidienne"
 }
