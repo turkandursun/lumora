@@ -40,6 +40,7 @@ import '../../features/wellbeing/presentation/screens/focus_timer_screen.dart';
 import '../../features/wellbeing/presentation/screens/sos_calm_screen.dart';
 
 import '../../features/export/presentation/screens/export_screen.dart';
+import '../../features/auth/presentation/screens/greeting_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -51,6 +52,7 @@ class AppRoutes {
   static const signup = '/signup';
   static const nameEntry = '/name-entry';
   static const welcome = '/welcome';
+  static const greeting = '/greeting';
   static const home = '/home';
   static const reminders = '/reminders';
   static const goals = '/goals';
@@ -183,6 +185,10 @@ final GoRouter appRouter = GoRouter(
             false;
         return _smoothPage(state, WelcomeScreen(isNewSignup: isNewSignup));
       },
+    ),
+    GoRoute(
+      path: AppRoutes.greeting,
+      builder: (context, state) => const GreetingScreen(),
     ),
     GoRoute(
       path: AppRoutes.home,

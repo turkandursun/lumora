@@ -394,6 +394,7 @@ class _QuickAddButton extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
+
             boxShadow: [
               BoxShadow(
                 color: glow.withValues(alpha: 0.5),
@@ -544,6 +545,13 @@ class _FabMenuItem extends StatelessWidget {
                     Text(label, style: const TextStyle(color: Color(0xFFF4EEFF), fontSize: 14.5, fontWeight: FontWeight.w700)),
                   ],
                 ),
+
+            child: const Padding(
+              padding: EdgeInsets.all(9),
+              child: Image(
+                image: AssetImage('assets/images/luma_star_closed.png'),
+                fit: BoxFit.contain,
+
               ),
             ),
           ),

@@ -427,5 +427,6 @@
   "communityModerationContact": "Mantengamos este espacio anónimo: sin números de teléfono, enlaces ni datos de contacto.",
   "communityModerationHarmful": "Mantengamos este espacio amable: reformúlalo, por favor.",
   "communityModerationEmpty": "Escribe algo primero.",
-  "homeStreakBannerTitle": "Racha diaria"
+  "homeStreakBannerTitle": "Racha diaria",
+  "greetingWelcomeBack": "Hola, bienvenida de nuevo. Echaba de menos verte por aquí."
 }

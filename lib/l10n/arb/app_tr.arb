@@ -427,5 +427,6 @@
   "communityModerationContact": "Burayı anonim tutalım — telefon, link veya iletişim bilgisi paylaşma.",
   "communityModerationHarmful": "Burayı nazik tutalım — lütfen ifadeni yumuşat.",
   "communityModerationEmpty": "Önce bir şeyler yaz.",
-  "homeStreakBannerTitle": "Günlük seri"
+  "homeStreakBannerTitle": "Günlük seri",
+  "greetingWelcomeBack": "Merhaba, hoş geldin. Seni burada görmeyi özlemiştim."
 }

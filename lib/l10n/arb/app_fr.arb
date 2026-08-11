@@ -427,5 +427,6 @@
   "communityModerationContact": "Gardons cet espace anonyme — pas de numéros, de liens ni de coordonnées.",
   "communityModerationHarmful": "Gardons cet espace bienveillant — reformule, s'il te plaît.",
   "communityModerationEmpty": "Écris d'abord quelque chose.",
-  "homeStreakBannerTitle": "Série quotidienne"
+  "homeStreakBannerTitle": "Série quotidienne",
+  "greetingWelcomeBack": "Bonjour, bon retour. Tu m'avais manqué ici."
 }

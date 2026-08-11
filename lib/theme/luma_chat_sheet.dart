@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'astra_screen_kit.dart';
@@ -7,6 +9,7 @@ import '../core/services/ai_service.dart';
 import '../core/services/crisis_detection_service.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'crisis_support_sheet.dart';
+import 'luma_avatar.dart';
 import 'lumora_palette.dart';
 
 class _ChatMessage {
@@ -48,6 +51,10 @@ class _LumaChatSheetState extends State<LumaChatSheet> {
   bool _hasError = false;
   bool _sessionReady = Supabase.instance.client.auth.currentSession != null;
 
+  // Drives Luma's mouth animation while she "speaks" her reply.
+  bool _lumaTalking = false;
+  Timer? _talkTimer;
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +71,7 @@ class _LumaChatSheetState extends State<LumaChatSheet> {
 
   @override
   void dispose() {
+    _talkTimer?.cancel();
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -112,6 +120,14 @@ class _LumaChatSheetState extends State<LumaChatSheet> {
       setState(() {
         _messages.add(_ChatMessage(isUser: false, text: reply));
         _isSending = false;
+        _lumaTalking = true;
+      });
+      // Keep her mouth moving briefly, as if speaking the reply — longer for
+      // longer answers, capped so it never drags.
+      _talkTimer?.cancel();
+      final talkMs = (reply.length * 45).clamp(900, 3500);
+      _talkTimer = Timer(Duration(milliseconds: talkMs), () {
+        if (mounted) setState(() => _lumaTalking = false);
       });
     } catch (e) {
       debugPrint('[LumaChat] _send caught error: $e');
@@ -157,7 +173,14 @@ class _LumaChatSheetState extends State<LumaChatSheet> {
                               );
                             }
                             final message = _messages[index];
-                            return _MessageBubble(message: message);
+                            final isLatestLuma = !message.isUser &&
+                                index == _messages.length - 1 &&
+                                !_isSending;
+                            return _MessageBubble(
+                              message: message,
+                              animateAvatar: isLatestLuma,
+                              speaking: _lumaTalking,
+                            );
                           },
                         ),
                 ),
@@ -274,8 +297,6 @@ class _Header extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              const _LumaStar(size: 28),
-              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
@@ -312,7 +333,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const _LumaStar(size: 66),
+            const LumaAvatar(size: 96),
             const SizedBox(height: 18),
             Text(
               isTr ? 'Merhaba, ben Luma ✨' : "Hi, I'm Luma ✨",
@@ -336,9 +357,18 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
+  const _MessageBubble({
+    required this.message,
+    this.animateAvatar = false,
+    this.speaking = false,
+  });
 
   final _ChatMessage message;
+
+  /// When true, Luma's animated star avatar (mouth-flap) is shown beside this
+  /// bubble instead of the small static star — used for her latest reply.
+  final bool animateAvatar;
+  final bool speaking;
 
   @override
   Widget build(BuildContext context) {
@@ -379,9 +409,11 @@ class _MessageBubble extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(right: 8, bottom: 6),
-            child: _LumaStar(size: 22),
+          Padding(
+            padding: const EdgeInsets.only(right: 8, bottom: 4),
+            child: animateAvatar
+                ? LumaAvatar(size: 46, speaking: speaking)
+                : const LumaAvatar(size: 30),
           ),
           Flexible(child: bubble),
         ],
@@ -392,6 +424,32 @@ class _MessageBubble extends StatelessWidget {
 
 class _ThinkingBubble extends StatelessWidget {
   const _ThinkingBubble({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(right: 8, bottom: 4),
+            child: LumaAvatar(size: 46, speaking: true),
+          ),
+          Flexible(
+            child: _ThinkingBubbleBody(text: text),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThinkingBubbleBody extends StatelessWidget {
+  const _ThinkingBubbleBody({required this.text});
 
   final String text;
 

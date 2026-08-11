@@ -1741,5 +1741,6 @@
       }
     }
   },
-  "homeStreakBannerTitle": "Daily streak"
+  "homeStreakBannerTitle": "Daily streak",
+  "greetingWelcomeBack": "Hi, welcome back. I missed seeing you here."
 }

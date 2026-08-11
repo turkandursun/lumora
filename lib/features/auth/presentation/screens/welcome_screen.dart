@@ -136,7 +136,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     if (widget.isNewSignup) {
       context.go(AppRoutes.hobbiesOnboarding);
     } else {
-      context.go(AppRoutes.home);
+      context.go(AppRoutes.greeting);
     }
   }
 

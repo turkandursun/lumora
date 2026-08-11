@@ -427,5 +427,6 @@
   "communityModerationContact": "Halten wir diesen Ort anonym — keine Telefonnummern, Links oder Kontaktdaten.",
   "communityModerationHarmful": "Halten wir diesen Ort freundlich — bitte formuliere es um.",
   "communityModerationEmpty": "Schreibe zuerst etwas.",
-  "homeStreakBannerTitle": "Tagesserie"
+  "homeStreakBannerTitle": "Tagesserie",
+  "greetingWelcomeBack": "Hallo, willkommen zurück. Ich habe es vermisst, dich hier zu sehen."
 }
