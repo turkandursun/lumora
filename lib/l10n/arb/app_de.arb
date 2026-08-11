@@ -462,5 +462,9 @@
   "communityModerationHarmful": "Halten wir diesen Ort freundlich — bitte formuliere es um.",
   "communityModerationEmpty": "Schreibe zuerst etwas.",
   "homeStreakBannerTitle": "Tagesserie",
-  "greetingWelcomeBack": "Hallo, willkommen zurück. Ich habe es vermisst, dich hier zu sehen."
+  "greetingWelcomeBack": "Hallo, willkommen zurück. Ich habe es vermisst, dich hier zu sehen.",
+  "journalToneFeedbackTitle": "Eine sanfte Reflexion",
+  "journalToneWellnessPrompt": "Möchtest du dir einen kleinen Moment für dich nehmen?",
+  "journalToneCalmAction": "Zur Ruhe kommen",
+  "journalToneNotNow": "Jetzt nicht"
 }

@@ -462,5 +462,9 @@
   "communityModerationHarmful": "Mantengamos este espacio amable: reformúlalo, por favor.",
   "communityModerationEmpty": "Escribe algo primero.",
   "homeStreakBannerTitle": "Racha diaria",
-  "greetingWelcomeBack": "Hola, bienvenida de nuevo. Echaba de menos verte por aquí."
+  "greetingWelcomeBack": "Hola, bienvenida de nuevo. Echaba de menos verte por aquí.",
+  "journalToneFeedbackTitle": "Una reflexión amable",
+  "journalToneWellnessPrompt": "¿Te gustaría regalarte un pequeño espacio?",
+  "journalToneCalmAction": "Recuperar la calma",
+  "journalToneNotNow": "Ahora no"
 }

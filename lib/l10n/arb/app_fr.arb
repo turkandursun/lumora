@@ -462,5 +462,9 @@
   "communityModerationHarmful": "Gardons cet espace bienveillant — reformule, s'il te plaît.",
   "communityModerationEmpty": "Écris d'abord quelque chose.",
   "homeStreakBannerTitle": "Série quotidienne",
-  "greetingWelcomeBack": "Bonjour, bon retour. Tu m'avais manqué ici."
+  "greetingWelcomeBack": "Bonjour, bon retour. Tu m'avais manqué ici.",
+  "journalToneFeedbackTitle": "Une réflexion bienveillante",
+  "journalToneWellnessPrompt": "Souhaites-tu t’accorder un petit moment ?",
+  "journalToneCalmAction": "Retrouver le calme",
+  "journalToneNotNow": "Pas maintenant"
 }

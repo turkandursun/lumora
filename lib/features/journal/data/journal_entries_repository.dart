@@ -42,7 +42,9 @@ class JournalEntriesRepository {
   }) async {
     final user = _client.auth.currentUser;
     final now = DateTime.now();
-    debugPrint('[JournalSave] about to insert content="$content"');
+    debugPrint(
+      '[JournalSave] about to insert contentLength=${content.runes.length}',
+    );
 
     String? photoUrl;
     if (user != null && (photoBytes != null || photoPath != null)) {

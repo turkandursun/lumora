@@ -462,5 +462,9 @@
   "communityModerationHarmful": "Burayı nazik tutalım — lütfen ifadeni yumuşat.",
   "communityModerationEmpty": "Önce bir şeyler yaz.",
   "homeStreakBannerTitle": "Günlük seri",
-  "greetingWelcomeBack": "Merhaba, hoş geldin. Seni burada görmeyi özlemiştim."
+  "greetingWelcomeBack": "Merhaba, hoş geldin. Seni burada görmeyi özlemiştim.",
+  "journalToneFeedbackTitle": "Nazik bir yansıma",
+  "journalToneWellnessPrompt": "Kendine küçük bir alan açmak ister misin?",
+  "journalToneCalmAction": "Sakinleş",
+  "journalToneNotNow": "Şimdi değil"
 }

@@ -1776,5 +1776,21 @@
     }
   },
   "homeStreakBannerTitle": "Daily streak",
-  "greetingWelcomeBack": "Hi, welcome back. I missed seeing you here."
+  "greetingWelcomeBack": "Hi, welcome back. I missed seeing you here.",
+  "journalToneFeedbackTitle": "A gentle reflection",
+  "@journalToneFeedbackTitle": {
+    "description": "Quiet heading above the optional AI journal-tone feedback."
+  },
+  "journalToneWellnessPrompt": "Would you like to make a little space for yourself?",
+  "@journalToneWellnessPrompt": {
+    "description": "Optional prompt above wellness actions in the journal-tone feedback sheet."
+  },
+  "journalToneCalmAction": "Find calm",
+  "@journalToneCalmAction": {
+    "description": "Action that opens the existing Calm screen from journal-tone feedback."
+  },
+  "journalToneNotNow": "Not now",
+  "@journalToneNotNow": {
+    "description": "Dismiss action on the journal-tone feedback sheet."
+  }
 }

@@ -19,14 +19,17 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/services/crisis_detection_service.dart';
+import '../../../../core/services/journal_tone_service.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
 
 import '../../../goals/domain/goal_template.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
+import '../controllers/journal_tone_feedback_controller.dart';
 import '../providers/journal_entries_provider.dart';
 import '../providers/journal_streak_provider.dart';
+import '../widgets/journal_tone_feedback_sheet.dart';
 
 /// Exact replica of the reference screenshot:
 /// Moon background · Date+Title card · Writing card · Voice card ·
@@ -53,6 +56,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
   Timer? _recordingTicker;
   String _preSpeechText = '';
   JournalEntryRow? _editingEntry;
+  late final JournalToneFeedbackController _toneFeedbackController;
+  bool _isSaving = false;
 
   /// Optionally attached photo for this entry (local file path or web bytes).
   String? _pickedPhotoPath;
@@ -69,6 +74,9 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     super.initState();
     _initSpeechToText();
     _entryController.addListener(_onTextChanged);
+    _toneFeedbackController = JournalToneFeedbackController(
+      JournalToneService(),
+    );
 
     // Waveform bars (15 bars)
     _barHeights =
@@ -109,6 +117,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     _entryController.dispose();
     _titleController.dispose();
     _recordingTicker?.cancel();
+    _toneFeedbackController.dispose();
     _stt.stop();
     _waveController.dispose();
     super.dispose();
@@ -271,19 +280,24 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
   }
 
   Future<void> _saveEntry() async {
+    if (_isSaving) return;
     final content = _entryController.text.trim();
     if (content.isEmpty) return;
 
-    if (CrisisDetectionService.containsCrisisLanguage(content)) {
-      CrisisSupportSheet.show(context);
+    final crisisSupportTriggered =
+        CrisisDetectionService.containsCrisisLanguage(content);
+    if (crisisSupportTriggered) {
+      unawaited(CrisisSupportSheet.show(context));
     }
 
     final title = _titleController.text.trim();
+    final locale = Localizations.localeOf(context).languageCode;
     final repo = ref.read(journalEntriesRepositoryProvider);
     final editing = _editingEntry;
+    setState(() => _isSaving = true);
 
-    // Persist before clearing the composer. Goal progress is awarded only
-    // after a successful first save, never when an existing entry is edited.
+    // Only journal persistence determines save success. Every streak, Goal and
+    // AI operation starts after this block behind its own error boundary.
     try {
       if (editing != null) {
         await repo.update(
@@ -300,16 +314,11 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
           photoPath: _pickedPhotoPath,
           photoBytes: _pickedPhotoBytes,
         );
-        await ref.read(journalStreakProvider.notifier).recordEntrySaved();
-        await ref.read(goalsRepositoryProvider).incrementByTemplateKey(
-              GoalTemplateKeys.journal,
-              1,
-            );
-        await ref.read(goalStreakProvider.notifier).refresh();
       }
     } catch (error, stackTrace) {
       debugPrint('[JournalSave] save failed: $error\n$stackTrace');
       if (!mounted) return;
+      setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -333,9 +342,82 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       _pickedPhotoPath = null;
       _pickedPhotoBytes = null;
       _editingEntry = null;
+      _isSaving = false;
     });
     FocusScope.of(context).unfocus();
     _showSealedToast(context);
+
+    if (editing == null) {
+      unawaited(_runSecondaryJournalEffects());
+      if (shouldAnalyzeSavedJournal(
+        isNewEntry: true,
+        crisisSupportTriggered: crisisSupportTriggered,
+      )) {
+        unawaited(_analyzeSavedJournal(content: content, locale: locale));
+      }
+    }
+  }
+
+  Future<void> _runSecondaryJournalEffects() async {
+    final journalStreak = ref.read(journalStreakProvider.notifier);
+    final goalsRepository = ref.read(goalsRepositoryProvider);
+    final goalStreak = ref.read(goalStreakProvider.notifier);
+
+    await runJournalSecondaryEffectSafely(
+      () async {
+        await journalStreak.recordEntrySaved();
+      },
+      onError: (error) => debugPrint(
+        '[JournalSave] journal streak update skipped: ${error.runtimeType}',
+      ),
+    );
+    await runJournalSecondaryEffectSafely(
+      () async {
+        await goalsRepository.incrementByTemplateKey(
+          GoalTemplateKeys.journal,
+          1,
+        );
+      },
+      onError: (error) => debugPrint(
+        '[JournalSave] journal goal progress skipped: ${error.runtimeType}',
+      ),
+    );
+    await runJournalSecondaryEffectSafely(
+      goalStreak.refresh,
+      onError: (error) => debugPrint(
+        '[JournalSave] goal streak refresh skipped: ${error.runtimeType}',
+      ),
+    );
+  }
+
+  Future<void> _analyzeSavedJournal({
+    required String content,
+    required String locale,
+  }) async {
+    try {
+      await _toneFeedbackController.analyzeSavedJournal(
+        text: content,
+        locale: locale,
+        canPresent: () =>
+            mounted && ModalRoute.of(context)?.isCurrent == true,
+        onAnalysisReady: (analysis) async {
+          if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+          final isDark =
+              ref.read(astraThemeProvider) == AstraThemeMode.dark;
+          await JournalToneFeedbackSheet.showAndNavigate(
+            context: context,
+            analysis: analysis,
+            isDark: isDark,
+          );
+        },
+      );
+    } catch (error) {
+      // The controller already isolates expected failures; this final boundary
+      // guarantees no future implementation can leak into journal saving.
+      debugPrint(
+        '[JournalTone] optional feedback skipped: ${error.runtimeType}',
+      );
+    }
   }
 
   /// Small "Günlüğü Mühürle" confirmation toast, shown briefly after a
@@ -816,6 +898,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                       valueListenable: _entryController,
                       builder: (ctx, val, _) {
                         final enabled = val.text.trim().isNotEmpty &&
+                            !_isSaving &&
                             !_isListeningAndRecording;
                         return _SealButton(
                           isDark: isDark,
