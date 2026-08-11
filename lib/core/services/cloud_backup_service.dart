@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -36,10 +37,14 @@ class CloudBackupService {
     'quotes',
     'quote_favorites',
     'reminders',
+    'goals',
   };
 
   static const _dedicatedSyncPrefsKeys = <String>{
     'reminders_seeded',
+    'goals_seeded',
+    'goals_streak_count',
+    'goals_streak_last_active_date',
   };
 
   /// No longer exported, but still cleared between accounts and accepted from
@@ -61,13 +66,21 @@ class CloudBackupService {
     'mood_log_v1',
     'period_days_v1',
     'period_symptoms_v1',
-    'goals_streak_count',
-    'goals_streak_last_active_date',
     'journal_streak_count',
     'journal_streak_last_entry_date',
     'onboarding_completed',
-    'goals_seeded',
   ];
+
+  /// Test seam shared by export and restore guards. Goal streak values use
+  /// user-suffixed device-local keys and are intentionally not cloud-backed
+  /// in Level 1.
+  @visibleForTesting
+  static bool isDedicatedSyncTable(String table) =>
+      _dedicatedSyncTables.contains(table);
+
+  @visibleForTesting
+  static bool isDedicatedSyncPreference(String key) =>
+      _dedicatedSyncPrefsKeys.contains(key);
 
   String? get _userId => _client.auth.currentUser?.id;
 
@@ -110,7 +123,7 @@ class CloudBackupService {
         .get();
     final names = rows.map((r) => r.data['name'] as String);
     return (forBackup
-            ? names.where((name) => !_dedicatedSyncTables.contains(name))
+            ? names.where((name) => !isDedicatedSyncTable(name))
             : names)
         .toList();
   }
@@ -170,7 +183,7 @@ class CloudBackupService {
         final meta = entry.value;
         if (meta is! Map) continue;
         final key = entry.key.toString();
-        if (_dedicatedSyncPrefsKeys.contains(key)) continue;
+        if (isDedicatedSyncPreference(key)) continue;
         final t = meta['t'];
         final v = meta['v'];
         switch (t) {
@@ -253,11 +266,12 @@ class CloudBackupService {
     }
   }
 
-  /// Wipes every local store (Drift tables + the whitelisted prefs) so no
-  /// data leaks between accounts sharing the same device.
+  /// Wipes generic local stores between accounts. Dedicated user-scoped
+  /// caches (including goals) stay intact and are filtered by their own
+  /// repositories, preserving offline pending work for the original account.
   Future<void> _clearLocalData() async {
     for (final table in await _tableNames()) {
-      if (table == 'quotes') continue;
+      if (isDedicatedSyncTable(table)) continue;
       await _db.customStatement('DELETE FROM "$table"');
     }
     final prefs = await SharedPreferences.getInstance();

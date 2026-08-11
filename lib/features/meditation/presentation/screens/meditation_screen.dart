@@ -8,7 +8,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../theme/astra_screen_kit.dart';
-import '../../../goals/data/goals_repository.dart';
+import '../../../goals/domain/goal_template.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 
 const _rainAsset = 'audio/rain_loop.mp3';
@@ -158,6 +158,7 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
   Timer? _fadeTimer;
 
   _Stage _stage = _Stage.setup;
+  bool _completionHandled = false;
   _Focus _focus = _Focus.calm;
   int _minutes = 5;
   bool _soundOn = true;
@@ -265,9 +266,22 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
       // Substrings that indicate a male voice. Note: 'male' is a substring of
       // 'female', so any female match cancels male scoring below.
       const maleHints = [
-        'male', '#male',
-        'daniel', 'alex', 'fred', 'aaron', 'arthur', 'david', 'mark',
-        'oliver', 'george', 'ryan', 'thomas', 'matthew', 'tolga', 'erkek',
+        'male',
+        '#male',
+        'daniel',
+        'alex',
+        'fred',
+        'aaron',
+        'arthur',
+        'david',
+        'mark',
+        'oliver',
+        'george',
+        'ryan',
+        'thomas',
+        'matthew',
+        'tolga',
+        'erkek',
         'google uk english male',
       ];
 
@@ -289,7 +303,9 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
         if (isFemale) score += 100;
         if (isMale) score -= 100;
         if (ll == exactLocale) score += 3;
-        if (n.contains('google') || n.contains('natural') || n.contains('neural')) {
+        if (n.contains('google') ||
+            n.contains('natural') ||
+            n.contains('neural')) {
           score += 2; // richer network/neural voices sound warmer
         }
 
@@ -349,6 +365,7 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     await _configureTts(isTr);
 
     setState(() {
+      _completionHandled = false;
       _stage = _Stage.running;
       _total = _minutes * 60;
       _remaining = _total;
@@ -368,7 +385,7 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       if (_remaining <= 1) {
-        _finish();
+        unawaited(_finish());
         return;
       }
       setState(() => _remaining--);
@@ -382,17 +399,20 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     });
   }
 
-  void _finish() {
+  Future<void> _finish() async {
+    if (_completionHandled) return;
+    _completionHandled = true;
     _timer?.cancel();
     _stopAmbient();
     _safe(() => _tts.stop());
     if (!mounted) return;
     setState(() => _stage = _Stage.done);
     // Auto-advance the "meditation" goal by the minutes just completed.
-    ref
-        .read(goalsRepositoryProvider)
-        .incrementByIconKey(DefaultGoalIconKeys.meditation, _minutes);
-    ref.read(goalStreakProvider.notifier).refresh();
+    await ref.read(goalsRepositoryProvider).incrementByTemplateKey(
+          GoalTemplateKeys.meditation,
+          _minutes,
+        );
+    await ref.read(goalStreakProvider.notifier).refresh();
   }
 
   void _stop() {
@@ -514,7 +534,8 @@ class _SetupView extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 12),
-          Text(isTr ? 'Meditasyon' : 'Meditation', style: AstraKit.heading1(isDark, fontSize: 26)),
+          Text(isTr ? 'Meditasyon' : 'Meditation',
+              style: AstraKit.heading1(isDark, fontSize: 26)),
           const SizedBox(height: 8),
           Text(
             isTr ? 'Bugün neye ihtiyacın var?' : 'What do you need today?',
@@ -539,7 +560,8 @@ class _SetupView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 26),
-          Text(isTr ? 'Ne kadar süre?' : 'How long?', style: AstraKit.mutedText(isDark, fontSize: 15)),
+          Text(isTr ? 'Ne kadar süre?' : 'How long?',
+              style: AstraKit.mutedText(isDark, fontSize: 15)),
           const SizedBox(height: 14),
           Wrap(
             spacing: 12,
@@ -566,7 +588,9 @@ class _SetupView extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _ToggleRow(
-            icon: voiceOn ? Icons.record_voice_over_rounded : Icons.voice_over_off_rounded,
+            icon: voiceOn
+                ? Icons.record_voice_over_rounded
+                : Icons.voice_over_off_rounded,
             label: isTr ? 'Sesli rehber' : 'Voice guide',
             value: voiceOn,
             isDark: isDark,
@@ -574,7 +598,12 @@ class _SetupView extends StatelessWidget {
             onChanged: onToggleVoice,
           ),
           const SizedBox(height: 28),
-          AstraGoldButton(isDark: isDark, label: isTr ? 'Başla' : 'Begin', icon: Icons.play_arrow_rounded, expand: false, onTap: onStart),
+          AstraGoldButton(
+              isDark: isDark,
+              label: isTr ? 'Başla' : 'Begin',
+              icon: Icons.play_arrow_rounded,
+              expand: false,
+              onTap: onStart),
           const SizedBox(height: 16),
         ],
       ),
@@ -614,7 +643,9 @@ class _FocusChip extends StatelessWidget {
             color: selected
                 ? primary.withValues(alpha: 0.85)
                 : (isDark ? const Color(0x33231845) : const Color(0x99FBF1DD)),
-            border: Border.all(color: selected ? primary : primary.withValues(alpha: 0.25), width: 1.2),
+            border: Border.all(
+                color: selected ? primary : primary.withValues(alpha: 0.25),
+                width: 1.2),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -643,7 +674,12 @@ class _FocusChip extends StatelessWidget {
 }
 
 class _MinutePill extends StatelessWidget {
-  const _MinutePill({required this.label, required this.selected, required this.isDark, required this.primary, required this.onTap});
+  const _MinutePill(
+      {required this.label,
+      required this.selected,
+      required this.isDark,
+      required this.primary,
+      required this.onTap});
 
   final String label;
   final bool selected;
@@ -662,12 +698,19 @@ class _MinutePill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: selected ? primary.withValues(alpha: 0.85) : (isDark ? const Color(0x33231845) : const Color(0x99FBF1DD)),
-            border: Border.all(color: selected ? primary : primary.withValues(alpha: 0.25), width: 1.2),
+            color: selected
+                ? primary.withValues(alpha: 0.85)
+                : (isDark ? const Color(0x33231845) : const Color(0x99FBF1DD)),
+            border: Border.all(
+                color: selected ? primary : primary.withValues(alpha: 0.25),
+                width: 1.2),
           ),
           child: Text(
             label,
-            style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700, color: selected ? const Color(0xFF1A0F00) : null),
+            style: AstraKit.body(isDark,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: selected ? const Color(0xFF1A0F00) : null),
           ),
         ),
       ),
@@ -706,7 +749,10 @@ class _ToggleRow extends StatelessWidget {
         children: [
           Icon(icon, color: primary, size: 18),
           const SizedBox(width: 10),
-          Expanded(child: Text(label, style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w600))),
+          Expanded(
+              child: Text(label,
+                  style: AstraKit.body(isDark,
+                      fontSize: 14, fontWeight: FontWeight.w600))),
           Switch(value: value, activeThumbColor: primary, onChanged: onChanged),
         ],
       ),
@@ -744,7 +790,9 @@ class _RunningView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final breathLabel = breathIn ? (isTr ? 'Nefes al' : 'Breathe in') : (isTr ? 'Ver' : 'Breathe out');
+    final breathLabel = breathIn
+        ? (isTr ? 'Nefes al' : 'Breathe in')
+        : (isTr ? 'Ver' : 'Breathe out');
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -757,7 +805,8 @@ class _RunningView extends StatelessWidget {
             child: Text(
               affirmation,
               textAlign: TextAlign.center,
-              style: AstraKit.body(isDark, fontSize: 18, fontWeight: FontWeight.w600, height: 1.4),
+              style: AstraKit.body(isDark,
+                  fontSize: 18, fontWeight: FontWeight.w600, height: 1.4),
             ),
           ),
         ),
@@ -780,7 +829,8 @@ class _RunningView extends StatelessWidget {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        (isDark ? Colors.white : primary).withValues(alpha: 0.92),
+                        (isDark ? Colors.white : primary)
+                            .withValues(alpha: 0.92),
                         primary.withValues(alpha: 0.45),
                         primary.withValues(alpha: 0.0),
                       ],
@@ -818,7 +868,9 @@ class _RunningView extends StatelessWidget {
         TextButton.icon(
           onPressed: onStop,
           icon: Icon(Icons.stop_rounded, color: AstraKit.muted(isDark)),
-          label: Text(isTr ? 'Bitir' : 'End', style: AstraKit.mutedText(isDark, fontSize: 14, fontWeight: FontWeight.w700)),
+          label: Text(isTr ? 'Bitir' : 'End',
+              style: AstraKit.mutedText(isDark,
+                  fontSize: 14, fontWeight: FontWeight.w700)),
         ),
       ],
     );
@@ -826,7 +878,12 @@ class _RunningView extends StatelessWidget {
 }
 
 class _DoneView extends StatelessWidget {
-  const _DoneView({super.key, required this.isTr, required this.isDark, required this.primary, required this.onDone});
+  const _DoneView(
+      {super.key,
+      required this.isTr,
+      required this.isDark,
+      required this.primary,
+      required this.onDone});
 
   final bool isTr;
   final bool isDark;
@@ -840,7 +897,8 @@ class _DoneView extends StatelessWidget {
       children: [
         Icon(Icons.self_improvement_rounded, color: primary, size: 60),
         const SizedBox(height: 18),
-        Text(isTr ? 'Tamamlandı 🌸' : 'Complete 🌸', style: AstraKit.heading1(isDark, fontSize: 24)),
+        Text(isTr ? 'Tamamlandı 🌸' : 'Complete 🌸',
+            style: AstraKit.heading1(isDark, fontSize: 24)),
         const SizedBox(height: 10),
         Text(
           isTr
@@ -850,7 +908,12 @@ class _DoneView extends StatelessWidget {
           style: AstraKit.mutedText(isDark, fontSize: 14.5),
         ),
         const SizedBox(height: 30),
-        AstraGoldButton(isDark: isDark, label: isTr ? 'Bitir' : 'Done', icon: Icons.check_rounded, expand: false, onTap: onDone),
+        AstraGoldButton(
+            isDark: isDark,
+            label: isTr ? 'Bitir' : 'Done',
+            icon: Icons.check_rounded,
+            expand: false,
+            onTap: onDone),
       ],
     );
   }

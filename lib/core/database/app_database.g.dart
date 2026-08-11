@@ -621,6 +621,47 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
   late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
       'supabase_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _templateKeyMeta =
+      const VerificationMeta('templateKey');
+  @override
+  late final GeneratedColumn<String> templateKey = GeneratedColumn<String>(
+      'template_key', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('active'));
+  static const VerificationMeta _syncStateMeta =
+      const VerificationMeta('syncState');
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+      'sync_state', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('synced'));
+  static const VerificationMeta _changedAtMeta =
+      const VerificationMeta('changedAt');
+  @override
+  late final GeneratedColumn<DateTime> changedAt = GeneratedColumn<DateTime>(
+      'changed_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      clientDefault: () => DateTime.now().toUtc());
+  static const VerificationMeta _cloudUpdatedAtMeta =
+      const VerificationMeta('cloudUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> cloudUpdatedAt =
+      GeneratedColumn<DateTime>('cloud_updated_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _lastSyncedAtMeta =
+      const VerificationMeta('lastSyncedAt');
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+      'last_synced_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -633,7 +674,13 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
         frequency,
         periodStart,
         userId,
-        supabaseId
+        supabaseId,
+        templateKey,
+        status,
+        syncState,
+        changedAt,
+        cloudUpdatedAt,
+        lastSyncedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -694,6 +741,36 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
           supabaseId.isAcceptableOrUnknown(
               data['supabase_id']!, _supabaseIdMeta));
     }
+    if (data.containsKey('template_key')) {
+      context.handle(
+          _templateKeyMeta,
+          templateKey.isAcceptableOrUnknown(
+              data['template_key']!, _templateKeyMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    if (data.containsKey('sync_state')) {
+      context.handle(_syncStateMeta,
+          syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta));
+    }
+    if (data.containsKey('changed_at')) {
+      context.handle(_changedAtMeta,
+          changedAt.isAcceptableOrUnknown(data['changed_at']!, _changedAtMeta));
+    }
+    if (data.containsKey('cloud_updated_at')) {
+      context.handle(
+          _cloudUpdatedAtMeta,
+          cloudUpdatedAt.isAcceptableOrUnknown(
+              data['cloud_updated_at']!, _cloudUpdatedAtMeta));
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+          _lastSyncedAtMeta,
+          lastSyncedAt.isAcceptableOrUnknown(
+              data['last_synced_at']!, _lastSyncedAtMeta));
+    }
     return context;
   }
 
@@ -726,6 +803,18 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
           .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
       supabaseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
+      templateKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}template_key']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      syncState: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_state'])!,
+      changedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}changed_at'])!,
+      cloudUpdatedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}cloud_updated_at']),
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}last_synced_at']),
     );
   }
 
@@ -762,6 +851,24 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
 
   /// Remote primary key in Supabase `goals` table.
   final String? supabaseId;
+
+  /// Stable catalogue key for suggested goals. Custom goals keep this null.
+  final String? templateKey;
+
+  /// Whether the goal is currently visible or retained as history.
+  final String status;
+
+  /// Local-first synchronization state (`synced` or `pending`).
+  final String syncState;
+
+  /// Last local mutation time, generated in UTC for new local rows.
+  final DateTime changedAt;
+
+  /// Last `updated_at` value observed from Supabase.
+  final DateTime? cloudUpdatedAt;
+
+  /// Last time this local row completed a successful cloud synchronization.
+  final DateTime? lastSyncedAt;
   const GoalRow(
       {required this.id,
       required this.title,
@@ -773,7 +880,13 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       required this.frequency,
       required this.periodStart,
       this.userId,
-      this.supabaseId});
+      this.supabaseId,
+      this.templateKey,
+      required this.status,
+      required this.syncState,
+      required this.changedAt,
+      this.cloudUpdatedAt,
+      this.lastSyncedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -799,6 +912,18 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
     if (!nullToAbsent || supabaseId != null) {
       map['supabase_id'] = Variable<String>(supabaseId);
     }
+    if (!nullToAbsent || templateKey != null) {
+      map['template_key'] = Variable<String>(templateKey);
+    }
+    map['status'] = Variable<String>(status);
+    map['sync_state'] = Variable<String>(syncState);
+    map['changed_at'] = Variable<DateTime>(changedAt);
+    if (!nullToAbsent || cloudUpdatedAt != null) {
+      map['cloud_updated_at'] = Variable<DateTime>(cloudUpdatedAt);
+    }
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
     return map;
   }
 
@@ -820,6 +945,18 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       supabaseId: supabaseId == null && nullToAbsent
           ? const Value.absent()
           : Value(supabaseId),
+      templateKey: templateKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(templateKey),
+      status: Value(status),
+      syncState: Value(syncState),
+      changedAt: Value(changedAt),
+      cloudUpdatedAt: cloudUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cloudUpdatedAt),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
     );
   }
 
@@ -840,6 +977,12 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       periodStart: serializer.fromJson<DateTime>(json['periodStart']),
       userId: serializer.fromJson<String?>(json['userId']),
       supabaseId: serializer.fromJson<String?>(json['supabaseId']),
+      templateKey: serializer.fromJson<String?>(json['templateKey']),
+      status: serializer.fromJson<String>(json['status']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      changedAt: serializer.fromJson<DateTime>(json['changedAt']),
+      cloudUpdatedAt: serializer.fromJson<DateTime?>(json['cloudUpdatedAt']),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
     );
   }
   @override
@@ -859,6 +1002,12 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       'periodStart': serializer.toJson<DateTime>(periodStart),
       'userId': serializer.toJson<String?>(userId),
       'supabaseId': serializer.toJson<String?>(supabaseId),
+      'templateKey': serializer.toJson<String?>(templateKey),
+      'status': serializer.toJson<String>(status),
+      'syncState': serializer.toJson<String>(syncState),
+      'changedAt': serializer.toJson<DateTime>(changedAt),
+      'cloudUpdatedAt': serializer.toJson<DateTime?>(cloudUpdatedAt),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
     };
   }
 
@@ -873,7 +1022,13 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
           GoalFrequency? frequency,
           DateTime? periodStart,
           Value<String?> userId = const Value.absent(),
-          Value<String?> supabaseId = const Value.absent()}) =>
+          Value<String?> supabaseId = const Value.absent(),
+          Value<String?> templateKey = const Value.absent(),
+          String? status,
+          String? syncState,
+          DateTime? changedAt,
+          Value<DateTime?> cloudUpdatedAt = const Value.absent(),
+          Value<DateTime?> lastSyncedAt = const Value.absent()}) =>
       GoalRow(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -888,6 +1043,14 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
         periodStart: periodStart ?? this.periodStart,
         userId: userId.present ? userId.value : this.userId,
         supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
+        templateKey: templateKey.present ? templateKey.value : this.templateKey,
+        status: status ?? this.status,
+        syncState: syncState ?? this.syncState,
+        changedAt: changedAt ?? this.changedAt,
+        cloudUpdatedAt:
+            cloudUpdatedAt.present ? cloudUpdatedAt.value : this.cloudUpdatedAt,
+        lastSyncedAt:
+            lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
       );
   GoalRow copyWithCompanion(GoalsCompanion data) {
     return GoalRow(
@@ -906,6 +1069,17 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       userId: data.userId.present ? data.userId.value : this.userId,
       supabaseId:
           data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+      templateKey:
+          data.templateKey.present ? data.templateKey.value : this.templateKey,
+      status: data.status.present ? data.status.value : this.status,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      changedAt: data.changedAt.present ? data.changedAt.value : this.changedAt,
+      cloudUpdatedAt: data.cloudUpdatedAt.present
+          ? data.cloudUpdatedAt.value
+          : this.cloudUpdatedAt,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
     );
   }
 
@@ -922,14 +1096,36 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
           ..write('frequency: $frequency, ')
           ..write('periodStart: $periodStart, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('templateKey: $templateKey, ')
+          ..write('status: $status, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt, ')
+          ..write('cloudUpdatedAt: $cloudUpdatedAt, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, title, iconKey, unit, customUnitLabel,
-      target, progress, frequency, periodStart, userId, supabaseId);
+  int get hashCode => Object.hash(
+      id,
+      title,
+      iconKey,
+      unit,
+      customUnitLabel,
+      target,
+      progress,
+      frequency,
+      periodStart,
+      userId,
+      supabaseId,
+      templateKey,
+      status,
+      syncState,
+      changedAt,
+      cloudUpdatedAt,
+      lastSyncedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -944,7 +1140,13 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
           other.frequency == this.frequency &&
           other.periodStart == this.periodStart &&
           other.userId == this.userId &&
-          other.supabaseId == this.supabaseId);
+          other.supabaseId == this.supabaseId &&
+          other.templateKey == this.templateKey &&
+          other.status == this.status &&
+          other.syncState == this.syncState &&
+          other.changedAt == this.changedAt &&
+          other.cloudUpdatedAt == this.cloudUpdatedAt &&
+          other.lastSyncedAt == this.lastSyncedAt);
 }
 
 class GoalsCompanion extends UpdateCompanion<GoalRow> {
@@ -959,6 +1161,12 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
   final Value<DateTime> periodStart;
   final Value<String?> userId;
   final Value<String?> supabaseId;
+  final Value<String?> templateKey;
+  final Value<String> status;
+  final Value<String> syncState;
+  final Value<DateTime> changedAt;
+  final Value<DateTime?> cloudUpdatedAt;
+  final Value<DateTime?> lastSyncedAt;
   const GoalsCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -971,6 +1179,12 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
     this.periodStart = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.templateKey = const Value.absent(),
+    this.status = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
+    this.cloudUpdatedAt = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
   });
   GoalsCompanion.insert({
     this.id = const Value.absent(),
@@ -984,6 +1198,12 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
     required DateTime periodStart,
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.templateKey = const Value.absent(),
+    this.status = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
+    this.cloudUpdatedAt = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
   })  : title = Value(title),
         iconKey = Value(iconKey),
         unit = Value(unit),
@@ -1002,6 +1222,12 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
     Expression<DateTime>? periodStart,
     Expression<String>? userId,
     Expression<String>? supabaseId,
+    Expression<String>? templateKey,
+    Expression<String>? status,
+    Expression<String>? syncState,
+    Expression<DateTime>? changedAt,
+    Expression<DateTime>? cloudUpdatedAt,
+    Expression<DateTime>? lastSyncedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1015,6 +1241,12 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
       if (periodStart != null) 'period_start': periodStart,
       if (userId != null) 'user_id': userId,
       if (supabaseId != null) 'supabase_id': supabaseId,
+      if (templateKey != null) 'template_key': templateKey,
+      if (status != null) 'status': status,
+      if (syncState != null) 'sync_state': syncState,
+      if (changedAt != null) 'changed_at': changedAt,
+      if (cloudUpdatedAt != null) 'cloud_updated_at': cloudUpdatedAt,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
     });
   }
 
@@ -1029,7 +1261,13 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
       Value<GoalFrequency>? frequency,
       Value<DateTime>? periodStart,
       Value<String?>? userId,
-      Value<String?>? supabaseId}) {
+      Value<String?>? supabaseId,
+      Value<String?>? templateKey,
+      Value<String>? status,
+      Value<String>? syncState,
+      Value<DateTime>? changedAt,
+      Value<DateTime?>? cloudUpdatedAt,
+      Value<DateTime?>? lastSyncedAt}) {
     return GoalsCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -1042,6 +1280,12 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
       periodStart: periodStart ?? this.periodStart,
       userId: userId ?? this.userId,
       supabaseId: supabaseId ?? this.supabaseId,
+      templateKey: templateKey ?? this.templateKey,
+      status: status ?? this.status,
+      syncState: syncState ?? this.syncState,
+      changedAt: changedAt ?? this.changedAt,
+      cloudUpdatedAt: cloudUpdatedAt ?? this.cloudUpdatedAt,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
     );
   }
 
@@ -1083,6 +1327,24 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
     if (supabaseId.present) {
       map['supabase_id'] = Variable<String>(supabaseId.value);
     }
+    if (templateKey.present) {
+      map['template_key'] = Variable<String>(templateKey.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (changedAt.present) {
+      map['changed_at'] = Variable<DateTime>(changedAt.value);
+    }
+    if (cloudUpdatedAt.present) {
+      map['cloud_updated_at'] = Variable<DateTime>(cloudUpdatedAt.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
     return map;
   }
 
@@ -1099,7 +1361,13 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
           ..write('frequency: $frequency, ')
           ..write('periodStart: $periodStart, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('templateKey: $templateKey, ')
+          ..write('status: $status, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt, ')
+          ..write('cloudUpdatedAt: $cloudUpdatedAt, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
           ..write(')'))
         .toString();
   }
@@ -4415,6 +4683,12 @@ typedef $$GoalsTableCreateCompanionBuilder = GoalsCompanion Function({
   required DateTime periodStart,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String?> templateKey,
+  Value<String> status,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
+  Value<DateTime?> cloudUpdatedAt,
+  Value<DateTime?> lastSyncedAt,
 });
 typedef $$GoalsTableUpdateCompanionBuilder = GoalsCompanion Function({
   Value<int> id,
@@ -4428,6 +4702,12 @@ typedef $$GoalsTableUpdateCompanionBuilder = GoalsCompanion Function({
   Value<DateTime> periodStart,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String?> templateKey,
+  Value<String> status,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
+  Value<DateTime?> cloudUpdatedAt,
+  Value<DateTime?> lastSyncedAt,
 });
 
 class $$GoalsTableFilterComposer extends Composer<_$AppDatabase, $GoalsTable> {
@@ -4475,6 +4755,25 @@ class $$GoalsTableFilterComposer extends Composer<_$AppDatabase, $GoalsTable> {
 
   ColumnFilters<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get templateKey => $composableBuilder(
+      column: $table.templateKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get cloudUpdatedAt => $composableBuilder(
+      column: $table.cloudUpdatedAt,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+      column: $table.lastSyncedAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$GoalsTableOrderingComposer
@@ -4519,6 +4818,26 @@ class $$GoalsTableOrderingComposer
 
   ColumnOrderings<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get templateKey => $composableBuilder(
+      column: $table.templateKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get cloudUpdatedAt => $composableBuilder(
+      column: $table.cloudUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+      column: $table.lastSyncedAt,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$GoalsTableAnnotationComposer
@@ -4562,6 +4881,24 @@ class $$GoalsTableAnnotationComposer
 
   GeneratedColumn<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => column);
+
+  GeneratedColumn<String> get templateKey => $composableBuilder(
+      column: $table.templateKey, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get changedAt =>
+      $composableBuilder(column: $table.changedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cloudUpdatedAt => $composableBuilder(
+      column: $table.cloudUpdatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+      column: $table.lastSyncedAt, builder: (column) => column);
 }
 
 class $$GoalsTableTableManager extends RootTableManager<
@@ -4598,6 +4935,12 @@ class $$GoalsTableTableManager extends RootTableManager<
             Value<DateTime> periodStart = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String?> templateKey = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
+            Value<DateTime?> cloudUpdatedAt = const Value.absent(),
+            Value<DateTime?> lastSyncedAt = const Value.absent(),
           }) =>
               GoalsCompanion(
             id: id,
@@ -4611,6 +4954,12 @@ class $$GoalsTableTableManager extends RootTableManager<
             periodStart: periodStart,
             userId: userId,
             supabaseId: supabaseId,
+            templateKey: templateKey,
+            status: status,
+            syncState: syncState,
+            changedAt: changedAt,
+            cloudUpdatedAt: cloudUpdatedAt,
+            lastSyncedAt: lastSyncedAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -4624,6 +4973,12 @@ class $$GoalsTableTableManager extends RootTableManager<
             required DateTime periodStart,
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String?> templateKey = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
+            Value<DateTime?> cloudUpdatedAt = const Value.absent(),
+            Value<DateTime?> lastSyncedAt = const Value.absent(),
           }) =>
               GoalsCompanion.insert(
             id: id,
@@ -4637,6 +4992,12 @@ class $$GoalsTableTableManager extends RootTableManager<
             periodStart: periodStart,
             userId: userId,
             supabaseId: supabaseId,
+            templateKey: templateKey,
+            status: status,
+            syncState: syncState,
+            changedAt: changedAt,
+            cloudUpdatedAt: cloudUpdatedAt,
+            lastSyncedAt: lastSyncedAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

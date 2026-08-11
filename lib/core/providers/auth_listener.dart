@@ -29,6 +29,7 @@ void invalidateUserProviders(WidgetRef ref) {
   ref.invalidate(moodLogProvider);
   ref.invalidate(goalsStreamProvider);
   ref.invalidate(goalStreakProvider);
+  ref.invalidate(goalsRepositoryProvider);
   ref.invalidate(dreamsStreamProvider);
   ref.invalidate(periodDaysProvider);
   ref.invalidate(symptomsProvider);
@@ -45,7 +46,10 @@ void invalidateUserProviders(WidgetRef ref) {
 Future<void> clearLocalUserData(WidgetRef ref) async {
   try {
     await ref.read(journalEntriesRepositoryProvider).deleteAll();
-    await ref.read(goalsRepositoryProvider).deleteAll();
+    // Goal rows are user-scoped and may contain offline pending operations.
+    // Keep them across logout so they can resume when the same user returns;
+    // goalsStreamProvider is invalidated and the next account only watches its
+    // own user_id rows.
     await ref.read(dreamsRepositoryProvider).deleteAll();
     await ref.read(activityRepositoryProvider).deleteAll();
     await ref.read(remindersRepositoryProvider).deleteAll();

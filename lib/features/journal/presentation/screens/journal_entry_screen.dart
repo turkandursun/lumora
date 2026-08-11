@@ -23,9 +23,10 @@ import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
 
-import '../../../goals/data/goals_repository.dart';
+import '../../../goals/domain/goal_template.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 import '../providers/journal_entries_provider.dart';
+import '../providers/journal_streak_provider.dart';
 
 /// Exact replica of the reference screenshot:
 /// Moon background · Date+Title card · Writing card · Voice card ·
@@ -70,7 +71,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     _entryController.addListener(_onTextChanged);
 
     // Waveform bars (15 bars)
-    _barHeights = List.generate(15, (i) => 0.2 + math.Random().nextDouble() * 0.5);
+    _barHeights =
+        List.generate(15, (i) => 0.2 + math.Random().nextDouble() * 0.5);
     _waveController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -261,9 +263,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       final isTr = Localizations.localeOf(context).languageCode == 'tr';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isTr
-              ? 'Fotoğraf seçilemedi.'
-              : 'Could not pick a photo.'),
+          content:
+              Text(isTr ? 'Fotoğraf seçilemedi.' : 'Could not pick a photo.'),
         ),
       );
     }
@@ -281,13 +282,14 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     final repo = ref.read(journalEntriesRepositoryProvider);
     final editing = _editingEntry;
 
-    // Actually persist the entry (locally + cloud). Without this the write area
-    // would only show the "sealed" toast and clear itself, losing the text.
+    // Persist before clearing the composer. Goal progress is awarded only
+    // after a successful first save, never when an existing entry is edited.
     try {
       if (editing != null) {
         await repo.update(
           editing.id,
           content: content,
+          audioPath: editing.audioPath,
           photoUrl: editing.photoUrl,
           supabaseId: editing.supabaseId,
         );
@@ -298,25 +300,32 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
           photoPath: _pickedPhotoPath,
           photoBytes: _pickedPhotoBytes,
         );
-        // Auto-advance the journaling goal + streak on a new entry.
-        await ref
-            .read(goalsRepositoryProvider)
-            .incrementByIconKey(DefaultGoalIconKeys.journal, 10);
-        ref.read(goalStreakProvider.notifier).refresh();
+        await ref.read(journalStreakProvider.notifier).recordEntrySaved();
+        await ref.read(goalsRepositoryProvider).incrementByTemplateKey(
+              GoalTemplateKeys.journal,
+              1,
+            );
+        await ref.read(goalStreakProvider.notifier).refresh();
       }
-    } catch (e) {
-      debugPrint('[JournalSave] failed: $e');
+    } catch (error, stackTrace) {
+      debugPrint('[JournalSave] save failed: $error\n$stackTrace');
       if (!mounted) return;
-      final isTr = Localizations.localeOf(context).languageCode == 'tr';
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
           content: Text(
-              isTr ? 'Kaydedilemedi, tekrar dene' : 'Could not save, try again'),
-        ));
+            Localizations.localeOf(context).languageCode == 'tr'
+                ? 'Günlük kaydedilemedi. Lütfen tekrar dene.'
+                : 'The journal could not be saved. Please try again.',
+          ),
+        ),
+      );
       return;
     }
 
+    if (editing != null) {
+      // Edits persist but deliberately do not generate a second Goal event.
+      debugPrint('[JournalSave] existing entry updated without goal progress');
+    }
     if (!mounted) return;
     _entryController.clear();
     _titleController.clear();
@@ -382,7 +391,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     final primary = AstraKit.primary(isDark);
 
     final localeStr = Localizations.localeOf(context).toString();
-    final dateStr = DateFormat('d MMMM yyyy, EEEE', localeStr).format(_selectedDate);
+    final dateStr =
+        DateFormat('d MMMM yyyy, EEEE', localeStr).format(_selectedDate);
 
     return Scaffold(
       body: _MountainBackground(
@@ -492,7 +502,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                               Container(
                                 width: 1,
                                 height: 44,
-                                margin: const EdgeInsets.symmetric(horizontal: 12),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 12),
                                 color: primary.withValues(alpha: 0.25),
                               ),
 
@@ -618,7 +629,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                   ),
                                   const SizedBox(width: 4),
                                   Icon(Icons.auto_awesome,
-                                      size: 13, color: primary.withValues(alpha: 0.7)),
+                                      size: 13,
+                                      color: primary.withValues(alpha: 0.7)),
                                 ],
                               ),
                             ],
@@ -652,7 +664,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.auto_awesome, size: 14, color: primary),
+                                  Icon(Icons.auto_awesome,
+                                      size: 14, color: primary),
                                   const SizedBox(width: 6),
                                   Text(
                                     isTr ? 'Sesle yaz' : 'Voice type',
@@ -701,7 +714,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                         ? _stopVoiceSession
                                         : _startVoiceSession,
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 300),
+                                      duration:
+                                          const Duration(milliseconds: 300),
                                       width: 56,
                                       height: 56,
                                       decoration: BoxDecoration(
@@ -713,8 +727,10 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                                   Colors.redAccent,
                                                 ]
                                               : [
-                                                  primary.withValues(alpha: 0.95),
-                                                  primary.withValues(alpha: 0.6),
+                                                  primary.withValues(
+                                                      alpha: 0.95),
+                                                  primary.withValues(
+                                                      alpha: 0.6),
                                                 ],
                                         ),
                                         boxShadow: [
@@ -780,7 +796,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                   ),
                 ),
                 padding: EdgeInsets.fromLTRB(
-                  16, 12, 16, MediaQuery.of(context).padding.bottom + 16),
+                    16, 12, 16, MediaQuery.of(context).padding.bottom + 16),
                 child: Column(
                   children: [
                     // Add-photo chip — glass background so it reads clearly
@@ -799,8 +815,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                     ValueListenableBuilder<TextEditingValue>(
                       valueListenable: _entryController,
                       builder: (ctx, val, _) {
-                        final enabled =
-                            val.text.trim().isNotEmpty && !_isListeningAndRecording;
+                        final enabled = val.text.trim().isNotEmpty &&
+                            !_isListeningAndRecording;
                         return _SealButton(
                           isDark: isDark,
                           primary: primary,
@@ -818,8 +834,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.lock_outline_rounded,
-                            size: 13,
-                            color: primary.withValues(alpha: 0.6)),
+                            size: 13, color: primary.withValues(alpha: 0.6)),
                         const SizedBox(width: 5),
                         Text(
                           isTr
@@ -884,9 +899,7 @@ class _GlassCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0x59181026)
-                : const Color(0x9EFBF1DD),
+            color: isDark ? const Color(0x59181026) : const Color(0x9EFBF1DD),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: primary.withValues(alpha: 0.40),
@@ -955,7 +968,9 @@ class _PhotoPreviewCard extends StatelessWidget {
               aspectRatio: 16 / 10,
               child: kIsWeb && bytes != null
                   ? Image.memory(bytes!, fit: BoxFit.cover)
-                  : Image.file(File(path), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                  : Image.file(File(path),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink()),
             ),
           ),
         ],
@@ -1142,7 +1157,9 @@ class _PhotoChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                hasPhoto ? Icons.check_circle_rounded : Icons.add_a_photo_rounded,
+                hasPhoto
+                    ? Icons.check_circle_rounded
+                    : Icons.add_a_photo_rounded,
                 size: 18,
                 color: hasPhoto ? Colors.greenAccent.shade400 : primary,
               ),
@@ -1263,13 +1280,16 @@ class _SealButton extends StatelessWidget {
                       style: GoogleFonts.outfit(
                         fontSize: 11,
                         fontWeight: FontWeight.w400,
-                        color: isDark ? Colors.white70 : const Color(0x99331100),
+                        color:
+                            isDark ? Colors.white70 : const Color(0x99331100),
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.auto_awesome, color: isDark ? Colors.white : const Color(0xFF1A0F00), size: 18),
+              Icon(Icons.auto_awesome,
+                  color: isDark ? Colors.white : const Color(0xFF1A0F00),
+                  size: 18),
               const SizedBox(width: 18),
             ],
           ),
