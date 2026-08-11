@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -153,6 +153,71 @@ class AppDatabase extends _$AppDatabase {
               WHERE default_key IS NULL
                 AND icon_key IN ('sun', 'breathing', 'reflection')
             ''');
+          }
+          if (from < 21 && await _hasTable('goals')) {
+            if (!await _hasColumn('goals', 'template_key')) {
+              await m.addColumn(goals, goals.templateKey);
+            }
+            if (!await _hasColumn('goals', 'status')) {
+              await m.addColumn(goals, goals.status);
+            }
+            if (!await _hasColumn('goals', 'sync_state')) {
+              await m.addColumn(goals, goals.syncState);
+            }
+            if (!await _hasColumn('goals', 'changed_at')) {
+              // SQLite cannot add a NOT NULL column with a dynamic time
+              // expression as its default. A constant makes ALTER TABLE safe;
+              // the backfill below immediately replaces it with UTC "now".
+              await customStatement('''
+                ALTER TABLE goals
+                ADD COLUMN changed_at INTEGER NOT NULL DEFAULT 0
+              ''');
+            }
+            if (!await _hasColumn('goals', 'cloud_updated_at')) {
+              await m.addColumn(goals, goals.cloudUpdatedAt);
+            }
+            if (!await _hasColumn('goals', 'last_synced_at')) {
+              await m.addColumn(goals, goals.lastSyncedAt);
+            }
+
+            // Only stable starter icon keys are safe to identify locally.
+            // Custom/preset rows are deliberately left for the later cloud
+            // sync to resolve from Supabase's authoritative template_key.
+            await customStatement('''
+              UPDATE goals
+              SET template_key = icon_key
+              WHERE template_key IS NULL
+                AND icon_key IN (
+                  'water',
+                  'journal',
+                  'meditation',
+                  'breathing',
+                  'reading'
+                )
+            ''');
+
+            // Existing rows remain active. Cloud-backed rows are already in
+            // sync, user-owned local-only rows need a future push, and guest
+            // rows stay unowned and non-pending so they cannot be uploaded to
+            // whichever account happens to sign in next.
+            await customStatement('''
+              UPDATE goals
+              SET status = 'active',
+                  sync_state = CASE
+                    WHEN supabase_id IS NOT NULL THEN 'synced'
+                    WHEN user_id IS NOT NULL THEN 'pending'
+                    ELSE 'synced'
+                  END,
+                  changed_at = CAST(strftime('%s', 'now') AS INTEGER),
+                  cloud_updated_at = NULL,
+                  last_synced_at = NULL
+            ''');
+          }
+          if (from < 22 && await _hasTable('goals')) {
+            // The partial unique index is intentionally installed by
+            // GoalsRepository after its cloud-aware legacy reconciliation.
+            // Creating it here would fail on the duplicate starter artifacts
+            // this version is responsible for merging without data loss.
           }
         },
       );

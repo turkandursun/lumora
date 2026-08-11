@@ -11,7 +11,7 @@ final goalsRepositoryProvider = Provider<GoalsRepository>((ref) {
 /// Reactive list of every goal, in insertion order.
 final goalsStreamProvider = StreamProvider<List<GoalRow>>((ref) {
   final repo = ref.watch(goalsRepositoryProvider);
-  repo.syncGoalsWithSupabase();
+  repo.initialize();
   return repo.watchAll();
 });
 
@@ -23,12 +23,17 @@ class GoalStreakNotifier extends StateNotifier<GoalStreak> {
   GoalStreakNotifier(this._repository) : super(const GoalStreak());
 
   final GoalsRepository _repository;
+  int _refreshGeneration = 0;
 
   Future<void> refresh() async {
-    state = await _repository.loadStreak();
+    final generation = ++_refreshGeneration;
+    final next = await _repository.loadStreak();
+    if (!mounted || generation != _refreshGeneration) return;
+    state = next;
   }
 }
 
-final goalStreakProvider = StateNotifierProvider<GoalStreakNotifier, GoalStreak>((ref) {
+final goalStreakProvider =
+    StateNotifierProvider<GoalStreakNotifier, GoalStreak>((ref) {
   return GoalStreakNotifier(ref.watch(goalsRepositoryProvider));
 });

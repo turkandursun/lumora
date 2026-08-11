@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
-import '../../../goals/data/goals_repository.dart';
+import '../../../goals/domain/goal_template.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
@@ -70,11 +70,13 @@ class _BreathingScreenState extends ConsumerState<BreathingScreen>
   int _selectedMinutes = _durationOptionsMinutes[1];
   int _remainingSeconds = 0;
   _SessionStage _stage = _SessionStage.selectingMode;
+  bool _completionHandled = false;
 
   @override
   void initState() {
     super.initState();
-    _breathController = AnimationController(vsync: this, duration: const Duration(seconds: 1));
+    _breathController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1));
     _loadLastMode();
   }
 
@@ -116,6 +118,7 @@ class _BreathingScreenState extends ConsumerState<BreathingScreen>
 
   void _start() {
     setState(() {
+      _completionHandled = false;
       _stage = _SessionStage.running;
       _remainingSeconds = _selectedMinutes * 60;
     });
@@ -125,7 +128,7 @@ class _BreathingScreenState extends ConsumerState<BreathingScreen>
       ..repeat();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_remainingSeconds <= 1) {
-        _finish();
+        unawaited(_finish());
       } else {
         setState(() => _remainingSeconds--);
       }
@@ -138,15 +141,18 @@ class _BreathingScreenState extends ConsumerState<BreathingScreen>
     setState(() => _stage = _SessionStage.selectingMode);
   }
 
-  void _finish() {
+  Future<void> _finish() async {
+    if (_completionHandled) return;
+    _completionHandled = true;
     _countdownTimer?.cancel();
     _breathController.stop();
     setState(() => _stage = _SessionStage.completed);
     // Auto-advance the "breathing" goal by the minutes just completed.
-    ref
-        .read(goalsRepositoryProvider)
-        .incrementByIconKey(DefaultGoalIconKeys.breathing, _selectedMinutes);
-    ref.read(goalStreakProvider.notifier).refresh();
+    await ref.read(goalsRepositoryProvider).incrementByTemplateKey(
+          GoalTemplateKeys.breathing,
+          _selectedMinutes,
+        );
+    await ref.read(goalStreakProvider.notifier).refresh();
   }
 
   void _backToModeSelector() {
@@ -180,7 +186,8 @@ class _BreathingScreenState extends ConsumerState<BreathingScreen>
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(l10n.breathingTitle, style: AstraKit.heading1(isDark, fontSize: 22)),
+                        child: Text(l10n.breathingTitle,
+                            style: AstraKit.heading1(isDark, fontSize: 22)),
                       ),
                     ],
                   ),
@@ -196,8 +203,10 @@ class _BreathingScreenState extends ConsumerState<BreathingScreen>
                             onSelected: _selectMode,
                             onNext: _confirmMode,
                           ),
-                        _SessionStage.selectingDuration => _DurationSelectorView(
-                            key: const ValueKey(_SessionStage.selectingDuration),
+                        _SessionStage.selectingDuration =>
+                          _DurationSelectorView(
+                            key:
+                                const ValueKey(_SessionStage.selectingDuration),
                             selectedMinutes: _selectedMinutes,
                             options: _durationOptionsMinutes,
                             isDark: isDark,
@@ -262,7 +271,8 @@ class _ModeSelectorView extends StatelessWidget {
         Text(
           l10n.breathingModePrompt,
           textAlign: TextAlign.center,
-          style: AstraKit.mutedText(isDark, fontSize: 15, fontWeight: FontWeight.w600),
+          style: AstraKit.mutedText(isDark,
+              fontSize: 15, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 24),
         Wrap(
@@ -281,7 +291,8 @@ class _ModeSelectorView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 40),
-        AstraGoldButton(isDark: isDark, label: l10n.onboardingNext, onTap: onNext),
+        AstraGoldButton(
+            isDark: isDark, label: l10n.onboardingNext, onTap: onNext),
       ],
     );
   }
@@ -324,7 +335,9 @@ class _ModeCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               color: isSelected
                   ? primary.withValues(alpha: 0.22)
-                  : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
+                  : (isDark
+                      ? const Color(0x33231845)
+                      : const Color(0x55FFF8EE)),
               border: Border.all(
                 color: isSelected ? primary : primary.withValues(alpha: 0.25),
                 width: 1.2,
@@ -338,7 +351,10 @@ class _ModeCard extends StatelessWidget {
                 Text(
                   label,
                   textAlign: TextAlign.center,
-                  style: AstraKit.body(isDark, fontSize: 13, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
+                  style: AstraKit.body(isDark,
+                      fontSize: 13,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500),
                 ),
               ],
             ),
@@ -378,7 +394,8 @@ class _DurationSelectorView extends StatelessWidget {
         const SizedBox(height: 36),
         Text(
           l10n.breathingDurationPrompt,
-          style: AstraKit.mutedText(isDark, fontSize: 13, fontWeight: FontWeight.w600),
+          style: AstraKit.mutedText(isDark,
+              fontSize: 13, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 14),
         Row(
@@ -398,7 +415,11 @@ class _DurationSelectorView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 40),
-        AstraGoldButton(isDark: isDark, label: l10n.breathingStartButton, onTap: onStart, expand: false),
+        AstraGoldButton(
+            isDark: isDark,
+            label: l10n.breathingStartButton,
+            onTap: onStart,
+            expand: false),
       ],
     );
   }
@@ -439,7 +460,9 @@ class _DurationPill extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
               color: isSelected
                   ? primary.withValues(alpha: 0.22)
-                  : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
+                  : (isDark
+                      ? const Color(0x33231845)
+                      : const Color(0x55FFF8EE)),
               border: Border.all(
                 color: isSelected ? primary : primary.withValues(alpha: 0.25),
                 width: 1.2,
@@ -447,7 +470,9 @@ class _DurationPill extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: AstraKit.body(isDark, fontSize: 14, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
+              style: AstraKit.body(isDark,
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
             ),
           ),
         ),
@@ -459,7 +484,11 @@ class _DurationPill extends StatelessWidget {
 /// Outlined pill used for the "Stop" action during an active session —
 /// quieter than the gold CTA since ending early isn't the primary path.
 class _OutlinePillButton extends StatelessWidget {
-  const _OutlinePillButton({required this.label, required this.isDark, required this.primary, required this.onTap});
+  const _OutlinePillButton(
+      {required this.label,
+      required this.isDark,
+      required this.primary,
+      required this.onTap});
 
   final String label;
   final bool isDark;
@@ -479,7 +508,9 @@ class _OutlinePillButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: primary.withValues(alpha: 0.45)),
           ),
-          child: Text(label, style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w600)),
+          child: Text(label,
+              style: AstraKit.body(isDark,
+                  fontSize: 15, fontWeight: FontWeight.w600)),
         ),
       ),
     );
@@ -539,7 +570,8 @@ class _RunningViewState extends State<_RunningView> {
 
     if (elapsedMs < inhaleEnd) {
       final progress = inhaleEnd == 0 ? 1.0 : elapsedMs / inhaleEnd;
-      return _minScale + (_maxScale - _minScale) * Curves.easeInOut.transform(progress);
+      return _minScale +
+          (_maxScale - _minScale) * Curves.easeInOut.transform(progress);
     }
     if (elapsedMs < holdHighEnd) {
       return _maxScale;
@@ -547,7 +579,8 @@ class _RunningViewState extends State<_RunningView> {
     if (elapsedMs < exhaleEnd) {
       final span = exhaleEnd - holdHighEnd;
       final progress = span == 0 ? 1.0 : (elapsedMs - holdHighEnd) / span;
-      return _maxScale - (_maxScale - _minScale) * Curves.easeInOut.transform(progress);
+      return _maxScale -
+          (_maxScale - _minScale) * Curves.easeInOut.transform(progress);
     }
     return _minScale;
   }
@@ -601,7 +634,8 @@ class _RunningViewState extends State<_RunningView> {
         const SizedBox(height: 20),
         Text(
           _formatCountdown(widget.remainingSeconds),
-          style: AstraKit.mutedText(widget.isDark, fontSize: 16, fontWeight: FontWeight.w600),
+          style: AstraKit.mutedText(widget.isDark,
+              fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 40),
         _OutlinePillButton(
@@ -617,7 +651,11 @@ class _RunningViewState extends State<_RunningView> {
 
 /// Gentle fade-in completion message shown once the chosen duration is up.
 class _CompletedView extends StatelessWidget {
-  const _CompletedView({super.key, required this.isDark, required this.primary, required this.onContinue});
+  const _CompletedView(
+      {super.key,
+      required this.isDark,
+      required this.primary,
+      required this.onContinue});
 
   final bool isDark;
   final Color primary;
@@ -677,7 +715,10 @@ class _BreathingOrb extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: primary.withValues(alpha: 0.5), blurRadius: 90, spreadRadius: 6),
+                    BoxShadow(
+                        color: primary.withValues(alpha: 0.5),
+                        blurRadius: 90,
+                        spreadRadius: 6),
                   ],
                 ),
               ),
@@ -700,7 +741,10 @@ class _BreathingOrb extends StatelessWidget {
                     stops: const [0.0, 0.28, 0.68, 1.0],
                   ),
                   boxShadow: [
-                    BoxShadow(color: primary.withValues(alpha: 0.7), blurRadius: 34, spreadRadius: 0),
+                    BoxShadow(
+                        color: primary.withValues(alpha: 0.7),
+                        blurRadius: 34,
+                        spreadRadius: 0),
                   ],
                 ),
               ),

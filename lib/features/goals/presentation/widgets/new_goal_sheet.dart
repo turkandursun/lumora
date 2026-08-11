@@ -53,7 +53,9 @@ class _NewGoalSheetState extends ConsumerState<NewGoalSheet> {
     await ref.read(goalsRepositoryProvider).addCustomGoal(
           title: _titleController.text.trim(),
           unit: _unit,
-          customUnitLabel: _unit == GoalUnit.custom ? _customUnitController.text.trim() : null,
+          customUnitLabel: _unit == GoalUnit.custom
+              ? _customUnitController.text.trim()
+              : null,
           target: int.parse(_targetController.text.trim()),
           frequency: _frequency,
         );
@@ -105,8 +107,9 @@ class _NewGoalSheetState extends ConsumerState<NewGoalSheet> {
                   _TextField(
                     controller: _titleController,
                     hint: l10n.goalsNewTitleHint,
-                    validator: (value) =>
-                        (value ?? '').trim().isEmpty ? l10n.goalsNewTitleValidationEmpty : null,
+                    validator: (value) => (value ?? '').trim().isEmpty
+                        ? l10n.goalsNewTitleValidationEmpty
+                        : null,
                   ),
                   const SizedBox(height: 14),
                   _TextField(
@@ -115,9 +118,13 @@ class _NewGoalSheetState extends ConsumerState<NewGoalSheet> {
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       final trimmed = (value ?? '').trim();
-                      if (trimmed.isEmpty) return l10n.goalsNewTargetValidationEmpty;
+                      if (trimmed.isEmpty) {
+                        return l10n.goalsNewTargetValidationEmpty;
+                      }
                       final parsed = int.tryParse(trimmed);
-                      if (parsed == null || parsed <= 0) return l10n.goalsNewTargetValidationInvalid;
+                      if (parsed == null || parsed <= 0) {
+                        return l10n.goalsNewTargetValidationInvalid;
+                      }
                       return null;
                     },
                   ),
@@ -157,7 +164,8 @@ class _NewGoalSheetState extends ConsumerState<NewGoalSheet> {
                   const SizedBox(height: 10),
                   _FrequencySelector(
                     selected: _frequency,
-                    onSelected: (frequency) => setState(() => _frequency = frequency),
+                    onSelected: (frequency) =>
+                        setState(() => _frequency = frequency),
                   ),
                   const SizedBox(height: 26),
                   _SubmitButton(
@@ -204,7 +212,8 @@ class _TextField extends StatelessWidget {
         ),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.05),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
@@ -215,11 +224,13 @@ class _TextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: LumoraPalette.lightPurple, width: 1.5),
+          borderSide:
+              const BorderSide(color: LumoraPalette.lightPurple, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: LumoraPalette.accentPink.withValues(alpha: 0.7)),
+          borderSide: BorderSide(
+              color: LumoraPalette.accentPink.withValues(alpha: 0.7)),
         ),
       ),
       validator: validator,
@@ -277,7 +288,8 @@ class _FrequencySelector extends StatelessWidget {
         for (final entry in options.entries)
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(right: entry.key == GoalFrequency.monthly ? 0 : 8),
+              padding: EdgeInsets.only(
+                  right: entry.key == GoalFrequency.monthly ? 0 : 8),
               child: _Pill(
                 label: entry.value,
                 isSelected: entry.key == selected,
@@ -326,7 +338,9 @@ class _Pill extends StatelessWidget {
                   ? LumoraPalette.primaryPurple.withValues(alpha: 0.9)
                   : Colors.white.withValues(alpha: 0.06),
               border: Border.all(
-                color: isSelected ? LumoraPalette.lightPurple : Colors.white.withValues(alpha: 0.16),
+                color: isSelected
+                    ? LumoraPalette.lightPurple
+                    : Colors.white.withValues(alpha: 0.16),
                 width: 1.1,
               ),
             ),
@@ -346,7 +360,8 @@ class _Pill extends StatelessWidget {
 }
 
 class _SubmitButton extends StatelessWidget {
-  const _SubmitButton({required this.label, required this.isSaving, required this.onTap});
+  const _SubmitButton(
+      {required this.label, required this.isSaving, required this.onTap});
 
   final String label;
   final bool isSaving;
