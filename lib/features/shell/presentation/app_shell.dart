@@ -31,19 +31,12 @@ enum _ActiveTab { home, profile }
 class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver, TickerProviderStateMixin, RouteAware {
   _ActiveTab _active = _ActiveTab.home;
-  // The Profile tab is built lazily the first time it's opened, so its entrance
-  // animations play when the user actually sees it — not silently while hidden.
   bool _profileVisited = false;
   DateTime? _lastBackup;
 
-  // Ticking these replays the entrance choreography (greeting → bell → the rest
-  // cascading up) on each tab EVERY time it becomes active, not just on first
-  // build — every AstraEntrance under the tab's AstraEntranceReplay re-runs.
   final ValueNotifier<int> _homeReplay = ValueNotifier<int>(0);
   final ValueNotifier<int> _profileReplay = ValueNotifier<int>(0);
 
-  // Drives the raised FAB's radial "quick add" menu: 0 = closed, 1 = open. The
-  // '+' rotates to an 'X', the scene blurs, and the actions spring outward.
   late final AnimationController _fabAnim;
 
   @override
@@ -60,7 +53,6 @@ class _AppShellState extends ConsumerState<AppShell>
       _active = tab;
       if (tab == _ActiveTab.profile) _profileVisited = true;
     });
-    // Replay the incoming tab's entrance cascade.
     if (tab == _ActiveTab.home) {
       _homeReplay.value++;
     } else {
@@ -89,8 +81,6 @@ class _AppShellState extends ConsumerState<AppShell>
     if (route is PageRoute) astraRouteObserver.subscribe(this, route);
   }
 
-  /// A pushed screen was popped and the shell is visible again — replay the
-  /// active tab's entrance cascade so returning from a card also re-animates.
   @override
   void didPopNext() {
     if (_active == _ActiveTab.home) {
@@ -112,8 +102,6 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Back up whenever the user leaves the app, so the latest data is safe in
-    // the cloud. Debounced so rapid pause/resume cycles don't spam uploads.
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       final now = DateTime.now();
@@ -122,7 +110,6 @@ class _AppShellState extends ConsumerState<AppShell>
         return;
       }
       _lastBackup = now;
-      // Fire-and-forget; failures must never disrupt the app.
       ref.read(cloudBackupServiceProvider).backup().catchError((_) {});
     }
   }
@@ -136,18 +123,12 @@ class _AppShellState extends ConsumerState<AppShell>
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
     final screens = [
       const HomeScreen(),
-      // Only built once the user first opens Profile, so its cascade animates
-      // in view rather than finishing while the tab is still hidden.
       _profileVisited ? const ProfileScreen() : const SizedBox.shrink(),
     ];
     final activeIndex = _active == _ActiveTab.home ? 0 : 1;
     return Scaffold(
       extendBody: true,
       backgroundColor: Colors.transparent,
-      // Both tabs stay alive (state + scroll preserved). Each is wrapped in an
-      // [AstraEntranceReplay]; switching to a tab ticks its notifier so its
-      // entrance cascade (greeting → bell → the rest sliding up) replays every
-      // time — not only on first launch.
       body: Stack(
         children: [
           for (var i = 0; i < screens.length; i++)
@@ -161,7 +142,6 @@ class _AppShellState extends ConsumerState<AppShell>
                 ),
               ),
             ),
-          // Radial quick-add menu overlay (blur + springing actions).
           _FabMenuOverlay(
             anim: _fabAnim,
             isDark: isDark,
@@ -184,16 +164,11 @@ class _AppShellState extends ConsumerState<AppShell>
   }
 }
 
-/// The bar follows the app theme: a deep violet surface with a lavender accent
-/// on the dark/moon theme, a warm cream surface with a gold accent on the
-/// light/sun theme — so it never sits as a dark slab on the bright scene.
 const _barDark = Color(0xFF211C30);
 const _barLight = Color(0xFFF6EAD3);
 const _lavender = Color(0xFFC084FC);
 const _lavenderDeep = Color(0xFF8B5CF6);
 
-/// Theme-aware bottom bar matching Home's cards, with a raised circular center
-/// button for the quick-add action.
 class _ShellBottomNav extends StatelessWidget {
   const _ShellBottomNav({
     required this.isDark,
@@ -351,9 +326,6 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-/// The raised, elevated center button — a circular FAB that opens the quick-add
-/// menu. As the menu opens it spins ~45° (spring) and its leaf morphs into a
-/// close 'X'.
 class _QuickAddButton extends StatelessWidget {
   const _QuickAddButton({
     required this.label,
@@ -371,8 +343,6 @@ class _QuickAddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lavender pill on the dark theme, gold on the light theme — matching the
-    // rest of the interface's theme accent.
     final gradient = isDark
         ? const [_lavender, _lavenderDeep]
         : const [Color(0xFFF0D68A), Color(0xFFB8860B)];
@@ -394,7 +364,6 @@ class _QuickAddButton extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-
             boxShadow: [
               BoxShadow(
                 color: glow.withValues(alpha: 0.5),
@@ -402,21 +371,26 @@ class _QuickAddButton extends StatelessWidget {
                 offset: const Offset(0, 6),
               ),
             ],
-            // Ring in the bar's own colour so the button reads as lifted off it.
             border: Border.all(color: barColor, width: 3),
           ),
           child: AnimatedBuilder(
             animation: anim,
             builder: (context, _) {
-              // Spin 45° (0.125 turns) and cross-fade leaf → X as it opens.
               return Transform.rotate(
-                angle: spin.value * 0.7853981633974483, // 45°
+                angle: spin.value * 0.7853981633974483,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
                     Opacity(
                       opacity: (1 - anim.value).clamp(0.0, 1.0),
-                      child: Icon(Icons.eco_rounded, color: iconColor, size: 26),
+                      child: const SizedBox(
+                        width: 34,
+                        height: 34,
+                        child: Image(
+                          image: AssetImage('assets/images/luma_star_closed.png'),
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
                     Opacity(
                       opacity: anim.value.clamp(0.0, 1.0),
@@ -433,9 +407,6 @@ class _QuickAddButton extends StatelessWidget {
   }
 }
 
-/// Quick-add options that spring out from the FAB — one action, plus the
-/// journal / dream / calm shortcuts — over a blurred, dimmed scene. Reachable
-/// only while the FAB menu is open.
 class _FabMenuOverlay extends StatelessWidget {
   const _FabMenuOverlay({
     required this.anim,
@@ -467,7 +438,6 @@ class _FabMenuOverlay extends StatelessWidget {
         return Positioned.fill(
           child: Stack(
             children: [
-              // Blurred, dimmed scrim — tap anywhere to close.
               GestureDetector(
                 onTap: onClose,
                 child: BackdropFilter(
@@ -475,7 +445,6 @@ class _FabMenuOverlay extends StatelessWidget {
                   child: Container(color: Colors.black.withValues(alpha: 0.42 * v)),
                 ),
               ),
-              // Actions stack, springing up from just above the FAB.
               Positioned(
                 left: 0,
                 right: 0,
@@ -487,7 +456,6 @@ class _FabMenuOverlay extends StatelessWidget {
                       _FabMenuItem(
                         icon: items[i].$1,
                         label: items[i].$2,
-                        // Bottom item leads, cascading upward.
                         progress: _staggered(v, items.length - 1 - i, items.length),
                         onTap: () => onAction(items[i].$3),
                       ),
@@ -501,7 +469,6 @@ class _FabMenuOverlay extends StatelessWidget {
     );
   }
 
-  /// Per-item eased progress with a small stagger across the open animation.
   double _staggered(double v, int order, int total) {
     final start = order * 0.08;
     final local = ((v - start) / (1 - start)).clamp(0.0, 1.0);
@@ -510,7 +477,12 @@ class _FabMenuOverlay extends StatelessWidget {
 }
 
 class _FabMenuItem extends StatelessWidget {
-  const _FabMenuItem({required this.icon, required this.label, required this.progress, required this.onTap});
+  const _FabMenuItem({
+    required this.icon,
+    required this.label,
+    required this.progress,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String label;
@@ -535,23 +507,29 @@ class _FabMenuItem extends StatelessWidget {
                   color: const Color(0xF01B1330),
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(color: const Color(0x55C084FC)),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 14, offset: const Offset(0, 6))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(icon, color: const Color(0xFFC084FC), size: 20),
                     const SizedBox(width: 12),
-                    Text(label, style: const TextStyle(color: Color(0xFFF4EEFF), fontSize: 14.5, fontWeight: FontWeight.w700)),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Color(0xFFF4EEFF),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
-
-            child: const Padding(
-              padding: EdgeInsets.all(9),
-              child: Image(
-                image: AssetImage('assets/images/luma_star_closed.png'),
-                fit: BoxFit.contain,
-
               ),
             ),
           ),
