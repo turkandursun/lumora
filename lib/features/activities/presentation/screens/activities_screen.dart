@@ -203,18 +203,24 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                               spacing: 8,
                               runSpacing: 8,
                               children: [
-                                for (final o in _activityOptions)
-                                  _OptionChip(
-                                    icon: o.$4,
-                                    label: isTr ? o.$2 : o.$3,
-                                    selected: _selected.contains(o.$1),
-                                    isDark: isDark,
-                                    primary: primary,
-                                    onTap: () => setState(() {
-                                      if (!_selected.add(o.$1)) {
-                                        _selected.remove(o.$1);
-                                      }
-                                    }),
+                                for (final (i, o) in _activityOptions.indexed)
+                                  AstraEntrance(
+                                    index: i,
+                                    intervalMs: 30,
+                                    offset: 12,
+                                    scaleFrom: 0.8,
+                                    child: _OptionChip(
+                                      icon: o.$4,
+                                      label: isTr ? o.$2 : o.$3,
+                                      selected: _selected.contains(o.$1),
+                                      isDark: isDark,
+                                      primary: primary,
+                                      onTap: () => setState(() {
+                                        if (!_selected.add(o.$1)) {
+                                          _selected.remove(o.$1);
+                                        }
+                                      }),
+                                    ),
                                   ),
                               ],
                             ),

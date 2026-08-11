@@ -210,14 +210,20 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
                         )
                       else ...[
                         for (var i = 0; i < _questions.length; i++) ...[
-                          _QuestionCard(
+                          AstraEntrance(
                             index: i,
-                            question: _questions[i],
-                            isTr: isTr,
-                            isDark: isDark,
-                            primary: primary,
-                            onChanged: (answer) =>
-                                setState(() => _answers[i] = answer),
+                            intervalMs: 70,
+                            offset: 22,
+                            scaleFrom: 0.94,
+                            child: _QuestionCard(
+                              index: i,
+                              question: _questions[i],
+                              isTr: isTr,
+                              isDark: isDark,
+                              primary: primary,
+                              onChanged: (answer) =>
+                                  setState(() => _answers[i] = answer),
+                            ),
                           ),
                           const SizedBox(height: 12),
                         ],
@@ -238,7 +244,11 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
                       ],
                       if (_analysis != null) ...[
                         const SizedBox(height: 14),
-                        _AnalysisCard(isTr: isTr, text: _analysis!, isDark: isDark, primary: primary),
+                        AstraEntrance(
+                          offset: 26,
+                          scaleFrom: 0.96,
+                          child: _AnalysisCard(isTr: isTr, text: _analysis!, isDark: isDark, primary: primary),
+                        ),
                       ],
                       const SizedBox(height: 8),
                     ],

@@ -69,17 +69,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Header runs its own greeting → bell cascade first; the rest
+                  // of the page then slides up in sequence after it.
                   HomeHeader(firstName: firstName),
                   const SizedBox(height: 18),
-                  const MotivationQuoteCarousel(),
+                  const AstraEntrance(delayMs: 160, child: MotivationQuoteCarousel()),
                   const SizedBox(height: 16),
-                  const HomeStatsRow(),
+                  const AstraEntrance(delayMs: 210, child: HomeStatsRow()),
                   const SizedBox(height: 16),
-                  const DreamJournalBanner(),
+                  const AstraEntrance(delayMs: 260, child: DreamJournalBanner()),
                   const SizedBox(height: 22),
-                  HomeFeatureGrid(
-                    items: homeFeatureItems(context, ref, l10n),
-                    isDark: isDark,
+                  AstraEntrance(
+                    delayMs: 310,
+                    child: HomeFeatureGrid(
+                      items: homeFeatureItems(context, ref, l10n),
+                      isDark: isDark,
+                    ),
                   ),
                 ],
               ),

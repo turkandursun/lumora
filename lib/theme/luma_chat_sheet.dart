@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'astra_screen_kit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/services/ai_service.dart';
@@ -148,7 +150,11 @@ class _LumaChatSheetState extends State<LumaChatSheet> {
                           itemCount: _messages.length + (_isSending ? 1 : 0),
                           itemBuilder: (context, index) {
                             if (index == _messages.length) {
-                              return _ThinkingBubble(text: l10n.lumaChatThinking);
+                              return AstraEntrance(
+                                offset: 16,
+                                scaleFrom: 0.96,
+                                child: _ThinkingBubble(text: l10n.lumaChatThinking),
+                              );
                             }
                             final message = _messages[index];
                             return _MessageBubble(message: message);

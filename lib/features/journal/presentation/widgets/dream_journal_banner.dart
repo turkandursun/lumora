@@ -1,13 +1,13 @@
 import 'dart:math';
 
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../dreams/presentation/screens/dream_journal_screen.dart';
 
 /// Full-width "Rüya Günlüğü" (Dream Journal) banner — a frosted glass card with
 /// a small moon-and-stars illustration, theme-aware so it matches the rest of
@@ -20,45 +20,53 @@ class DreamJournalBanner extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
     final accent = AstraKit.primary(isDark);
-    return AstraGlassCard(
-      isDark: isDark,
-      primaryColor: accent,
-      padding: EdgeInsets.zero,
-      borderRadius: 22,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: () => context.push(AppRoutes.dreams),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 52,
-                  height: 52,
-                  child: CustomPaint(painter: _MoonStarsPainter(isDark: isDark)),
+
+    // Container transform: tapping the banner morphs the card itself outward
+    // until it fills the whole Dream Journal screen (and back again on pop),
+    // instead of a normal page push.
+    return OpenContainer(
+      transitionType: ContainerTransitionType.fadeThrough,
+      transitionDuration: const Duration(milliseconds: 460),
+      closedElevation: 0,
+      openElevation: 0,
+      closedColor: Colors.transparent,
+      openColor: Colors.transparent,
+      middleColor: Colors.transparent,
+      closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      openBuilder: (context, _) => const DreamJournalScreen(),
+      closedBuilder: (context, openContainer) => BouncyTap(
+        onTap: openContainer,
+        child: AstraGlassCard(
+          isDark: isDark,
+          primaryColor: accent,
+          padding: const EdgeInsets.all(18),
+          borderRadius: 22,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 52,
+                height: 52,
+                child: CustomPaint(painter: _MoonStarsPainter(isDark: isDark)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.homeDreamJournalTitle, style: AstraKit.heading2(isDark, fontSize: 16)),
+                    const SizedBox(height: 3),
+                    Text(
+                      l10n.homeDreamJournalDesc,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AstraKit.mutedText(isDark, fontSize: 11.5, fontWeight: FontWeight.w500),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.homeDreamJournalTitle, style: AstraKit.heading2(isDark, fontSize: 16)),
-                      const SizedBox(height: 3),
-                      Text(
-                        l10n.homeDreamJournalDesc,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AstraKit.mutedText(isDark, fontSize: 11.5, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(Icons.chevron_right_rounded, color: accent),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right_rounded, color: accent),
+            ],
           ),
         ),
       ),

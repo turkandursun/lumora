@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../activities/presentation/screens/activities_screen.dart';
+import '../../../ai_questions/presentation/screens/ai_questions_screen.dart';
+import '../../../breathing/presentation/screens/breathing_screen.dart';
+import '../../../calendar/presentation/screens/calendar_screen.dart';
+import '../../../community/presentation/screens/community_screen.dart';
+import '../../../daily_question/presentation/screens/daily_question_screen.dart';
+import '../../../letters/presentation/screens/letters_screen.dart';
+import '../../../meditation/presentation/screens/meditation_screen.dart';
 
-/// One tappable card in the Home feature grid.
+/// One tappable card in the Home feature grid. [screenBuilder] is the
+/// destination the card morphs open into (container transform).
 class HomeFeatureItem {
   const HomeFeatureItem({
     required this.title,
     required this.description,
     required this.primaryIcon,
     this.accentIcon,
-    required this.onTap,
+    required this.screenBuilder,
     this.badgeCount = 0,
   });
 
@@ -21,7 +28,7 @@ class HomeFeatureItem {
   final String description;
   final IconData primaryIcon;
   final IconData? accentIcon;
-  final VoidCallback onTap;
+  final WidgetBuilder screenBuilder;
   final int badgeCount;
 }
 
@@ -39,55 +46,54 @@ List<HomeFeatureItem> homeFeatureItems(
       description: isTr ? 'Günlük & ruh hali' : 'Journal & moods',
       primaryIcon: Icons.calendar_month_rounded,
       accentIcon: Icons.wb_sunny_rounded,
-      onTap: () => context.push(AppRoutes.calendar),
+      screenBuilder: (_) => const CalendarScreen(),
     ),
     HomeFeatureItem(
       title: isTr ? 'Etkinliklerim' : 'My activities',
       description: isTr ? 'Fotoğraflı günlük' : 'Log with photos',
       primaryIcon: Icons.photo_camera_back_rounded,
       accentIcon: Icons.groups_rounded,
-      onTap: () => context.push(AppRoutes.activities),
+      screenBuilder: (_) => const ActivitiesScreen(),
     ),
-
     HomeFeatureItem(
       title: l10n.homeFeatureAiQuestionsTitle,
       description: l10n.homeFeatureAiQuestionsDesc,
       primaryIcon: Icons.psychology_alt_rounded,
       accentIcon: Icons.question_mark_rounded,
-      onTap: () => context.push(AppRoutes.aiQuestions),
+      screenBuilder: (_) => const AiQuestionsScreen(),
     ),
     HomeFeatureItem(
       title: l10n.homeFeatureMeditationTitle,
       description: l10n.homeFeatureMeditationDesc,
       primaryIcon: Icons.self_improvement_rounded,
-      onTap: () => context.push(AppRoutes.meditation),
+      screenBuilder: (_) => const MeditationScreen(),
     ),
     HomeFeatureItem(
       title: l10n.homeFeatureBreathingTitle,
       description: l10n.homeFeatureBreathingDesc,
       primaryIcon: Icons.air_rounded,
-      onTap: () => context.push(AppRoutes.breathing),
+      screenBuilder: (_) => const BreathingScreen(),
     ),
     HomeFeatureItem(
       title: l10n.homeFeatureLetterTitle,
       description: l10n.homeFeatureLetterDesc,
       primaryIcon: Icons.mail_rounded,
       accentIcon: Icons.favorite_rounded,
-      onTap: () => context.push(AppRoutes.letters),
+      screenBuilder: (_) => const LettersScreen(),
     ),
     HomeFeatureItem(
       title: l10n.exploreFeatureDailyQuestion,
       description: l10n.homeFeatureDailyQuestionDesc,
       primaryIcon: Icons.help_outline_rounded,
       accentIcon: Icons.auto_awesome_rounded,
-      onTap: () => context.push(AppRoutes.dailyQuestion),
+      screenBuilder: (_) => const DailyQuestionScreen(),
     ),
     HomeFeatureItem(
       title: l10n.exploreFeatureCommunity,
       description: l10n.homeFeatureCommunityDesc,
       primaryIcon: Icons.diversity_3_rounded,
       accentIcon: Icons.favorite_rounded,
-      onTap: () => context.push(AppRoutes.community),
+      screenBuilder: (_) => const CommunityScreen(),
     ),
   ];
 }
@@ -134,7 +140,12 @@ class _FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = AstraKit.primary(isDark);
-    return AstraGlassCard(
+    return AstraMorphContainer(
+      borderRadius: 20,
+      openBuilder: item.screenBuilder,
+      closedBuilder: (context, open) => BouncyTap(
+      onTap: open,
+      child: AstraGlassCard(
       isDark: isDark,
       primaryColor: accent,
       padding: EdgeInsets.zero,
@@ -144,7 +155,7 @@ class _FeatureCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: item.onTap,
+          onTap: null,
           splashColor: accent.withValues(alpha: 0.14),
           child: Stack(
             children: [
@@ -216,6 +227,8 @@ class _FeatureCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+      ),
       ),
     );
   }

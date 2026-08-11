@@ -181,14 +181,20 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
                         spacing: 10,
                         runSpacing: 10,
                         children: [
-                          for (final p in _presets)
-                            _HobbyChip(
-                              icon: p.$4,
-                              label: isTr ? p.$2 : p.$3,
-                              selected: selected.contains(p.$1),
-                              isDark: isDark,
-                              primary: primary,
-                              onTap: () => ref.read(hobbiesProvider.notifier).toggle(p.$1),
+                          for (final (i, p) in _presets.indexed)
+                            AstraEntrance(
+                              index: i,
+                              intervalMs: 30,
+                              offset: 12,
+                              scaleFrom: 0.8,
+                              child: _HobbyChip(
+                                icon: p.$4,
+                                label: isTr ? p.$2 : p.$3,
+                                selected: selected.contains(p.$1),
+                                isDark: isDark,
+                                primary: primary,
+                                onTap: () => ref.read(hobbiesProvider.notifier).toggle(p.$1),
+                              ),
                             ),
                         ],
                       ),

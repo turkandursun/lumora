@@ -55,8 +55,11 @@ class HomeHeader extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // The greeting lands first...
         Expanded(
-          child: Column(
+          child: AstraEntrance(
+            offset: 16,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -98,13 +101,19 @@ class HomeHeader extends ConsumerWidget {
               ),
             ],
           ),
+          ),
         ),
         const SizedBox(width: 10),
-        _NotificationBell(
+        // ...then the bell.
+        AstraEntrance(
+          delayMs: 90,
+          offset: 16,
+          child: _NotificationBell(
           hasUnread: hasUnreadReminders,
           isDark: isDark,
           accent: accent,
           onTap: () => context.push(AppRoutes.reminders),
+        ),
         ),
       ],
     );
