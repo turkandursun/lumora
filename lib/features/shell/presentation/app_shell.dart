@@ -456,7 +456,7 @@ class _FabMenuOverlay extends StatelessWidget {
                       _FabMenuItem(
                         icon: items[i].$1,
                         label: items[i].$2,
-                        // Bottom item leads, cascading upward.
+                        isDark: isDark,
                         progress: _staggered(v, items.length - 1 - i, items.length),
                         onTap: () => onAction(items[i].$3),
                       ),
@@ -478,7 +478,13 @@ class _FabMenuOverlay extends StatelessWidget {
 }
 
 class _FabMenuItem extends StatelessWidget {
-  const _FabMenuItem({required this.icon, required this.label, required this.progress, required this.onTap});
+  const _FabMenuItem({
+    required this.icon,
+    required this.label,
+    required this.isDark,
+    required this.progress,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String label;
@@ -488,12 +494,7 @@ class _FabMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Theme-aware pill: deep violet glass with a lavender accent on the moon
-    // theme, warm cream with a gold accent on the sun theme — so the quick-add
-    // menu never floats as dark chips over the bright daytime scene.
     final accent = AstraKit.primary(isDark);
-    final pill = isDark ? const Color(0xF01B1330) : const Color(0xF5FBEFD8);
-    final textColor = AstraKit.heading(isDark);
     return Opacity(
       opacity: progress.clamp(0.0, 1.0),
       child: Transform.translate(
@@ -507,17 +508,30 @@ class _FabMenuItem extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
                 decoration: BoxDecoration(
-                  color: pill,
+                  color: isDark ? const Color(0xF01B1330) : const Color(0xF2FBF1DC),
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: const Color(0x55C084FC)),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 14, offset: const Offset(0, 6))],
+                  border: Border.all(color: accent.withValues(alpha: isDark ? 0.4 : 0.55)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.14),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(icon, color: accent, size: 20),
                     const SizedBox(width: 12),
-                    Text(label, style: const TextStyle(color: Color(0xFFF4EEFF), fontSize: 14.5, fontWeight: FontWeight.w700)),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: AstraKit.heading(isDark),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
               ),

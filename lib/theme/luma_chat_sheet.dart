@@ -21,59 +21,6 @@ class _ChatMessage {
   final String text;
 }
 
-/// Theme-aware colours for Luma's chat sheet, so the panel matches the app's
-/// moon (violet-on-night) / sun (gold-on-cream) themes instead of always
-/// painting the dark night surface.
-class _ChatPalette {
-  const _ChatPalette(this.isDark);
-
-  final bool isDark;
-
-  /// Sheet surface: the deep night purple on the moon theme, a warm cream on
-  /// the sun theme (so it never sits as a dark slab over the bright scene).
-  Color get sheet =>
-      isDark ? const Color(0xFF1A1330) : const Color(0xFFFBF3E4);
-
-  /// Luma's star accent — violet at night, gold in daylight.
-  Color get star =>
-      isDark ? LumoraPalette.lightPurple : AstraKit.gold(isDark);
-
-  Color get heading => AstraKit.heading(isDark);
-  Color get body => AstraKit.ink(isDark);
-  Color get muted => AstraKit.muted(isDark);
-  Color get handle => AstraKit.faint(isDark);
-
-  /// Incoming (Luma) bubble surface + hairline.
-  Color get botBubble =>
-      isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.72);
-  Color get botBorder => isDark
-      ? Colors.white.withValues(alpha: 0.12)
-      : AstraKit.primary(isDark).withValues(alpha: 0.22);
-
-  /// Outgoing (user) bubble gradient + its text colour.
-  List<Color> get userGradient => isDark
-      ? LumoraPalette.ctaGradient
-      : const [Color(0xFFF0D68A), Color(0xFFB8860B)];
-  Color get userText => isDark ? Colors.white : const Color(0xFF1A0F00);
-
-  /// Input field surface + hairline.
-  Color get inputFill =>
-      isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.66);
-  Color get inputBorder => isDark
-      ? Colors.white.withValues(alpha: 0.14)
-      : AstraKit.primary(isDark).withValues(alpha: 0.3);
-
-  /// Send button gradient + glow + icon.
-  List<Color> get sendGradient => isDark
-      ? LumoraPalette.ctaGradient
-      : const [Color(0xFFF0D68A), Color(0xFFB8860B)];
-  Color get sendGlow => isDark ? LumoraPalette.primaryPurple : AstraKit.gold(isDark);
-  Color get sendIcon => isDark ? Colors.white : const Color(0xFF1A0F00);
-
-  /// Crisis/error banner text.
-  Color get bannerText => isDark ? LumoraPalette.warmCream : const Color(0xFF7A3350);
-}
-
 /// Lightweight session-only chat panel for talking to Luma — opened as a
 /// bottom sheet from [LumaCompanion]'s speech bubble. Conversation history
 /// is not persisted: it lives only in this widget's state and is gone once
@@ -199,24 +146,23 @@ class _LumaChatSheetState extends ConsumerState<LumaChatSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final palette = _ChatPalette(isDark);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: FractionallySizedBox(
         heightFactor: 0.78,
         child: Container(
           decoration: BoxDecoration(
-            color: palette.sheet,
+            color: isDark ? LumoraPalette.nightBackground : const Color(0xFFFBF3E2),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: SafeArea(
             top: false,
             child: Column(
               children: [
-                _Header(title: l10n.lumaChatTitle, palette: palette),
+                _Header(title: l10n.lumaChatTitle, isDark: isDark),
                 Expanded(
                   child: _messages.isEmpty
-                      ? _EmptyState(text: l10n.lumaChatEmptyState, palette: palette)
+                      ? _EmptyState(text: l10n.lumaChatEmptyState, isDark: isDark)
                       : ListView.builder(
                           controller: _scrollController,
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -226,32 +172,29 @@ class _LumaChatSheetState extends ConsumerState<LumaChatSheet> {
                               return AstraEntrance(
                                 offset: 16,
                                 scaleFrom: 0.96,
-                                child: _ThinkingBubble(text: l10n.lumaChatThinking, palette: palette),
+                                child: _ThinkingBubble(text: l10n.lumaChatThinking, isDark: isDark),
                               );
                             }
                             final message = _messages[index];
-<<<<<<< Updated upstream
                             final isLatestLuma = !message.isUser &&
                                 index == _messages.length - 1 &&
                                 !_isSending;
                             return _MessageBubble(
                               message: message,
+                              isDark: isDark,
                               animateAvatar: isLatestLuma,
                               speaking: _lumaTalking,
                             );
-=======
-                            return _MessageBubble(message: message, palette: palette);
->>>>>>> Stashed changes
                           },
                         ),
                 ),
-                if (_hasError) _ErrorBanner(text: l10n.lumaChatError, palette: palette),
+                if (_hasError) _ErrorBanner(text: l10n.lumaChatError, isDark: isDark),
                 _InputBar(
                   controller: _inputController,
                   hint: _sessionReady ? l10n.lumaChatInputHint : l10n.lumaChatSessionLoading,
                   enabled: !_isSending && _sessionReady,
+                  isDark: isDark,
                   onSend: _send,
-                  palette: palette,
                 ),
               ],
             ),
@@ -265,13 +208,9 @@ class _LumaChatSheetState extends ConsumerState<LumaChatSheet> {
 /// Luma's face: a soft, twinkling star. Reused at different sizes across
 /// the chat so the whole conversation feels like talking to one character.
 class _LumaStar extends StatefulWidget {
-  const _LumaStar({this.size = 26, this.accent = LumoraPalette.lightPurple});
+  const _LumaStar({this.size = 26});
 
   final double size;
-
-  /// Star glow / gradient tint — violet on the moon theme, gold on the sun
-  /// theme, so Luma's face matches the active theme.
-  final Color accent;
 
   @override
   State<_LumaStar> createState() => _LumaStarState();
@@ -316,7 +255,7 @@ class _LumaStarState extends State<_LumaStar>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: widget.accent
+                      color: LumoraPalette.lightPurple
                           .withValues(alpha: 0.35 + 0.35 * t),
                       blurRadius: 10 + t * 10,
                       spreadRadius: 1 + t * 2,
@@ -325,10 +264,10 @@ class _LumaStarState extends State<_LumaStar>
                 ),
               ),
               ShaderMask(
-                shaderCallback: (rect) => LinearGradient(
+                shaderCallback: (rect) => const LinearGradient(
                   colors: [
                     LumoraPalette.warmCream,
-                    widget.accent,
+                    LumoraPalette.lightPurple,
                   ],
                 ).createShader(rect),
                 child: Icon(Icons.star_rounded, size: s, color: Colors.white),
@@ -342,13 +281,14 @@ class _LumaStarState extends State<_LumaStar>
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.title, required this.palette});
+  const _Header({required this.title, required this.isDark});
 
   final String title;
-  final _ChatPalette palette;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = isDark ? Colors.white : AstraKit.heading(isDark);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 12, 8),
       child: Column(
@@ -357,30 +297,25 @@ class _Header extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: palette.handle,
+              color: onSurface.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 14),
           Row(
             children: [
-<<<<<<< Updated upstream
-=======
-              _LumaStar(size: 28, accent: palette.star),
-              const SizedBox(width: 8),
->>>>>>> Stashed changes
               Expanded(
                 child: Text(
                   title,
                   style: LumoraPalette.bodyStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: palette.heading,
+                    color: onSurface,
                   ),
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.close_rounded, color: palette.muted),
+                icon: Icon(Icons.close_rounded, color: onSurface.withValues(alpha: 0.6)),
                 onPressed: () => Navigator.of(context).maybePop(),
               ),
             ],
@@ -392,10 +327,10 @@ class _Header extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.text, required this.palette});
+  const _EmptyState({required this.text, required this.isDark});
 
   final String text;
-  final _ChatPalette palette;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -406,16 +341,14 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-<<<<<<< Updated upstream
             const LumaAvatar(size: 96),
-=======
-            _LumaStar(size: 66, accent: palette.star),
->>>>>>> Stashed changes
             const SizedBox(height: 18),
             Text(
               isTr ? 'Merhaba, ben Luma ✨' : "Hi, I'm Luma ✨",
               textAlign: TextAlign.center,
-              style: LumoraPalette.storyTitleStyle(fontSize: 21, color: palette.heading),
+              style: LumoraPalette.storyTitleStyle(fontSize: 21).copyWith(
+                color: AstraKit.heading(isDark),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -423,7 +356,7 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: LumoraPalette.bodyStyle(
                 fontSize: 14,
-                color: palette.muted,
+                color: AstraKit.muted(isDark),
               ),
             ),
           ],
@@ -434,18 +367,15 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-<<<<<<< Updated upstream
   const _MessageBubble({
     required this.message,
+    required this.isDark,
     this.animateAvatar = false,
     this.speaking = false,
   });
-=======
-  const _MessageBubble({required this.message, required this.palette});
->>>>>>> Stashed changes
 
   final _ChatMessage message;
-  final _ChatPalette palette;
+  final bool isDark;
 
   /// When true, Luma's animated star avatar (mouth-flap) is shown beside this
   /// bubble instead of the small static star — used for her latest reply.
@@ -455,29 +385,38 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
+    final accent = AstraKit.primary(isDark);
+    // Luma's (assistant) bubble: a soft translucent card that reads on either
+    // theme — faint white on the dark scene, a light accent tint on the cream.
+    final lumaBubbleColor =
+        isDark ? Colors.white.withValues(alpha: 0.08) : accent.withValues(alpha: 0.10);
+    final lumaBorderColor =
+        isDark ? Colors.white.withValues(alpha: 0.12) : accent.withValues(alpha: 0.22);
     final bubble = Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.7),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         gradient: isUser
-            ? LinearGradient(colors: palette.userGradient)
+            ? const LinearGradient(colors: LumoraPalette.ctaGradient)
             : null,
-        color: isUser ? null : palette.botBubble,
+        color: isUser ? null : lumaBubbleColor,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(18),
           topRight: const Radius.circular(18),
           bottomLeft: Radius.circular(isUser ? 18 : 4),
           bottomRight: Radius.circular(isUser ? 4 : 18),
         ),
-        border: isUser ? null : Border.all(color: palette.botBorder),
+        border: isUser ? null : Border.all(color: lumaBorderColor),
       ),
       child: Text(
         message.text,
         style: LumoraPalette.bodyStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: isUser ? palette.userText : palette.body,
+          // User bubble sits on the purple CTA gradient → always white.
+          // Luma bubble sits on the theme surface → theme-aware ink.
+          color: isUser ? Colors.white : AstraKit.ink(isDark),
         ),
       ),
     );
@@ -492,15 +431,10 @@ class _MessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Padding(
-<<<<<<< Updated upstream
             padding: const EdgeInsets.only(right: 8, bottom: 4),
             child: animateAvatar
                 ? LumaAvatar(size: 46, speaking: speaking)
                 : const LumaAvatar(size: 30),
-=======
-            padding: const EdgeInsets.only(right: 8, bottom: 6),
-            child: _LumaStar(size: 22, accent: palette.star),
->>>>>>> Stashed changes
           ),
           Flexible(child: bubble),
         ],
@@ -510,10 +444,10 @@ class _MessageBubble extends StatelessWidget {
 }
 
 class _ThinkingBubble extends StatelessWidget {
-  const _ThinkingBubble({required this.text, required this.palette});
+  const _ThinkingBubble({required this.text, required this.isDark});
 
   final String text;
-  final _ChatPalette palette;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -528,7 +462,7 @@ class _ThinkingBubble extends StatelessWidget {
             child: LumaAvatar(size: 46, speaking: true),
           ),
           Flexible(
-            child: _ThinkingBubbleBody(text: text),
+            child: _ThinkingBubbleBody(text: text, isDark: isDark),
           ),
         ],
       ),
@@ -537,33 +471,41 @@ class _ThinkingBubble extends StatelessWidget {
 }
 
 class _ThinkingBubbleBody extends StatelessWidget {
-  const _ThinkingBubbleBody({required this.text});
+  const _ThinkingBubbleBody({required this.text, required this.isDark});
 
   final String text;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
+    final accent = AstraKit.primary(isDark);
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: palette.botBubble,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : accent.withValues(alpha: 0.07),
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(18),
             topRight: Radius.circular(18),
             bottomRight: Radius.circular(18),
             bottomLeft: Radius.circular(4),
           ),
-          border: Border.all(color: palette.botBorder),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : accent.withValues(alpha: 0.18),
+          ),
         ),
         child: Text(
           text,
           style: LumoraPalette.bodyStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: palette.muted,
+            color: AstraKit.muted(isDark),
           ),
         ),
       ),
@@ -572,26 +514,28 @@ class _ThinkingBubbleBody extends StatelessWidget {
 }
 
 class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.text, required this.palette});
+  const _ErrorBanner({required this.text, required this.isDark});
 
   final String text;
-  final _ChatPalette palette;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
+    // Cream text vanishes on the light surface, so use a deep rose on light.
+    final onBanner = isDark ? LumoraPalette.warmCream : const Color(0xFF8A2E3F);
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: LumoraPalette.accentPink.withValues(alpha: palette.isDark ? 0.14 : 0.22),
+          color: LumoraPalette.accentPink.withValues(alpha: isDark ? 0.14 : 0.16),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: LumoraPalette.accentPink.withValues(alpha: 0.35)),
+          border: Border.all(color: LumoraPalette.accentPink.withValues(alpha: isDark ? 0.35 : 0.45)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.spa_outlined, size: 16, color: palette.bannerText),
+            Icon(Icons.spa_outlined, size: 16, color: onBanner),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -599,7 +543,7 @@ class _ErrorBanner extends StatelessWidget {
                 style: LumoraPalette.bodyStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: palette.bannerText,
+                  color: onBanner,
                 ),
               ),
             ),
@@ -615,18 +559,19 @@ class _InputBar extends StatelessWidget {
     required this.controller,
     required this.hint,
     required this.enabled,
+    required this.isDark,
     required this.onSend,
-    required this.palette,
   });
 
   final TextEditingController controller;
   final String hint;
   final bool enabled;
+  final bool isDark;
   final VoidCallback onSend;
-  final _ChatPalette palette;
 
   @override
   Widget build(BuildContext context) {
+    final accent = AstraKit.primary(isDark);
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
       child: Row(
@@ -637,9 +582,15 @@ class _InputBar extends StatelessWidget {
               constraints: const BoxConstraints(minHeight: 46, maxHeight: 120),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
-                color: palette.inputFill,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : accent.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(23),
-                border: Border.all(color: palette.inputBorder),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.14)
+                      : accent.withValues(alpha: 0.22),
+                ),
               ),
               child: TextField(
                 controller: controller,
@@ -648,25 +599,25 @@ class _InputBar extends StatelessWidget {
                 maxLines: 4,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onSend(),
-                style: LumoraPalette.bodyStyle(fontSize: 14.5, color: palette.body),
-                cursorColor: palette.star,
+                style: LumoraPalette.bodyStyle(fontSize: 14.5, color: AstraKit.ink(isDark)),
+                cursorColor: accent,
                 decoration: InputDecoration(
                   border: InputBorder.none,
-                  // Keep transparent so our own theme-aware field surface shows
-                  // through instead of the global TextField fill.
+                  // Keep transparent so the themed chat surface shows through
+                  // instead of the light theme's default softLavender fill.
                   filled: false,
                   isCollapsed: true,
                   hintText: hint,
                   hintStyle: LumoraPalette.bodyStyle(
                     fontSize: 14.5,
-                    color: palette.muted,
+                    color: AstraKit.faint(isDark),
                   ),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 10),
-          _SendButton(enabled: enabled, onTap: onSend, palette: palette),
+          _SendButton(enabled: enabled, onTap: onSend),
         ],
       ),
     );
@@ -674,11 +625,10 @@ class _InputBar extends StatelessWidget {
 }
 
 class _SendButton extends StatelessWidget {
-  const _SendButton({required this.enabled, required this.onTap, required this.palette});
+  const _SendButton({required this.enabled, required this.onTap});
 
   final bool enabled;
   final VoidCallback onTap;
-  final _ChatPalette palette;
 
   @override
   Widget build(BuildContext context) {
@@ -687,10 +637,10 @@ class _SendButton extends StatelessWidget {
       height: 46,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(colors: palette.sendGradient),
+        gradient: const LinearGradient(colors: LumoraPalette.ctaGradient),
         boxShadow: [
           BoxShadow(
-            color: palette.sendGlow.withValues(alpha: enabled ? 0.45 : 0.15),
+            color: LumoraPalette.primaryPurple.withValues(alpha: enabled ? 0.45 : 0.15),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -701,7 +651,7 @@ class _SendButton extends StatelessWidget {
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: enabled ? onTap : null,
-          child: Icon(Icons.arrow_upward_rounded, color: palette.sendIcon, size: 20),
+          child: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 20),
         ),
       ),
     );
