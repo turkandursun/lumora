@@ -5,12 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/tables/reminders_table.dart';
+import '../../../core/services/reminder_notification_ids.dart';
 import '../../../core/services/reminder_notifier.dart';
 
-/// Localized title + notification body for one reminder, resolved by the
-/// presentation layer (which has an [AppLocalizations] instance) and handed
-/// down here — this repository never touches localization directly, so it
-/// stays correct even if the app's language changes between calls.
 class ReminderCopy {
   const ReminderCopy({required this.title, required this.body});
 
@@ -18,8 +15,6 @@ class ReminderCopy {
   final String body;
 }
 
-/// Icon keys for the starter reminders — also used to look up
-/// each one's [ReminderCopy] in the presentation layer.
 class DefaultReminderIconKeys {
   DefaultReminderIconKeys._();
 
@@ -28,17 +23,64 @@ class DefaultReminderIconKeys {
   static const weeklyReflection = 'reflection';
 }
 
-/// Icon key used for reminders the user creates themselves via the "New
-/// Reminder" sheet.
-const customReminderIconKey = 'custom';
+class DefaultReminderKeys {
+  DefaultReminderKeys._();
 
-const _seededPrefKey = 'reminders_seeded';
+  static const morningJournal = 'morning_journal';
+  static const breathingBreak = 'breathing_break';
+  static const weeklyReflection = 'weekly_reflection';
+}
+
+class DefaultReminderDefinition {
+  const DefaultReminderDefinition({
+    required this.defaultKey,
+    required this.iconKey,
+    required this.frequency,
+    required this.weekday,
+    required this.hour,
+    required this.minute,
+  });
+
+  final String defaultKey;
+  final String iconKey;
+  final ReminderFrequency frequency;
+  final int? weekday;
+  final int hour;
+  final int minute;
+}
+
+const defaultReminderDefinitions = <DefaultReminderDefinition>[
+  DefaultReminderDefinition(
+    defaultKey: DefaultReminderKeys.morningJournal,
+    iconKey: DefaultReminderIconKeys.morningJournal,
+    frequency: ReminderFrequency.daily,
+    weekday: null,
+    hour: 8,
+    minute: 0,
+  ),
+  DefaultReminderDefinition(
+    defaultKey: DefaultReminderKeys.breathingBreak,
+    iconKey: DefaultReminderIconKeys.breathingBreak,
+    frequency: ReminderFrequency.daily,
+    weekday: null,
+    hour: 12,
+    minute: 0,
+  ),
+  DefaultReminderDefinition(
+    defaultKey: DefaultReminderKeys.weeklyReflection,
+    iconKey: DefaultReminderIconKeys.weeklyReflection,
+    frequency: ReminderFrequency.weekly,
+    weekday: DateTime.sunday,
+    hour: 18,
+    minute: 0,
+  ),
+];
+
+const customReminderIconKey = 'custom';
 const _defaultDisabledFixPrefKey = 'reminders_default_disabled_fix_v1';
 const _gratitudeCleanupPrefKey = 'reminders_gratitude_cleanup_v1';
 
-/// Owns reminder persistence (via [AppDatabase]) and keeps
-/// [NotificationService] in sync with it: enabling a reminder schedules its
-/// notification, disabling or deleting one cancels it.
+/// Supabase is the source of truth; Drift is the user-scoped offline cache.
 class RemindersRepository {
   RemindersRepository({
     required AppDatabase database,
@@ -51,204 +93,252 @@ class RemindersRepository {
   final AppDatabase _db;
   final ReminderNotifier _notifications;
   final SupabaseClient _client;
+  Future<void>? _initialization;
+  String? _initializingUserId;
 
   Stream<List<ReminderRow>> watchAll() {
-    final user = _client.auth.currentUser;
-    if (user == null) {
-      return (_db.select(_db.reminders)..where((t) => t.userId.isNull())).watch();
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      return (_db.select(_db.reminders)
+            ..where((table) => table.userId.isNull()))
+          .watch();
     }
-    return (_db.select(_db.reminders)..where((t) => t.userId.equals(user.id))).watch();
+    return (_db.select(_db.reminders)
+          ..where((table) => table.userId.equals(userId)))
+        .watch();
   }
 
-  /// Inserts the starter reminders exactly once, ever (tracked via a
-  /// [SharedPreferences] flag, so manually deleting them all later doesn't
-  /// bring them back). Toggled OFF (enabled = false) by default.
-  Future<void> ensureSeeded(Map<String, ReminderCopy> defaultCopy) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_seededPrefKey) ?? false) return;
+  /// Serializes initialization across multiple screen instances in the same
+  /// process. Database uniqueness remains the cross-device/race safeguard.
+  Future<void> initializeForCurrentUser(
+    Map<String, ReminderCopy> defaultCopy,
+  ) {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return Future<void>.value();
 
-    final user = _client.auth.currentUser;
-    final defaultReminders = [
-      (
-        title: defaultCopy[DefaultReminderIconKeys.morningJournal]!.title,
-        iconKey: DefaultReminderIconKeys.morningJournal,
-        frequency: ReminderFrequency.daily,
-        weekday: null,
-        hour: 8,
-        minute: 0,
-      ),
-      (
-        title: defaultCopy[DefaultReminderIconKeys.breathingBreak]!.title,
-        iconKey: DefaultReminderIconKeys.breathingBreak,
-        frequency: ReminderFrequency.daily,
-        weekday: null,
-        hour: 12,
-        minute: 0,
-      ),
-      (
-        title: defaultCopy[DefaultReminderIconKeys.weeklyReflection]!.title,
-        iconKey: DefaultReminderIconKeys.weeklyReflection,
-        frequency: ReminderFrequency.weekly,
-        weekday: DateTime.sunday,
-        hour: 18,
-        minute: 0,
-      ),
-    ];
+    final active = _initialization;
+    if (active != null && _initializingUserId == userId) return active;
 
-    for (final item in defaultReminders) {
-      String? cloudId;
-      if (user != null) {
+    late final Future<void> operation;
+    operation = _runInitialization(defaultCopy).whenComplete(() {
+      if (identical(_initialization, operation)) {
+        _initialization = null;
+        _initializingUserId = null;
+      }
+    });
+    _initializingUserId = userId;
+    _initialization = operation;
+    return operation;
+  }
+
+  Future<void> _runInitialization(
+    Map<String, ReminderCopy> defaultCopy,
+  ) async {
+    debugPrint('[Reminders] initialization started');
+    try {
+      await _notifications.requestPermission();
+      await ensureDefaultRemindersForCurrentUser(defaultCopy);
+      await fixLegacyDefaultRemindersDisabled();
+      await cleanupGratitudeReminders();
+      await syncUnsyncedRemindersToCloud();
+      await fetchAndSyncFromSupabase(defaultCopy);
+      await reconcileNotifications(defaultCopy);
+      debugPrint('[Reminders] initialization completed');
+    } catch (error) {
+      debugPrint('[Reminders] error: $error');
+    }
+  }
+
+  /// Creates only cloud defaults that do not already exist for the current
+  /// user. Existing rows are never updated, so user settings stay untouched.
+  Future<void> ensureDefaultRemindersForCurrentUser(
+    Map<String, ReminderCopy> defaultCopy,
+  ) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    try {
+      final response = await _client
+          .from('reminders')
+          .select('default_key')
+          .eq('user_id', userId);
+      if (_client.auth.currentUser?.id != userId) return;
+
+      final existingKeys = response
+          .map((row) => row['default_key'] as String?)
+          .whereType<String>()
+          .toSet();
+      final missing = defaultReminderDefinitions
+          .where((definition) => !existingKeys.contains(definition.defaultKey))
+          .toList(growable: false);
+
+      debugPrint(
+          '[Reminders] existing defaults: ${existingKeys.toList()..sort()}');
+      debugPrint(
+        '[Reminders] missing defaults: '
+        '${missing.map((definition) => definition.defaultKey).toList()}',
+      );
+
+      for (final definition in missing) {
+        final copy = defaultCopy[definition.iconKey]!;
         try {
-          final insertData = <String, dynamic>{
-            'user_id': user.id,
-            'title': item.title,
-            'icon_key': item.iconKey,
-            'frequency': item.frequency.name,
-            'weekday': item.weekday,
-            'hour': item.hour,
-            'minute': item.minute,
+          await _client.from('reminders').insert({
+            'user_id': userId,
+            'default_key': definition.defaultKey,
+            'title': copy.title,
+            'icon_key': definition.iconKey,
+            'frequency': definition.frequency.name,
+            'weekday': definition.weekday,
+            'hour': definition.hour,
+            'minute': definition.minute,
             'enabled': false,
-          };
-
-          final response = await _client
-              .from('reminders')
-              .insert(insertData)
-              .select('id')
-              .single();
-
-          cloudId = response['id']?.toString();
-          debugPrint('[RemindersSync] Seeded default reminder into Supabase, iconKey=${item.iconKey}, cloudId=$cloudId');
-        } catch (e) {
-          debugPrint('[RemindersSync] Error seeding default reminder into Supabase: $e');
+          });
+          debugPrint('[Reminders] inserted default: ${definition.defaultKey}');
+        } on PostgrestException catch (error) {
+          if (error.code != '23505') rethrow;
+          // Another initializer/device won the race. The partial UNIQUE
+          // index is the final authority, so this is a successful outcome.
         }
       }
-
-      await _db.into(_db.reminders).insert(
-            RemindersCompanion.insert(
-              title: item.title,
-              iconKey: item.iconKey,
-              frequency: item.frequency,
-              weekday: Value(item.weekday),
-              hour: item.hour,
-              minute: item.minute,
-              enabled: const Value(false),
-              userId: Value(user?.id),
-              supabaseId: Value(cloudId),
-            ),
-          );
+      debugPrint('[Reminders] defaults ensured');
+    } catch (error) {
+      debugPrint('[Reminders] error: $error');
     }
-
-    await prefs.setBool(_seededPrefKey, true);
   }
 
-  /// One-time cleanup for legacy devices: deletes any existing seeded "Şükran Anı"
-  /// (gratitude) reminders from local Drift database and Supabase.
   Future<void> cleanupGratitudeReminders() async {
+    final userId = _client.auth.currentUser?.id;
+    final markerSuffix = userId ?? 'guest';
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool(_gratitudeCleanupPrefKey) ?? false) return;
+      final marker = '${_gratitudeCleanupPrefKey}_$markerSuffix';
+      if (prefs.getBool(marker) ?? false) return;
 
-      final rows = await (_db.select(_db.reminders)
-            ..where((t) => t.iconKey.equals('heart')))
-          .get();
+      final query = _db.select(_db.reminders)
+        ..where((table) {
+          final owner = userId == null
+              ? table.userId.isNull()
+              : table.userId.equals(userId);
+          return owner & table.iconKey.equals('heart');
+        });
+      final rows = await query.get();
 
       for (final row in rows) {
-        if (row.enabled) {
-          await _notifications.cancel(row.id);
-        }
-        if (row.supabaseId != null && _client.auth.currentUser != null) {
+        await _cancelRowNotifications(row);
+        if (row.supabaseId != null && userId != null) {
           try {
-            await _client.from('reminders').delete().eq('id', row.supabaseId!);
-          } catch (e) {
-            debugPrint('[RemindersSync] Error deleting gratitude reminder from Supabase: $e');
+            await _client
+                .from('reminders')
+                .delete()
+                .eq('id', row.supabaseId!)
+                .eq('user_id', userId);
+          } catch (error) {
+            debugPrint('[Reminders] error: $error');
           }
         }
-        await (_db.delete(_db.reminders)..where((t) => t.id.equals(row.id))).go();
+        await (_db.delete(_db.reminders)
+              ..where((table) => table.id.equals(row.id)))
+            .go();
       }
 
-      await prefs.setBool(_gratitudeCleanupPrefKey, true);
-      debugPrint('[RemindersSync] One-time cleanup: removed legacy gratitude reminders.');
-    } catch (e) {
-      debugPrint('[RemindersSync] Error running gratitude reminders cleanup: $e');
+      await prefs.setBool(marker, true);
+    } catch (error) {
+      debugPrint('[Reminders] error: $error');
     }
   }
 
-  /// Uploads any local reminders that do not have a [supabaseId] to Supabase (e.g. seeded while logged out, or legacy rows).
+  /// Uploads only the current user's pending local rows. Defaults resolve by
+  /// `(user_id, default_key)` first; custom reminders retain normal inserts.
   Future<void> syncUnsyncedRemindersToCloud() async {
-    try {
-      final user = _client.auth.currentUser;
-      if (user == null) return;
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
 
+    try {
       final unsyncedRows = await (_db.select(_db.reminders)
-            ..where((t) => t.supabaseId.isNull() | t.userId.isNull()))
+            ..where(
+              (table) =>
+                  table.userId.equals(userId) & table.supabaseId.isNull(),
+            ))
           .get();
 
       for (final row in unsyncedRows) {
-        try {
-          final insertData = <String, dynamic>{
-            'user_id': user.id,
-            'title': row.title,
-            'icon_key': row.iconKey,
-            'frequency': row.frequency.name,
-            'weekday': row.weekday,
-            'hour': row.hour,
-            'minute': row.minute,
-            'enabled': row.enabled,
-          };
+        if (_client.auth.currentUser?.id != userId) return;
+        String? cloudId;
 
-          final response = await _client
+        if (row.defaultKey != null) {
+          cloudId = await _cloudIdForDefault(userId, row.defaultKey!);
+          if (cloudId == null) {
+            try {
+              final inserted = await _client
+                  .from('reminders')
+                  .insert(_cloudPayload(row, userId: userId))
+                  .select('id')
+                  .single();
+              cloudId = inserted['id']?.toString();
+            } on PostgrestException catch (error) {
+              if (error.code != '23505') rethrow;
+              cloudId = await _cloudIdForDefault(userId, row.defaultKey!);
+            }
+          }
+        } else {
+          final inserted = await _client
               .from('reminders')
-              .insert(insertData)
+              .insert(_cloudPayload(row, userId: userId))
               .select('id')
               .single();
-
-          final cloudId = response['id']?.toString();
-          if (cloudId != null) {
-            await (_db.update(_db.reminders)..where((t) => t.id.equals(row.id)))
-                .write(RemindersCompanion(
-              userId: Value(user.id),
-              supabaseId: Value(cloudId),
-            ));
-            debugPrint('[RemindersSync] Backfilled local reminder (id=${row.id}) to Supabase, cloudId=$cloudId');
-          }
-        } catch (e) {
-          debugPrint('[RemindersSync] Error backfilling local reminder (id=${row.id}) to Supabase: $e');
+          cloudId = inserted['id']?.toString();
         }
+
+        if (cloudId == null || _client.auth.currentUser?.id != userId) {
+          continue;
+        }
+        await (_db.update(_db.reminders)
+              ..where(
+                (table) =>
+                    table.id.equals(row.id) & table.userId.equals(userId),
+              ))
+            .write(RemindersCompanion(supabaseId: Value(cloudId)));
       }
-    } catch (e) {
-      debugPrint('[RemindersSync] Error running syncUnsyncedRemindersToCloud: $e');
+    } catch (error) {
+      debugPrint('[Reminders] error: $error');
     }
   }
 
-  /// One-time migration for existing devices: defaults legacy starter reminders to OFF
-  /// and cancels any active notifications for them.
+  /// One-time safeguard for pre-cloud default rows only. Rows that already
+  /// have a stable defaultKey are user data and are never overwritten here.
   Future<void> fixLegacyDefaultRemindersDisabled() async {
+    final userId = _client.auth.currentUser?.id;
+    final markerSuffix = userId ?? 'guest';
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool(_defaultDisabledFixPrefKey) ?? false) return;
+      final marker = '${_defaultDisabledFixPrefKey}_$markerSuffix';
+      if (prefs.getBool(marker) ?? false) return;
 
-      const defaultKeys = [
+      const iconKeys = [
         DefaultReminderIconKeys.morningJournal,
         DefaultReminderIconKeys.breathingBreak,
         DefaultReminderIconKeys.weeklyReflection,
       ];
-
       final rows = await (_db.select(_db.reminders)
-            ..where((t) => t.iconKey.isIn(defaultKeys)))
+            ..where((table) {
+              final owner = userId == null
+                  ? table.userId.isNull()
+                  : table.userId.equals(userId);
+              return owner &
+                  table.defaultKey.isNull() &
+                  table.iconKey.isIn(iconKeys);
+            }))
           .get();
 
-      for (final row in rows) {
-        if (row.enabled) {
-          await _notifications.cancel(row.id);
-          await (_db.update(_db.reminders)..where((t) => t.id.equals(row.id)))
-              .write(const RemindersCompanion(enabled: Value(false)));
-        }
+      for (final row in rows.where((item) => item.enabled)) {
+        await _cancelRowNotifications(row);
+        await (_db.update(_db.reminders)
+              ..where((table) => table.id.equals(row.id)))
+            .write(const RemindersCompanion(enabled: Value(false)));
       }
-
-      await prefs.setBool(_defaultDisabledFixPrefKey, true);
-      debugPrint('[RemindersSync] One-time migration: defaulted legacy starter reminders to OFF.');
-    } catch (e) {
-      debugPrint('[RemindersSync] Error running legacy default reminders fix: $e');
+      await prefs.setBool(marker, true);
+    } catch (error) {
+      debugPrint('[Reminders] error: $error');
     }
   }
 
@@ -260,32 +350,29 @@ class RemindersRepository {
     required int minute,
     required String notificationBody,
   }) async {
-    final user = _client.auth.currentUser;
+    final userId = _client.auth.currentUser?.id;
     String? cloudId;
 
-    if (user != null) {
+    if (userId != null) {
       try {
-        final insertData = <String, dynamic>{
-          'user_id': user.id,
-          'title': title,
-          'icon_key': customReminderIconKey,
-          'frequency': frequency.name,
-          'weekday': weekday,
-          'hour': hour,
-          'minute': minute,
-          'enabled': true,
-        };
-
-        final response = await _client
+        final inserted = await _client
             .from('reminders')
-            .insert(insertData)
+            .insert({
+              'user_id': userId,
+              'default_key': null,
+              'title': title,
+              'icon_key': customReminderIconKey,
+              'frequency': frequency.name,
+              'weekday': weekday,
+              'hour': hour,
+              'minute': minute,
+              'enabled': true,
+            })
             .select('id')
             .single();
-
-        cloudId = response['id']?.toString();
-        debugPrint('[RemindersSync] Inserted custom reminder into Supabase, cloudId=$cloudId');
-      } catch (e) {
-        debugPrint('[RemindersSync] Error inserting into Supabase: $e');
+        cloudId = inserted['id']?.toString();
+      } catch (error) {
+        debugPrint('[Reminders] error: $error');
       }
     }
 
@@ -298,124 +385,143 @@ class RemindersRepository {
             hour: hour,
             minute: minute,
             enabled: const Value(true),
-            userId: Value(user?.id),
+            userId: Value(userId),
             supabaseId: Value(cloudId),
+            defaultKey: const Value(null),
           ),
         );
-
-    await _notifications.schedule(
-      id: id,
-      title: title,
-      body: notificationBody,
-      frequency: frequency,
-      weekday: weekday,
-      hour: hour,
-      minute: minute,
+    final row = await (_db.select(_db.reminders)
+          ..where((table) => table.id.equals(id)))
+        .getSingle();
+    await _schedule(
+      row,
+      ReminderCopy(title: title, body: notificationBody),
     );
   }
 
-  /// Toggles [reminder]'s enabled state, scheduling or cancelling its
-  /// notification to match.
-  Future<void> setEnabled(ReminderRow reminder, bool enabled, {ReminderCopy? copy}) async {
-    final user = _client.auth.currentUser;
-
-    await (_db.update(_db.reminders)..where((t) => t.id.equals(reminder.id)))
+  Future<void> setEnabled(
+    ReminderRow reminder,
+    bool enabled, {
+    ReminderCopy? copy,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    await (_db.update(_db.reminders)
+          ..where((table) => table.id.equals(reminder.id)))
         .write(RemindersCompanion(enabled: Value(enabled)));
 
+    final updated = reminder.copyWith(enabled: enabled);
     if (enabled) {
-      if (copy != null) await _schedule(reminder, copy);
+      if (copy != null) await _schedule(updated, copy);
     } else {
-      await _notifications.cancel(reminder.id);
+      await _cancelRowNotifications(updated);
     }
 
-    if (user != null && reminder.supabaseId != null) {
+    if (userId != null && reminder.supabaseId != null) {
       try {
-        await _client.from('reminders').update({'enabled': enabled}).eq('id', reminder.supabaseId!);
-        debugPrint('[RemindersSync] Updated enabled=$enabled in Supabase for cloudId=${reminder.supabaseId}');
-      } catch (e) {
-        debugPrint('[RemindersSync] Error updating enabled in Supabase: $e');
+        await _client
+            .from('reminders')
+            .update({'enabled': enabled})
+            .eq('id', reminder.supabaseId!)
+            .eq('user_id', userId);
+      } catch (error) {
+        debugPrint('[Reminders] error: $error');
       }
     }
   }
 
   Future<void> delete(ReminderRow reminder) async {
-    final user = _client.auth.currentUser;
+    if (reminder.defaultKey != null) {
+      debugPrint(
+        '[Reminders] error: system default cannot be deleted: '
+        '${reminder.defaultKey}',
+      );
+      return;
+    }
 
-    await (_db.delete(_db.reminders)..where((t) => t.id.equals(reminder.id))).go();
-    await _notifications.cancel(reminder.id);
+    final userId = _client.auth.currentUser?.id;
+    await (_db.delete(_db.reminders)
+          ..where((table) => table.id.equals(reminder.id)))
+        .go();
+    await _cancelRowNotifications(reminder);
 
-    if (user != null && reminder.supabaseId != null) {
+    if (userId != null && reminder.supabaseId != null) {
       try {
-        await _client.from('reminders').delete().eq('id', reminder.supabaseId!);
-        debugPrint('[RemindersSync] Deleted reminder from Supabase, cloudId=${reminder.supabaseId}');
-      } catch (e) {
-        debugPrint('[RemindersSync] Error deleting reminder from Supabase: $e');
+        await _client
+            .from('reminders')
+            .delete()
+            .eq('id', reminder.supabaseId!)
+            .eq('user_id', userId);
+      } catch (error) {
+        debugPrint('[Reminders] error: $error');
       }
     }
   }
 
-  /// Deletes all local reminders and cancels their notifications (e.g. upon user logout).
   Future<void> deleteAll() async {
     final rows = await _db.select(_db.reminders).get();
     for (final row in rows) {
-      try {
-        await _notifications.cancel(row.id);
-      } catch (_) {}
+      await _cancelRowNotifications(row);
     }
     await _db.delete(_db.reminders).go();
   }
 
-  /// Fetches user's reminders from Supabase and syncs missing/deleted ones to local Drift DB.
-  Future<void> fetchAndSyncFromSupabase(Map<String, ReminderCopy> defaultCopy) async {
+  /// Mirrors the current user's cloud rows into Drift and removes stale or
+  /// duplicate local cache rows. Notification state is reconciled afterwards.
+  Future<void> fetchAndSyncFromSupabase(
+    Map<String, ReminderCopy> defaultCopy,
+  ) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+
     try {
-      final user = _client.auth.currentUser;
-      if (user == null) return;
+      final response =
+          await _client.from('reminders').select().eq('user_id', userId);
+      debugPrint('[Reminders] cloud fetch count: ${response.length}');
+      if (_client.auth.currentUser?.id != userId) return;
 
-      final response = await _client
-          .from('reminders')
-          .select()
-          .eq('user_id', user.id);
-
-      final cloudRows = response as List;
-      final cloudMap = <String, Map<String, dynamic>>{};
-      for (final row in cloudRows) {
-        final id = row['id']?.toString();
-        if (id != null) {
-          cloudMap[id] = row as Map<String, dynamic>;
-        }
+      final cloudRows = <String, Map<String, dynamic>>{};
+      for (final row in response) {
+        final cloudId = row['id']?.toString();
+        if (cloudId != null) cloudRows[cloudId] = row;
       }
 
-      final localEntries = await (_db.select(_db.reminders)
-            ..where((t) => t.userId.equals(user.id)))
+      var localRows = await (_db.select(_db.reminders)
+            ..where((table) => table.userId.equals(userId)))
           .get();
+      final cloudIds = cloudRows.keys.toSet();
 
-      final localSupabaseIdMap = <String, ReminderRow>{};
-      for (final entry in localEntries) {
-        if (entry.supabaseId != null) {
-          localSupabaseIdMap[entry.supabaseId!] = entry;
-        }
-      }
-
-      // Delete local entries that were deleted in cloud
-      for (final localSupabaseId in localSupabaseIdMap.keys) {
-        if (!cloudMap.containsKey(localSupabaseId)) {
-          final localRow = localSupabaseIdMap[localSupabaseId]!;
-          await _notifications.cancel(localRow.id);
+      for (final local in localRows) {
+        final cloudId = local.supabaseId;
+        if (cloudId != null && !cloudIds.contains(cloudId)) {
+          await _cancelRowNotifications(local);
           await (_db.delete(_db.reminders)
-                ..where((t) => t.supabaseId.equals(localSupabaseId)))
+                ..where((table) => table.id.equals(local.id)))
               .go();
-          debugPrint('[RemindersSync] Deleted local reminder with supabaseId=$localSupabaseId (deleted from cloud)');
         }
       }
 
-      // Insert cloud entries that are missing locally, or update enabled state
-      for (final cloudId in cloudMap.keys) {
-        final row = cloudMap[cloudId]!;
+      localRows = await (_db.select(_db.reminders)
+            ..where((table) => table.userId.equals(userId)))
+          .get();
+      final consumedLocalIds = <int>{};
+
+      for (final entry in cloudRows.entries) {
+        final cloudId = entry.key;
+        final row = entry.value;
+        final defaultKey = row['default_key'] as String?;
+        final candidates = localRows.where((local) {
+          if (consumedLocalIds.contains(local.id)) return false;
+          if (local.supabaseId == cloudId) return true;
+          return defaultKey != null &&
+              local.defaultKey == defaultKey &&
+              local.supabaseId == null;
+        }).toList()
+          ..sort((a, b) => a.id.compareTo(b.id));
+
         final title = row['title'] as String? ?? '';
         final iconKey = row['icon_key'] as String? ?? customReminderIconKey;
-        final freqStr = row['frequency'] as String? ?? 'daily';
         final frequency = ReminderFrequency.values.firstWhere(
-          (e) => e.name == freqStr,
+          (value) => value.name == (row['frequency'] as String? ?? 'daily'),
           orElse: () => ReminderFrequency.daily,
         );
         final weekday = row['weekday'] as int?;
@@ -423,8 +529,8 @@ class RemindersRepository {
         final minute = row['minute'] as int? ?? 0;
         final enabled = row['enabled'] as bool? ?? false;
 
-        if (!localSupabaseIdMap.containsKey(cloudId)) {
-          final newId = await _db.into(_db.reminders).insert(
+        if (candidates.isEmpty) {
+          await _db.into(_db.reminders).insert(
                 RemindersCompanion.insert(
                   title: title,
                   iconKey: iconKey,
@@ -433,49 +539,145 @@ class RemindersRepository {
                   hour: hour,
                   minute: minute,
                   enabled: Value(enabled),
-                  userId: Value(user.id),
+                  userId: Value(userId),
                   supabaseId: Value(cloudId),
+                  defaultKey: Value(defaultKey),
                 ),
               );
-
-          if (enabled) {
-            final copy = defaultCopy[iconKey] ??
-                ReminderCopy(title: title, body: title);
-            await _notifications.schedule(
-              id: newId,
-              title: copy.title,
-              body: copy.body,
-              frequency: frequency,
-              weekday: weekday,
-              hour: hour,
-              minute: minute,
-            );
-          }
-          debugPrint('[RemindersSync] Inserted cloud reminder locally, cloudId=$cloudId');
         } else {
-          final localRow = localSupabaseIdMap[cloudId]!;
-          if (localRow.enabled != enabled) {
-            await (_db.update(_db.reminders)..where((t) => t.id.equals(localRow.id)))
-                .write(RemindersCompanion(enabled: Value(enabled)));
+          final keeper = candidates.first;
+          consumedLocalIds.add(keeper.id);
+          await (_db.update(_db.reminders)
+                ..where((table) => table.id.equals(keeper.id)))
+              .write(
+            RemindersCompanion(
+              title: Value(title),
+              iconKey: Value(iconKey),
+              frequency: Value(frequency),
+              weekday: Value(weekday),
+              hour: Value(hour),
+              minute: Value(minute),
+              enabled: Value(enabled),
+              userId: Value(userId),
+              supabaseId: Value(cloudId),
+              defaultKey: Value(defaultKey),
+            ),
+          );
 
-            if (enabled) {
-              final copy = defaultCopy[iconKey] ??
-                  ReminderCopy(title: title, body: title);
-              await _schedule(localRow, copy);
-            } else {
-              await _notifications.cancel(localRow.id);
-            }
+          for (final duplicate in candidates.skip(1)) {
+            consumedLocalIds.add(duplicate.id);
+            await _cancelRowNotifications(duplicate);
+            await (_db.delete(_db.reminders)
+                  ..where((table) => table.id.equals(duplicate.id)))
+                .go();
           }
         }
       }
-    } catch (e) {
-      debugPrint('[RemindersSync] Error fetching from Supabase: $e');
+
+      final localCount = await (_db.select(_db.reminders)
+            ..where((table) => table.userId.equals(userId)))
+          .get()
+          .then((rows) => rows.length);
+      debugPrint('[Reminders] local reminder count: $localCount');
+    } catch (error) {
+      debugPrint('[Reminders] error: $error');
     }
   }
 
-  Future<void> _schedule(ReminderRow row, ReminderCopy copy) {
-    return _notifications.schedule(
-      id: row.id,
+  /// Makes the plugin's pending reminder namespace exactly match the current
+  /// user's enabled Drift rows after cloud/local synchronization.
+  Future<void> reconcileNotifications(
+    Map<String, ReminderCopy> defaultCopy,
+  ) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    try {
+      final rows = await (_db.select(_db.reminders)
+            ..where((table) => table.userId.equals(userId)))
+          .get();
+      final pending = await _notifications.pendingNotificationIds();
+      final knownIds = <int>{};
+      final ownerByNotificationId = <int, String>{};
+
+      for (final row in rows) {
+        final stableIdentity = _notificationIdentity(row);
+        final notificationId = reminderNotificationId(stableIdentity);
+        final existingOwner = ownerByNotificationId[notificationId];
+        if (existingOwner != null && existingOwner != stableIdentity) {
+          debugPrint(
+            '[Reminders] error: notification id collision '
+            '$notificationId ($existingOwner, $stableIdentity)',
+          );
+          continue;
+        }
+        ownerByNotificationId[notificationId] = stableIdentity;
+        knownIds.add(notificationId);
+
+        // Cancel the pre-v20 raw Drift id when it is still pending. This is
+        // limited to ids that are known to belong to current reminder rows.
+        if (row.id != notificationId && pending.contains(row.id)) {
+          await _cancelNotification(row.id);
+        }
+
+        if (row.enabled) {
+          final copy = defaultCopy[row.iconKey] ??
+              ReminderCopy(title: row.title, body: row.title);
+          await _schedule(row, copy);
+        } else if (pending.contains(notificationId)) {
+          await _cancelNotification(notificationId);
+        }
+      }
+
+      final orphanIds = pending.where(
+        (id) => isReminderNotificationId(id) && !knownIds.contains(id),
+      );
+      for (final id in orphanIds) {
+        await _cancelNotification(id);
+      }
+    } catch (error) {
+      debugPrint('[Reminders] error: $error');
+    }
+  }
+
+  Future<String?> _cloudIdForDefault(String userId, String defaultKey) async {
+    final row = await _client
+        .from('reminders')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('default_key', defaultKey)
+        .maybeSingle();
+    return row?['id']?.toString();
+  }
+
+  Map<String, dynamic> _cloudPayload(
+    ReminderRow row, {
+    required String userId,
+  }) {
+    return {
+      'user_id': userId,
+      'default_key': row.defaultKey,
+      'title': row.title,
+      'icon_key': row.iconKey,
+      'frequency': row.frequency.name,
+      'weekday': row.weekday,
+      'hour': row.hour,
+      'minute': row.minute,
+      'enabled': row.enabled,
+    };
+  }
+
+  String _notificationIdentity(ReminderRow row) {
+    return row.supabaseId ?? 'local:${row.userId ?? 'guest'}:${row.id}';
+  }
+
+  int _notificationId(ReminderRow row) =>
+      reminderNotificationId(_notificationIdentity(row));
+
+  Future<void> _schedule(ReminderRow row, ReminderCopy copy) async {
+    final id = _notificationId(row);
+    await _notifications.schedule(
+      id: id,
       title: copy.title,
       body: copy.body,
       frequency: row.frequency,
@@ -483,5 +685,17 @@ class RemindersRepository {
       hour: row.hour,
       minute: row.minute,
     );
+    debugPrint('[Reminders] notification scheduled: $id');
+  }
+
+  Future<void> _cancelNotification(int id) async {
+    await _notifications.cancel(id);
+    debugPrint('[Reminders] notification cancelled: $id');
+  }
+
+  Future<void> _cancelRowNotifications(ReminderRow row) async {
+    final stableId = _notificationId(row);
+    await _cancelNotification(stableId);
+    if (row.id != stableId) await _cancelNotification(row.id);
   }
 }

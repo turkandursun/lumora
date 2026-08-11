@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/activities/presentation/providers/activity_providers.dart';
 import '../../features/calendar/presentation/providers/calendar_providers.dart';
@@ -37,6 +38,7 @@ void invalidateUserProviders(WidgetRef ref) {
   ref.invalidate(dailyQuestionHistoryProvider);
   ref.invalidate(activitiesProvider);
   ref.invalidate(quoteFavoritesProvider);
+  ref.invalidate(favoriteQuotesProvider);
 }
 
 /// Clears local user data stored in SQLite / Drift tables on sign out.
@@ -48,7 +50,15 @@ Future<void> clearLocalUserData(WidgetRef ref) async {
     await ref.read(activityRepositoryProvider).deleteAll();
     await ref.read(remindersRepositoryProvider).deleteAll();
     await ref.read(letterRepositoryProvider).deleteAll();
-    debugPrint('[AuthListener] Successfully cleared local user database tables');
+    final quoteFavoritesRepository = ref.read(quoteFavoritesRepositoryProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      await quoteFavoritesRepository.clearAllLocalData();
+    } else {
+      await quoteFavoritesRepository.clearLocalDataForUser(userId);
+    }
+    debugPrint(
+        '[AuthListener] Successfully cleared local user database tables');
   } catch (e) {
     debugPrint('[AuthListener] Error clearing local user database tables: $e');
   }

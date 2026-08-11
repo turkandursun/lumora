@@ -7,12 +7,16 @@ import 'tables/dreams_table.dart';
 import 'tables/goals_table.dart';
 import 'tables/journal_entries_table.dart';
 import 'tables/letters_table.dart';
+import 'tables/quote_favorites_table.dart';
+import 'tables/quotes_table.dart';
 import 'tables/reminders_table.dart';
 
 part 'app_database.g.dart';
 
 /// The app's local offline-first database: [Reminders], [Goals], [Dreams],
-/// [JournalEntries] (Home's writing area), [DailyQuestionAnswers], [Activities], and [Letters].
+/// [JournalEntries] (Home's writing area), [DailyQuestionAnswers], [Activities],
+/// [Letters], the offline [Quotes] catalogue, and user-scoped
+/// [QuoteFavorites].
 ///
 /// The connection is platform-conditional under the hood: `drift_flutter`
 /// picks a native sqlite3 connection on Android/iOS/desktop and a
@@ -27,6 +31,8 @@ part 'app_database.g.dart';
   DailyQuestionAnswers,
   Activities,
   Letters,
+  Quotes,
+  QuoteFavorites,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -34,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -126,6 +132,27 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 17 && !await _hasColumn('journal_entries', 'photo_url')) {
             await m.addColumn(journalEntries, journalEntries.photoUrl);
+          }
+          if (from < 18 && !await _hasTable('quotes')) {
+            await m.createTable(quotes);
+          }
+          if (from < 19 && !await _hasTable('quote_favorites')) {
+            await m.createTable(quoteFavorites);
+          }
+          if (from < 20 && await _hasTable('reminders')) {
+            if (!await _hasColumn('reminders', 'default_key')) {
+              await m.addColumn(reminders, reminders.defaultKey);
+            }
+            await customStatement('''
+              UPDATE reminders
+              SET default_key = CASE icon_key
+                WHEN 'sun' THEN 'morning_journal'
+                WHEN 'breathing' THEN 'breathing_break'
+                WHEN 'reflection' THEN 'weekly_reflection'
+              END
+              WHERE default_key IS NULL
+                AND icon_key IN ('sun', 'breathing', 'reflection')
+            ''');
           }
         },
       );

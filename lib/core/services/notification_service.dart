@@ -28,7 +28,8 @@ class NotificationService implements ReminderNotifier {
 
   static const _channelId = 'reminders';
   static const _channelName = 'Reminders';
-  static const _channelDescription = 'Gentle nudges for journaling, breathing, and reflection';
+  static const _channelDescription =
+      'Gentle nudges for journaling, breathing, and reflection';
 
   // Fixed, arbitrary identifiers for Windows toast registration — these
   // just need to be stable across runs, not globally unique.
@@ -83,13 +84,23 @@ class NotificationService implements ReminderNotifier {
     await init();
     if (defaultTargetPlatform == TargetPlatform.android) {
       await _plugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
           ?.requestNotificationsPermission();
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       await _plugin
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
           ?.requestPermissions(alert: true, badge: true, sound: true);
     }
+  }
+
+  @override
+  Future<Set<int>> pendingNotificationIds() async {
+    if (!_isSupportedPlatform) return const <int>{};
+    await init();
+    final pending = await _plugin.pendingNotificationRequests();
+    return pending.map((notification) => notification.id).toSet();
   }
 
   /// Schedules a repeating (or, for [ReminderFrequency.once], single-shot)

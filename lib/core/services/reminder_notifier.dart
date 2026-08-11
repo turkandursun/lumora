@@ -8,6 +8,8 @@ import '../database/tables/reminders_table.dart';
 abstract class ReminderNotifier {
   Future<void> requestPermission();
 
+  Future<Set<int>> pendingNotificationIds();
+
   Future<void> schedule({
     required int id,
     required String title,

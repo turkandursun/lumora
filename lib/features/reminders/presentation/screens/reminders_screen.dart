@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -58,7 +60,8 @@ IconData iconForReminder(String iconKey) {
 /// [NotificationService], which does the timezone-aware version of this).
 DateTime nextOccurrence(ReminderRow reminder) {
   final now = DateTime.now();
-  var next = DateTime(now.year, now.month, now.day, reminder.hour, reminder.minute);
+  var next =
+      DateTime(now.year, now.month, now.day, reminder.hour, reminder.minute);
   if (!next.isAfter(now)) next = next.add(const Duration(days: 1));
   if (reminder.frequency == ReminderFrequency.weekly) {
     final weekday = reminder.weekday ?? DateTime.monday;
@@ -69,13 +72,15 @@ DateTime nextOccurrence(ReminderRow reminder) {
   return next;
 }
 
-String frequencyTimeLabel(BuildContext context, AppLocalizations l10n, ReminderRow reminder) {
+String frequencyTimeLabel(
+    BuildContext context, AppLocalizations l10n, ReminderRow reminder) {
   final time =
       '${reminder.hour.toString().padLeft(2, '0')}:${reminder.minute.toString().padLeft(2, '0')}';
   final frequencyLabel = switch (reminder.frequency) {
     ReminderFrequency.daily => l10n.remindersFrequencyDaily,
     ReminderFrequency.once => l10n.remindersFrequencyOnce,
-    ReminderFrequency.weekly => _weekdayName(context, reminder.weekday ?? DateTime.monday),
+    ReminderFrequency.weekly =>
+      _weekdayName(context, reminder.weekday ?? DateTime.monday),
   };
   return '$frequencyLabel - $time';
 }
@@ -101,7 +106,8 @@ class RemindersScreen extends ConsumerStatefulWidget {
 
 class _RemindersScreenState extends ConsumerState<RemindersScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabController = TabController(length: 2, vsync: this);
+  late final TabController _tabController =
+      TabController(length: 2, vsync: this);
   bool _didInitialSetup = false;
 
   @override
@@ -117,12 +123,9 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
     _didInitialSetup = true;
     final l10n = AppLocalizations.of(context);
     final copy = defaultReminderCopy(l10n);
-    ref.read(notificationServiceProvider).requestPermission();
-    ref.read(remindersRepositoryProvider).ensureSeeded(copy);
-    ref.read(remindersRepositoryProvider).fixLegacyDefaultRemindersDisabled();
-    ref.read(remindersRepositoryProvider).cleanupGratitudeReminders();
-    ref.read(remindersRepositoryProvider).syncUnsyncedRemindersToCloud();
-    ref.read(remindersRepositoryProvider).fetchAndSyncFromSupabase(copy);
+    unawaited(
+      ref.read(remindersRepositoryProvider).initializeForCurrentUser(copy),
+    );
   }
 
   @override
@@ -160,7 +163,8 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(l10n.remindersTitle, style: AstraKit.heading1(isDark, fontSize: 24)),
+                      Text(l10n.remindersTitle,
+                          style: AstraKit.heading1(isDark, fontSize: 24)),
                     ],
                   ),
                 ),
@@ -170,8 +174,10 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                   indicatorWeight: 3,
                   labelColor: AstraKit.ink(isDark),
                   unselectedLabelColor: AstraKit.muted(isDark),
-                  labelStyle: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w700),
-                  unselectedLabelStyle: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500),
+                  labelStyle: GoogleFonts.outfit(
+                      fontSize: 14, fontWeight: FontWeight.w700),
+                  unselectedLabelStyle: GoogleFonts.outfit(
+                      fontSize: 14, fontWeight: FontWeight.w500),
                   tabs: [
                     Tab(text: l10n.remindersTabUpcoming),
                     Tab(text: l10n.remindersTabAll),
@@ -180,8 +186,11 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                 Expanded(
                   child: remindersAsync.when(
                     data: (reminders) {
-                      final upcoming = reminders.where((r) => r.enabled).toList()
-                        ..sort((a, b) => nextOccurrence(a).compareTo(nextOccurrence(b)));
+                      final upcoming = reminders
+                          .where((r) => r.enabled)
+                          .toList()
+                        ..sort((a, b) =>
+                            nextOccurrence(a).compareTo(nextOccurrence(b)));
                       return TabBarView(
                         controller: _tabController,
                         children: [
@@ -200,9 +209,11 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                         ],
                       );
                     },
-                    loading: () => Center(child: CircularProgressIndicator(color: primary)),
+                    loading: () => Center(
+                        child: CircularProgressIndicator(color: primary)),
                     error: (_, __) => Center(
-                      child: Text(l10n.remindersLoadError, style: AstraKit.mutedText(isDark)),
+                      child: Text(l10n.remindersLoadError,
+                          style: AstraKit.mutedText(isDark)),
                     ),
                   ),
                 ),
@@ -234,21 +245,23 @@ class _ReminderList extends StatelessWidget {
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Text(emptyText, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark)),
+          child: Text(emptyText,
+              textAlign: TextAlign.center, style: AstraKit.mutedText(isDark)),
         ),
       );
     }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
       itemCount: reminders.length,
-      itemBuilder: (context, index) =>
-          _ReminderCard(reminder: reminders[index], isDark: isDark, primary: primary),
+      itemBuilder: (context, index) => _ReminderCard(
+          reminder: reminders[index], isDark: isDark, primary: primary),
     );
   }
 }
 
 class _ReminderCard extends ConsumerWidget {
-  const _ReminderCard({required this.reminder, required this.isDark, required this.primary});
+  const _ReminderCard(
+      {required this.reminder, required this.isDark, required this.primary});
 
   final ReminderRow reminder;
   final bool isDark;
@@ -279,13 +292,15 @@ class _ReminderCard extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(isDark)),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel',
+                style: AstraKit.mutedText(isDark)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               isTr ? 'Sil' : 'Delete',
-              style: const TextStyle(color: errorColor, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: errorColor, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -316,16 +331,20 @@ class _ReminderCard extends ConsumerWidget {
                 color: primary.withValues(alpha: 0.16),
                 border: Border.all(color: primary.withValues(alpha: 0.35)),
               ),
-              child: Icon(iconForReminder(reminder.iconKey), color: primary, size: 22),
+              child: Icon(iconForReminder(reminder.iconKey),
+                  color: primary, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(reminder.title, style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700)),
+                  Text(reminder.title,
+                      style: AstraKit.body(isDark,
+                          fontSize: 15, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
-                  Text(frequencyTimeLabel(context, l10n, reminder), style: AstraKit.mutedText(isDark, fontSize: 12.5)),
+                  Text(frequencyTimeLabel(context, l10n, reminder),
+                      style: AstraKit.mutedText(isDark, fontSize: 12.5)),
                 ],
               ),
             ),
@@ -334,18 +353,21 @@ class _ReminderCard extends ConsumerWidget {
               activeThumbColor: primary,
               onChanged: (value) {
                 final copy = value ? reminderCopyFor(l10n, reminder) : null;
-                ref.read(remindersRepositoryProvider).setEnabled(reminder, value, copy: copy);
+                ref
+                    .read(remindersRepositoryProvider)
+                    .setEnabled(reminder, value, copy: copy);
               },
             ),
-            IconButton(
-              icon: Icon(
-                Icons.delete_outline_rounded,
-                color: AstraKit.muted(isDark),
-                size: 20,
+            if (reminder.defaultKey == null)
+              IconButton(
+                icon: Icon(
+                  Icons.delete_outline_rounded,
+                  color: AstraKit.muted(isDark),
+                  size: 20,
+                ),
+                onPressed: () => _confirmDelete(context, ref),
+                tooltip: isTr ? 'Sil' : 'Delete',
               ),
-              onPressed: () => _confirmDelete(context, ref),
-              tooltip: isTr ? 'Sil' : 'Delete',
-            ),
           ],
         ),
       ),

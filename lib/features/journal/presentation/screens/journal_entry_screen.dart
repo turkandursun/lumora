@@ -26,7 +26,6 @@ import '../../../../theme/responsive_content.dart';
 import '../../../goals/data/goals_repository.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 import '../providers/journal_entries_provider.dart';
-import '../providers/journal_streak_provider.dart';
 
 /// Exact replica of the reference screenshot:
 /// Moon background · Date+Title card · Writing card · Voice card ·
@@ -278,30 +277,46 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       CrisisSupportSheet.show(context);
     }
 
-
     final title = _titleController.text.trim();
-    if (_editingEntry != null) {
-      await ref.read(journalEntriesRepositoryProvider).update(
-        _editingEntry!.id,
-        content: content,
-        // Preserve any audio note saved before this feature was removed.
-        audioPath: _editingEntry!.audioPath,
-        supabaseId: _editingEntry!.supabaseId,
-      );
-    } else {
-      await ref.read(journalEntriesRepositoryProvider).save(
-            content,
-            title: title.isEmpty ? null : title,
-            photoPath: _pickedPhotoPath,
-            photoBytes: _pickedPhotoBytes,
-          );
-      await ref.read(journalStreakProvider.notifier).recordEntrySaved();
-      // Auto-advance the "journal" goal when a new entry is written.
-      await ref
-          .read(goalsRepositoryProvider)
-          .incrementByIconKey(DefaultGoalIconKeys.journal, 10);
-      ref.read(goalStreakProvider.notifier).refresh();
+    final repo = ref.read(journalEntriesRepositoryProvider);
+    final editing = _editingEntry;
+
+    // Actually persist the entry (locally + cloud). Without this the write area
+    // would only show the "sealed" toast and clear itself, losing the text.
+    try {
+      if (editing != null) {
+        await repo.update(
+          editing.id,
+          content: content,
+          photoUrl: editing.photoUrl,
+          supabaseId: editing.supabaseId,
+        );
+      } else {
+        await repo.save(
+          content,
+          title: title.isEmpty ? null : title,
+          photoPath: _pickedPhotoPath,
+          photoBytes: _pickedPhotoBytes,
+        );
+        // Auto-advance the journaling goal + streak on a new entry.
+        await ref
+            .read(goalsRepositoryProvider)
+            .incrementByIconKey(DefaultGoalIconKeys.journal, 10);
+        ref.read(goalStreakProvider.notifier).refresh();
+      }
+    } catch (e) {
+      debugPrint('[JournalSave] failed: $e');
+      if (!mounted) return;
+      final isTr = Localizations.localeOf(context).languageCode == 'tr';
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(
+              isTr ? 'Kaydedilemedi, tekrar dene' : 'Could not save, try again'),
+        ));
+      return;
     }
+
     if (!mounted) return;
     _entryController.clear();
     _titleController.clear();

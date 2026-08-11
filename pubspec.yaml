@@ -55,6 +55,10 @@ dependencies:
   # Photos for daily activity entries
   image_picker: ^1.1.2
 
+  # PDF export of the personal journal archive
+  pdf: ^3.11.1
+  printing: ^5.13.2
+
   # Voice journal entry recording
   record: ^7.1.1
   speech_to_text: ^7.0.0

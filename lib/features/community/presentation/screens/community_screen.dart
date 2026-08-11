@@ -10,11 +10,9 @@ import '../../domain/community_share.dart';
 import '../../domain/relative_time.dart';
 import '../providers/community_providers.dart';
 
-/// "Safe Space Community" — a simple, read-only, anonymous feed of other
-/// users' shared answers to today's Daily Question (see
-/// `features/daily_question`). No likes/comments/replies in this version;
-/// the only interaction besides reading is flagging a concerning entry via
-/// [_ReportButton].
+/// "Safe Space Community" — a simple, anonymous feed of other users' shared
+/// answers to today's Daily Question. Everything stays anonymous; concerning
+/// entries can be flagged for review.
 class CommunityScreen extends ConsumerWidget {
   const CommunityScreen({super.key});
 
@@ -37,7 +35,8 @@ class CommunityScreen extends ConsumerWidget {
           child: ResponsiveContent(
             child: RefreshIndicator(
               color: primary,
-              backgroundColor: isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
+              backgroundColor:
+                  isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
               onRefresh: () async {
                 ref.invalidate(communityFeedProvider);
                 await ref.read(communityFeedProvider.future);
@@ -54,33 +53,38 @@ class CommunityScreen extends ConsumerWidget {
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(l10n.communityTitle, style: AstraKit.heading1(isDark, fontSize: 24)),
+                      Text(l10n.communityTitle,
+                          style: AstraKit.heading1(isDark, fontSize: 24)),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _FramingBanner(text: l10n.communityFramingText, isDark: isDark, primary: primary),
+                  _FramingBanner(
+                      text: l10n.communityFramingText,
+                      isDark: isDark,
+                      primary: primary),
                   const SizedBox(height: 20),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      l10n.communityTodayQuestionLabel,
-                      style: AstraKit.label(isDark, fontSize: 11.5),
-                    ),
+                    child: Text(l10n.communityTodayQuestionLabel,
+                        style: AstraKit.label(isDark, fontSize: 11.5)),
                   ),
                   const SizedBox(height: 6),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      todayQuestionText,
-                      style: AstraKit.body(isDark, fontSize: 16, fontWeight: FontWeight.w600, height: 1.35),
-                    ),
+                    child: Text(todayQuestionText,
+                        style: AstraKit.body(isDark,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            height: 1.35)),
                   ),
                   const SizedBox(height: 22),
                   feedAsync.when(
                     data: (shares) => shares.isEmpty
                         ? Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
-                            child: Text(l10n.communityEmptyState, style: AstraKit.mutedText(isDark)),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 20, horizontal: 8),
+                            child: Text(l10n.communityEmptyState,
+                                style: AstraKit.mutedText(isDark)),
                           )
                         : Column(
                             children: [
@@ -89,17 +93,20 @@ class CommunityScreen extends ConsumerWidget {
                                   share: share,
                                   isDark: isDark,
                                   primary: primary,
-                                  onReported: () => ref.invalidate(communityFeedProvider),
+                                  onReported: () =>
+                                      ref.invalidate(communityFeedProvider),
                                 ),
                             ],
                           ),
                     loading: () => Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Center(child: CircularProgressIndicator(color: primary)),
+                      child:
+                          Center(child: CircularProgressIndicator(color: primary)),
                     ),
                     error: (_, __) => Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(l10n.communityLoadError, style: AstraKit.mutedText(isDark)),
+                      child: Text(l10n.communityLoadError,
+                          style: AstraKit.mutedText(isDark)),
                     ),
                   ),
                 ],

@@ -9,9 +9,27 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../domain/daily_content.dart';
+import '../../domain/quote.dart';
 import '../providers/journal_entries_provider.dart';
 import '../providers/quote_favorites_provider.dart';
+import '../providers/quotes_provider.dart';
 import 'share_quote_card.dart';
+
+/// Instant fallback while the Drift catalogue is being opened or refreshed.
+/// IDs and ordering deliberately mirror [famousQuotes].
+final List<Quote> _embeddedQuoteFallback = [
+  for (final entry in famousQuotes.indexed)
+    Quote(
+      id: entry.$2.id,
+      textTr: entry.$2.tr,
+      textEn: entry.$2.en,
+      author: entry.$2.author,
+      rotationOrder: entry.$1,
+      isActive: true,
+      source: 'famous',
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+    ),
+];
 
 // ── Mood-adaptive affirmations ─────────────────────────────────────────────
 // When the user's most common mood over the last 7 days is known, the
@@ -113,7 +131,9 @@ _Memory? _findMemory(List<JournalEntryRow> entries, DateTime now, bool isTr) {
     if (d.month == today.month && d.day == today.day && d.year < today.year) {
       final yrs = today.year - d.year;
       chosen = e;
-      label = isTr ? '$yrs yıl önce bugün' : '$yrs year${yrs > 1 ? 's' : ''} ago today';
+      label = isTr
+          ? '$yrs yıl önce bugün'
+          : '$yrs year${yrs > 1 ? 's' : ''} ago today';
       break;
     }
   }
@@ -173,12 +193,15 @@ class MotivationQuoteCarousel extends ConsumerStatefulWidget {
   const MotivationQuoteCarousel({super.key});
 
   @override
-  ConsumerState<MotivationQuoteCarousel> createState() => _MotivationQuoteCarouselState();
+  ConsumerState<MotivationQuoteCarousel> createState() =>
+      _MotivationQuoteCarouselState();
 }
 
-class _MotivationQuoteCarouselState extends ConsumerState<MotivationQuoteCarousel> {
+class _MotivationQuoteCarouselState
+    extends ConsumerState<MotivationQuoteCarousel> {
   late final PageController _pageController;
   late int _page;
+  String? _lastLoggedQuoteSource;
 
   @override
   void initState() {
@@ -204,16 +227,39 @@ class _MotivationQuoteCarouselState extends ConsumerState<MotivationQuoteCarouse
   @override
   Widget build(BuildContext context) {
     final favorites = ref.watch(quoteFavoritesProvider);
+    final catalogue = ref.watch(quotesProvider);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final moodLog = ref.watch(moodLogProvider);
     final now = DateTime.now();
-    final dayQuote = famousQuotes[dailyRotationIndex(now, famousQuotes.length)];
+    final catalogueQuotes = catalogue.valueOrNull;
+    final activeQuotes = catalogueQuotes == null
+        ? <Quote>[]
+        : catalogueQuotes
+            .where(
+              (quote) => quote.isActive && quote.rotationOrder != null,
+            )
+            .toList(growable: false)
+      ..sort((a, b) {
+        final byRotation = a.rotationOrder!.compareTo(b.rotationOrder!);
+        return byRotation != 0 ? byRotation : a.id.compareTo(b.id);
+      });
+    final rotationQuotes =
+        activeQuotes.isNotEmpty ? activeQuotes : _embeddedQuoteFallback;
+    final quoteSource = activeQuotes.isNotEmpty ? 'provider' : 'fallback';
+    final quoteSourceLog = '$quoteSource (${rotationQuotes.length} quotes)';
+    if (_lastLoggedQuoteSource != quoteSourceLog) {
+      _lastLoggedQuoteSource = quoteSourceLog;
+      debugPrint('[Quotes] Home source: $quoteSourceLog');
+    }
+    final dayQuote =
+        rotationQuotes[dailyRotationIndex(now, rotationQuotes.length)];
     final themeDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
     final accent = _accent(themeDark);
 
     // Personalization signals: dominant recent mood + an "on this day" memory.
     final mood = _mostCommonMoodLast7(moodLog);
-    final entries = ref.watch(allJournalEntriesProvider).valueOrNull ?? const <JournalEntryRow>[];
+    final entries = ref.watch(allJournalEntriesProvider).valueOrNull ??
+        const <JournalEntryRow>[];
     final memory = _findMemory(entries, now, isTr);
 
     final slides = <Widget>[
@@ -296,7 +342,7 @@ class _QuoteSlide extends StatelessWidget {
   });
 
   final bool isDark;
-  final FamousQuote quote;
+  final Quote quote;
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
   final VoidCallback onShare;
@@ -329,13 +375,17 @@ class _QuoteSlide extends StatelessWidget {
                       quote.text(isTr),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w600, height: 1.35),
+                      style: AstraKit.body(isDark,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          height: 1.35),
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      '— ${quote.author}',
-                      style: AstraKit.label(isDark, fontSize: 12.5),
-                    ),
+                    if (quote.author != null)
+                      Text(
+                        '— ${quote.author}',
+                        style: AstraKit.label(isDark, fontSize: 12.5),
+                      ),
                   ],
                 ),
                 ),
@@ -359,7 +409,9 @@ class _QuoteSlide extends StatelessWidget {
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 180),
                             child: Icon(
-                              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              isFavorite
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
                               key: ValueKey(isFavorite),
                               color: _accent(isDark),
                               size: 20,
@@ -371,7 +423,9 @@ class _QuoteSlide extends StatelessWidget {
                   ),
                   Semantics(
                     button: true,
-                    label: Localizations.localeOf(context).languageCode == 'tr' ? 'Paylaş' : 'Share',
+                    label: Localizations.localeOf(context).languageCode == 'tr'
+                        ? 'Paylaş'
+                        : 'Share',
                     child: Material(
                       color: Colors.transparent,
                       shape: const CircleBorder(),
@@ -380,7 +434,8 @@ class _QuoteSlide extends StatelessWidget {
                         onTap: onShare,
                         child: Padding(
                           padding: const EdgeInsets.all(6),
-                          child: Icon(Icons.ios_share_rounded, color: _accent(isDark), size: 19),
+                          child: Icon(Icons.ios_share_rounded,
+                              color: _accent(isDark), size: 19),
                         ),
                       ),
                     ),
@@ -415,8 +470,7 @@ class _CarouselArrow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(4),
         child: Icon(icon,
-            size: 22,
-            color: enabled ? accent : accent.withValues(alpha: 0.3)),
+            size: 22, color: enabled ? accent : accent.withValues(alpha: 0.3)),
       ),
     );
   }
@@ -449,7 +503,8 @@ class _SlideHeader extends StatelessWidget {
 /// Daily affirmation card — mood-adaptive when a recent mood is known, so it
 /// speaks to how the user has actually been feeling.
 class _AffirmationSlide extends StatelessWidget {
-  const _AffirmationSlide({required this.isDark, required this.isTr, this.mood});
+  const _AffirmationSlide(
+      {required this.isDark, required this.isTr, this.mood});
 
   final bool isDark;
   final bool isTr;
@@ -477,7 +532,8 @@ class _AffirmationSlide extends StatelessWidget {
     final List<String> list;
     final String title;
     if (mood != null) {
-      list = (isTr ? _moodAffirmationsTr : _moodAffirmationsEn)[mood!] ?? (isTr ? _tr : _en);
+      list = (isTr ? _moodAffirmationsTr : _moodAffirmationsEn)[mood!] ??
+          (isTr ? _tr : _en);
       title = isTr ? 'Senin için' : 'For you';
     } else {
       list = isTr ? _tr : _en;
@@ -492,7 +548,9 @@ class _AffirmationSlide extends StatelessWidget {
         Expanded(
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Text(text, style: AstraKit.body(isDark, fontSize: 16, fontWeight: FontWeight.w600, height: 1.4)),
+            child: Text(text,
+                style: AstraKit.body(isDark,
+                    fontSize: 16, fontWeight: FontWeight.w600, height: 1.4)),
           ),
         ),
       ],
@@ -513,14 +571,18 @@ class _MemorySlide extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SlideHeader(isDark: isDark, icon: Icons.auto_stories_rounded, title: memory.label),
+        _SlideHeader(
+            isDark: isDark,
+            icon: Icons.auto_stories_rounded,
+            title: memory.label),
         const SizedBox(height: 8),
         Expanded(
           child: Text(
             memory.text,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: AstraKit.body(isDark, fontSize: 14.5, fontWeight: FontWeight.w600, height: 1.35)
+            style: AstraKit.body(isDark,
+                    fontSize: 14.5, fontWeight: FontWeight.w600, height: 1.35)
                 .copyWith(fontStyle: FontStyle.italic),
           ),
         ),
@@ -542,7 +604,10 @@ class _ActionsSlide extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SlideHeader(isDark: isDark, icon: Icons.favorite_rounded, title: isTr ? 'Kendine bir an' : 'A moment for you'),
+        _SlideHeader(
+            isDark: isDark,
+            icon: Icons.favorite_rounded,
+            title: isTr ? 'Kendine bir an' : 'A moment for you'),
         const SizedBox(height: 12),
         Expanded(
           child: Row(
@@ -614,7 +679,9 @@ class _ActionButton extends StatelessWidget {
             children: [
               Icon(icon, color: accent, size: 22),
               const SizedBox(height: 6),
-              Text(label, style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w700)),
+              Text(label,
+                  style: AstraKit.body(isDark,
+                      fontSize: 12.5, fontWeight: FontWeight.w700)),
             ],
           ),
         ),
@@ -622,4 +689,3 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
-

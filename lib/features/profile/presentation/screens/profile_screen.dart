@@ -349,6 +349,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 AstraEntrance(
                   delayMs: 620,
                   child: _MenuItem(
+                    icon: Icons.picture_as_pdf_rounded,
+                    label: l10n.exportProfileTile,
+                    isDark: isDark,
+                    primary: primary,
+                    onTap: () => context.push(AppRoutes.exportData),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                AstraEntrance(
+                  delayMs: 670,
+                  child: _MenuItem(
                     icon: Icons.logout_rounded,
                     label: l10n.profileMenuLogout,
                     isDark: isDark,

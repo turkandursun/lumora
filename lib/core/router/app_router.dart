@@ -35,8 +35,11 @@ import '../../features/stats/presentation/screens/stats_screen.dart';
 import '../../features/shell/presentation/widgets/feature_coming_soon_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/theme_choice/presentation/screens/astra_landing_screen.dart';
+
 import '../../features/wellbeing/presentation/screens/focus_timer_screen.dart';
 import '../../features/wellbeing/presentation/screens/sos_calm_screen.dart';
+
+import '../../features/export/presentation/screens/export_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -74,6 +77,7 @@ class AppRoutes {
   static const focusTimer = '/focus';
   static const favorites = '/favorites';
   static const quotes = '/quotes';
+  static const exportData = '/export';
 }
 
 /// Bridges Supabase's auth-state stream to a [Listenable] so [GoRouter] can
@@ -126,6 +130,7 @@ const _protectedRoutes = {
   AppRoutes.focusTimer,
   AppRoutes.favorites,
   AppRoutes.quotes,
+  AppRoutes.exportData,
 };
 
 /// Lets screens (e.g. [AppShell]) become [RouteAware] so they can replay their
@@ -211,6 +216,10 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.featureComingSoon,
       pageBuilder: (context, state) =>
           _smoothPage(state, FeatureComingSoonScreen(args: state.extra! as FeatureComingSoonArgs)),
+    ),
+    GoRoute(
+      path: AppRoutes.exportData,
+      pageBuilder: (context, state) => _smoothPage(state, const ExportScreen()),
     ),
     GoRoute(
       path: AppRoutes.dailyQuestion,

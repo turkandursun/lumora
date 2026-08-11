@@ -72,6 +72,12 @@ class $RemindersTable extends Reminders
   late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
       'supabase_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _defaultKeyMeta =
+      const VerificationMeta('defaultKey');
+  @override
+  late final GeneratedColumn<String> defaultKey = GeneratedColumn<String>(
+      'default_key', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -83,7 +89,8 @@ class $RemindersTable extends Reminders
         minute,
         enabled,
         userId,
-        supabaseId
+        supabaseId,
+        defaultKey
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -140,6 +147,12 @@ class $RemindersTable extends Reminders
           supabaseId.isAcceptableOrUnknown(
               data['supabase_id']!, _supabaseIdMeta));
     }
+    if (data.containsKey('default_key')) {
+      context.handle(
+          _defaultKeyMeta,
+          defaultKey.isAcceptableOrUnknown(
+              data['default_key']!, _defaultKeyMeta));
+    }
     return context;
   }
 
@@ -170,6 +183,8 @@ class $RemindersTable extends Reminders
           .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
       supabaseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
+      defaultKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}default_key']),
     );
   }
 
@@ -197,6 +212,7 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
   final bool enabled;
   final String? userId;
   final String? supabaseId;
+  final String? defaultKey;
   const ReminderRow(
       {required this.id,
       required this.title,
@@ -207,7 +223,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       required this.minute,
       required this.enabled,
       this.userId,
-      this.supabaseId});
+      this.supabaseId,
+      this.defaultKey});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -230,6 +247,9 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
     if (!nullToAbsent || supabaseId != null) {
       map['supabase_id'] = Variable<String>(supabaseId);
     }
+    if (!nullToAbsent || defaultKey != null) {
+      map['default_key'] = Variable<String>(defaultKey);
+    }
     return map;
   }
 
@@ -250,6 +270,9 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       supabaseId: supabaseId == null && nullToAbsent
           ? const Value.absent()
           : Value(supabaseId),
+      defaultKey: defaultKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultKey),
     );
   }
 
@@ -268,6 +291,7 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       enabled: serializer.fromJson<bool>(json['enabled']),
       userId: serializer.fromJson<String?>(json['userId']),
       supabaseId: serializer.fromJson<String?>(json['supabaseId']),
+      defaultKey: serializer.fromJson<String?>(json['defaultKey']),
     );
   }
   @override
@@ -285,6 +309,7 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       'enabled': serializer.toJson<bool>(enabled),
       'userId': serializer.toJson<String?>(userId),
       'supabaseId': serializer.toJson<String?>(supabaseId),
+      'defaultKey': serializer.toJson<String?>(defaultKey),
     };
   }
 
@@ -298,7 +323,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
           int? minute,
           bool? enabled,
           Value<String?> userId = const Value.absent(),
-          Value<String?> supabaseId = const Value.absent()}) =>
+          Value<String?> supabaseId = const Value.absent(),
+          Value<String?> defaultKey = const Value.absent()}) =>
       ReminderRow(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -310,6 +336,7 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
         enabled: enabled ?? this.enabled,
         userId: userId.present ? userId.value : this.userId,
         supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
+        defaultKey: defaultKey.present ? defaultKey.value : this.defaultKey,
       );
   ReminderRow copyWithCompanion(RemindersCompanion data) {
     return ReminderRow(
@@ -324,6 +351,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
       userId: data.userId.present ? data.userId.value : this.userId,
       supabaseId:
           data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+      defaultKey:
+          data.defaultKey.present ? data.defaultKey.value : this.defaultKey,
     );
   }
 
@@ -339,14 +368,15 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
           ..write('minute: $minute, ')
           ..write('enabled: $enabled, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('defaultKey: $defaultKey')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, title, iconKey, frequency, weekday, hour,
-      minute, enabled, userId, supabaseId);
+      minute, enabled, userId, supabaseId, defaultKey);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -360,7 +390,8 @@ class ReminderRow extends DataClass implements Insertable<ReminderRow> {
           other.minute == this.minute &&
           other.enabled == this.enabled &&
           other.userId == this.userId &&
-          other.supabaseId == this.supabaseId);
+          other.supabaseId == this.supabaseId &&
+          other.defaultKey == this.defaultKey);
 }
 
 class RemindersCompanion extends UpdateCompanion<ReminderRow> {
@@ -374,6 +405,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
   final Value<bool> enabled;
   final Value<String?> userId;
   final Value<String?> supabaseId;
+  final Value<String?> defaultKey;
   const RemindersCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -385,6 +417,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     this.enabled = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.defaultKey = const Value.absent(),
   });
   RemindersCompanion.insert({
     this.id = const Value.absent(),
@@ -397,6 +430,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     this.enabled = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.defaultKey = const Value.absent(),
   })  : title = Value(title),
         iconKey = Value(iconKey),
         frequency = Value(frequency),
@@ -413,6 +447,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     Expression<bool>? enabled,
     Expression<String>? userId,
     Expression<String>? supabaseId,
+    Expression<String>? defaultKey,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -425,6 +460,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
       if (enabled != null) 'enabled': enabled,
       if (userId != null) 'user_id': userId,
       if (supabaseId != null) 'supabase_id': supabaseId,
+      if (defaultKey != null) 'default_key': defaultKey,
     });
   }
 
@@ -438,7 +474,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
       Value<int>? minute,
       Value<bool>? enabled,
       Value<String?>? userId,
-      Value<String?>? supabaseId}) {
+      Value<String?>? supabaseId,
+      Value<String?>? defaultKey}) {
     return RemindersCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -450,6 +487,7 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
       enabled: enabled ?? this.enabled,
       userId: userId ?? this.userId,
       supabaseId: supabaseId ?? this.supabaseId,
+      defaultKey: defaultKey ?? this.defaultKey,
     );
   }
 
@@ -487,6 +525,9 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
     if (supabaseId.present) {
       map['supabase_id'] = Variable<String>(supabaseId.value);
     }
+    if (defaultKey.present) {
+      map['default_key'] = Variable<String>(defaultKey.value);
+    }
     return map;
   }
 
@@ -502,7 +543,8 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
           ..write('minute: $minute, ')
           ..write('enabled: $enabled, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('defaultKey: $defaultKey')
           ..write(')'))
         .toString();
   }
@@ -3337,6 +3379,749 @@ class LettersCompanion extends UpdateCompanion<LetterRow> {
   }
 }
 
+class $QuotesTable extends Quotes with TableInfo<$QuotesTable, QuoteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuotesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _textTrMeta = const VerificationMeta('textTr');
+  @override
+  late final GeneratedColumn<String> textTr = GeneratedColumn<String>(
+      'text_tr', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _textEnMeta = const VerificationMeta('textEn');
+  @override
+  late final GeneratedColumn<String> textEn = GeneratedColumn<String>(
+      'text_en', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _authorMeta = const VerificationMeta('author');
+  @override
+  late final GeneratedColumn<String> author = GeneratedColumn<String>(
+      'author', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _rotationOrderMeta =
+      const VerificationMeta('rotationOrder');
+  @override
+  late final GeneratedColumn<int> rotationOrder = GeneratedColumn<int>(
+      'rotation_order', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'));
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+      'source', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, textTr, textEn, author, rotationOrder, isActive, source, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quotes';
+  @override
+  VerificationContext validateIntegrity(Insertable<QuoteRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('text_tr')) {
+      context.handle(_textTrMeta,
+          textTr.isAcceptableOrUnknown(data['text_tr']!, _textTrMeta));
+    } else if (isInserting) {
+      context.missing(_textTrMeta);
+    }
+    if (data.containsKey('text_en')) {
+      context.handle(_textEnMeta,
+          textEn.isAcceptableOrUnknown(data['text_en']!, _textEnMeta));
+    } else if (isInserting) {
+      context.missing(_textEnMeta);
+    }
+    if (data.containsKey('author')) {
+      context.handle(_authorMeta,
+          author.isAcceptableOrUnknown(data['author']!, _authorMeta));
+    }
+    if (data.containsKey('rotation_order')) {
+      context.handle(
+          _rotationOrderMeta,
+          rotationOrder.isAcceptableOrUnknown(
+              data['rotation_order']!, _rotationOrderMeta));
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    } else if (isInserting) {
+      context.missing(_isActiveMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(_sourceMeta,
+          source.isAcceptableOrUnknown(data['source']!, _sourceMeta));
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  QuoteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuoteRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      textTr: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}text_tr'])!,
+      textEn: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}text_en'])!,
+      author: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}author']),
+      rotationOrder: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}rotation_order']),
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+      source: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}source'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $QuotesTable createAlias(String alias) {
+    return $QuotesTable(attachedDatabase, alias);
+  }
+}
+
+class QuoteRow extends DataClass implements Insertable<QuoteRow> {
+  final String id;
+  final String textTr;
+  final String textEn;
+  final String? author;
+  final int? rotationOrder;
+  final bool isActive;
+  final String source;
+  final DateTime updatedAt;
+  const QuoteRow(
+      {required this.id,
+      required this.textTr,
+      required this.textEn,
+      this.author,
+      this.rotationOrder,
+      required this.isActive,
+      required this.source,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['text_tr'] = Variable<String>(textTr);
+    map['text_en'] = Variable<String>(textEn);
+    if (!nullToAbsent || author != null) {
+      map['author'] = Variable<String>(author);
+    }
+    if (!nullToAbsent || rotationOrder != null) {
+      map['rotation_order'] = Variable<int>(rotationOrder);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    map['source'] = Variable<String>(source);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  QuotesCompanion toCompanion(bool nullToAbsent) {
+    return QuotesCompanion(
+      id: Value(id),
+      textTr: Value(textTr),
+      textEn: Value(textEn),
+      author:
+          author == null && nullToAbsent ? const Value.absent() : Value(author),
+      rotationOrder: rotationOrder == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rotationOrder),
+      isActive: Value(isActive),
+      source: Value(source),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory QuoteRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuoteRow(
+      id: serializer.fromJson<String>(json['id']),
+      textTr: serializer.fromJson<String>(json['textTr']),
+      textEn: serializer.fromJson<String>(json['textEn']),
+      author: serializer.fromJson<String?>(json['author']),
+      rotationOrder: serializer.fromJson<int?>(json['rotationOrder']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      source: serializer.fromJson<String>(json['source']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'textTr': serializer.toJson<String>(textTr),
+      'textEn': serializer.toJson<String>(textEn),
+      'author': serializer.toJson<String?>(author),
+      'rotationOrder': serializer.toJson<int?>(rotationOrder),
+      'isActive': serializer.toJson<bool>(isActive),
+      'source': serializer.toJson<String>(source),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  QuoteRow copyWith(
+          {String? id,
+          String? textTr,
+          String? textEn,
+          Value<String?> author = const Value.absent(),
+          Value<int?> rotationOrder = const Value.absent(),
+          bool? isActive,
+          String? source,
+          DateTime? updatedAt}) =>
+      QuoteRow(
+        id: id ?? this.id,
+        textTr: textTr ?? this.textTr,
+        textEn: textEn ?? this.textEn,
+        author: author.present ? author.value : this.author,
+        rotationOrder:
+            rotationOrder.present ? rotationOrder.value : this.rotationOrder,
+        isActive: isActive ?? this.isActive,
+        source: source ?? this.source,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  QuoteRow copyWithCompanion(QuotesCompanion data) {
+    return QuoteRow(
+      id: data.id.present ? data.id.value : this.id,
+      textTr: data.textTr.present ? data.textTr.value : this.textTr,
+      textEn: data.textEn.present ? data.textEn.value : this.textEn,
+      author: data.author.present ? data.author.value : this.author,
+      rotationOrder: data.rotationOrder.present
+          ? data.rotationOrder.value
+          : this.rotationOrder,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      source: data.source.present ? data.source.value : this.source,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuoteRow(')
+          ..write('id: $id, ')
+          ..write('textTr: $textTr, ')
+          ..write('textEn: $textEn, ')
+          ..write('author: $author, ')
+          ..write('rotationOrder: $rotationOrder, ')
+          ..write('isActive: $isActive, ')
+          ..write('source: $source, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id, textTr, textEn, author, rotationOrder, isActive, source, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuoteRow &&
+          other.id == this.id &&
+          other.textTr == this.textTr &&
+          other.textEn == this.textEn &&
+          other.author == this.author &&
+          other.rotationOrder == this.rotationOrder &&
+          other.isActive == this.isActive &&
+          other.source == this.source &&
+          other.updatedAt == this.updatedAt);
+}
+
+class QuotesCompanion extends UpdateCompanion<QuoteRow> {
+  final Value<String> id;
+  final Value<String> textTr;
+  final Value<String> textEn;
+  final Value<String?> author;
+  final Value<int?> rotationOrder;
+  final Value<bool> isActive;
+  final Value<String> source;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const QuotesCompanion({
+    this.id = const Value.absent(),
+    this.textTr = const Value.absent(),
+    this.textEn = const Value.absent(),
+    this.author = const Value.absent(),
+    this.rotationOrder = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.source = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuotesCompanion.insert({
+    required String id,
+    required String textTr,
+    required String textEn,
+    this.author = const Value.absent(),
+    this.rotationOrder = const Value.absent(),
+    required bool isActive,
+    required String source,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        textTr = Value(textTr),
+        textEn = Value(textEn),
+        isActive = Value(isActive),
+        source = Value(source),
+        updatedAt = Value(updatedAt);
+  static Insertable<QuoteRow> custom({
+    Expression<String>? id,
+    Expression<String>? textTr,
+    Expression<String>? textEn,
+    Expression<String>? author,
+    Expression<int>? rotationOrder,
+    Expression<bool>? isActive,
+    Expression<String>? source,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (textTr != null) 'text_tr': textTr,
+      if (textEn != null) 'text_en': textEn,
+      if (author != null) 'author': author,
+      if (rotationOrder != null) 'rotation_order': rotationOrder,
+      if (isActive != null) 'is_active': isActive,
+      if (source != null) 'source': source,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuotesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? textTr,
+      Value<String>? textEn,
+      Value<String?>? author,
+      Value<int?>? rotationOrder,
+      Value<bool>? isActive,
+      Value<String>? source,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return QuotesCompanion(
+      id: id ?? this.id,
+      textTr: textTr ?? this.textTr,
+      textEn: textEn ?? this.textEn,
+      author: author ?? this.author,
+      rotationOrder: rotationOrder ?? this.rotationOrder,
+      isActive: isActive ?? this.isActive,
+      source: source ?? this.source,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (textTr.present) {
+      map['text_tr'] = Variable<String>(textTr.value);
+    }
+    if (textEn.present) {
+      map['text_en'] = Variable<String>(textEn.value);
+    }
+    if (author.present) {
+      map['author'] = Variable<String>(author.value);
+    }
+    if (rotationOrder.present) {
+      map['rotation_order'] = Variable<int>(rotationOrder.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuotesCompanion(')
+          ..write('id: $id, ')
+          ..write('textTr: $textTr, ')
+          ..write('textEn: $textEn, ')
+          ..write('author: $author, ')
+          ..write('rotationOrder: $rotationOrder, ')
+          ..write('isActive: $isActive, ')
+          ..write('source: $source, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $QuoteFavoritesTable extends QuoteFavorites
+    with TableInfo<$QuoteFavoritesTable, QuoteFavoriteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuoteFavoritesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _quoteIdMeta =
+      const VerificationMeta('quoteId');
+  @override
+  late final GeneratedColumn<String> quoteId = GeneratedColumn<String>(
+      'quote_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _isFavoriteMeta =
+      const VerificationMeta('isFavorite');
+  @override
+  late final GeneratedColumn<bool> isFavorite = GeneratedColumn<bool>(
+      'is_favorite', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_favorite" IN (0, 1))'));
+  static const VerificationMeta _syncStateMeta =
+      const VerificationMeta('syncState');
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+      'sync_state', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _changedAtMeta =
+      const VerificationMeta('changedAt');
+  @override
+  late final GeneratedColumn<DateTime> changedAt = GeneratedColumn<DateTime>(
+      'changed_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [userId, quoteId, isFavorite, syncState, changedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quote_favorites';
+  @override
+  VerificationContext validateIntegrity(Insertable<QuoteFavoriteRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('quote_id')) {
+      context.handle(_quoteIdMeta,
+          quoteId.isAcceptableOrUnknown(data['quote_id']!, _quoteIdMeta));
+    } else if (isInserting) {
+      context.missing(_quoteIdMeta);
+    }
+    if (data.containsKey('is_favorite')) {
+      context.handle(
+          _isFavoriteMeta,
+          isFavorite.isAcceptableOrUnknown(
+              data['is_favorite']!, _isFavoriteMeta));
+    } else if (isInserting) {
+      context.missing(_isFavoriteMeta);
+    }
+    if (data.containsKey('sync_state')) {
+      context.handle(_syncStateMeta,
+          syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta));
+    } else if (isInserting) {
+      context.missing(_syncStateMeta);
+    }
+    if (data.containsKey('changed_at')) {
+      context.handle(_changedAtMeta,
+          changedAt.isAcceptableOrUnknown(data['changed_at']!, _changedAtMeta));
+    } else if (isInserting) {
+      context.missing(_changedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId, quoteId};
+  @override
+  QuoteFavoriteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuoteFavoriteRow(
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      quoteId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}quote_id'])!,
+      isFavorite: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_favorite'])!,
+      syncState: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_state'])!,
+      changedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}changed_at'])!,
+    );
+  }
+
+  @override
+  $QuoteFavoritesTable createAlias(String alias) {
+    return $QuoteFavoritesTable(attachedDatabase, alias);
+  }
+}
+
+class QuoteFavoriteRow extends DataClass
+    implements Insertable<QuoteFavoriteRow> {
+  final String userId;
+  final String quoteId;
+  final bool isFavorite;
+  final String syncState;
+  final DateTime changedAt;
+  const QuoteFavoriteRow(
+      {required this.userId,
+      required this.quoteId,
+      required this.isFavorite,
+      required this.syncState,
+      required this.changedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<String>(userId);
+    map['quote_id'] = Variable<String>(quoteId);
+    map['is_favorite'] = Variable<bool>(isFavorite);
+    map['sync_state'] = Variable<String>(syncState);
+    map['changed_at'] = Variable<DateTime>(changedAt);
+    return map;
+  }
+
+  QuoteFavoritesCompanion toCompanion(bool nullToAbsent) {
+    return QuoteFavoritesCompanion(
+      userId: Value(userId),
+      quoteId: Value(quoteId),
+      isFavorite: Value(isFavorite),
+      syncState: Value(syncState),
+      changedAt: Value(changedAt),
+    );
+  }
+
+  factory QuoteFavoriteRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuoteFavoriteRow(
+      userId: serializer.fromJson<String>(json['userId']),
+      quoteId: serializer.fromJson<String>(json['quoteId']),
+      isFavorite: serializer.fromJson<bool>(json['isFavorite']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      changedAt: serializer.fromJson<DateTime>(json['changedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<String>(userId),
+      'quoteId': serializer.toJson<String>(quoteId),
+      'isFavorite': serializer.toJson<bool>(isFavorite),
+      'syncState': serializer.toJson<String>(syncState),
+      'changedAt': serializer.toJson<DateTime>(changedAt),
+    };
+  }
+
+  QuoteFavoriteRow copyWith(
+          {String? userId,
+          String? quoteId,
+          bool? isFavorite,
+          String? syncState,
+          DateTime? changedAt}) =>
+      QuoteFavoriteRow(
+        userId: userId ?? this.userId,
+        quoteId: quoteId ?? this.quoteId,
+        isFavorite: isFavorite ?? this.isFavorite,
+        syncState: syncState ?? this.syncState,
+        changedAt: changedAt ?? this.changedAt,
+      );
+  QuoteFavoriteRow copyWithCompanion(QuoteFavoritesCompanion data) {
+    return QuoteFavoriteRow(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      quoteId: data.quoteId.present ? data.quoteId.value : this.quoteId,
+      isFavorite:
+          data.isFavorite.present ? data.isFavorite.value : this.isFavorite,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      changedAt: data.changedAt.present ? data.changedAt.value : this.changedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuoteFavoriteRow(')
+          ..write('userId: $userId, ')
+          ..write('quoteId: $quoteId, ')
+          ..write('isFavorite: $isFavorite, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(userId, quoteId, isFavorite, syncState, changedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuoteFavoriteRow &&
+          other.userId == this.userId &&
+          other.quoteId == this.quoteId &&
+          other.isFavorite == this.isFavorite &&
+          other.syncState == this.syncState &&
+          other.changedAt == this.changedAt);
+}
+
+class QuoteFavoritesCompanion extends UpdateCompanion<QuoteFavoriteRow> {
+  final Value<String> userId;
+  final Value<String> quoteId;
+  final Value<bool> isFavorite;
+  final Value<String> syncState;
+  final Value<DateTime> changedAt;
+  final Value<int> rowid;
+  const QuoteFavoritesCompanion({
+    this.userId = const Value.absent(),
+    this.quoteId = const Value.absent(),
+    this.isFavorite = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuoteFavoritesCompanion.insert({
+    required String userId,
+    required String quoteId,
+    required bool isFavorite,
+    required String syncState,
+    required DateTime changedAt,
+    this.rowid = const Value.absent(),
+  })  : userId = Value(userId),
+        quoteId = Value(quoteId),
+        isFavorite = Value(isFavorite),
+        syncState = Value(syncState),
+        changedAt = Value(changedAt);
+  static Insertable<QuoteFavoriteRow> custom({
+    Expression<String>? userId,
+    Expression<String>? quoteId,
+    Expression<bool>? isFavorite,
+    Expression<String>? syncState,
+    Expression<DateTime>? changedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (quoteId != null) 'quote_id': quoteId,
+      if (isFavorite != null) 'is_favorite': isFavorite,
+      if (syncState != null) 'sync_state': syncState,
+      if (changedAt != null) 'changed_at': changedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuoteFavoritesCompanion copyWith(
+      {Value<String>? userId,
+      Value<String>? quoteId,
+      Value<bool>? isFavorite,
+      Value<String>? syncState,
+      Value<DateTime>? changedAt,
+      Value<int>? rowid}) {
+    return QuoteFavoritesCompanion(
+      userId: userId ?? this.userId,
+      quoteId: quoteId ?? this.quoteId,
+      isFavorite: isFavorite ?? this.isFavorite,
+      syncState: syncState ?? this.syncState,
+      changedAt: changedAt ?? this.changedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (quoteId.present) {
+      map['quote_id'] = Variable<String>(quoteId.value);
+    }
+    if (isFavorite.present) {
+      map['is_favorite'] = Variable<bool>(isFavorite.value);
+    }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (changedAt.present) {
+      map['changed_at'] = Variable<DateTime>(changedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuoteFavoritesCompanion(')
+          ..write('userId: $userId, ')
+          ..write('quoteId: $quoteId, ')
+          ..write('isFavorite: $isFavorite, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3348,6 +4133,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $DailyQuestionAnswersTable(this);
   late final $ActivitiesTable activities = $ActivitiesTable(this);
   late final $LettersTable letters = $LettersTable(this);
+  late final $QuotesTable quotes = $QuotesTable(this);
+  late final $QuoteFavoritesTable quoteFavorites = $QuoteFavoritesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3359,7 +4146,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         journalEntries,
         dailyQuestionAnswers,
         activities,
-        letters
+        letters,
+        quotes,
+        quoteFavorites
       ];
 }
 
@@ -3374,6 +4163,7 @@ typedef $$RemindersTableCreateCompanionBuilder = RemindersCompanion Function({
   Value<bool> enabled,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String?> defaultKey,
 });
 typedef $$RemindersTableUpdateCompanionBuilder = RemindersCompanion Function({
   Value<int> id,
@@ -3386,6 +4176,7 @@ typedef $$RemindersTableUpdateCompanionBuilder = RemindersCompanion Function({
   Value<bool> enabled,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String?> defaultKey,
 });
 
 class $$RemindersTableFilterComposer
@@ -3428,6 +4219,9 @@ class $$RemindersTableFilterComposer
 
   ColumnFilters<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get defaultKey => $composableBuilder(
+      column: $table.defaultKey, builder: (column) => ColumnFilters(column));
 }
 
 class $$RemindersTableOrderingComposer
@@ -3468,6 +4262,9 @@ class $$RemindersTableOrderingComposer
 
   ColumnOrderings<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get defaultKey => $composableBuilder(
+      column: $table.defaultKey, builder: (column) => ColumnOrderings(column));
 }
 
 class $$RemindersTableAnnotationComposer
@@ -3508,6 +4305,9 @@ class $$RemindersTableAnnotationComposer
 
   GeneratedColumn<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => column);
+
+  GeneratedColumn<String> get defaultKey => $composableBuilder(
+      column: $table.defaultKey, builder: (column) => column);
 }
 
 class $$RemindersTableTableManager extends RootTableManager<
@@ -3543,6 +4343,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             Value<bool> enabled = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String?> defaultKey = const Value.absent(),
           }) =>
               RemindersCompanion(
             id: id,
@@ -3555,6 +4356,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             enabled: enabled,
             userId: userId,
             supabaseId: supabaseId,
+            defaultKey: defaultKey,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -3567,6 +4369,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             Value<bool> enabled = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String?> defaultKey = const Value.absent(),
           }) =>
               RemindersCompanion.insert(
             id: id,
@@ -3579,6 +4382,7 @@ class $$RemindersTableTableManager extends RootTableManager<
             enabled: enabled,
             userId: userId,
             supabaseId: supabaseId,
+            defaultKey: defaultKey,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -4941,6 +5745,391 @@ typedef $$LettersTableProcessedTableManager = ProcessedTableManager<
     (LetterRow, BaseReferences<_$AppDatabase, $LettersTable, LetterRow>),
     LetterRow,
     PrefetchHooks Function()>;
+typedef $$QuotesTableCreateCompanionBuilder = QuotesCompanion Function({
+  required String id,
+  required String textTr,
+  required String textEn,
+  Value<String?> author,
+  Value<int?> rotationOrder,
+  required bool isActive,
+  required String source,
+  required DateTime updatedAt,
+  Value<int> rowid,
+});
+typedef $$QuotesTableUpdateCompanionBuilder = QuotesCompanion Function({
+  Value<String> id,
+  Value<String> textTr,
+  Value<String> textEn,
+  Value<String?> author,
+  Value<int?> rotationOrder,
+  Value<bool> isActive,
+  Value<String> source,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$QuotesTableFilterComposer
+    extends Composer<_$AppDatabase, $QuotesTable> {
+  $$QuotesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get textTr => $composableBuilder(
+      column: $table.textTr, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get textEn => $composableBuilder(
+      column: $table.textEn, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get author => $composableBuilder(
+      column: $table.author, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get rotationOrder => $composableBuilder(
+      column: $table.rotationOrder, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get source => $composableBuilder(
+      column: $table.source, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$QuotesTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuotesTable> {
+  $$QuotesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get textTr => $composableBuilder(
+      column: $table.textTr, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get textEn => $composableBuilder(
+      column: $table.textEn, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get author => $composableBuilder(
+      column: $table.author, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get rotationOrder => $composableBuilder(
+      column: $table.rotationOrder,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get source => $composableBuilder(
+      column: $table.source, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$QuotesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuotesTable> {
+  $$QuotesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get textTr =>
+      $composableBuilder(column: $table.textTr, builder: (column) => column);
+
+  GeneratedColumn<String> get textEn =>
+      $composableBuilder(column: $table.textEn, builder: (column) => column);
+
+  GeneratedColumn<String> get author =>
+      $composableBuilder(column: $table.author, builder: (column) => column);
+
+  GeneratedColumn<int> get rotationOrder => $composableBuilder(
+      column: $table.rotationOrder, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$QuotesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $QuotesTable,
+    QuoteRow,
+    $$QuotesTableFilterComposer,
+    $$QuotesTableOrderingComposer,
+    $$QuotesTableAnnotationComposer,
+    $$QuotesTableCreateCompanionBuilder,
+    $$QuotesTableUpdateCompanionBuilder,
+    (QuoteRow, BaseReferences<_$AppDatabase, $QuotesTable, QuoteRow>),
+    QuoteRow,
+    PrefetchHooks Function()> {
+  $$QuotesTableTableManager(_$AppDatabase db, $QuotesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuotesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuotesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuotesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> textTr = const Value.absent(),
+            Value<String> textEn = const Value.absent(),
+            Value<String?> author = const Value.absent(),
+            Value<int?> rotationOrder = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<String> source = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              QuotesCompanion(
+            id: id,
+            textTr: textTr,
+            textEn: textEn,
+            author: author,
+            rotationOrder: rotationOrder,
+            isActive: isActive,
+            source: source,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String textTr,
+            required String textEn,
+            Value<String?> author = const Value.absent(),
+            Value<int?> rotationOrder = const Value.absent(),
+            required bool isActive,
+            required String source,
+            required DateTime updatedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              QuotesCompanion.insert(
+            id: id,
+            textTr: textTr,
+            textEn: textEn,
+            author: author,
+            rotationOrder: rotationOrder,
+            isActive: isActive,
+            source: source,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$QuotesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $QuotesTable,
+    QuoteRow,
+    $$QuotesTableFilterComposer,
+    $$QuotesTableOrderingComposer,
+    $$QuotesTableAnnotationComposer,
+    $$QuotesTableCreateCompanionBuilder,
+    $$QuotesTableUpdateCompanionBuilder,
+    (QuoteRow, BaseReferences<_$AppDatabase, $QuotesTable, QuoteRow>),
+    QuoteRow,
+    PrefetchHooks Function()>;
+typedef $$QuoteFavoritesTableCreateCompanionBuilder = QuoteFavoritesCompanion
+    Function({
+  required String userId,
+  required String quoteId,
+  required bool isFavorite,
+  required String syncState,
+  required DateTime changedAt,
+  Value<int> rowid,
+});
+typedef $$QuoteFavoritesTableUpdateCompanionBuilder = QuoteFavoritesCompanion
+    Function({
+  Value<String> userId,
+  Value<String> quoteId,
+  Value<bool> isFavorite,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
+  Value<int> rowid,
+});
+
+class $$QuoteFavoritesTableFilterComposer
+    extends Composer<_$AppDatabase, $QuoteFavoritesTable> {
+  $$QuoteFavoritesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get quoteId => $composableBuilder(
+      column: $table.quoteId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isFavorite => $composableBuilder(
+      column: $table.isFavorite, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$QuoteFavoritesTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuoteFavoritesTable> {
+  $$QuoteFavoritesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get quoteId => $composableBuilder(
+      column: $table.quoteId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isFavorite => $composableBuilder(
+      column: $table.isFavorite, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$QuoteFavoritesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuoteFavoritesTable> {
+  $$QuoteFavoritesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get quoteId =>
+      $composableBuilder(column: $table.quoteId, builder: (column) => column);
+
+  GeneratedColumn<bool> get isFavorite => $composableBuilder(
+      column: $table.isFavorite, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get changedAt =>
+      $composableBuilder(column: $table.changedAt, builder: (column) => column);
+}
+
+class $$QuoteFavoritesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $QuoteFavoritesTable,
+    QuoteFavoriteRow,
+    $$QuoteFavoritesTableFilterComposer,
+    $$QuoteFavoritesTableOrderingComposer,
+    $$QuoteFavoritesTableAnnotationComposer,
+    $$QuoteFavoritesTableCreateCompanionBuilder,
+    $$QuoteFavoritesTableUpdateCompanionBuilder,
+    (
+      QuoteFavoriteRow,
+      BaseReferences<_$AppDatabase, $QuoteFavoritesTable, QuoteFavoriteRow>
+    ),
+    QuoteFavoriteRow,
+    PrefetchHooks Function()> {
+  $$QuoteFavoritesTableTableManager(
+      _$AppDatabase db, $QuoteFavoritesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuoteFavoritesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuoteFavoritesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuoteFavoritesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> userId = const Value.absent(),
+            Value<String> quoteId = const Value.absent(),
+            Value<bool> isFavorite = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              QuoteFavoritesCompanion(
+            userId: userId,
+            quoteId: quoteId,
+            isFavorite: isFavorite,
+            syncState: syncState,
+            changedAt: changedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String userId,
+            required String quoteId,
+            required bool isFavorite,
+            required String syncState,
+            required DateTime changedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              QuoteFavoritesCompanion.insert(
+            userId: userId,
+            quoteId: quoteId,
+            isFavorite: isFavorite,
+            syncState: syncState,
+            changedAt: changedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$QuoteFavoritesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $QuoteFavoritesTable,
+    QuoteFavoriteRow,
+    $$QuoteFavoritesTableFilterComposer,
+    $$QuoteFavoritesTableOrderingComposer,
+    $$QuoteFavoritesTableAnnotationComposer,
+    $$QuoteFavoritesTableCreateCompanionBuilder,
+    $$QuoteFavoritesTableUpdateCompanionBuilder,
+    (
+      QuoteFavoriteRow,
+      BaseReferences<_$AppDatabase, $QuoteFavoritesTable, QuoteFavoriteRow>
+    ),
+    QuoteFavoriteRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4959,4 +6148,8 @@ class $AppDatabaseManager {
       $$ActivitiesTableTableManager(_db, _db.activities);
   $$LettersTableTableManager get letters =>
       $$LettersTableTableManager(_db, _db.letters);
+  $$QuotesTableTableManager get quotes =>
+      $$QuotesTableTableManager(_db, _db.quotes);
+  $$QuoteFavoritesTableTableManager get quoteFavorites =>
+      $$QuoteFavoritesTableTableManager(_db, _db.quoteFavorites);
 }
