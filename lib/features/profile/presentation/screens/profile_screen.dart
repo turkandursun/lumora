@@ -201,62 +201,73 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 Text(l10n.profileTitle, style: AstraKit.heading1(isDark, fontSize: 24)),
                 const SizedBox(height: 18),
-                _ProfileHeaderCard(
-                  name: name.isEmpty ? (isTr ? 'Sen' : 'You') : name,
-                  subtitle: _memberSince(isTr),
-                  isDark: isDark,
-                  primary: primary,
-                  onEdit: () => _editName(isTr, isDark, primary),
+                AstraEntrance(
+                  child: _ProfileHeaderCard(
+                    name: name.isEmpty ? (isTr ? 'Sen' : 'You') : name,
+                    subtitle: _memberSince(isTr),
+                    isDark: isDark,
+                    primary: primary,
+                    onEdit: () => _editName(isTr, isDark, primary),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        icon: Icons.local_fire_department_rounded,
-                        value: '$visitDays',
-                        label: isTr ? 'Gün serisi' : 'Day streak',
-                        isDark: isDark,
-                        primary: primary,
+                AstraEntrance(
+                  delayMs: 80,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.local_fire_department_rounded,
+                          value: visitDays,
+                          label: isTr ? 'Gün serisi' : 'Day streak',
+                          isDark: isDark,
+                          primary: primary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        icon: Icons.menu_book_rounded,
-                        value: '$journaledDays',
-                        label: isTr ? 'Günlük' : 'Entries',
-                        isDark: isDark,
-                        primary: primary,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.menu_book_rounded,
+                          value: journaledDays,
+                          label: isTr ? 'Günlük' : 'Entries',
+                          isDark: isDark,
+                          primary: primary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        icon: Icons.wb_sunny_rounded,
-                        value: '$moodCount',
-                        label: isTr ? 'Ruh hali' : 'Moods',
-                        isDark: isDark,
-                        primary: primary,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.wb_sunny_rounded,
+                          value: moodCount,
+                          label: isTr ? 'Ruh hali' : 'Moods',
+                          isDark: isDark,
+                          primary: primary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
-                _AchievementPreviewCard(
-                  reward: reward,
-                  isTr: isTr,
-                  isDark: isDark,
-                  primary: primary,
-                  onTap: () => context.push(AppRoutes.rewards),
+                AstraEntrance(
+                  delayMs: 160,
+                  child: _AchievementPreviewCard(
+                    reward: reward,
+                    isTr: isTr,
+                    isDark: isDark,
+                    primary: primary,
+                    onTap: () => context.push(AppRoutes.rewards),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                _HobbiesCard(
-                  hobbies: hobbies,
-                  isTr: isTr,
-                  isDark: isDark,
-                  primary: primary,
-                  onEdit: () => context.push(AppRoutes.hobbies),
+                AstraEntrance(
+                  delayMs: 240,
+                  child: _HobbiesCard(
+                    hobbies: hobbies,
+                    isTr: isTr,
+                    isDark: isDark,
+                    primary: primary,
+                    onEdit: () => context.push(AppRoutes.hobbies),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -264,77 +275,101 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 12),
-                _MenuSwitchItem(
-                  icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                  label: isTr ? 'Tema' : 'Theme',
-                  value: isDark,
-                  isDark: isDark,
-                  primary: primary,
-                  onChanged: (v) {
-                    ref.read(astraThemeProvider.notifier).setTheme(
-                          v ? AstraThemeMode.dark : AstraThemeMode.light,
-                        );
-                  },
+                AstraEntrance(
+                  delayMs: 320,
+                  child: _MenuSwitchItem(
+                    icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    label: isTr ? 'Tema' : 'Theme',
+                    value: isDark,
+                    isDark: isDark,
+                    primary: primary,
+                    onChanged: (v) {
+                      ref.read(astraThemeProvider.notifier).setTheme(
+                            v ? AstraThemeMode.dark : AstraThemeMode.light,
+                          );
+                    },
+                  ),
                 ),
                 const SizedBox(height: 12),
-                _MenuItem(
-                  icon: Icons.favorite_border_rounded,
-                  label: isTr ? 'Favorilerim' : 'My favorites',
-                  isDark: isDark,
-                  primary: primary,
-                  onTap: () => context.push(AppRoutes.favorites),
+                AstraEntrance(
+                  delayMs: 370,
+                  child: _MenuItem(
+                    icon: Icons.favorite_border_rounded,
+                    label: isTr ? 'Favorilerim' : 'My favorites',
+                    isDark: isDark,
+                    primary: primary,
+                    onTap: () => context.push(AppRoutes.favorites),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                _MenuItem(
-                  icon: Icons.track_changes_outlined,
-                  label: l10n.profileMenuGoals,
-                  isDark: isDark,
-                  primary: primary,
-                  onTap: () => context.push(AppRoutes.goals),
+                AstraEntrance(
+                  delayMs: 420,
+                  child: _MenuItem(
+                    icon: Icons.track_changes_outlined,
+                    label: l10n.profileMenuGoals,
+                    isDark: isDark,
+                    primary: primary,
+                    onTap: () => context.push(AppRoutes.goals),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                _MenuItem(
-                  icon: Icons.bar_chart_rounded,
-                  label: isTr ? 'İstatistikler' : 'Statistics',
-                  isDark: isDark,
-                  primary: primary,
-                  onTap: () => context.push(AppRoutes.stats),
+                AstraEntrance(
+                  delayMs: 470,
+                  child: _MenuItem(
+                    icon: Icons.bar_chart_rounded,
+                    label: isTr ? 'İstatistikler' : 'Statistics',
+                    isDark: isDark,
+                    primary: primary,
+                    onTap: () => context.push(AppRoutes.stats),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                _MenuItem(
-                  icon: Icons.cloud_upload_rounded,
-                  label: isTr ? 'Verilerimi yedekle' : 'Back up my data',
-                  isDark: isDark,
-                  primary: primary,
-                  onTap: () => _backupNow(isTr),
+                AstraEntrance(
+                  delayMs: 520,
+                  child: _MenuItem(
+                    icon: Icons.cloud_upload_rounded,
+                    label: isTr ? 'Verilerimi yedekle' : 'Back up my data',
+                    isDark: isDark,
+                    primary: primary,
+                    onTap: () => _backupNow(isTr),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                _MenuItem(
-                  icon: Icons.cloud_download_rounded,
-                  label: isTr ? 'Buluttan geri yükle' : 'Restore from cloud',
-                  isDark: isDark,
-                  primary: primary,
-                  onTap: () => _restoreNow(isTr, isDark, primary),
+                AstraEntrance(
+                  delayMs: 570,
+                  child: _MenuItem(
+                    icon: Icons.cloud_download_rounded,
+                    label: isTr ? 'Buluttan geri yükle' : 'Restore from cloud',
+                    isDark: isDark,
+                    primary: primary,
+                    onTap: () => _restoreNow(isTr, isDark, primary),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                _MenuItem(
-                  icon: Icons.picture_as_pdf_rounded,
-                  label: l10n.exportProfileTile,
-                  isDark: isDark,
-                  primary: primary,
-                  onTap: () => context.push(AppRoutes.exportData),
+                AstraEntrance(
+                  delayMs: 620,
+                  child: _MenuItem(
+                    icon: Icons.picture_as_pdf_rounded,
+                    label: l10n.exportProfileTile,
+                    isDark: isDark,
+                    primary: primary,
+                    onTap: () => context.push(AppRoutes.exportData),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                _MenuItem(
-                  icon: Icons.logout_rounded,
-                  label: l10n.profileMenuLogout,
-                  isDark: isDark,
-                  primary: primary,
-                  onTap: () async {
-                    await clearLocalUserData(ref);
-                    await Supabase.instance.client.auth.signOut();
-                    if (context.mounted) context.go(AppRoutes.login);
-                  },
+                AstraEntrance(
+                  delayMs: 670,
+                  child: _MenuItem(
+                    icon: Icons.logout_rounded,
+                    label: l10n.profileMenuLogout,
+                    isDark: isDark,
+                    primary: primary,
+                    onTap: () async {
+                      await clearLocalUserData(ref);
+                      await Supabase.instance.client.auth.signOut();
+                      if (context.mounted) context.go(AppRoutes.login);
+                    },
+                  ),
                 ),
               ],
             ),
@@ -409,7 +444,7 @@ class _StatCard extends StatelessWidget {
   const _StatCard({required this.icon, required this.value, required this.label, required this.isDark, required this.primary});
 
   final IconData icon;
-  final String value;
+  final int value;
   final String label;
   final bool isDark;
   final Color primary;
@@ -425,7 +460,7 @@ class _StatCard extends StatelessWidget {
         children: [
           Icon(icon, size: 22, color: primary),
           const SizedBox(height: 8),
-          Text(value, style: AstraKit.heading1(isDark, fontSize: 20)),
+          AstraCountUp(value: value, style: AstraKit.heading1(isDark, fontSize: 20)),
           const SizedBox(height: 2),
           Text(label, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 11.5)),
         ],
@@ -548,9 +583,18 @@ class _AchievementPreviewCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  isTr ? '${reward.points} puan' : '${reward.points} points',
-                  style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w600, color: primary),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AstraCountUp(
+                      value: reward.points,
+                      style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w600, color: primary),
+                    ),
+                    Text(
+                      isTr ? ' puan' : ' points',
+                      style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w600, color: primary),
+                    ),
+                  ],
                 ),
               ],
             ),

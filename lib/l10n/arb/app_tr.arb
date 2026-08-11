@@ -448,5 +448,19 @@
   "goalsConfirmButton": "Devam et",
   "goalsUpdatedMessage": "Hedef güncellendi.",
   "goalsArchivedMessage": "Hedef arşivlendi.",
-  "goalsPeriodSummary": "Bu dönemde {total} hedeften {done} tanesi tamamlandı"
+  "goalsPeriodSummary": "Bu dönemde {total} hedeften {done} tanesi tamamlandı",
+  "communityTabToday": "Bugün",
+  "communityTabFeed": "Akış",
+  "communityComposerHint": "Bir düşünceni anonim paylaş…",
+  "communityComposerButton": "Paylaş",
+  "communityPostEmpty": "Henüz paylaşım yok — ilk nazik düşünceyi sen bırak.",
+  "communityRepliesTitle": "Yanıtlar",
+  "communityReplyHint": "Nazik bir yanıt yaz…",
+  "communityReplyCountLabel": "{count} yanıt",
+  "communityRepliesEmpty": "Henüz yanıt yok — ilk nazik ses sen ol.",
+  "communityModerationContact": "Burayı anonim tutalım — telefon, link veya iletişim bilgisi paylaşma.",
+  "communityModerationHarmful": "Burayı nazik tutalım — lütfen ifadeni yumuşat.",
+  "communityModerationEmpty": "Önce bir şeyler yaz.",
+  "homeStreakBannerTitle": "Günlük seri",
+  "greetingWelcomeBack": "Merhaba, hoş geldin. Seni burada görmeyi özlemiştim."
 }

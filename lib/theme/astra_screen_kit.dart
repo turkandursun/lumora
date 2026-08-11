@@ -1,6 +1,8 @@
 import 'dart:ui';
 
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -162,9 +164,12 @@ class AstraMountainBackground extends StatelessWidget {
   }
 }
 
-/// Frosted glass card — a soft blur of the mountain scene behind the card
-/// keeps content legible while the scene stays vivid. Same fill/border/blur
-/// values as the journal writing and sealed-journals screens.
+/// Frosted glass card. The mountain scene behind it is already softly blurred
+/// once, app-wide, by [AstraMountainBackground] — so instead of an expensive
+/// per-card [BackdropFilter] (which re-blurs every frame during animations and
+/// was the main source of jank), the card uses a translucent tint over that
+/// pre-blurred scene. Cheap to composite, so entrances / taps / page
+/// transitions stay smooth even with many cards on screen.
 class AstraGlassCard extends StatelessWidget {
   const AstraGlassCard({
     super.key,
@@ -184,25 +189,17 @@ class AstraGlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = primaryColor ?? AstraKit.primary(isDark);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            // Translucent frosted glass in both themes: a dark tint on the moon
-            // scene, a light cream tint on the bright sun scene — the blurred
-            // scene shows softly through either.
-            color: isDark ? const Color(0x59181026) : const Color(0x8FFBF1DC),
-            borderRadius: BorderRadius.circular(borderRadius),
-            border: Border.all(
-                color: primary.withValues(alpha: isDark ? 0.40 : 0.55),
-                width: 1.2),
-          ),
-          child: child,
-        ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        // A bit more opaque than the old blurred card (no per-card blur now),
+        // so text stays crisp over the pre-blurred scene.
+        color: isDark ? const Color(0xBF181026) : const Color(0xE6FBF1DC),
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+            color: primary.withValues(alpha: isDark ? 0.42 : 0.55),
+            width: 1.2),
       ),
+      child: Padding(padding: padding, child: child),
     );
   }
 }
@@ -310,7 +307,7 @@ class AstraGoldButton extends StatelessWidget {
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 200),
       opacity: enabled ? 1.0 : 0.55,
-      child: GestureDetector(
+      child: BouncyTap(
         onTap: active ? onTap : null,
         child: Container(
           height: height,
@@ -536,6 +533,272 @@ class AstraLabeledDivider extends StatelessWidget {
         ),
         line,
       ],
+    );
+  }
+}
+
+/// Provides a "replay" signal to every [AstraEntrance] beneath it: whenever the
+/// given [Listenable] fires, those entrances re-run their cascade. Wrap a screen
+/// with this and tick the notifier each time the screen becomes visible again
+/// (e.g. on tab switch) so the entrance choreography plays every time, not just
+/// on first build.
+class AstraEntranceReplay extends InheritedWidget {
+  const AstraEntranceReplay({super.key, required this.notifier, required super.child});
+
+  final Listenable notifier;
+
+  static Listenable? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<AstraEntranceReplay>()?.notifier;
+
+  @override
+  bool updateShouldNotify(AstraEntranceReplay oldWidget) => !identical(notifier, oldWidget.notifier);
+}
+
+/// Staggered fade + slide-in entrance with a soft spring settle. The child
+/// rises [offset] logical pixels from below while fading 0→1, overshooting a
+/// touch (Curves.easeOutBack) so it "springs" into place — the Reflectly-style
+/// content cascade. Give siblings an increasing [index] (delay = index ×
+/// [intervalMs]) so a screen's cards flow in one after another.
+///
+/// Usage:
+/// ```dart
+/// Column(children: [
+///   for (var i = 0; i < cards.length; i++)
+///     AstraEntrance(index: i, child: cards[i]),
+/// ])
+/// ```
+class AstraEntrance extends StatefulWidget {
+  const AstraEntrance({
+    super.key,
+    required this.child,
+    this.index,
+    this.intervalMs = 100,
+    this.delayMs = 0,
+    this.offset = 30,
+    this.scaleFrom = 1.0,
+    this.duration = const Duration(milliseconds: 360),
+  });
+
+  final Widget child;
+
+  /// Position in a staggered group; if set, the start delay is
+  /// `index * intervalMs`. Falls back to [delayMs] when null.
+  final int? index;
+  final int intervalMs;
+  final int delayMs;
+
+  /// How far below its resting place the child starts, in logical pixels.
+  final double offset;
+
+  /// Starting scale — set below 1.0 (e.g. 0.8 for chips) to have the child
+  /// grow into place; the easeOutBack curve makes it spring slightly past 1.0.
+  final double scaleFrom;
+  final Duration duration;
+
+  @override
+  State<AstraEntrance> createState() => _AstraEntranceState();
+}
+
+class _AstraEntranceState extends State<AstraEntrance> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this, duration: widget.duration);
+  late final Animation<double> _fade =
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.55, curve: Curves.easeOut));
+  // easeOutBack overshoots past 1.0, giving the gentle spring settle.
+  late final Animation<double> _slide = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
+
+  Listenable? _replay;
+
+  int get _delay => widget.index != null ? widget.index! * widget.intervalMs : widget.delayMs;
+
+  void _play() {
+    _controller.value = 0;
+    if (_delay <= 0) {
+      _controller.forward(from: 0);
+    } else {
+      Future<void>.delayed(Duration(milliseconds: _delay), () {
+        if (mounted) _controller.forward(from: 0);
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _play();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Re-run the entrance whenever an ancestor [AstraEntranceReplay] ticks — so
+    // the choreography replays every time a screen becomes visible again, not
+    // only on first build.
+    final r = AstraEntranceReplay.maybeOf(context);
+    if (!identical(r, _replay)) {
+      _replay?.removeListener(_play);
+      _replay = r;
+      _replay?.addListener(_play);
+    }
+  }
+
+  @override
+  void dispose() {
+    _replay?.removeListener(_play);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      child: RepaintBoundary(child: widget.child),
+      builder: (context, child) {
+        final t = _slide.value; // may overshoot past 1.0 (spring settle)
+        final scale = widget.scaleFrom + (1 - widget.scaleFrom) * t;
+        return Opacity(
+          opacity: _fade.value.clamp(0.0, 1.0),
+          child: Transform.translate(
+            offset: Offset(0, widget.offset * (1 - t)),
+            child: widget.scaleFrom == 1.0 ? child : Transform.scale(scale: scale, child: child),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// A number that counts up from zero to [value] the first time it appears — the
+/// "odometer" stat counter for streaks, entries, points, etc. Re-animates from
+/// the current value whenever [value] changes.
+class AstraCountUp extends StatelessWidget {
+  const AstraCountUp({
+    super.key,
+    required this.value,
+    required this.style,
+    this.duration = const Duration(milliseconds: 1000),
+    this.textAlign,
+  });
+
+  final int value;
+  final TextStyle style;
+  final Duration duration;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<int>(
+      tween: IntTween(begin: 0, end: value),
+      duration: duration,
+      curve: Curves.easeOutCubic,
+      builder: (context, v, _) => Text('$v', style: style, textAlign: textAlign),
+    );
+  }
+}
+
+/// A tap wrapper that gives any card or button a bouncy micro-interaction:
+/// it shrinks to [pressedScale] on press, then springs back to full size with
+/// real spring physics (overshooting slightly), firing a light haptic on tap.
+/// Reusable — wrap any tappable widget:
+/// ```dart
+/// BouncyTap(onTap: () => context.push(route), child: myCard)
+/// ```
+class BouncyTap extends StatefulWidget {
+  const BouncyTap({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.pressedScale = 0.95,
+    this.haptic = true,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final double pressedScale;
+  final bool haptic;
+
+  @override
+  State<BouncyTap> createState() => _BouncyTapState();
+}
+
+class _BouncyTapState extends State<BouncyTap> with SingleTickerProviderStateMixin {
+  // Unbounded so the spring can overshoot below 0 (a slight grow-past-100%
+  // bounce) on release.
+  late final AnimationController _controller = AnimationController.unbounded(vsync: this, value: 0);
+  // Playful spring (mass 1 · stiffness 250 · damping 20): a small, soft
+  // overshoot on release — bouncy without feeling floppy.
+  static const _spring = SpringDescription(mass: 1, stiffness: 250, damping: 20);
+
+  void _press() {
+    _controller.animateTo(1, duration: const Duration(milliseconds: 80), curve: Curves.easeOut);
+  }
+
+  void _release() {
+    _controller.animateWith(SpringSimulation(_spring, _controller.value, 0, _controller.velocity));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = widget.onTap != null;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: enabled ? (_) => _press() : null,
+      onTapCancel: enabled ? _release : null,
+      onTapUp: enabled
+          ? (_) {
+              _release();
+              if (widget.haptic) HapticFeedback.lightImpact();
+              widget.onTap!();
+            }
+          : null,
+      child: AnimatedBuilder(
+        animation: _controller,
+        child: widget.child,
+        builder: (context, child) {
+          final scale = 1 - (1 - widget.pressedScale) * _controller.value.clamp(-0.6, 1.4);
+          return Transform.scale(scale: scale, child: child);
+        },
+      ),
+    );
+  }
+}
+
+/// Container-transform navigation: tapping the card "morphs" it outward until
+/// it fills the destination screen (and shrinks back on pop) instead of a plain
+/// page push — the game-like "carried from one place to another" feel. Reusable
+/// across the app: give it the card ([closedBuilder] receives an `open`
+/// callback to trigger the morph) and the destination ([openBuilder]).
+class AstraMorphContainer extends StatelessWidget {
+  const AstraMorphContainer({
+    super.key,
+    required this.closedBuilder,
+    required this.openBuilder,
+    this.borderRadius = 20,
+  });
+
+  final Widget Function(BuildContext context, VoidCallback open) closedBuilder;
+  final WidgetBuilder openBuilder;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    return OpenContainer(
+      transitionType: ContainerTransitionType.fadeThrough,
+      transitionDuration: const Duration(milliseconds: 340),
+      closedElevation: 0,
+      openElevation: 0,
+      closedColor: Colors.transparent,
+      openColor: Colors.transparent,
+      middleColor: Colors.transparent,
+      closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+      openBuilder: (context, _) => openBuilder(context),
+      closedBuilder: (context, open) => closedBuilder(context, open),
     );
   }
 }

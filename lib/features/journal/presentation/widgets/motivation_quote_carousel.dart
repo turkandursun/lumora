@@ -269,13 +269,9 @@ class _MotivationQuoteCarouselState
         isDark: themeDark,
         quote: dayQuote,
         isFavorite: favorites.contains(dayQuote.id),
-        onToggleFavorite: () =>
-            ref.read(quoteFavoritesProvider.notifier).toggle(dayQuote.id),
-        onShare: () => ShareQuoteCard.share(
-            context: context,
-            quoteText: dayQuote.text(isTr),
-            isTr: isTr,
-            author: dayQuote.author),
+        onToggleFavorite: () => ref.read(quoteFavoritesProvider.notifier).toggle(dayQuote.id),
+        onShare: () => ShareQuoteCard.share(context: context, quoteText: dayQuote.text(isTr), isTr: isTr, author: dayQuote.author),
+        onOpen: () => context.push(AppRoutes.quotes, extra: dailyRotationIndex(now, famousQuotes.length)),
       ),
       _AffirmationSlide(isDark: themeDark, isTr: isTr, mood: mood),
       if (memory != null) _MemorySlide(isDark: themeDark, memory: memory),
@@ -342,6 +338,7 @@ class _QuoteSlide extends StatelessWidget {
     required this.isFavorite,
     required this.onToggleFavorite,
     required this.onShare,
+    required this.onOpen,
   });
 
   final bool isDark;
@@ -349,6 +346,7 @@ class _QuoteSlide extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
   final VoidCallback onShare;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -366,7 +364,10 @@ class _QuoteSlide extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Column(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onOpen,
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -386,6 +387,7 @@ class _QuoteSlide extends StatelessWidget {
                         style: AstraKit.label(isDark, fontSize: 12.5),
                       ),
                   ],
+                ),
                 ),
               ),
               Column(

@@ -279,23 +279,27 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     }
 
     final title = _titleController.text.trim();
-    final isNewEntry = _editingEntry == null;
+    final repo = ref.read(journalEntriesRepositoryProvider);
+    final editing = _editingEntry;
+
+    // Persist before clearing the composer. Goal progress is awarded only
+    // after a successful first save, never when an existing entry is edited.
     try {
-      if (_editingEntry != null) {
-        await ref.read(journalEntriesRepositoryProvider).update(
-              _editingEntry!.id,
-              content: content,
-              audioPath: _editingEntry!.audioPath,
-              photoUrl: _editingEntry!.photoUrl,
-              supabaseId: _editingEntry!.supabaseId,
-            );
+      if (editing != null) {
+        await repo.update(
+          editing.id,
+          content: content,
+          audioPath: editing.audioPath,
+          photoUrl: editing.photoUrl,
+          supabaseId: editing.supabaseId,
+        );
       } else {
-        await ref.read(journalEntriesRepositoryProvider).save(
-              content,
-              title: title.isEmpty ? null : title,
-              photoPath: _pickedPhotoPath,
-              photoBytes: _pickedPhotoBytes,
-            );
+        await repo.save(
+          content,
+          title: title.isEmpty ? null : title,
+          photoPath: _pickedPhotoPath,
+          photoBytes: _pickedPhotoBytes,
+        );
         await ref.read(journalStreakProvider.notifier).recordEntrySaved();
         await ref.read(goalsRepositoryProvider).incrementByTemplateKey(
               GoalTemplateKeys.journal,
@@ -318,7 +322,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       return;
     }
 
-    if (!isNewEntry) {
+    if (editing != null) {
       // Edits persist but deliberately do not generate a second Goal event.
       debugPrint('[JournalSave] existing entry updated without goal progress');
     }

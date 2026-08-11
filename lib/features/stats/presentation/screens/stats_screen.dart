@@ -136,11 +136,11 @@ class _OverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tiles = <Widget>[
-      _StatTile(icon: Icons.edit_note_rounded, primary: primary, isDark: isDark, value: '$journaledDays', label: isTr ? 'günlük gün' : 'journaled'),
-      _StatTile(icon: Icons.local_fire_department_rounded, primary: primary, isDark: isDark, value: '$streak', label: isTr ? 'gün seri' : 'day streak'),
-      _StatTile(icon: Icons.nights_stay_rounded, primary: primary, isDark: isDark, value: '$dreams', label: isTr ? 'rüya' : 'dreams'),
-      _StatTile(icon: Icons.insights_rounded, primary: primary, isDark: isDark, value: '$moods', label: isTr ? 'ruh hali' : 'moods'),
-      _StatTile(icon: Icons.mail_rounded, primary: primary, isDark: isDark, value: '$letters', label: isTr ? 'mektup' : 'letters'),
+      _StatTile(icon: Icons.edit_note_rounded, primary: primary, isDark: isDark, value: journaledDays, label: isTr ? 'günlük gün' : 'journaled'),
+      _StatTile(icon: Icons.local_fire_department_rounded, primary: primary, isDark: isDark, value: streak, label: isTr ? 'gün seri' : 'day streak'),
+      _StatTile(icon: Icons.nights_stay_rounded, primary: primary, isDark: isDark, value: dreams, label: isTr ? 'rüya' : 'dreams'),
+      _StatTile(icon: Icons.insights_rounded, primary: primary, isDark: isDark, value: moods, label: isTr ? 'ruh hali' : 'moods'),
+      _StatTile(icon: Icons.mail_rounded, primary: primary, isDark: isDark, value: letters, label: isTr ? 'mektup' : 'letters'),
     ];
 
     return AstraGlassCard(
@@ -179,7 +179,7 @@ class _StatTile extends StatelessWidget {
   final IconData icon;
   final Color primary;
   final bool isDark;
-  final String value;
+  final int value;
   final String label;
 
   @override
@@ -189,7 +189,7 @@ class _StatTile extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: primary),
         const SizedBox(height: 5),
-        Text(value, style: AstraKit.heading1(isDark, fontSize: 20)),
+        AstraCountUp(value: value, style: AstraKit.heading1(isDark, fontSize: 20)),
         const SizedBox(height: 1),
         Text(label, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 10, fontWeight: FontWeight.w600)),
       ],
@@ -396,14 +396,14 @@ class _MiniStat extends StatelessWidget {
 
   final bool isDark;
   final Color primary;
-  final String value;
+  final int value;
   final String label;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: AstraKit.heading1(isDark, fontSize: 22, fontWeight: FontWeight.w700).copyWith(color: primary)),
+        AstraCountUp(value: value, style: AstraKit.heading1(isDark, fontSize: 22, fontWeight: FontWeight.w700).copyWith(color: primary)),
         const SizedBox(height: 2),
         Text(label, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 11, fontWeight: FontWeight.w600)),
       ],
@@ -447,9 +447,9 @@ class _JournalAnalysisCard extends StatelessWidget {
           else ...[
             Row(
               children: [
-                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: '${stats.entryCount}', label: isTr ? 'yazı' : 'entries')),
-                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: '${stats.totalWords}', label: isTr ? 'kelime' : 'words')),
-                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: '${stats.avgWords.round()}', label: isTr ? 'ort. kelime' : 'avg words')),
+                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: stats.entryCount, label: isTr ? 'yazı' : 'entries')),
+                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: stats.totalWords, label: isTr ? 'kelime' : 'words')),
+                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: stats.avgWords.round(), label: isTr ? 'ort. kelime' : 'avg words')),
               ],
             ),
             if (stats.topWords.isNotEmpty) ...[

@@ -448,5 +448,19 @@
   "goalsConfirmButton": "Continuer",
   "goalsUpdatedMessage": "Objectif mis à jour.",
   "goalsArchivedMessage": "Objectif archivé.",
-  "goalsPeriodSummary": "{done} objectifs sur {total} terminés pour cette période"
+  "goalsPeriodSummary": "{done} objectifs sur {total} terminés pour cette période",
+  "communityTabToday": "Aujourd'hui",
+  "communityTabFeed": "Fil",
+  "communityComposerHint": "Partage une pensée, anonymement…",
+  "communityComposerButton": "Partager",
+  "communityPostEmpty": "Pas encore de publications — partage la première pensée bienveillante.",
+  "communityRepliesTitle": "Réponses",
+  "communityReplyHint": "Écris une réponse bienveillante…",
+  "communityReplyCountLabel": "{count} réponses",
+  "communityRepliesEmpty": "Pas encore de réponses — sois la première voix bienveillante.",
+  "communityModerationContact": "Gardons cet espace anonyme — pas de numéros, de liens ni de coordonnées.",
+  "communityModerationHarmful": "Gardons cet espace bienveillant — reformule, s'il te plaît.",
+  "communityModerationEmpty": "Écris d'abord quelque chose.",
+  "homeStreakBannerTitle": "Série quotidienne",
+  "greetingWelcomeBack": "Bonjour, bon retour. Tu m'avais manqué ici."
 }

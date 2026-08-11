@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../screens/journal_entry_screen.dart';
 
 /// Gentle, inviting prompts encouraging the user to write down their thoughts.
 const _promptsTr = [
@@ -43,7 +42,12 @@ class HomeStatsRow extends ConsumerWidget {
     final promptIndex = DateTime.now().hour % _promptsTr.length;
     final promptText = isTr ? _promptsTr[promptIndex] : _promptsEn[promptIndex];
 
-    return AstraGlassCard(
+    return AstraMorphContainer(
+      borderRadius: 24,
+      openBuilder: (_) => const JournalEntryScreen(),
+      closedBuilder: (context, open) => BouncyTap(
+      onTap: open,
+      child: AstraGlassCard(
       isDark: isDark,
       primaryColor: accent,
       padding: EdgeInsets.zero,
@@ -53,7 +57,7 @@ class HomeStatsRow extends ConsumerWidget {
         borderRadius: BorderRadius.circular(24),
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
-          onTap: () => context.push(AppRoutes.journalEntry),
+          onTap: null,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: Row(
@@ -147,6 +151,8 @@ class HomeStatsRow extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+      ),
       ),
     );
   }

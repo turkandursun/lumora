@@ -1755,5 +1755,26 @@
   "goalsConfirmButton": "Continue",
   "goalsUpdatedMessage": "Goal updated.",
   "goalsArchivedMessage": "Goal archived.",
-  "goalsPeriodSummary": "{done} of {total} completed in this period"
+  "goalsPeriodSummary": "{done} of {total} completed in this period",
+  "communityTabToday": "Today",
+  "communityTabFeed": "Feed",
+  "communityComposerHint": "Share a thought, anonymously…",
+  "communityComposerButton": "Share",
+  "communityPostEmpty": "No posts yet — share the first gentle thought.",
+  "communityRepliesTitle": "Replies",
+  "communityReplyHint": "Write a kind reply…",
+  "communityReplyCountLabel": "{count} replies",
+  "communityRepliesEmpty": "No replies yet — be the first kind voice.",
+  "communityModerationContact": "Let's keep this space anonymous — no phone numbers, links or contact info.",
+  "communityModerationHarmful": "Let's keep this space kind — please rephrase.",
+  "communityModerationEmpty": "Write something first.",
+  "@communityReplyCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeStreakBannerTitle": "Daily streak",
+  "greetingWelcomeBack": "Hi, welcome back. I missed seeing you here."
 }
