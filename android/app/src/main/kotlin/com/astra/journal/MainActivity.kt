@@ -1,4 +1,4 @@
-package com.example.mindful_journal
+package com.astra.journal
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
