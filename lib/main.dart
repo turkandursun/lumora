@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'core/config/env.dart';
+import 'core/config/supabase_auth_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,9 @@ void main() async {
   await Supabase.initialize(
     url: Env.supabaseUrl,
     publishableKey: Env.supabasePublishableKey,
+    authOptions: FlutterAuthClientOptions(
+      localStorage: supabaseAuthLocalStorage,
+    ),
   );
   runApp(const ProviderScope(child: LumoraApp()));
 }

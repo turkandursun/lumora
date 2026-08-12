@@ -608,6 +608,16 @@
   "@profileMenuLogout": {
     "description": "Label for the button on the profile screen that signs the user out."
   },
+  "profileMenuDeleteAccount": "Delete My Account",
+  "accountDeletionFirstTitle": "Do you want to delete your account?",
+  "accountDeletionFirstBody": "Your account and personal data in ASTRA will be permanently deleted.",
+  "accountDeletionContinue": "Continue",
+  "accountDeletionFinalTitle": "This action cannot be undone",
+  "accountDeletionFinalBody": "Your journals, mood records, goals, images, and other account data will be permanently deleted. Are you sure?",
+  "accountDeletionConfirm": "Permanently Delete My Account",
+  "accountDeletionCancel": "Cancel",
+  "accountDeletionInProgress": "Deleting account...",
+  "accountDeletionFailed": "Your account could not be deleted. Your data is still safe; please try again.",
   "profileMenuAppLock": "Privacy & Security",
   "@profileMenuAppLock": {
     "description": "Label for the menu item on the profile screen that opens the Privacy & Security settings screen."
