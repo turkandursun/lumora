@@ -34,6 +34,25 @@ class JournalToneFeedbackController {
     }
   }
 
+  /// Returns the tone analysis, or `null` if it was superseded by a newer
+  /// request or failed for any reason. Used by the loading-first feedback
+  /// sheet, which shows a "Luma is reading…" state while this resolves so the
+  /// user immediately understands a reflection is on its way.
+  Future<JournalToneAnalysis?> requestAnalysis({
+    required String text,
+    required String locale,
+  }) async {
+    final requestGeneration = ++_generation;
+    try {
+      final analysis = await _service.analyze(text: text, locale: locale);
+      if (_disposed || requestGeneration != _generation) return null;
+      return analysis;
+    } catch (_) {
+      // AI feedback is optional; every failure resolves to a quiet null.
+      return null;
+    }
+  }
+
   void invalidate() => _generation++;
 
   void dispose() {

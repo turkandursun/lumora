@@ -395,21 +395,18 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     required String locale,
   }) async {
     try {
-      await _toneFeedbackController.analyzeSavedJournal(
+      // Present the feedback sheet immediately in a "Luma is reading…" state so
+      // the user knows a reflection is on its way, then let it resolve in place.
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+      final isDark = ref.read(astraThemeProvider) == AstraThemeMode.dark;
+      final analysisFuture = _toneFeedbackController.requestAnalysis(
         text: content,
         locale: locale,
-        canPresent: () =>
-            mounted && ModalRoute.of(context)?.isCurrent == true,
-        onAnalysisReady: (analysis) async {
-          if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
-          final isDark =
-              ref.read(astraThemeProvider) == AstraThemeMode.dark;
-          await JournalToneFeedbackSheet.showAndNavigate(
-            context: context,
-            analysis: analysis,
-            isDark: isDark,
-          );
-        },
+      );
+      await JournalToneFeedbackSheet.showAndNavigate(
+        context: context,
+        analysisFuture: analysisFuture,
+        isDark: isDark,
       );
     } catch (error) {
       // The controller already isolates expected failures; this final boundary
