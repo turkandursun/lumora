@@ -1877,5 +1877,9 @@
         "type": "int"
       }
     }
-  }
+  },
+  "journalToneFeedbackTitle": "Journal Tone Feedback",
+  "journalToneNotNow": "Not Now",
+  "journalToneWellnessPrompt": "How are you feeling about this entry?",
+  "journalToneCalmAction": "Take a Calm Moment"
 }
