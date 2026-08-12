@@ -8,7 +8,7 @@ import '../../../ai_questions/presentation/screens/ai_questions_screen.dart';
 import '../../../breathing/presentation/screens/breathing_screen.dart';
 import '../../../calendar/presentation/screens/calendar_screen.dart';
 import '../../../community/presentation/screens/community_screen.dart';
-import '../../../daily_question/presentation/screens/daily_question_screen.dart';
+import '../../../dilemma/presentation/screens/dilemma_swipe_screen.dart';
 import '../../../letters/presentation/screens/letters_screen.dart';
 import '../../../meditation/presentation/screens/meditation_screen.dart';
 
@@ -82,11 +82,11 @@ List<HomeFeatureItem> homeFeatureItems(
       screenBuilder: (_) => const LettersScreen(),
     ),
     HomeFeatureItem(
-      title: l10n.exploreFeatureDailyQuestion,
-      description: l10n.homeFeatureDailyQuestionDesc,
-      primaryIcon: Icons.help_outline_rounded,
-      accentIcon: Icons.auto_awesome_rounded,
-      screenBuilder: (_) => const DailyQuestionScreen(),
+      title: l10n.homeFeatureDilemmaTitle,
+      description: l10n.homeFeatureDilemmaDesc,
+      primaryIcon: Icons.swipe_rounded,
+      accentIcon: Icons.balance_rounded,
+      screenBuilder: (_) => const DilemmaSwipeScreen(),
     ),
     HomeFeatureItem(
       title: l10n.exploreFeatureCommunity,

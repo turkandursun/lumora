@@ -45,18 +45,26 @@ class ContentModeration {
   static final List<String> _harmfulWords = [
     // Turkish
     'aptal', 'aptalsin', 'salak', 'salaksin', 'gerizekali', 'ahmak',
-    'orospu', 'orospusun', 'serefsiz', 'siktir', 'amk', 'yavsak',
+    'orospu', 'orospusun', 'serefsiz', 'siktir', 'amk', 'amcik', 'yavsak',
     'pezevenk', 'kahpe', 'ibne', 'gavat', 'gebertirim', 'geber',
     'oldururum', 'oldurecegim',
+    'sikeyim', 'sikik', 'siktim', 'sikim', 'siktir', 'yarrak', 'yarram',
+    'kaltak', 'surtuk', 'pust', 'godos', 'dallama', 'orospucocugu',
+    // "göt" is only filtered in its unambiguous vulgar compounds — bare "göt"
+    // normalizes to "got", which collides with English "got" and Turkish
+    // "götür-" (to carry), so filtering it alone would flag innocent words.
+    'gotveren', 'gotos', 'gotlek', 'gotoglani',
     // English
     'idiot', 'stupid', 'moron', 'retard', 'bitch', 'bastard', 'asshole',
-    'fuck', 'fucking', 'fucker', 'motherfucker', 'shit', 'slut', 'whore',
-    'cunt', 'faggot', 'kys',
+    'arsehole', 'fuck', 'fucking', 'fucker', 'motherfucker', 'shit', 'slut',
+    'whore', 'cunt', 'faggot', 'kys', 'pussy', 'nigger', 'nigga', 'douche',
+    'douchebag', 'wanker', 'twat', 'bollocks', 'bugger', 'dumbass', 'jackass',
   ];
 
   // Multi-word hurtful phrases, matched as plain substrings on normalized text.
   static final List<String> _harmfulPhrases = [
     'siktir git', 'geri zekali', 'kill yourself',
+    'orospu cocugu', 'anani sikeyim', 'gotunu sikeyim', 'anani avradini',
   ];
 
   // Common letter → look-alike substitutions (leet speak), pre-formatted for
