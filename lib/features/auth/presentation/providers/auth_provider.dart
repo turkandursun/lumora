@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../../core/config/env.dart';
 
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
@@ -133,7 +136,12 @@ class AuthController extends StateNotifier<AuthState> {
   Future<bool> signInWithGoogle() async {
     state = state.copyWith(status: AuthStatus.submitting);
     try {
-      await _client.auth.signInWithOAuth(OAuthProvider.google);
+      await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        // Web returns to the site URL (default); native platforms need an
+        // explicit deep link so the browser hands control back to the app.
+        redirectTo: kIsWeb ? null : Env.oauthNativeRedirect,
+      );
       state = state.copyWith(status: AuthStatus.idle);
       return true;
     } on AuthException catch (_) {

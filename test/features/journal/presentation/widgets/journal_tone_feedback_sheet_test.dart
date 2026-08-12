@@ -22,7 +22,7 @@ void main() {
     expect(_allSuggestionButtons(), findsNothing);
   });
 
-  testWidgets('only suggestions present in the response are rendered',
+  testWidgets('a low mood always offers the four fixed support options',
       (tester) async {
     await tester.pumpWidget(
       _sheetApp(
@@ -34,18 +34,13 @@ void main() {
       ),
     );
 
-    expect(
-      find.byKey(const ValueKey('journal-tone-suggestion-calm')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey('journal-tone-suggestion-breathing')),
-      findsNothing,
-    );
-    expect(
-      find.byKey(const ValueKey('journal-tone-suggestion-meditation')),
-      findsNothing,
-    );
+    for (final name in const ['lumaChat', 'calm', 'breathing', 'meditation']) {
+      expect(
+        find.byKey(ValueKey('journal-tone-suggestion-$name')),
+        findsOneWidget,
+        reason: '$name option should always be present on a low mood',
+      );
+    }
   });
 
   for (final testCase in const [
@@ -62,7 +57,8 @@ void main() {
       AppRoutes.calm,
     ),
   ]) {
-    testWidgets('${testCase.$1.name} action closes sheet and opens its route',
+    testWidgets(
+        '${testCase.$1.name} action opens its route and keeps a working back',
         (tester) async {
       final router = _routerForSuggestion(testCase.$1);
       addTearDown(router.dispose);
@@ -77,10 +73,19 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // The sheet closed and the destination is on screen.
       expect(find.byType(JournalToneFeedbackSheet), findsNothing);
-      expect(router.routeInformationProvider.value.uri.path, testCase.$2);
       expect(
           find.byKey(ValueKey('target-${testCase.$1.name}')), findsOneWidget);
+
+      // The route was pushed (not replaced), so there is a back entry: popping
+      // returns to the screen we launched from. This is the regression the
+      // go -> push change fixes.
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('open-feedback')), findsOneWidget);
+      expect(
+          find.byKey(ValueKey('target-${testCase.$1.name}')), findsNothing);
     });
   }
 }
@@ -119,7 +124,7 @@ GoRouter _routerForSuggestion(JournalWellnessSuggestion suggestion) {
             onPressed: () => unawaited(
               JournalToneFeedbackSheet.showAndNavigate(
                 context: context,
-                analysis: analysis,
+                analysisFuture: Future.value(analysis),
                 isDark: false,
               ),
             ),

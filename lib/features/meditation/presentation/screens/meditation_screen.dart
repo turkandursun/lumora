@@ -5,9 +5,12 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../data/meditation_voice_service.dart';
+import '../../domain/meditation_voices.dart';
 import '../../../goals/domain/goal_template.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 
@@ -146,7 +149,9 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
   AnimationController? _pulse;
 
   final AudioPlayer _player = AudioPlayer();
+  final AudioPlayer _voicePlayer = AudioPlayer();
   final FlutterTts _tts = FlutterTts();
+  final MeditationVoiceService _voice = MeditationVoiceService();
 
   // Ambient sound plays softly, and ducks even lower while the guide voice
   // speaks so the words stay clear. A gentle fade in/out avoids an abrupt,
@@ -163,6 +168,8 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
   int _minutes = 5;
   bool _soundOn = true;
   bool _voiceOn = true;
+  static const _voicePrefKey = 'meditation_voice_key';
+  String _voiceKey = meditationVoiceOptions.first.key;
   bool _breathIn = true;
 
   int _remaining = 0;
@@ -196,6 +203,28 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
         _safe(() => _player.setVolume(_ambientCurrent));
       }
     });
+    // Bring ambient back up when an ElevenLabs voice clip finishes too.
+    _voicePlayer.onPlayerComplete.listen((_) {
+      _speaking = false;
+      if (_soundOn && _stage == _Stage.running) {
+        _safe(() => _player.setVolume(_ambientCurrent));
+      }
+    });
+    // Restore the previously chosen guide voice.
+    SharedPreferences.getInstance().then((prefs) {
+      final k = prefs.getString(_voicePrefKey);
+      if (k != null &&
+          meditationVoiceOptions.any((v) => v.key == k) &&
+          mounted) {
+        setState(() => _voiceKey = k);
+      }
+    });
+  }
+
+  void _selectVoice(String key) {
+    setState(() => _voiceKey = key);
+    SharedPreferences.getInstance()
+        .then((prefs) => prefs.setString(_voicePrefKey, key));
   }
 
   @override
@@ -204,6 +233,7 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     _fadeTimer?.cancel();
     _pulse?.dispose();
     _safe(() => _player.dispose());
+    _safe(() => _voicePlayer.dispose());
     _safe(() => _tts.stop());
     super.dispose();
   }
@@ -325,6 +355,22 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     _speaking = true;
     // Duck the ambient sound while speaking so the voice is clearly heard.
     if (_soundOn) _safe(() => _player.setVolume(_ambientDuck));
+
+    // Try the natural ElevenLabs voice; fall back to the device's built-in
+    // text-to-speech if it's unavailable (no key, offline, quota, etc.).
+    final bytes = await _voice.voiceBytes(text, voiceId: voiceIdForKey(_voiceKey));
+    if (!mounted || _stage != _Stage.running) return;
+    if (bytes != null) {
+      try {
+        await _tts.stop();
+        await _voicePlayer.stop();
+        await _voicePlayer.play(BytesSource(bytes, mimeType: 'audio/mpeg'));
+        return;
+      } catch (_) {
+        // fall through to device TTS
+      }
+    }
+    await _voicePlayer.stop();
     await _tts.stop();
     await _tts.speak(text);
   }
@@ -405,6 +451,7 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     _timer?.cancel();
     _stopAmbient();
     _safe(() => _tts.stop());
+    _safe(() => _voicePlayer.stop());
     if (!mounted) return;
     setState(() => _stage = _Stage.done);
     // Auto-advance the "meditation" goal by the minutes just completed.
@@ -419,6 +466,7 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     _timer?.cancel();
     _stopAmbient();
     _safe(() => _tts.stop());
+    _safe(() => _voicePlayer.stop());
     if (!mounted) return;
     setState(() => _stage = _Stage.setup);
   }
@@ -461,10 +509,12 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
                           minutes: _minutes,
                           soundOn: _soundOn,
                           voiceOn: _voiceOn,
+                          voiceKey: _voiceKey,
                           onFocus: (f) => setState(() => _focus = f),
                           onMinutes: (m) => setState(() => _minutes = m),
                           onToggleSound: (v) => setState(() => _soundOn = v),
                           onToggleVoice: (v) => setState(() => _voiceOn = v),
+                          onVoice: _selectVoice,
                           onStart: _start,
                         ),
                       _Stage.running => _RunningView(
@@ -507,10 +557,12 @@ class _SetupView extends StatelessWidget {
     required this.minutes,
     required this.soundOn,
     required this.voiceOn,
+    required this.voiceKey,
     required this.onFocus,
     required this.onMinutes,
     required this.onToggleSound,
     required this.onToggleVoice,
+    required this.onVoice,
     required this.onStart,
   });
 
@@ -521,10 +573,12 @@ class _SetupView extends StatelessWidget {
   final int minutes;
   final bool soundOn;
   final bool voiceOn;
+  final String voiceKey;
   final ValueChanged<_Focus> onFocus;
   final ValueChanged<int> onMinutes;
   final ValueChanged<bool> onToggleSound;
   final ValueChanged<bool> onToggleVoice;
+  final ValueChanged<String> onVoice;
   final VoidCallback onStart;
 
   @override
@@ -597,6 +651,37 @@ class _SetupView extends StatelessWidget {
             primary: primary,
             onChanged: onToggleVoice,
           ),
+          // Named guide-voice picker (only when the voice guide is on).
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            child: voiceOn
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Column(
+                      children: [
+                        Text(isTr ? 'Rehber sesi' : 'Guide voice',
+                            style: AstraKit.mutedText(isDark, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 10,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            for (final v in meditationVoiceOptions)
+                              _VoiceChip(
+                                label: v.name,
+                                selected: v.key == voiceKey,
+                                isDark: isDark,
+                                primary: primary,
+                                onTap: () => onVoice(v.key),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
           const SizedBox(height: 28),
           AstraGoldButton(
               isDark: isDark,
@@ -664,6 +749,63 @@ class _FocusChip extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   color: selected ? const Color(0xFF1A0F00) : null,
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VoiceChip extends StatelessWidget {
+  const _VoiceChip({
+    required this.label,
+    required this.selected,
+    required this.isDark,
+    required this.primary,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final bool isDark;
+  final Color primary;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: selected
+                ? primary.withValues(alpha: 0.85)
+                : (isDark ? const Color(0x33231845) : const Color(0x99FBF1DD)),
+            border: Border.all(
+                color: selected ? primary : primary.withValues(alpha: 0.25),
+                width: 1.2),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.graphic_eq_rounded,
+                  size: 15,
+                  color: selected
+                      ? const Color(0xFF1A0F00)
+                      : primary.withValues(alpha: 0.8)),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: AstraKit.body(isDark,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? const Color(0xFF1A0F00) : null),
               ),
             ],
           ),

@@ -167,9 +167,15 @@ async function generateAnalysis({
         },
       ],
       generationConfig: {
-        maxOutputTokens: 1024,
+        // Headroom so a long journal never truncates the JSON mid-object.
+        maxOutputTokens: 2048,
         temperature: 0.2,
-        thinkingConfig: { thinkingLevel: "MINIMAL" },
+        // Disable "thinking" entirely (thinkingBudget: 0). The previous
+        // `thinkingLevel: "MINIMAL"` is not a valid field, so dynamic thinking
+        // stayed on and, for long entries, consumed the whole output budget
+        // before any JSON was produced (finishReason MAX_TOKENS) — which is
+        // exactly why longer journals failed to analyze.
+        thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: "application/json",
         responseJsonSchema: {
           type: "object",

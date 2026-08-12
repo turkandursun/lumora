@@ -5,11 +5,9 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/services/weather_service.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../reminders/presentation/providers/reminders_providers.dart';
-import '../providers/weather_provider.dart';
 
 String _timeOfDayGreeting(AppLocalizations l10n, DateTime now, String? name) {
   final hour = now.hour;
@@ -49,7 +47,6 @@ class HomeHeader extends ConsumerWidget {
       blurRadius: 8,
       offset: const Offset(0, 1),
     );
-    final weatherAsync = ref.watch(weatherReadingProvider);
     final hasUnreadReminders = ref.watch(remindersStreamProvider).maybeWhen(
           data: (rows) => rows.any((r) => r.enabled),
           orElse: () => false,
@@ -65,33 +62,17 @@ class HomeHeader extends ConsumerWidget {
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Eyebrow: quiet date label + a soft weather chip.
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      dateLabel,
-                      style: AstraKit.body(isDark, fontSize: 11, fontWeight: FontWeight.w600)
-                          .copyWith(
-                            color: AstraKit.muted(isDark),
-                            letterSpacing: 1.4,
-                            shadows: [textShadow],
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+              // Eyebrow: a quiet date label.
+              Text(
+                dateLabel,
+                style: AstraKit.body(isDark, fontSize: 11, fontWeight: FontWeight.w600)
+                    .copyWith(
+                      color: AstraKit.muted(isDark),
+                      letterSpacing: 1.4,
+                      shadows: [textShadow],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  weatherAsync.when(
-                    data: (reading) => _WeatherChip(reading: reading, isDark: isDark, accent: accent),
-                    loading: () => SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 1.6, color: accent),
-                    ),
-                    error: (_, __) => const SizedBox.shrink(),
-                  ),
-                ],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 7),
               // Hero greeting — larger, airier, with a gently glowing sparkle.
@@ -134,38 +115,6 @@ class HomeHeader extends ConsumerWidget {
         ),
         ),
       ],
-    );
-  }
-}
-
-class _WeatherChip extends StatelessWidget {
-  const _WeatherChip({required this.reading, required this.isDark, required this.accent});
-
-  final WeatherReading reading;
-  final bool isDark;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0x33231845) : const Color(0xB3FCF4E2),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: accent.withValues(alpha: 0.28)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(reading.condition.icon, size: 13, color: accent),
-          const SizedBox(width: 5),
-          Text(
-            reading.roundedTemperature,
-            style: AstraKit.body(isDark, fontSize: 11.5, fontWeight: FontWeight.w700)
-                .copyWith(letterSpacing: 0.2),
-          ),
-        ],
-      ),
     );
   }
 }

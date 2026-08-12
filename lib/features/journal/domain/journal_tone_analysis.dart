@@ -1,6 +1,6 @@
 enum JournalTone { positive, neutral, mixed, lowMood }
 
-enum JournalWellnessSuggestion { breathing, meditation, calm }
+enum JournalWellnessSuggestion { breathing, meditation, calm, lumaChat }
 
 /// Typed, defensive representation of the `journal-tone` Edge Function
 /// response. This is intentionally independent from AppMood: an AI reading of
@@ -121,5 +121,8 @@ class JournalToneAnalysis {
         JournalWellnessSuggestion.breathing => 'breathing',
         JournalWellnessSuggestion.meditation => 'meditation',
         JournalWellnessSuggestion.calm => 'calm',
+        // Client-only support option — the model never returns this value, so
+        // it has no wire representation beyond this defensive fallback.
+        JournalWellnessSuggestion.lumaChat => 'luma_chat',
       };
 }

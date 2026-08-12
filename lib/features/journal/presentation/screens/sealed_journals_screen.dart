@@ -344,9 +344,70 @@ class _EntryTile extends StatelessWidget {
   }
 }
 
-/// The premium reading view: the entry rendered on a warm, ruled sheet of paper
-/// that drops onto the dimmed screen. Handwritten-style body so it feels like
-/// something actually written, not a database row.
+/// Theme-aware palette for the reading page — warm ivory in the light theme,
+/// a deep "night parchment" in the dark theme, so it feels intentional and
+/// premium in both instead of a bright card blinding the reader at night.
+class _PaperPalette {
+  const _PaperPalette({
+    required this.paperTop,
+    required this.paperBottom,
+    required this.ink,
+    required this.softInk,
+    required this.hairline,
+    required this.frame,
+    required this.spine,
+    required this.accent,
+    required this.shadow,
+  });
+
+  final Color paperTop;
+  final Color paperBottom;
+  final Color ink;
+  final Color softInk;
+  final Color hairline;
+  final Color frame;
+  final Color spine;
+  final Color accent;
+  final List<BoxShadow> shadow;
+
+  factory _PaperPalette.of(bool isDark, Color primary) {
+    if (isDark) {
+      return _PaperPalette(
+        paperTop: const Color(0xFF241E31),
+        paperBottom: const Color(0xFF191426),
+        ink: const Color(0xFFEDE4D6),
+        softInk: const Color(0xFFA99CBB),
+        hairline: const Color(0x1FFFFFFF),
+        frame: const Color(0xFF2C2540),
+        spine: primary.withValues(alpha: 0.55),
+        accent: primary,
+        shadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.55), blurRadius: 44, offset: const Offset(0, 22)),
+          BoxShadow(color: primary.withValues(alpha: 0.16), blurRadius: 34, spreadRadius: 1),
+        ],
+      );
+    }
+    return _PaperPalette(
+      paperTop: const Color(0xFFFCF8EF),
+      paperBottom: const Color(0xFFF2E9D6),
+      ink: const Color(0xFF2B2318),
+      softInk: const Color(0xFF9A876A),
+      hairline: const Color(0x14000000),
+      frame: const Color(0xFFFFFDF8),
+      spine: primary.withValues(alpha: 0.38),
+      accent: primary,
+      shadow: const [
+        BoxShadow(color: Color(0x59000000), blurRadius: 46, offset: Offset(0, 22)),
+        BoxShadow(color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 2)),
+      ],
+    );
+  }
+}
+
+/// The premium reading view: the entry set like a page from a fine journal —
+/// an editorial serif on warm parchment, a hairline ornament rule under the
+/// title, a soft bookbinding spine down the left edge, and framed media. It
+/// eases onto the dimmed screen rather than reading like a database row.
 class _JournalDetailPage extends StatelessWidget {
   const _JournalDetailPage({
     required this.entry,
@@ -364,12 +425,12 @@ class _JournalDetailPage extends StatelessWidget {
   final Color primary;
   final VoidCallback onDelete;
 
-  static const _inkColor = Color(0xFF3A2A12);
-  static const _paperColor = Color(0xFFFBF4E4);
-
   @override
   Widget build(BuildContext context) {
-    final dateLabel = DateFormat('d MMMM yyyy · EEEE', localeStr).format(entry.createdAt);
+    final p = _PaperPalette.of(isDark, primary);
+    final dateEyebrow =
+        DateFormat('d MMMM yyyy', localeStr).format(entry.createdAt).toUpperCase();
+    final weekday = DateFormat('EEEE', localeStr).format(entry.createdAt);
     final time = DateFormat('HH:mm', localeStr).format(entry.createdAt);
     final hasTitle = entry.title != null && entry.title!.trim().isNotEmpty;
     final hasText = entry.content.trim().isNotEmpty;
@@ -382,69 +443,139 @@ class _JournalDetailPage extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 30),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: 460),
               child: Container(
                 decoration: BoxDecoration(
-                  color: _paperColor,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0x1A000000)),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x66000000), blurRadius: 40, offset: Offset(0, 20)),
-                    BoxShadow(color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 2)),
-                  ],
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [p.paperTop, p.paperBottom],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: p.hairline),
+                  boxShadow: p.shadow,
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(22),
                   child: Stack(
                     children: [
-                      const Positioned.fill(child: CustomPaint(painter: _RuledPaperPainter())),
+                      // A soft bound "spine" down the inner-left edge.
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 5,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                p.spine.withValues(alpha: 0),
+                                p.spine,
+                                p.spine.withValues(alpha: 0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(30, 20, 18, 30),
+                        padding: const EdgeInsets.fromLTRB(28, 22, 22, 30),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // ── Eyebrow date + actions
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
-                                  child: Text(
-                                    '$dateLabel · $time',
-                                    style: GoogleFonts.kalam(fontSize: 13.5, color: const Color(0xFF7A5A2A), fontWeight: FontWeight.w700),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        dateEyebrow,
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 2,
+                                          color: p.softInk,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        '$weekday · $time',
+                                        style: GoogleFonts.lora(
+                                          fontSize: 13,
+                                          fontStyle: FontStyle.italic,
+                                          color: p.softInk,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                _PaperIconBtn(icon: Icons.delete_outline_rounded, onTap: onDelete),
-                                const SizedBox(width: 4),
-                                _PaperIconBtn(icon: Icons.close_rounded, onTap: () => Navigator.of(context).maybePop()),
+                                _PaperIconBtn(icon: Icons.delete_outline_rounded, palette: p, onTap: onDelete),
+                                const SizedBox(width: 6),
+                                _PaperIconBtn(
+                                  icon: Icons.close_rounded,
+                                  palette: p,
+                                  onTap: () => Navigator.of(context).maybePop(),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 6),
-                            const Divider(color: Color(0x22000000), height: 18),
-                            if (hasTitle) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                entry.title!,
-                                style: GoogleFonts.playfairDisplay(fontSize: 25, fontWeight: FontWeight.w700, color: _inkColor),
+                            const SizedBox(height: 18),
+                            // ── Title
+                            Text(
+                              hasTitle ? entry.title!.trim() : (isTr ? 'Bugünden' : 'From today'),
+                              style: GoogleFonts.playfairDisplay(
+                                fontSize: 27,
+                                fontWeight: FontWeight.w700,
+                                height: 1.18,
+                                color: p.ink,
                               ),
-                              const SizedBox(height: 14),
-                            ],
+                            ),
+                            const SizedBox(height: 14),
+                            _OrnamentRule(palette: p),
+                            const SizedBox(height: 20),
+                            // ── Photo, framed like a mounted print
                             if (hasPhoto) ...[
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.network(photoUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
-                              ),
-                              const SizedBox(height: 16),
+                              _FramedPhoto(url: photoUrl, palette: p),
+                              const SizedBox(height: 20),
                             ],
+                            // ── Body, set in a warm literary serif
                             if (hasText)
                               Text(
-                                entry.content,
-                                style: GoogleFonts.kalam(fontSize: 18, height: 1.65, color: _inkColor, fontWeight: FontWeight.w400),
+                                entry.content.trim(),
+                                style: GoogleFonts.lora(
+                                  fontSize: 16.5,
+                                  height: 1.85,
+                                  color: p.ink,
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
                             if (hasAudio) ...[
-                              const SizedBox(height: 16),
-                              VoiceEntryPlayer(audioPath: entry.audioPath!),
+                              const SizedBox(height: 18),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: p.frame,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: p.hairline),
+                                ),
+                                child: VoiceEntryPlayer(audioPath: entry.audioPath!),
+                              ),
                             ],
+                            const SizedBox(height: 24),
+                            // ── Closing flourish
+                            Center(
+                              child: Icon(
+                                Icons.spa_rounded,
+                                size: 16,
+                                color: p.accent.withValues(alpha: 0.55),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -460,10 +591,90 @@ class _JournalDetailPage extends StatelessWidget {
   }
 }
 
+/// A hairline rule broken by a small centered diamond — a quiet editorial
+/// divider under the title.
+class _OrnamentRule extends StatelessWidget {
+  const _OrnamentRule({required this.palette});
+
+  final _PaperPalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget line() => Expanded(
+          child: Container(height: 1, color: palette.softInk.withValues(alpha: 0.35)),
+        );
+    return Row(
+      children: [
+        line(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Transform.rotate(
+            angle: 0.785398, // 45°
+            child: Container(
+              width: 6,
+              height: 6,
+              color: palette.accent.withValues(alpha: 0.75),
+            ),
+          ),
+        ),
+        line(),
+      ],
+    );
+  }
+}
+
+/// A photo mounted on the page — a thin paper mat with a soft drop shadow.
+class _FramedPhoto extends StatelessWidget {
+  const _FramedPhoto({required this.url, required this.palette});
+
+  final String url;
+  final _PaperPalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: palette.frame,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: palette.hairline),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.14), blurRadius: 14, offset: const Offset(0, 6)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(9),
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) return child;
+            return AspectRatio(
+              aspectRatio: 4 / 3,
+              child: Container(
+                color: palette.hairline,
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: palette.accent),
+                ),
+              ),
+            );
+          },
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        ),
+      ),
+    );
+  }
+}
+
 class _PaperIconBtn extends StatelessWidget {
-  const _PaperIconBtn({required this.icon, required this.onTap});
+  const _PaperIconBtn({required this.icon, required this.palette, required this.onTap});
 
   final IconData icon;
+  final _PaperPalette palette;
   final VoidCallback onTap;
 
   @override
@@ -476,65 +687,39 @@ class _PaperIconBtn extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: const Color(0x0F000000),
-          border: Border.all(color: const Color(0x22000000)),
+          color: palette.softInk.withValues(alpha: 0.10),
+          border: Border.all(color: palette.hairline),
         ),
-        child: Icon(icon, size: 18, color: const Color(0xFF7A5A2A)),
+        child: Icon(icon, size: 18, color: palette.softInk),
       ),
     );
   }
 }
 
-/// Faint ruled lines + a soft margin rule, behind the journal text.
-class _RuledPaperPainter extends CustomPainter {
-  const _RuledPaperPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final line = Paint()
-      ..color = const Color(0x0F5A3A12)
-      ..strokeWidth = 1;
-    for (double y = 70; y < size.height - 10; y += 30) {
-      canvas.drawLine(Offset(24, y), Offset(size.width - 18, y), line);
-    }
-    final margin = Paint()
-      ..color = const Color(0x22C0392B)
-      ..strokeWidth = 1.4;
-    canvas.drawLine(const Offset(22, 8), Offset(22, size.height - 8), margin);
-  }
-
-  @override
-  bool shouldRepaint(covariant _RuledPaperPainter oldDelegate) => false;
-}
-
-/// Route that drops the page in from just above, with a soft spring settle and
-/// a slight tilt — like a sheet of paper landing on the desk.
+/// Route that eases the page in with a gentle upward settle, fade and subtle
+/// scale — a calm, premium arrival rather than a thrown sheet of paper.
 Route<T> _paperDropRoute<T>(Widget page) {
   return PageRouteBuilder<T>(
     opaque: false,
     barrierColor: const Color(0x8C000000),
     barrierDismissible: true,
     barrierLabel: 'journal',
-    transitionDuration: const Duration(milliseconds: 520),
-    reverseTransitionDuration: const Duration(milliseconds: 300),
+    transitionDuration: const Duration(milliseconds: 420),
+    reverseTransitionDuration: const Duration(milliseconds: 260),
     pageBuilder: (_, __, ___) => page,
     transitionsBuilder: (context, animation, secondary, child) {
-      final drop = CurvedAnimation(parent: animation, curve: Curves.easeOutBack, reverseCurve: Curves.easeInCubic);
-      final fade = CurvedAnimation(parent: animation, curve: const Interval(0.0, 0.6, curve: Curves.easeOut));
+      final settle = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+      final fade = CurvedAnimation(parent: animation, curve: const Interval(0.0, 0.55, curve: Curves.easeOut));
       return FadeTransition(
         opacity: fade,
         child: AnimatedBuilder(
-          animation: drop,
+          animation: settle,
           child: child,
           builder: (context, c) {
-            final v = drop.value;
+            final v = settle.value;
             return Transform.translate(
-              offset: Offset(0, -42 * (1 - v)),
-              child: Transform.rotate(
-                angle: -0.05 * (1 - v),
-                alignment: Alignment.topCenter,
-                child: Transform.scale(scale: 0.9 + 0.1 * v, alignment: Alignment.topCenter, child: c),
-              ),
+              offset: Offset(0, -20 * (1 - v)),
+              child: Transform.scale(scale: 0.96 + 0.04 * v, alignment: Alignment.topCenter, child: c),
             );
           },
         ),
