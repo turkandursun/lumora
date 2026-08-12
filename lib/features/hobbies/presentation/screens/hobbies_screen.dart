@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../auth/domain/auth_flow_routes.dart';
 import '../providers/hobbies_providers.dart';
 
 /// (id, Turkish label, English label, icon)
@@ -75,8 +75,8 @@ IconData? hobbyIcon(String id) => _presetById(id)?.$4;
 class HobbiesScreen extends ConsumerStatefulWidget {
   const HobbiesScreen({super.key, this.onboarding = false});
 
-  /// When true, shown once right after sign-in: no back button, and a
-  /// "Continue" button that marks the prompt done and heads to Home.
+  /// When true, shown once during fresh registration: no back button, and a
+  /// "Continue" button that hands off to LUMA's first welcome.
   final bool onboarding;
 
   @override
@@ -149,24 +149,14 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
                         style: AstraKit.mutedText(isDark, fontSize: 13.5),
                       ),
                       const SizedBox(height: 16),
-                      if (selected.isNotEmpty) ...[
-                        Text(isTr ? 'Seçtiklerin' : 'Your picks', style: AstraKit.heading2(isDark, fontSize: 15)),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final id in selected)
-                              _SelectedChip(
-                                label: _labelFor(id, isTr),
-                                isDark: isDark,
-                                primary: primary,
-                                onRemove: () => ref.read(hobbiesProvider.notifier).remove(id),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                      ],
+                      _SelectedHobbiesSection(
+                        selected: selected,
+                        isTr: isTr,
+                        isDark: isDark,
+                        primary: primary,
+                        onRemove: (id) =>
+                            ref.read(hobbiesProvider.notifier).remove(id),
+                      ),
                       _CustomAddRow(
                         isTr: isTr,
                         isDark: isDark,
@@ -183,6 +173,7 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
                         children: [
                           for (final (i, p) in _presets.indexed)
                             AstraEntrance(
+                              key: ValueKey(p.$1),
                               index: i,
                               intervalMs: 30,
                               offset: 12,
@@ -220,7 +211,59 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
 
   void _finishOnboarding() {
     if (!mounted) return;
-    context.go(AppRoutes.home);
+    context.go(AuthFlowRoutes.afterSignupHobbies, extra: true);
+  }
+}
+
+class _SelectedHobbiesSection extends StatelessWidget {
+  const _SelectedHobbiesSection({
+    required this.selected,
+    required this.isTr,
+    required this.isDark,
+    required this.primary,
+    required this.onRemove,
+  });
+
+  final Set<String> selected;
+  final bool isTr;
+  final bool isDark;
+  final Color primary;
+  final ValueChanged<String> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      alignment: Alignment.topCenter,
+      child: selected.isEmpty
+          ? const SizedBox.shrink()
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isTr ? 'Seçtiklerin' : 'Your picks',
+                  style: AstraKit.heading2(isDark, fontSize: 15),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final id in selected)
+                      _SelectedChip(
+                        key: ValueKey('selected_$id'),
+                        label: _labelFor(id, isTr),
+                        isDark: isDark,
+                        primary: primary,
+                        onRemove: () => onRemove(id),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+              ],
+            ),
+    );
   }
 }
 
@@ -328,7 +371,7 @@ class _HobbyChip extends StatelessWidget {
 }
 
 class _SelectedChip extends StatelessWidget {
-  const _SelectedChip({required this.label, required this.isDark, required this.primary, required this.onRemove});
+  const _SelectedChip({super.key, required this.label, required this.isDark, required this.primary, required this.onRemove});
 
   final String label;
   final bool isDark;

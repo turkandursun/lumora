@@ -9,6 +9,7 @@ import '../../features/meditation/presentation/screens/meditation_screen.dart';
 
 import '../../features/activities/presentation/screens/activities_screen.dart';
 import '../../features/ai_questions/presentation/screens/ai_questions_screen.dart';
+import '../../features/auth/domain/auth_flow_routes.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/name_entry_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
@@ -46,13 +47,13 @@ class AppRoutes {
 
   static const splash = '/splash';
   static const astraLanding = '/astra-landing';
-  static const onboarding = '/onboarding';
+  static const onboarding = AuthFlowRoutes.onboarding;
   static const login = '/login';
   static const signup = '/signup';
-  static const nameEntry = '/name-entry';
-  static const welcome = '/welcome';
-  static const greeting = '/greeting';
-  static const home = '/home';
+  static const nameEntry = AuthFlowRoutes.nameEntry;
+  static const welcome = AuthFlowRoutes.mood;
+  static const greeting = AuthFlowRoutes.greeting;
+  static const home = AuthFlowRoutes.home;
   static const reminders = '/reminders';
   static const goals = '/goals';
   static const breathing = '/breathing';
@@ -70,7 +71,7 @@ class AppRoutes {
   static const aiQuestions = '/ai-questions';
   static const meditation = '/meditation';
   static const hobbies = '/hobbies';
-  static const hobbiesOnboarding = '/hobbies-onboarding';
+  static const hobbiesOnboarding = AuthFlowRoutes.hobbiesOnboarding;
   static const activities = '/activities';
   static const feed = '/feed';
   static const calm = '/calm';
@@ -142,6 +143,14 @@ final GoRouter appRouter = GoRouter(
   refreshListenable: _AuthRefreshNotifier(),
   redirect: (context, state) {
     final isAuthenticated = Supabase.instance.client.auth.currentSession != null;
+    final targetRequiresFreshSignupIntent =
+        state.matchedLocation == AppRoutes.nameEntry ||
+            state.matchedLocation == AppRoutes.onboarding ||
+            state.matchedLocation == AppRoutes.hobbiesOnboarding;
+    if (targetRequiresFreshSignupIntent &&
+        !AuthFlowRoutes.hasFreshSignupIntent(state.extra)) {
+      return isAuthenticated ? AppRoutes.welcome : AppRoutes.login;
+    }
     final targetIsProtected = _protectedRoutes.contains(state.matchedLocation);
     if (targetIsProtected && !isAuthenticated) {
       return AppRoutes.login;
@@ -160,7 +169,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.onboarding,
       pageBuilder: (context, state) =>
-          _smoothPage(state, OnboardingScreen(isNewSignup: (state.extra as bool?) ?? false)),
+          _smoothPage(state, const OnboardingScreen(isNewSignup: true)),
     ),
     GoRoute(
       path: AppRoutes.login,
@@ -185,7 +194,9 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.greeting,
-      builder: (context, state) => const GreetingScreen(),
+      builder: (context, state) => GreetingScreen(
+        isFirstWelcome: state.extra == true,
+      ),
     ),
     GoRoute(
       path: AppRoutes.home,

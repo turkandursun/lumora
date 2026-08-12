@@ -68,7 +68,6 @@ class CloudBackupService {
     'period_symptoms_v1',
     'journal_streak_count',
     'journal_streak_last_entry_date',
-    'onboarding_completed',
   ];
 
   /// Test seam shared by export and restore guards. Goal streak values use

@@ -15,6 +15,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../domain/auth_flow_routes.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/google_sign_in_button.dart';
 
@@ -44,6 +45,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   bool _rememberMe = false;
   bool _obscurePassword = true;
   String? _formError;
+  bool _didRouteAfterSignIn = false;
   StreamSubscription<supabase.AuthState>? _authStateSubscription;
 
   late final AnimationController _entrance;
@@ -133,9 +135,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _routeAfterSignIn() async {
+    if (_didRouteAfterSignIn) return;
+    _didRouteAfterSignIn = true;
     await ref.read(cloudBackupServiceProvider).onSignIn();
     if (!mounted) return;
-    context.go(AppRoutes.onboarding, extra: false);
+    context.go(
+      AuthFlowRoutes.afterAuthentication(AuthFlowOrigin.existingLogin),
+    );
   }
 
   void _onSignUpTap() => context.go(AppRoutes.signup);

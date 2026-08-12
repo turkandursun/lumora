@@ -8,13 +8,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/mood_gradients.dart';
 import '../../../../theme/mood_theme_provider.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../../profile/presentation/providers/visit_tracker_providers.dart';
+import '../../domain/auth_flow_routes.dart';
 
 /// Mood accent colours — shared with the calendar via [moodSymbolColors], so a
 /// day's mood reads identically everywhere. NOT changed here on purpose.
@@ -133,11 +133,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   Future<void> _advance() async {
     if (_navigated || !mounted) return;
     _navigated = true;
-    if (widget.isNewSignup) {
-      context.go(AppRoutes.hobbiesOnboarding);
-    } else {
-      context.go(AppRoutes.greeting);
-    }
+    context.go(
+      AuthFlowRoutes.afterMood(isNewSignup: widget.isNewSignup),
+      extra: widget.isNewSignup ? true : null,
+    );
   }
 
   void _pickMood(AppMood mood) {

@@ -5,16 +5,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/luma_avatar.dart';
+import '../../domain/auth_flow_routes.dart';
 
 /// A warm greeting beat shown right after the user picks their mood: Luma's
 /// star appears and "types" a hello, letter by letter, then hands off to Home.
 /// Uses the same theme-aware scene (sun / moon) as the rest of the app.
 class GreetingScreen extends ConsumerStatefulWidget {
-  const GreetingScreen({super.key});
+  const GreetingScreen({super.key, this.isFirstWelcome = false});
+
+  final bool isFirstWelcome;
 
   @override
   ConsumerState<GreetingScreen> createState() => _GreetingScreenState();
@@ -34,7 +36,10 @@ class _GreetingScreenState extends ConsumerState<GreetingScreen> {
     super.didChangeDependencies();
     if (_started) return;
     _started = true;
-    _full = AppLocalizations.of(context).greetingWelcomeBack;
+    final l10n = AppLocalizations.of(context);
+    _full = widget.isFirstWelcome
+        ? l10n.greetingFirstWelcome
+        : l10n.greetingWelcomeBack;
     _typeTimer = Timer.periodic(const Duration(milliseconds: 55), (t) {
       if (_i >= _full.length) {
         t.cancel();
@@ -53,7 +58,7 @@ class _GreetingScreenState extends ConsumerState<GreetingScreen> {
   }
 
   void _goHome() {
-    if (mounted) context.go(AppRoutes.home);
+    if (mounted) context.go(AuthFlowRoutes.afterGreeting);
   }
 
   void _skip() {

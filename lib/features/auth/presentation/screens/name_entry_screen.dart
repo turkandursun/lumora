@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../../profile/data/profile_repository.dart';
+import '../../domain/auth_flow_routes.dart';
 
 /// Asked right after a fresh e-mail sign-up: a single "what should we call you?"
 /// field, kept out of the sign-up panel so that screen stays short enough to
@@ -41,8 +41,7 @@ class _NameEntryScreenState extends ConsumerState<NameEntryScreen> {
       }
     }
     if (!mounted) return;
-    // Fresh sign-up -> run the ASTRA onboarding (which then shows hobbies).
-    context.go(AppRoutes.onboarding, extra: true);
+    context.go(AuthFlowRoutes.afterNameEntry, extra: true);
   }
 
   @override

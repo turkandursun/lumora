@@ -11,11 +11,11 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supabase
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/services/onboarding_storage_service.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../domain/auth_flow_routes.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/google_sign_in_button.dart';
 
@@ -45,7 +45,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _onboardingStorage = OnboardingStorageService();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isGoogleSubmitting = false;
@@ -115,12 +114,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
         .signUpWithPassword(email: email, password: password);
     if (!success || !mounted) return;
 
-    await _onboardingStorage.setOnboardingIncomplete();
     // Fresh account: wipe any local data left by a previous account on this
     // device so the new user starts clean and account-isolated.
     await ref.read(cloudBackupServiceProvider).onSignIn();
     if (!mounted) return;
-    context.go(AppRoutes.nameEntry);
+    context.go(
+      AuthFlowRoutes.afterAuthentication(
+        AuthFlowOrigin.freshPasswordSignup,
+      ),
+      extra: true,
+    );
   }
 
   Future<void> _onGoogleSignInPressed() async {
@@ -138,13 +141,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     });
   }
 
-  /// Google sign-in from the sign-up screen is treated as a new signup: run
-  /// the ASTRA onboarding, which then shows the hobbies step. (Returning users
-  /// normally use the login screen's Google button, which skips it.)
+  /// OAuth emits the same `signedIn` event for new and existing accounts.
+  /// Only a user created during this sign-up attempt receives onboarding;
+  /// returning Google users continue through the normal login flow.
   Future<void> _routeAfterGoogleSignIn() async {
     await ref.read(cloudBackupServiceProvider).onSignIn();
     if (!mounted) return;
-    context.go(AppRoutes.onboarding, extra: true);
+    final isFreshSignup = AuthFlowRoutes.isFreshOAuthAccount(
+      createdAt: Supabase.instance.client.auth.currentUser?.createdAt,
+    );
+    final origin = isFreshSignup
+        ? AuthFlowOrigin.freshOAuthSignup
+        : AuthFlowOrigin.existingLogin;
+    context.go(
+      AuthFlowRoutes.afterAuthentication(origin),
+      extra: isFreshSignup ? true : null,
+    );
   }
 
   void _onLoginTap() => context.go(AppRoutes.login);

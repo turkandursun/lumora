@@ -6,9 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/services/onboarding_storage_service.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../../auth/domain/auth_flow_routes.dart';
 
 /// One storytelling beat of the onboarding flow.
 class _Beat {
@@ -69,7 +69,7 @@ const List<_Beat> _beats = [
   ),
 ];
 
-/// Lumora's first-touch storytelling onboarding, in the ASTRA visual language:
+/// ASTRA's first-touch storytelling onboarding, in the current visual language:
 /// the theme's moon/sun mountain scene fills the screen, and four swipeable
 /// beats (welcome · journaling · Luma companion · privacy) fade and rise on
 /// frosted gold-glass cards — the same world as the login and journal screens,
@@ -87,7 +87,6 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
-  final _onboardingStorage = OnboardingStorageService();
   double _page = 0;
 
   int get _pageCount => _beats.length;
@@ -106,12 +105,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _completeOnboarding() async {
-    await _onboardingStorage.setOnboardingComplete();
-    if (!mounted) return;
+  void _completeOnboarding() {
     final hasSession = Supabase.instance.client.auth.currentSession != null;
     if (hasSession) {
-      context.go(AppRoutes.welcome, extra: widget.isNewSignup);
+      context.go(AuthFlowRoutes.afterOnboarding, extra: widget.isNewSignup);
     } else {
       context.go(AppRoutes.login);
     }

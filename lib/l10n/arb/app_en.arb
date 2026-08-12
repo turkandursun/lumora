@@ -6,7 +6,7 @@
   },
   "loginTagline": "Discover Yourself  •  Grow  •  Shine",
   "@loginTagline": {
-    "description": "Brand tagline shown under the Lumora logo."
+    "description": "Brand tagline shown under the ASTRA logo."
   },
   "loginEmailHint": "Email",
   "@loginEmailHint": {
@@ -66,7 +66,7 @@
   },
   "signupTagline": "Begin your journey",
   "@signupTagline": {
-    "description": "Brand tagline shown under the Lumora logo on the sign up screen."
+    "description": "Brand tagline shown under the ASTRA logo on the sign up screen."
   },
   "signupNameHint": "Name (optional)",
   "@signupNameHint": {
@@ -116,7 +116,7 @@
   "@onboardingGetStarted": {
     "description": "Final call-to-action button label on the last onboarding page."
   },
-  "onboardingWelcomeEyebrow": "LUMORA",
+  "onboardingWelcomeEyebrow": "ASTRA",
   "@onboardingWelcomeEyebrow": {
     "description": "Wordmark shown above the welcome heading on the first onboarding page."
   },
@@ -124,7 +124,7 @@
   "@onboardingWelcomeTitle": {
     "description": "Warm heading on the first onboarding page, introducing the app."
   },
-  "onboardingWelcomeBody": "Lumora is a gentle space to pause, breathe, and get to know yourself a little better — one quiet moment at a time.",
+  "onboardingWelcomeBody": "ASTRA is a gentle space to pause, breathe, and get to know yourself a little better — one quiet moment at a time.",
   "@onboardingWelcomeBody": {
     "description": "Warm welcome copy on the first onboarding page, framing the app as a soft invitation."
   },
@@ -140,7 +140,7 @@
   "@onboardingCompanionTitle": {
     "description": "Heading on the AI companion onboarding page."
   },
-  "onboardingCompanionBody": "As you write, Lumora gently notices the patterns in your days and feelings — quiet reflections to help you understand yourself, never a substitute for the people who truly care for you.",
+  "onboardingCompanionBody": "As you write, ASTRA gently notices the patterns in your days and feelings — quiet reflections to help you understand yourself, never a substitute for the people who truly care for you.",
   "@onboardingCompanionBody": {
     "description": "Warm copy introducing the AI companion/insight feature without sounding clinical or overpromising."
   },
@@ -1777,6 +1777,10 @@
   },
   "homeStreakBannerTitle": "Daily streak",
   "greetingWelcomeBack": "Hi, welcome back. I missed seeing you here.",
+  "greetingFirstWelcome": "Welcome to ASTRA! I'm LUMA. I'll be here to guide you on your journey.",
+  "@greetingFirstWelcome": {
+    "description": "First welcome spoken by LUMA after a fresh registration."
+  },
   "homeFeatureDilemmaTitle": "Dilemma",
   "homeFeatureDilemmaDesc": "Swipe to pick a side",
   "dilemmaTitle": "Dilemmas",

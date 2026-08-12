@@ -6,11 +6,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../auth/domain/auth_flow_routes.dart';
 
-/// Shown on app start. Decides whether to route to onboarding (first
-/// launch), straight to home (an existing, still-valid Supabase session —
-/// restored synchronously by `Supabase.initialize()` in main.dart before
-/// this screen ever mounts), or login (onboarding done, no session).
+/// Shown on app start. Restored sessions always enter the mood/welcome flow;
+/// onboarding is reserved for an explicit fresh-signup navigation intent.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -41,7 +40,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // Route logged-in users through the mood check-in. It gates itself to the
     // first app entry of each calendar day, so on later opens the same day it
     // silently forwards to home.
-    context.go(hasSession ? AppRoutes.welcome : AppRoutes.login);
+    context.go(
+      hasSession
+          ? AuthFlowRoutes.afterAuthentication(AuthFlowOrigin.restoredSession)
+          : AppRoutes.login,
+    );
   }
 
   @override
