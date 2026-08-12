@@ -59,6 +59,9 @@ dependencies:
   pdf: ^3.11.1
   printing: ^5.13.2
 
+  # Direct HTTP (ElevenLabs meditation voice)
+  http: ^1.2.0
+
   # Voice journal entry recording
   record: ^7.1.1
   speech_to_text: ^7.0.0
