@@ -13,12 +13,20 @@ import '../database/app_database.dart';
 /// to a new phone: on a fresh device the snapshot is pulled back down and
 /// written into the same local stores the app already reads from.
 class CloudBackupService {
-  CloudBackupService({required AppDatabase database, SupabaseClient? client})
-      : _db = database,
-        _client = client ?? Supabase.instance.client;
+  CloudBackupService({
+    required AppDatabase database,
+    SupabaseClient? client,
+    bool Function()? accountDeletionInProgress,
+  })  : _db = database,
+        _client = client ?? Supabase.instance.client,
+        _accountDeletionInProgress =
+            accountDeletionInProgress ?? _deletionNotInProgress;
 
   final AppDatabase _db;
   final SupabaseClient _client;
+  final bool Function() _accountDeletionInProgress;
+
+  static bool _deletionNotInProgress() => false;
 
   static const _table = 'user_backups';
 
@@ -131,9 +139,11 @@ class CloudBackupService {
 
   /// Uploads a fresh snapshot of all local data to the cloud.
   Future<void> backup() async {
+    if (_accountDeletionInProgress()) return;
     final uid = _userId;
     if (uid == null) return;
     final snapshot = await _exportSnapshot();
+    if (_accountDeletionInProgress() || _userId != uid) return;
     await _client.from(_table).upsert({
       'user_id': uid,
       'data': snapshot,
@@ -145,6 +155,7 @@ class CloudBackupService {
 
   /// Whether the current user has a cloud backup available.
   Future<bool> hasCloudBackup() async {
+    if (_accountDeletionInProgress()) return false;
     final uid = _userId;
     if (uid == null) return false;
     try {
@@ -162,6 +173,7 @@ class CloudBackupService {
   /// Pulls the cloud snapshot and writes it into the local stores, replacing
   /// current local data. Returns true if a snapshot was found and applied.
   Future<bool> restore() async {
+    if (_accountDeletionInProgress()) return false;
     final uid = _userId;
     if (uid == null) return false;
     final row = await _client
@@ -250,6 +262,7 @@ class CloudBackupService {
   /// if one exists. If none exists, seed the cloud with the current local
   /// data so it's protected from here on. Safe to call on every startup.
   Future<void> syncOnStartup() async {
+    if (_accountDeletionInProgress()) return;
     final uid = _userId;
     if (uid == null) return;
     final prefs = await SharedPreferences.getInstance();
@@ -289,6 +302,7 @@ class CloudBackupService {
   /// sees its own data on a shared device. A normal re-login of the same
   /// account keeps the local data untouched.
   Future<void> onSignIn() async {
+    if (_accountDeletionInProgress()) return;
     final uid = _userId;
     if (uid == null) return;
     final prefs = await SharedPreferences.getInstance();

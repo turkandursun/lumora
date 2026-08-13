@@ -15,6 +15,7 @@ import '../../features/letters/presentation/providers/letter_providers.dart';
 import '../../features/mood/presentation/providers/mood_providers.dart';
 import '../../features/profile/presentation/providers/visit_tracker_providers.dart';
 import '../../features/reminders/presentation/providers/reminders_providers.dart';
+import '../../features/auth/presentation/providers/account_deletion_provider.dart';
 import 'astra_theme_provider.dart';
 
 /// Invalidate all user-specific Riverpod providers on auth change (signedIn, signedOut).
@@ -43,27 +44,17 @@ void invalidateUserProviders(WidgetRef ref) {
 }
 
 /// Clears local user data stored in SQLite / Drift tables on sign out.
-Future<void> clearLocalUserData(WidgetRef ref) async {
+Future<void> clearLocalUserData(WidgetRef ref, {String? userId}) async {
   try {
-    await ref.read(journalEntriesRepositoryProvider).deleteAll();
-    // Goal rows are user-scoped and may contain offline pending operations.
-    // Keep them across logout so they can resume when the same user returns;
-    // goalsStreamProvider is invalidated and the next account only watches its
-    // own user_id rows.
-    await ref.read(dreamsRepositoryProvider).deleteAll();
-    await ref.read(activityRepositoryProvider).deleteAll();
-    await ref.read(remindersRepositoryProvider).deleteAll();
-    await ref.read(letterRepositoryProvider).deleteAll();
-    final quoteFavoritesRepository = ref.read(quoteFavoritesRepositoryProvider);
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) {
-      await quoteFavoritesRepository.clearAllLocalData();
-    } else {
-      await quoteFavoritesRepository.clearLocalDataForUser(userId);
-    }
+    final scopedUserId =
+        userId ?? Supabase.instance.client.auth.currentUser?.id;
+    if (scopedUserId == null) return;
+    await ref
+        .read(localUserDataCleanupServiceProvider)
+        .clearSignedOutAccount(scopedUserId);
     debugPrint(
-        '[AuthListener] Successfully cleared local user database tables');
+        '[AuthListener] Successfully cleared local cache for signed-out user');
   } catch (e) {
-    debugPrint('[AuthListener] Error clearing local user database tables: $e');
+    debugPrint('[AuthListener] Error clearing signed-out user cache: $e');
   }
 }

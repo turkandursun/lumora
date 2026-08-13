@@ -11,10 +11,12 @@ import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
+import '../../../auth/presentation/providers/account_deletion_provider.dart';
 import '../../../dreams/presentation/providers/dreams_providers.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 import '../../../hobbies/presentation/providers/hobbies_providers.dart';
-import '../../../hobbies/presentation/screens/hobbies_screen.dart' show hobbyLabel;
+import '../../../hobbies/presentation/screens/hobbies_screen.dart'
+    show hobbyLabel;
 import '../../../journal/presentation/providers/journal_streak_provider.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../../rewards/domain/rewards.dart';
@@ -31,6 +33,8 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _isDeletingAccount = false;
+
   String _displayName() {
     final user = Supabase.instance.client.auth.currentUser;
     final name = (user?.userMetadata?['full_name'] as String?)?.trim();
@@ -45,20 +49,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
+        backgroundColor:
+            isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: Text(isTr ? 'Takma adın' : 'Your name', style: AstraKit.heading2(isDark, fontSize: 18)),
+        title: Text(isTr ? 'Takma adın' : 'Your name',
+            style: AstraKit.heading2(isDark, fontSize: 18)),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 24,
-          style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w500),
+          style:
+              AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w500),
           cursorColor: primary,
           decoration: InputDecoration(
             hintText: isTr ? 'İsmini yaz' : 'Type your name',
             hintStyle: AstraKit.mutedText(isDark),
             filled: true,
-            fillColor: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
+            fillColor:
+                isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
@@ -68,11 +76,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(isDark)),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel',
+                style: AstraKit.mutedText(isDark)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: Text(isTr ? 'Kaydet' : 'Save', style: AstraKit.body(isDark, color: primary, fontWeight: FontWeight.w700)),
+            child: Text(isTr ? 'Kaydet' : 'Save',
+                style: AstraKit.body(isDark,
+                    color: primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -109,9 +120,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
+        backgroundColor:
+            isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: Text(isTr ? 'Buluttan geri yükle' : 'Restore from cloud', style: AstraKit.heading2(isDark, fontSize: 18)),
+        title: Text(isTr ? 'Buluttan geri yükle' : 'Restore from cloud',
+            style: AstraKit.heading2(isDark, fontSize: 18)),
         content: Text(
           isTr
               ? 'Bu cihazdaki veriler, buluttaki son yedekle değiştirilecek. Devam edilsin mi?'
@@ -121,11 +134,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(isDark)),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel',
+                style: AstraKit.mutedText(isDark)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(isTr ? 'Geri yükle' : 'Restore', style: AstraKit.body(isDark, color: primary, fontWeight: FontWeight.w700)),
+            child: Text(isTr ? 'Geri yükle' : 'Restore',
+                style: AstraKit.body(isDark,
+                    color: primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -140,9 +156,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ? (isTr
                 ? 'Geri yüklendi. Değişikliklerin görünmesi için uygulamayı yeniden başlat.'
                 : 'Restored. Restart the app to see your data.')
-            : (isTr
-                ? 'Bulutta yedek bulunamadı.'
-                : 'No cloud backup found.')),
+            : (isTr ? 'Bulutta yedek bulunamadı.' : 'No cloud backup found.')),
       ));
     } catch (_) {
       if (!mounted) return;
@@ -151,6 +165,98 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ? 'Geri yüklenemedi. (Sunucu kurulumu gerekebilir.)'
             : "Couldn't restore. (Server setup may be needed.)"),
       ));
+    }
+  }
+
+  Future<void> _confirmAndDeleteAccount({
+    required AppLocalizations l10n,
+    required bool isDark,
+  }) async {
+    if (_isDeletingAccount) return;
+    final surface = isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE);
+    const destructive = Color(0xFFBE3D4C);
+
+    final wantsToContinue = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Text(
+          l10n.accountDeletionFirstTitle,
+          style: AstraKit.heading2(isDark, fontSize: 18),
+        ),
+        content: Text(
+          l10n.accountDeletionFirstBody,
+          style: AstraKit.mutedText(isDark, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.accountDeletionCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              l10n.accountDeletionContinue,
+              style: const TextStyle(color: destructive),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (wantsToContinue != true || !mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        icon: const Icon(
+          Icons.warning_amber_rounded,
+          color: destructive,
+          size: 34,
+        ),
+        title: Text(
+          l10n.accountDeletionFinalTitle,
+          style: AstraKit.heading2(isDark, fontSize: 18),
+        ),
+        content: Text(
+          l10n.accountDeletionFinalBody,
+          style: AstraKit.mutedText(isDark, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.accountDeletionCancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: destructive),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.accountDeletionConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isDeletingAccount = true);
+    try {
+      await ref.read(accountDeletionCoordinatorProvider).deleteAccount();
+      invalidateUserProviders(ref);
+      if (!mounted) return;
+      context.go(AppRoutes.login);
+    } catch (_) {
+      if (!mounted) return;
+      if (Supabase.instance.client.auth.currentSession == null) {
+        invalidateUserProviders(ref);
+        context.go(AppRoutes.login);
+        return;
+      }
+      setState(() => _isDeletingAccount = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.accountDeletionFailed)),
+      );
     }
   }
 
@@ -199,7 +305,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.profileTitle, style: AstraKit.heading1(isDark, fontSize: 24)),
+                Text(l10n.profileTitle,
+                    style: AstraKit.heading1(isDark, fontSize: 24)),
                 const SizedBox(height: 18),
                 AstraEntrance(
                   child: _ProfileHeaderCard(
@@ -272,13 +379,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(height: 20),
                 Text(
                   isTr ? 'Ayarlar' : 'Settings',
-                  style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700),
+                  style: AstraKit.body(isDark,
+                      fontSize: 15, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 12),
                 AstraEntrance(
                   delayMs: 320,
                   child: _MenuSwitchItem(
-                    icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    icon: isDark
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded,
                     label: isTr ? 'Tema' : 'Theme',
                     value: isDark,
                     isDark: isDark,
@@ -365,10 +475,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     isDark: isDark,
                     primary: primary,
                     onTap: () async {
-                      await clearLocalUserData(ref);
+                      final userId =
+                          Supabase.instance.client.auth.currentUser?.id;
+                      await clearLocalUserData(ref, userId: userId);
                       await Supabase.instance.client.auth.signOut();
                       if (context.mounted) context.go(AppRoutes.login);
                     },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                AstraEntrance(
+                  delayMs: 720,
+                  child: _MenuItem(
+                    icon: Icons.delete_forever_rounded,
+                    label: _isDeletingAccount
+                        ? l10n.accountDeletionInProgress
+                        : l10n.profileMenuDeleteAccount,
+                    isDark: isDark,
+                    primary: const Color(0xFFBE3D4C),
+                    onTap: () => _confirmAndDeleteAccount(
+                      l10n: l10n,
+                      isDark: isDark,
+                    ),
                   ),
                 ),
               ],
@@ -412,19 +540,28 @@ class _ProfileHeaderCard extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(colors: [primary, primary.withValues(alpha: 0.6)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              gradient: LinearGradient(
+                  colors: [primary, primary.withValues(alpha: 0.6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight),
             ),
-            child: Text(letter, style: AstraKit.heading1(isDark, fontSize: 26).copyWith(color: Colors.white)),
+            child: Text(letter,
+                style: AstraKit.heading1(isDark, fontSize: 26)
+                    .copyWith(color: Colors.white)),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AstraKit.heading2(isDark, fontSize: 19)),
+                Text(name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AstraKit.heading2(isDark, fontSize: 19)),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(subtitle, style: AstraKit.mutedText(isDark, fontSize: 12.5)),
+                  Text(subtitle,
+                      style: AstraKit.mutedText(isDark, fontSize: 12.5)),
                 ],
               ],
             ),
@@ -441,7 +578,12 @@ class _ProfileHeaderCard extends StatelessWidget {
 
 /// A small stat tile: an icon, a big number and a caption.
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.icon, required this.value, required this.label, required this.isDark, required this.primary});
+  const _StatCard(
+      {required this.icon,
+      required this.value,
+      required this.label,
+      required this.isDark,
+      required this.primary});
 
   final IconData icon;
   final int value;
@@ -460,9 +602,12 @@ class _StatCard extends StatelessWidget {
         children: [
           Icon(icon, size: 22, color: primary),
           const SizedBox(height: 8),
-          AstraCountUp(value: value, style: AstraKit.heading1(isDark, fontSize: 20)),
+          AstraCountUp(
+              value: value, style: AstraKit.heading1(isDark, fontSize: 20)),
           const SizedBox(height: 2),
-          Text(label, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 11.5)),
+          Text(label,
+              textAlign: TextAlign.center,
+              style: AstraKit.mutedText(isDark, fontSize: 11.5)),
         ],
       ),
     );
@@ -511,31 +656,42 @@ class _AchievementPreviewCard extends StatelessWidget {
                       width: 54,
                       height: 54,
                       alignment: Alignment.center,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: primary.withValues(alpha: 0.16)),
-                      child: Icon(Icons.star_rounded, size: starSize, color: primary),
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: primary.withValues(alpha: 0.16)),
+                      child: Icon(Icons.star_rounded,
+                          size: starSize, color: primary),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(isTr ? 'Seviye ${reward.level}' : 'Level ${reward.level}', style: AstraKit.heading2(isDark, fontSize: 18)),
+                          Text(
+                              isTr
+                                  ? 'Seviye ${reward.level}'
+                                  : 'Level ${reward.level}',
+                              style: AstraKit.heading2(isDark, fontSize: 18)),
                           const SizedBox(height: 2),
                           Text(
                             reward.isMaxLevel
                                 ? (isTr ? 'En yüksek seviye!' : 'Max level!')
-                                : (isTr ? 'Sonraki seviyeye ${reward.pointsToNext} puan' : '${reward.pointsToNext} pts to next level'),
+                                : (isTr
+                                    ? 'Sonraki seviyeye ${reward.pointsToNext} puan'
+                                    : '${reward.pointsToNext} pts to next level'),
                             style: AstraKit.mutedText(isDark, fontSize: 12.5),
                           ),
                         ],
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: primary.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: primary.withValues(alpha: 0.35)),
+                        border:
+                            Border.all(color: primary.withValues(alpha: 0.35)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -574,7 +730,11 @@ class _AchievementPreviewCard extends StatelessWidget {
                               duration: const Duration(milliseconds: 350),
                               curve: Curves.easeOut,
                               width: constraints.maxWidth * reward.fraction,
-                              decoration: BoxDecoration(gradient: LinearGradient(colors: [primary, primary.withValues(alpha: 0.7)])),
+                              decoration: BoxDecoration(
+                                  gradient: LinearGradient(colors: [
+                                primary,
+                                primary.withValues(alpha: 0.7)
+                              ])),
                             ),
                           ],
                         );
@@ -588,11 +748,17 @@ class _AchievementPreviewCard extends StatelessWidget {
                   children: [
                     AstraCountUp(
                       value: reward.points,
-                      style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w600, color: primary),
+                      style: AstraKit.body(isDark,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: primary),
                     ),
                     Text(
                       isTr ? ' puan' : ' points',
-                      style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w600, color: primary),
+                      style: AstraKit.body(isDark,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: primary),
                     ),
                   ],
                 ),
@@ -635,7 +801,9 @@ class _HobbiesCard extends StatelessWidget {
               Icon(Icons.interests_rounded, color: primary, size: 20),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(isTr ? 'Hobilerim' : 'My hobbies', style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700)),
+                child: Text(isTr ? 'Hobilerim' : 'My hobbies',
+                    style: AstraKit.body(isDark,
+                        fontSize: 15, fontWeight: FontWeight.w700)),
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
@@ -649,7 +817,9 @@ class _HobbiesCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 8, top: 4),
               child: Text(
-                isTr ? 'Henüz hobi eklemedin. Eklemek için dokun.' : "You haven't added hobbies yet. Tap to add.",
+                isTr
+                    ? 'Henüz hobi eklemedin. Eklemek için dokun.'
+                    : "You haven't added hobbies yet. Tap to add.",
                 style: AstraKit.mutedText(isDark, fontSize: 13),
               ),
             )
@@ -660,13 +830,16 @@ class _HobbiesCard extends StatelessWidget {
               children: [
                 for (final id in hobbies)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
                       color: primary.withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(color: primary.withValues(alpha: 0.4)),
                     ),
-                    child: Text(hobbyLabel(id, isTr), style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                    child: Text(hobbyLabel(id, isTr),
+                        style: AstraKit.body(isDark,
+                            fontSize: 12.5, fontWeight: FontWeight.w600)),
                   ),
               ],
             ),
@@ -677,7 +850,12 @@ class _HobbiesCard extends StatelessWidget {
 }
 
 class _MenuItem extends StatelessWidget {
-  const _MenuItem({required this.icon, required this.label, required this.isDark, required this.primary, required this.onTap});
+  const _MenuItem(
+      {required this.icon,
+      required this.label,
+      required this.isDark,
+      required this.primary,
+      required this.onTap});
 
   final IconData icon;
   final String label;
@@ -703,8 +881,12 @@ class _MenuItem extends StatelessWidget {
               children: [
                 Icon(icon, color: primary, size: 22),
                 const SizedBox(width: 14),
-                Expanded(child: Text(label, style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w600))),
-                Icon(Icons.chevron_right_rounded, color: AstraKit.muted(isDark)),
+                Expanded(
+                    child: Text(label,
+                        style: AstraKit.body(isDark,
+                            fontSize: 15, fontWeight: FontWeight.w600))),
+                Icon(Icons.chevron_right_rounded,
+                    color: AstraKit.muted(isDark)),
               ],
             ),
           ),
@@ -752,7 +934,8 @@ class _MenuSwitchItem extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
-                    style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w600),
+                    style: AstraKit.body(isDark,
+                        fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),
                 Switch.adaptive(

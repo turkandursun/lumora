@@ -18,20 +18,28 @@ class LumoraApp extends ConsumerStatefulWidget {
 
 class _LumoraAppState extends ConsumerState<LumoraApp> {
   StreamSubscription<AuthState>? _authSubscription;
+  String? _lastAuthenticatedUserId;
 
   @override
   void initState() {
     super.initState();
+    _lastAuthenticatedUserId = Supabase.instance.client.auth.currentUser?.id;
     _authSubscription =
         Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
       final event = data.event;
       if (event == AuthChangeEvent.signedOut) {
         debugPrint(
             '[AuthListener] User signed out -> clearing local DB & invalidating user providers');
-        await clearLocalUserData(ref);
+        await clearLocalUserData(
+          ref,
+          userId: _lastAuthenticatedUserId,
+        );
+        _lastAuthenticatedUserId = null;
         invalidateUserProviders(ref);
       } else if (event == AuthChangeEvent.signedIn ||
           event == AuthChangeEvent.tokenRefreshed) {
+        _lastAuthenticatedUserId = data.session?.user.id ??
+            Supabase.instance.client.auth.currentUser?.id;
         debugPrint(
             '[AuthListener] Auth state change ($event) -> invalidating user providers for fresh load');
         invalidateUserProviders(ref);

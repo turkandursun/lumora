@@ -151,6 +151,7 @@ class NotificationService implements ReminderNotifier {
   @override
   Future<void> cancel(int id) async {
     if (!_isSupportedPlatform) return;
+    await init();
     await _plugin.cancel(id: id);
   }
 }
