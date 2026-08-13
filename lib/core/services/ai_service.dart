@@ -59,7 +59,7 @@ class AiService {
           'language': language,
           if (context != null && context.trim().isNotEmpty) 'context': context.trim(),
         },
-      );
+      ).timeout(const Duration(seconds: 30)); // don't hang forever on a stalled request
 
       final data = response.data;
       final reply = data is Map ? data['reply'] : null;

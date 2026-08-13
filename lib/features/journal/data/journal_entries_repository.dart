@@ -125,7 +125,7 @@ class JournalEntriesRepository {
               .from(_journalBucket)
               .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
           photoUrl = signedUrlResponse;
-          debugPrint('[JournalSync] Uploaded photo to Supabase Storage, signedUrl=$photoUrl');
+          debugPrint('[JournalSync] Uploaded journal photo to Supabase Storage.');
         }
       } catch (e) {
         debugPrint('[JournalSync] Error uploading journal photo to Storage: $e');

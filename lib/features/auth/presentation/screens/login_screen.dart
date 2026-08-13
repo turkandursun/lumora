@@ -42,7 +42,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isGoogleSubmitting = false;
-  bool _rememberMe = false;
   bool _obscurePassword = true;
   String? _formError;
   bool _didRouteAfterSignIn = false;
@@ -124,8 +123,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       await Supabase.instance.client.auth.resetPasswordForEmail(email);
       if (!mounted) return;
       _showSnack(isTr
-          ? 'Şifre sıfırlama bağlantısı mailine gönderildi.'
-          : 'A password reset link has been sent to your email.');
+          ? 'Mailine 6 haneli bir kod gönderildi.'
+          : 'A 6-digit code has been sent to your email.');
+      // Take the user to the code + new-password screen so the reset actually
+      // completes inside the app (no deep link needed).
+      context.push(AppRoutes.resetPassword, extra: email);
     } catch (_) {
       if (!mounted) return;
       _showSnack(isTr
@@ -282,37 +284,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
           const SizedBox(height: 10),
 
-          // Beni Hatırla · Şifremi unuttum
+          // Şifremi unuttum (session is kept by Supabase; no misleading
+          // "remember me" toggle that doesn't actually change behavior).
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _rememberMe = !_rememberMe),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: Checkbox(
-                        value: _rememberMe,
-                        onChanged: (val) =>
-                            setState(() => _rememberMe = val ?? false),
-                        side: BorderSide(color: gold),
-                        activeColor: gold,
-                        checkColor: const Color(0xFF1A0F00),
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(isTr ? 'Beni Hatırla' : 'Remember me',
-                        style: AstraKit.body(isDark, fontSize: 13)),
-                  ],
-                ),
-              ),
               GestureDetector(
                 onTap: _onForgotPassword,
                 child: Text(

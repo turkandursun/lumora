@@ -37,7 +37,7 @@
   "onboardingCompanionTitle": "Ein sanfter Begleiter, der immer zuhört",
   "onboardingCompanionBody": "Während du schreibst, bemerkt ASTRA behutsam die Muster in deinen Tagen und Gefühlen — stille Reflexionen, die dir helfen, dich selbst zu verstehen, niemals ein Ersatz für die Menschen, die dich wirklich lieben.",
   "onboardingPrivacyTitle": "Wirklich nur deins",
-  "onboardingPrivacyBody": "Jedes Wort, das du schreibst, wird verschlüsselt und privat gehalten — dieser Raum gehört ganz allein dir.",
+  "onboardingPrivacyBody": "Alles, was du schreibst, bleibt privat und gehört ganz dir.",
   "shellTabHome": "Start",
   "shellTabStats": "Statistik",
   "shellTabAi": "KI",
@@ -547,5 +547,9 @@
   "dilemma29A": "Be feared",
   "dilemma29B": "Be loved",
   "dilemma30A": "A calm life",
-  "dilemma30B": "An exciting life"
+  "dilemma30B": "An exciting life",
+  "journalToneFeedbackTitle": "Tagebuch-Ton-Feedback",
+  "journalToneNotNow": "Jetzt nicht",
+  "journalToneWellnessPrompt": "Wie fühlst du dich mit diesem Eintrag?",
+  "journalToneCalmAction": "Nimm einen ruhigen Moment"
 }
