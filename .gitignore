@@ -49,3 +49,9 @@ app.*.map.json
 
 # Node (Supabase CLI installed locally as an npm dev-dependency)
 node_modules/
+
+# Android release signing — NEVER commit the keystore or its passwords.
+# (key.properties.example is a safe placeholder and is committed.)
+**/key.properties
+**/*.jks
+**/*.keystore

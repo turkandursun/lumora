@@ -1,0 +1,16 @@
+# Android release signing — TEMPLATE.
+#
+# Copy this file to `android/key.properties` (same folder) and fill in your
+# real values. The real key.properties and the .jks keystore are gitignored and
+# must NEVER be committed.
+#
+# Generate the keystore first (see README / the release steps), then set:
+#
+#   storeFile   = absolute path to your .jks keystore (forward slashes on Windows)
+#   storePassword / keyPassword = the passwords you chose during keytool
+#   keyAlias    = the alias you chose (e.g. "upload")
+
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=upload
+storeFile=C:/Users/YOU/upload-keystore.jks
