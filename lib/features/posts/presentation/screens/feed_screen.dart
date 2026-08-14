@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,6 +10,7 @@ import 'package:path/path.dart' as p;
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../community/domain/content_moderation.dart';
 import '../../data/posts_repository.dart';
 import '../providers/posts_providers.dart';
 
@@ -59,6 +61,30 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   Future<void> _share() async {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     if (_images.isEmpty) return;
+
+    // Text moderation: block hurtful language and personal contact info in the
+    // caption before it's ever published (same on-device filter the community
+    // feed uses). An empty caption (photo-only post) is fine.
+    final caption = _captionController.text.trim();
+    final issue = ContentModeration.check(caption);
+    if (issue == ModerationIssue.harmful || issue == ModerationIssue.contact) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 6),
+          content: Text(
+            issue == ModerationIssue.harmful
+                ? (isTr
+                    ? 'Paylaşımın incitici ifadeler içeriyor. Lütfen düzenleyip tekrar dene. 🌸'
+                    : 'Your post contains hurtful language. Please edit it and try again. 🌸')
+                : (isTr
+                    ? 'Güvenliğin için kişisel iletişim bilgisi (telefon, e-posta, link) paylaşılamaz.'
+                    : "For your safety, personal contact info (phone, e-mail, links) can't be shared."),
+          ),
+        ),
+      );
+      return;
+    }
+
     final l10n = AppLocalizations.of(context);
     setState(() => _posting = true);
     try {
@@ -69,7 +95,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         images.add(NewPostImage(bytes: bytes, ext: ext.isEmpty ? 'jpg' : ext));
       }
       await ref.read(postsRepositoryProvider).createPost(
-            caption: _captionController.text.trim(),
+            caption: caption,
             images: images,
             isPublic: _isPublic,
             l10n: l10n,
@@ -104,6 +130,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final locale = Localizations.localeOf(context).languageCode;
     final feed = ref.watch(postsFeedProvider);
+    final moderation = ref.watch(feedModerationProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
     final primary = AstraKit.primary(isDark);
@@ -160,14 +187,21 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       ),
                       const SizedBox(height: 16),
                       feed.when(
-                        data: (posts) => posts.isEmpty
-                            ? _hint(isTr ? 'Henüz paylaşım yok. İlk sen paylaş!' : 'No posts yet. Be the first!', isDark)
-                            : Column(
-                                children: [
-                                  for (final post in posts)
-                                    _PostCard(post: post, locale: locale, isDark: isDark, primary: primary),
-                                ],
-                              ),
+                        data: (posts) {
+                          final visible = posts
+                              .where((p) =>
+                                  !moderation.blockedNames.contains(p.displayName) &&
+                                  !moderation.hiddenPostIds.contains(p.id))
+                              .toList();
+                          return visible.isEmpty
+                              ? _hint(isTr ? 'Henüz paylaşım yok. İlk sen paylaş!' : 'No posts yet. Be the first!', isDark)
+                              : Column(
+                                  children: [
+                                    for (final post in visible)
+                                      _PostCard(post: post, locale: locale, isDark: isDark, primary: primary),
+                                  ],
+                                );
+                        },
                         loading: () => Padding(
                           padding: const EdgeInsets.symmetric(vertical: 30),
                           child: Center(child: CircularProgressIndicator(color: primary)),
@@ -249,7 +283,9 @@ class _ComposeCard extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.file(File(images[i].path), width: 84, height: 84, fit: BoxFit.cover),
+                        child: kIsWeb
+                            ? Image.network(images[i].path, width: 84, height: 84, fit: BoxFit.cover)
+                            : Image.file(File(images[i].path), width: 84, height: 84, fit: BoxFit.cover),
                       ),
                       GestureDetector(
                         onTap: () => onRemovePhoto(i),
@@ -469,6 +505,41 @@ class _PostCardState extends ConsumerState<_PostCard> {
     super.dispose();
   }
 
+  /// Report the post to the server (flags it for everyone) and hide it locally
+  /// right away so this device stops seeing it immediately.
+  Future<void> _report() async {
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    ref.read(feedModerationProvider.notifier).hidePost(widget.post.id);
+    try {
+      await ref.read(postsRepositoryProvider).reportPost(widget.post.id);
+    } catch (_) {
+      // Even if the server call fails, it's hidden locally.
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isTr
+            ? 'Paylaşım bildirildi ve gizlendi. Teşekkürler. 🌸'
+            : 'Post reported and hidden. Thank you. 🌸'),
+      ),
+    );
+  }
+
+  /// Block this (anonymous) author so none of their posts show on this device.
+  Future<void> _block() async {
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final name = widget.post.displayName;
+    await ref.read(feedModerationProvider.notifier).blockUser(name);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isTr
+            ? '$name engellendi. Paylaşımları artık görünmeyecek.'
+            : '$name blocked. Their posts will no longer appear.'),
+      ),
+    );
+  }
+
   Future<void> _toggleLike(bool currentlyLiked) async {
     if (_likeBusy) return;
     _likeBusy = true;
@@ -549,6 +620,37 @@ class _PostCardState extends ConsumerState<_PostCard> {
                     child: Text(post.displayName, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w700)),
                   ),
                   Text(DateFormat('d MMM', widget.locale).format(post.createdAt), style: AstraKit.mutedText(isDark, fontSize: 11)),
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_horiz_rounded, size: 20, color: AstraKit.muted(isDark)),
+                    padding: EdgeInsets.zero,
+                    tooltip: isTr ? 'Seçenekler' : 'Options',
+                    onSelected: (v) {
+                      if (v == 'report') _report();
+                      if (v == 'block') _block();
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'report',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.flag_outlined, size: 18),
+                            const SizedBox(width: 10),
+                            Text(isTr ? 'Şikayet et ve gizle' : 'Report & hide'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'block',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.block_rounded, size: 18),
+                            const SizedBox(width: 10),
+                            Text(isTr ? 'Kullanıcıyı engelle' : 'Block user'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

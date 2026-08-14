@@ -11,6 +11,7 @@ import '../../features/activities/presentation/screens/activities_screen.dart';
 import '../../features/ai_questions/presentation/screens/ai_questions_screen.dart';
 import '../../features/auth/domain/auth_flow_routes.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/name_entry_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
@@ -50,6 +51,7 @@ class AppRoutes {
   static const onboarding = AuthFlowRoutes.onboarding;
   static const login = '/login';
   static const signup = '/signup';
+  static const resetPassword = '/reset-password';
   static const nameEntry = AuthFlowRoutes.nameEntry;
   static const welcome = AuthFlowRoutes.mood;
   static const greeting = AuthFlowRoutes.greeting;
@@ -178,6 +180,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.signup,
       pageBuilder: (context, state) => _smoothPage(state, const SignupScreen()),
+    ),
+    GoRoute(
+      path: AppRoutes.resetPassword,
+      pageBuilder: (context, state) => _smoothPage(
+        state,
+        ResetPasswordScreen(email: state.extra is String ? state.extra as String : ''),
+      ),
     ),
     GoRoute(
       path: AppRoutes.nameEntry,

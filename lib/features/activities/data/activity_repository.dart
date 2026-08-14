@@ -167,7 +167,7 @@ class ActivityRepository {
               .from(_storageBucket)
               .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
           photoUrl = signedUrlResponse;
-          debugPrint('[ActivitySync] Uploaded photo to Supabase Storage, signedUrl=$photoUrl');
+          debugPrint('[ActivitySync] Uploaded activity photo to Supabase Storage.');
         }
       } catch (e) {
         debugPrint('[ActivitySync] Error uploading photo to Storage: $e');

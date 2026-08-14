@@ -154,7 +154,13 @@ class PostsRepository {
                 upsert: true,
               ),
             );
-        urls.add(_client.storage.from(_bucket).getPublicUrl(path));
+        // Private bucket + long-lived signed URL (never a public URL), so post
+        // photos aren't anonymously accessible. Only the owner can mint these;
+        // the stored URL keeps working for viewers of public posts.
+        final signedUrl = await _client.storage
+            .from(_bucket)
+            .createSignedUrl(path, 60 * 60 * 24 * 365);
+        urls.add(signedUrl);
       }
 
       await _client.from(_table).insert({
