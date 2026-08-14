@@ -88,8 +88,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     if (!mounted) return;
 
     if (!isNewDay && !widget.isNewSignup) {
-      // User has already opened the app today -> bypass mood check-in directly
-      _advance();
+      // Already opened today → skip the mood check-in AND the reflection,
+      // go straight Home.
+      if (mounted && !_navigated) {
+        _navigated = true;
+        context.go(AuthFlowRoutes.home);
+      }
     } else {
       // First visit of the day (or new sign up) -> show mood check-in UI and start animation
       _controller.forward();
@@ -319,7 +323,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       return Scaffold(
         body: AstraMountainBackground(
           isDark: isDark,
-          useEntryScene: true,
           child: const SizedBox.expand(),
         ),
       );
@@ -328,7 +331,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     return Scaffold(
       body: AstraMountainBackground(
         isDark: isDark,
-        useEntryScene: true,
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(

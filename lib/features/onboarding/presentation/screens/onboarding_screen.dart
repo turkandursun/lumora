@@ -137,7 +137,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return Scaffold(
       body: AstraMountainBackground(
         isDark: isDark,
-        useEntryScene: true,
         child: SafeArea(
           child: ResponsiveContent(
             child: Column(

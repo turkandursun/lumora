@@ -14,9 +14,17 @@ import '../../domain/auth_flow_routes.dart';
 /// star appears and "types" a hello, letter by letter, then hands off to Home.
 /// Uses the same theme-aware scene (sun / moon) as the rest of the app.
 class GreetingScreen extends ConsumerStatefulWidget {
-  const GreetingScreen({super.key, this.isFirstWelcome = false});
+  const GreetingScreen({
+    super.key,
+    this.isFirstWelcome = false,
+    this.nextRoute = AuthFlowRoutes.home,
+  });
 
   final bool isFirstWelcome;
+
+  /// Where to go after the greeting. On app entry this is the mood check-in;
+  /// at the end of the sign-up flow it's Home.
+  final String nextRoute;
 
   @override
   ConsumerState<GreetingScreen> createState() => _GreetingScreenState();
@@ -58,7 +66,7 @@ class _GreetingScreenState extends ConsumerState<GreetingScreen> {
   }
 
   void _goHome() {
-    if (mounted) context.go(AuthFlowRoutes.afterGreeting);
+    if (mounted) context.go(widget.nextRoute);
   }
 
   void _skip() {

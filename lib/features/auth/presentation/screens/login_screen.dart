@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase
     show AuthState;
 
+import '../../../../core/providers/astra_palette_provider.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
@@ -141,9 +142,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     _didRouteAfterSignIn = true;
     await ref.read(cloudBackupServiceProvider).onSignIn();
     if (!mounted) return;
-    context.go(
-      AuthFlowRoutes.afterAuthentication(AuthFlowOrigin.existingLogin),
-    );
+    // Existing login → mood check-in (no signup intent).
+    context.go(AuthFlowRoutes.afterAuthentication(AuthFlowOrigin.existingLogin));
   }
 
   void _onSignUpTap() => context.go(AppRoutes.signup);
@@ -169,12 +169,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
 
-    // Entry scene shared with the theme-choice screen: the ASTRA wordmark and
-    // tagline are baked into the top, leaving a wide empty lower area where the
-    // sign-in panel sits — so the wordmark always stays clearly above it.
-    final bgAsset = isDark
-        ? 'assets/images/astra_entry_bg.png'
-        : 'assets/images/astra_sun_entry_g3.png';
+    // Background follows the user's chosen palette (picked during onboarding),
+    // so the auth screens match the rest of the app.
+    final palette = ref.watch(activePaletteProvider);
 
     final errorMessage =
         _formError ?? _serverError(l10n, authState.failureReason);
@@ -185,9 +182,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Hero(
-            tag: 'astra_bg',
-            child: Image.asset(bgAsset, fit: BoxFit.cover),
+          DecoratedBox(
+            decoration: BoxDecoration(gradient: palette.backgroundGradient),
           ),
           SafeArea(
             child: LayoutBuilder(
@@ -205,9 +201,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // The scene's baked ASTRA wordmark + moon fill the
-                              // top; this spacer drops the panel into the empty
-                              // lower area, keeping the wordmark above it.
+                              const SizedBox(height: 54),
+                              Text('ASTRA',
+                                  textAlign: TextAlign.center,
+                                  style: AstraKit.wordmark(false, fontSize: 40)),
+                              const SizedBox(height: 6),
+                              Text(
+                                isTr
+                                    ? 'Yaz. Konuş. Rahatla.'
+                                    : 'Write. Talk. Breathe.',
+                                textAlign: TextAlign.center,
+                                style: AstraKit.mutedText(false, fontSize: 13.5),
+                              ),
                               const Spacer(),
                               _animated(_buildPanel(
                                   isDark, isTr, authState, errorMessage)),

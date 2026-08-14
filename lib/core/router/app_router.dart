@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -24,11 +26,15 @@ import '../../features/dreams/presentation/screens/new_dream_screen.dart';
 import '../../features/goals/presentation/screens/goals_screen.dart';
 import '../../features/hobbies/presentation/screens/hobbies_screen.dart';
 import '../../features/journal/presentation/screens/favorites_screen.dart';
+import '../../features/journal/presentation/screens/daily_reflection_screen.dart';
 import '../../features/journal/presentation/screens/journal_entry_screen.dart';
 import '../../features/journal/presentation/screens/quote_gallery_screen.dart';
 import '../../features/journal/presentation/screens/sealed_journals_screen.dart';
 import '../../features/posts/presentation/screens/feed_screen.dart';
+import '../../features/onboarding/presentation/screens/ai_rating_screen.dart';
+import '../../features/onboarding/presentation/screens/onboarding_complete_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
+import '../../features/onboarding/presentation/screens/onboarding_theme_screen.dart';
 import '../../features/reminders/presentation/screens/reminders_screen.dart';
 import '../../features/rewards/presentation/screens/rewards_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
@@ -53,8 +59,12 @@ class AppRoutes {
   static const signup = '/signup';
   static const resetPassword = '/reset-password';
   static const nameEntry = AuthFlowRoutes.nameEntry;
+  static const themeSelect = AuthFlowRoutes.themeSelect;
   static const welcome = AuthFlowRoutes.mood;
   static const greeting = AuthFlowRoutes.greeting;
+  static const aiRating = AuthFlowRoutes.aiRating;
+  static const onboardingComplete = AuthFlowRoutes.onboardingComplete;
+  static const dailyReflection = AuthFlowRoutes.dailyReflection;
   static const home = AuthFlowRoutes.home;
   static const reminders = '/reminders';
   static const goals = '/goals';
@@ -117,6 +127,7 @@ const _protectedRoutes = {
   AppRoutes.featureComingSoon,
   AppRoutes.community,
   AppRoutes.journalEntry,
+  AppRoutes.dailyReflection,
   AppRoutes.sealedJournals,
   AppRoutes.calendar,
   AppRoutes.rewards,
@@ -193,19 +204,67 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => _smoothPage(state, const NameEntryScreen()),
     ),
     GoRoute(
+      path: AppRoutes.themeSelect,
+      pageBuilder: (context, state) => _smoothPage(state, const OnboardingThemeScreen()),
+    ),
+    GoRoute(
+      path: AppRoutes.dailyReflection,
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const DailyReflectionScreen()),
+    ),
+    GoRoute(
       path: AppRoutes.welcome,
       pageBuilder: (context, state) {
-        final isNewSignup = (state.extra as bool?) ??
-            ((state.extra as Map<String, dynamic>?)?['isNewSignup'] as bool?) ??
-            false;
+        final extra = state.extra;
+        final isNewSignup = extra is bool
+            ? extra
+            : (extra is Map && extra['isNewSignup'] == true);
         return _smoothPage(state, WelcomeScreen(isNewSignup: isNewSignup));
       },
     ),
     GoRoute(
       path: AppRoutes.greeting,
-      builder: (context, state) => GreetingScreen(
-        isFirstWelcome: state.extra == true,
+      builder: (context, state) {
+        final extra = state.extra;
+        var isFirstWelcome = false;
+        var nextRoute = AppRoutes.home;
+        if (extra is bool) {
+          // Legacy: end of sign-up flow passes `true` → first welcome → Home.
+          isFirstWelcome = extra;
+        } else if (extra is Map) {
+          isFirstWelcome = extra['first'] == true;
+          final next = extra['next'];
+          if (next is String) nextRoute = next;
+        }
+        return GreetingScreen(
+          isFirstWelcome: isFirstWelcome,
+          nextRoute: nextRoute,
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.aiRating,
+      builder: (context, state) => AiRatingScreen(
+        onBack: null,
+        onSubmit: (rating) {
+          unawaited(_persistAiRating(rating));
+          context.go(AppRoutes.onboardingComplete);
+        },
       ),
+    ),
+    GoRoute(
+      path: AppRoutes.onboardingComplete,
+      builder: (context, state) {
+        final meta = Supabase.instance.client.auth.currentUser?.userMetadata;
+        final full = (meta?['full_name'] as String?)?.trim();
+        final name = (full != null && full.isNotEmpty)
+            ? full.split(RegExp(r'\s+')).first
+            : null;
+        return OnboardingCompleteScreen(
+          userName: name,
+          onStart: () => context.go(AppRoutes.home),
+        );
+      },
     ),
     GoRoute(
       path: AppRoutes.home,
@@ -352,4 +411,15 @@ CustomTransitionPage<void> _smoothPage(GoRouterState state, Widget child) {
     },
     child: child,
   );
+}
+
+/// Stores the user's first AI-experience rating (1–5) locally. Best-effort;
+/// a sync problem must never block the onboarding hand-off.
+Future<void> _persistAiRating(int rating) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('ai_first_rating_v1', rating);
+  } catch (_) {
+    // Ignore — the rating is a nice-to-have signal, not critical state.
+  }
 }

@@ -4,7 +4,11 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../core/providers/astra_palette_provider.dart';
+import 'astra_design_tokens.dart';
 
 /// Shared building blocks for the app's premium "Astra" look — the gold
 /// glass-card aesthetic introduced on the journal writing screen (mountain
@@ -15,12 +19,17 @@ import 'package:google_fonts/google_fonts.dart';
 class AstraKit {
   AstraKit._();
 
-  /// App-wide accent: a soft violet on the dark/moon theme, gold on the
-  /// light/sun theme — matches the dream journal's existing purple-on-night
-  /// look so every screen (besides the ASTRA-branded auth flow, which is
-  /// always gold — see [gold]) shares one consistent, theme-aware accent.
+  /// The active design-token palette (one of the 7 families). Set on every
+  /// frame by [AstraMountainBackground] from [activePaletteProvider]. When
+  /// non-null, the colour methods below source from it so the whole app is
+  /// re-skinned at once; when null they fall back to the legacy moon/sun look.
+  static AstraPalette? active;
+
+  /// App-wide accent. With a palette active this is the palette primary;
+  /// otherwise the legacy soft violet (moon) / gold (sun) accent.
   static Color primary(bool isDark) =>
-      isDark ? const Color(0xFFC084FC) : const Color(0xFF95610F);
+      active?.primary ??
+      (isDark ? const Color(0xFFC084FC) : const Color(0xFF95610F));
 
   /// Always-gold accent, regardless of theme — reserved for the ASTRA
   /// login/signup screens so their branded moon-and-gold look never
@@ -28,20 +37,24 @@ class AstraKit {
   static Color gold(bool isDark) =>
       isDark ? const Color(0xFFE3C264) : const Color(0xFFD4AF37);
 
-  // Reading colours: warm light on the dark/moon glass, deep brown on the
-  // light/sun glass (never yellow/gold text — it washes out on the bright sun
-  // scene). Both give strong contrast on their translucent frosted cards.
-  static Color ink(bool isDark) =>
-      isDark ? const Color(0xFFF6ECD2) : const Color(0xFF2A1B06);
+  // Reading colours. With a palette active, every family is a light pastel, so
+  // text is the shared dark tokens (constant readability, never light-on-light).
+  // Without a palette, the legacy warm-light-on-moon / deep-brown-on-sun tones.
+  static Color ink(bool isDark) => active != null
+      ? AstraText.body
+      : (isDark ? const Color(0xFFF6ECD2) : const Color(0xFF2A1B06));
 
-  static Color heading(bool isDark) =>
-      isDark ? const Color(0xFFF4EEFF) : const Color(0xFF231402);
+  static Color heading(bool isDark) => active != null
+      ? AstraText.title
+      : (isDark ? const Color(0xFFF4EEFF) : const Color(0xFF231402));
 
-  static Color muted(bool isDark) =>
-      isDark ? const Color(0xCCD8C8FF) : const Color(0xDE4A3208);
+  static Color muted(bool isDark) => active != null
+      ? AstraText.muted
+      : (isDark ? const Color(0xCCD8C8FF) : const Color(0xDE4A3208));
 
-  static Color faint(bool isDark) =>
-      isDark ? const Color(0x99C0A8FF) : const Color(0xAA5A420C);
+  static Color faint(bool isDark) => active != null
+      ? const Color(0x994A4452)
+      : (isDark ? const Color(0x99C0A8FF) : const Color(0xAA5A420C));
 
   /// Big brand wordmark ("ASTRA") — gold on the dark/moon scene; a deep bronze
   /// on the bright sun scene, where literal gold would wash out.
@@ -61,7 +74,10 @@ class AstraKit {
   static TextStyle label(bool isDark, {double fontSize = 12, Color? color}) => GoogleFonts.outfit(
         fontSize: fontSize,
         fontWeight: FontWeight.w700,
-        color: color ?? (isDark ? primary(isDark) : const Color(0xFF5C3E0E)),
+        color: color ??
+            (active != null
+                ? active!.secondary
+                : (isDark ? primary(isDark) : const Color(0xFF5C3E0E))),
         letterSpacing: 0.3,
       );
 
@@ -77,7 +93,7 @@ class AstraKit {
 /// theme, sun in the light theme — with a gentle top scrim so app-bar icons
 /// stay legible. Identical to the journal screens' background so switching
 /// screens never shows a background "jump".
-class AstraMountainBackground extends StatelessWidget {
+class AstraMountainBackground extends ConsumerWidget {
   const AstraMountainBackground({
     super.key,
     required this.isDark,
@@ -94,7 +110,17 @@ class AstraMountainBackground extends StatelessWidget {
   final bool useEntryScene;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Read the chosen palette and publish it to the shared kit so every colour
+    // method below (text, accents, icon containers…) matches this screen.
+    final palette = ref.watch(activePaletteProvider);
+    AstraKit.active = palette;
+
+    // The main app now uses a soft palette gradient instead of the photo
+    // scene. The branded entry journey (login/onboarding) keeps its moon/sun
+    // artwork for now.
+    final usePalette = !useEntryScene;
+
     final asset = useEntryScene
         ? (isDark
             ? 'assets/images/astra_dark_plain.png'
@@ -102,20 +128,29 @@ class AstraMountainBackground extends StatelessWidget {
         : (isDark
             ? 'assets/images/app_theme_dark.jpeg'
             : 'assets/images/app_theme_light.jpeg');
+    // Light pastel palette or the sun scene → dark icons; only the dark moon
+    // entry scene needs light icons.
+    final iconBrightness = (usePalette || !isDark)
+        ? Brightness.dark
+        : Brightness.light;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         systemNavigationBarColor: Colors.transparent,
         systemNavigationBarDividerColor: Colors.transparent,
-        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-        systemNavigationBarIconBrightness:
-            isDark ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness: iconBrightness,
+        systemNavigationBarIconBrightness: iconBrightness,
       ),
       child: ColoredBox(
-        color: isDark ? const Color(0xFF0F0B1A) : const Color(0xFFFDF6E9),
+        color: usePalette
+            ? palette.gradientTop
+            : (isDark ? const Color(0xFF0F0B1A) : const Color(0xFFFDF6E9)),
         child: Stack(
         fit: StackFit.expand,
         children: [
+          if (usePalette)
+            DecoratedBox(decoration: BoxDecoration(gradient: palette.backgroundGradient))
+          else
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 450),
             // Keep both the incoming and outgoing frames constrained to the
@@ -189,14 +224,19 @@ class AstraGlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = primaryColor ?? AstraKit.primary(isDark);
+    final active = AstraKit.active;
     return DecoratedBox(
       decoration: BoxDecoration(
-        // A bit more opaque than the old blurred card (no per-card blur now),
-        // so text stays crisp over the pre-blurred scene.
-        color: isDark ? const Color(0xBF181026) : const Color(0xE6FBF1DC),
+        // With a palette active every card is soft white glass (the pastel
+        // gradient shows through); otherwise the legacy dark/light tint.
+        color: active != null
+            ? active.cardBackground
+            : (isDark ? const Color(0xBF181026) : const Color(0xE6FBF1DC)),
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
-            color: primary.withValues(alpha: isDark ? 0.42 : 0.55),
+            color: active != null
+                ? active.softBorder
+                : primary.withValues(alpha: isDark ? 0.42 : 0.55),
             width: 1.2),
       ),
       child: Padding(padding: padding, child: child),
@@ -233,7 +273,9 @@ class AstraCircleIconButton extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isDark ? const Color(0x44231845) : const Color(0xF2FCF4E2),
+          color: AstraKit.active != null
+              ? const Color(0xE6FFFFFF)
+              : (isDark ? const Color(0x44231845) : const Color(0xF2FCF4E2)),
           border: Border.all(color: primary.withValues(alpha: 0.3)),
         ),
         child: Icon(icon, size: size * 0.47, color: primary),
@@ -279,28 +321,42 @@ class AstraGoldButton extends StatelessWidget {
     // Light theme (and any screen that forces it) keeps the rich 3-stop
     // gold pill; the dark theme's default is a violet-to-pink pill matching
     // the rest of the app's night accent instead.
-    final useGold = forceGold || !isDark;
-    final gradient = useGold
-        ? (isDark
-            ? const LinearGradient(
-                colors: [Color(0xFFF0D68A), Color(0xFFD4A93F), Color(0xFF8A6A10)],
-                stops: [0.0, 0.55, 1.0],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              )
+    // With a palette active (and not a branded gold screen), the primary CTA
+    // becomes a soft primary→secondary pill in the theme's colours.
+    final palette = AstraKit.active;
+    final usePalette = palette != null && !forceGold;
+    final useGold = !usePalette && (forceGold || !isDark);
+    final gradient = usePalette
+        ? LinearGradient(
+            colors: [palette.buttonPrimary, palette.secondary],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          )
+        : useGold
+            ? (isDark
+                ? const LinearGradient(
+                    colors: [Color(0xFFF0D68A), Color(0xFFD4A93F), Color(0xFF8A6A10)],
+                    stops: [0.0, 0.55, 1.0],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  )
+                : const LinearGradient(
+                    colors: [Color(0xFFFFEBA3), Color(0xFFEBB818), Color(0xFFAA7A0A)],
+                    stops: [0.0, 0.55, 1.0],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ))
             : const LinearGradient(
-                colors: [Color(0xFFFFEBA3), Color(0xFFEBB818), Color(0xFFAA7A0A)],
-                stops: [0.0, 0.55, 1.0],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ))
-        : const LinearGradient(
-            colors: [Color(0xFF8B5CF6), Color(0xFFF9A8D4)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          );
-    final primary = useGold ? AstraKit.gold(isDark) : AstraKit.primary(isDark);
-    final contentColor = useGold ? const Color(0xFF1A0F00) : Colors.white;
+                colors: [Color(0xFF8B5CF6), Color(0xFFF9A8D4)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              );
+    final primary = usePalette
+        ? palette.primary
+        : (useGold ? AstraKit.gold(isDark) : AstraKit.primary(isDark));
+    final contentColor = usePalette
+        ? palette.onPrimary
+        : (useGold ? const Color(0xFF1A0F00) : Colors.white);
     final active = enabled && !isLoading;
     final radius = height / 2;
 

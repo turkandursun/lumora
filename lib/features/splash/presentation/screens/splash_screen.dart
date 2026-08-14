@@ -40,11 +40,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // Route logged-in users through the mood check-in. It gates itself to the
     // first app entry of each calendar day, so on later opens the same day it
     // silently forwards to home.
-    context.go(
-      hasSession
-          ? AuthFlowRoutes.afterAuthentication(AuthFlowOrigin.restoredSession)
-          : AppRoutes.login,
-    );
+    if (hasSession) {
+      // Logged in → Luma greeting ("welcome back") → daily mood → reflection.
+      context.go(
+        AuthFlowRoutes.greeting,
+        extra: const {'first': false, 'next': AuthFlowRoutes.mood},
+      );
+    } else {
+      // Logged out → the intro journey: Luma greeting → theme → onboarding →
+      // login/sign-up.
+      context.go(
+        AuthFlowRoutes.greeting,
+        extra: const {'first': true, 'next': AuthFlowRoutes.themeSelect},
+      );
+    }
   }
 
   @override

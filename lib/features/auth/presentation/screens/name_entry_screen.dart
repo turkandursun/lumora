@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/providers/astra_palette_provider.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
@@ -50,9 +51,7 @@ class _NameEntryScreenState extends ConsumerState<NameEntryScreen> {
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
     final gold = AstraKit.gold(isDark);
 
-    final bgAsset = isDark
-        ? 'assets/images/astra_entry_bg.png'
-        : 'assets/images/astra_sun_entry_g3.png';
+    final palette = ref.watch(activePaletteProvider);
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -60,9 +59,8 @@ class _NameEntryScreenState extends ConsumerState<NameEntryScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Hero(
-            tag: 'astra_bg',
-            child: Image.asset(bgAsset, fit: BoxFit.cover),
+          DecoratedBox(
+            decoration: BoxDecoration(gradient: palette.backgroundGradient),
           ),
           SafeArea(
             child: LayoutBuilder(
