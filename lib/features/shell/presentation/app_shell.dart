@@ -134,11 +134,24 @@ class _AppShellState extends ConsumerState<AppShell>
           for (var i = 0; i < screens.length; i++)
             IgnorePointer(
               ignoring: activeIndex != i,
-              child: Opacity(
-                opacity: activeIndex == i ? 1 : 0,
-                child: AstraEntranceReplay(
-                  notifier: i == 0 ? _homeReplay : _profileReplay,
-                  child: screens[i],
+              // Smooth cross-fade + gentle scale when switching tabs, on top of
+              // each screen's own entrance replay.
+              // Clear horizontal swap: the incoming tab slides in from its side
+              // (home from the left, profile from the right) while fading.
+              child: AnimatedSlide(
+                offset: activeIndex == i
+                    ? Offset.zero
+                    : Offset(i == 0 ? -0.22 : 0.22, 0),
+                duration: const Duration(milliseconds: 340),
+                curve: Curves.easeOutCubic,
+                child: AnimatedOpacity(
+                  opacity: activeIndex == i ? 1 : 0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                  child: AstraEntranceReplay(
+                    notifier: i == 0 ? _homeReplay : _profileReplay,
+                    child: screens[i],
+                  ),
                 ),
               ),
             ),

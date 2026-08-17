@@ -202,16 +202,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               const SizedBox(height: 54),
-                              Text('ASTRA',
-                                  textAlign: TextAlign.center,
-                                  style: AstraKit.wordmark(false, fontSize: 40)),
+                              AstraEntrance(
+                                index: 0,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Text('ASTRA',
+                                    textAlign: TextAlign.center,
+                                    style:
+                                        AstraKit.wordmark(false, fontSize: 40)),
+                              ),
                               const SizedBox(height: 6),
-                              Text(
-                                isTr
-                                    ? 'Yaz. Konuş. Rahatla.'
-                                    : 'Write. Talk. Breathe.',
-                                textAlign: TextAlign.center,
-                                style: AstraKit.mutedText(false, fontSize: 13.5),
+                              AstraEntrance(
+                                index: 1,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Text(
+                                  isTr
+                                      ? 'Yaz. Konuş. Rahatla.'
+                                      : 'Write. Talk. Breathe.',
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      AstraKit.mutedText(false, fontSize: 13.5),
+                                ),
                               ),
                               const Spacer(),
                               _animated(_buildPanel(

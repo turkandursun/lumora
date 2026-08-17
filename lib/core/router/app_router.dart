@@ -224,7 +224,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.greeting,
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final extra = state.extra;
         var isFirstWelcome = false;
         var nextRoute = AppRoutes.home;
@@ -236,33 +236,42 @@ final GoRouter appRouter = GoRouter(
           final next = extra['next'];
           if (next is String) nextRoute = next;
         }
-        return GreetingScreen(
-          isFirstWelcome: isFirstWelcome,
-          nextRoute: nextRoute,
+        return _smoothPage(
+          state,
+          GreetingScreen(
+            isFirstWelcome: isFirstWelcome,
+            nextRoute: nextRoute,
+          ),
         );
       },
     ),
     GoRoute(
       path: AppRoutes.aiRating,
-      builder: (context, state) => AiRatingScreen(
-        onBack: null,
-        onSubmit: (rating) {
-          unawaited(_persistAiRating(rating));
-          context.go(AppRoutes.onboardingComplete);
-        },
+      pageBuilder: (context, state) => _smoothPage(
+        state,
+        AiRatingScreen(
+          onBack: null,
+          onSubmit: (rating) {
+            unawaited(_persistAiRating(rating));
+            context.go(AppRoutes.onboardingComplete);
+          },
+        ),
       ),
     ),
     GoRoute(
       path: AppRoutes.onboardingComplete,
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final meta = Supabase.instance.client.auth.currentUser?.userMetadata;
         final full = (meta?['full_name'] as String?)?.trim();
         final name = (full != null && full.isNotEmpty)
             ? full.split(RegExp(r'\s+')).first
             : null;
-        return OnboardingCompleteScreen(
-          userName: name,
-          onStart: () => context.go(AppRoutes.home),
+        return _smoothPage(
+          state,
+          OnboardingCompleteScreen(
+            userName: name,
+            onStart: () => context.go(AppRoutes.home),
+          ),
         );
       },
     ),
@@ -381,8 +390,8 @@ final GoRouter appRouter = GoRouter(
 CustomTransitionPage<void> _smoothPage(GoRouterState state, Widget child) {
   return CustomTransitionPage<void>(
     key: state.pageKey,
-    transitionDuration: const Duration(milliseconds: 240),
-    reverseTransitionDuration: const Duration(milliseconds: 210),
+    transitionDuration: const Duration(milliseconds: 340),
+    reverseTransitionDuration: const Duration(milliseconds: 300),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       // Shared-axis (Z) feel that animates BOTH directions:
       // • Entering (animation 0→1): fade in + scale 0.96→1.0 + slight rise.
@@ -392,19 +401,17 @@ CustomTransitionPage<void> _smoothPage(GoRouterState state, Widget child) {
       final inCurve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
       final outCurve = CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
 
-      return FadeTransition(
-        opacity: inCurve,
-        child: ScaleTransition(
-          scale: Tween<double>(begin: 0.96, end: 1.0).animate(inCurve),
+      // Bold, unmistakable horizontal push: the new screen slides in from the
+      // right while fading; the old one recedes to the left.
+      return SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0.30, 0), end: Offset.zero)
+            .animate(inCurve),
+        child: FadeTransition(
+          opacity: inCurve,
           child: SlideTransition(
-            position: Tween<Offset>(begin: const Offset(0, 0.03), end: Offset.zero).animate(inCurve),
-            child: FadeTransition(
-              opacity: Tween<double>(begin: 1.0, end: 0.0).animate(outCurve),
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 1.0, end: 0.95).animate(outCurve),
-                child: child,
-              ),
-            ),
+            position: Tween<Offset>(begin: Offset.zero, end: const Offset(-0.14, 0))
+                .animate(outCurve),
+            child: child,
           ),
         ),
       );

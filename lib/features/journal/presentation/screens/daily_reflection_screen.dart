@@ -96,21 +96,36 @@ class _DailyReflectionScreenState extends ConsumerState<DailyReflectionScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 12),
-                const LumaAvatar(size: 96),
+                const AstraEntrance(
+                  index: 0,
+                  intervalMs: 130,
+                  offset: 20,
+                  child: LumaAvatar(size: 96),
+                ),
                 const SizedBox(height: 20),
-                Text(
-                  _prompt(mood, isTr),
-                  textAlign: TextAlign.center,
-                  style: AstraKit.heading1(false, fontSize: 24)
-                      .copyWith(height: 1.25),
+                AstraEntrance(
+                  index: 1,
+                  intervalMs: 130,
+                  offset: 20,
+                  child: Text(
+                    _prompt(mood, isTr),
+                    textAlign: TextAlign.center,
+                    style: AstraKit.heading1(false, fontSize: 24)
+                        .copyWith(height: 1.25),
+                  ),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  isTr
-                      ? 'İstersen birkaç cümle yaz. Burası tamamen sana ait.'
-                      : 'Write a few lines if you like. This space is yours.',
-                  textAlign: TextAlign.center,
-                  style: AstraKit.mutedText(false, fontSize: 13.5),
+                AstraEntrance(
+                  index: 2,
+                  intervalMs: 130,
+                  offset: 20,
+                  child: Text(
+                    isTr
+                        ? 'İstersen birkaç cümle yaz. Burası tamamen sana ait.'
+                        : 'Write a few lines if you like. This space is yours.',
+                    textAlign: TextAlign.center,
+                    style: AstraKit.mutedText(false, fontSize: 13.5),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Expanded(

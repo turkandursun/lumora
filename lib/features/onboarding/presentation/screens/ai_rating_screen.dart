@@ -62,51 +62,71 @@ class _AiRatingScreenState extends State<AiRatingScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Text(
-                  'AI ile ilk deneyimini nasıl buldun?',
-                  textAlign: TextAlign.center,
-                  style: AstraKit.heading1(false, fontSize: 25)
-                      .copyWith(height: 1.25),
+                AstraEntrance(
+                  index: 0,
+                  intervalMs: 130,
+                  offset: 20,
+                  child: Text(
+                    'AI ile ilk deneyimini nasıl buldun?',
+                    textAlign: TextAlign.center,
+                    style: AstraKit.heading1(false, fontSize: 25)
+                        .copyWith(height: 1.25),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  'GÖRÜŞLERİN KENDİMİZİ GELİŞTİRMEMİZE YARDIMCI OLUYOR',
-                  textAlign: TextAlign.center,
-                  style: AstraKit.mutedText(false, fontSize: 12).copyWith(
-                    letterSpacing: 1.1,
-                    fontWeight: FontWeight.w700,
-                    height: 1.4,
+                AstraEntrance(
+                  index: 1,
+                  intervalMs: 130,
+                  offset: 20,
+                  child: Text(
+                    'GÖRÜŞLERİN KENDİMİZİ GELİŞTİRMEMİZE YARDIMCI OLUYOR',
+                    textAlign: TextAlign.center,
+                    style: AstraKit.mutedText(false, fontSize: 12).copyWith(
+                      letterSpacing: 1.1,
+                      fontWeight: FontWeight.w700,
+                      height: 1.4,
+                    ),
                   ),
                 ),
                 const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (var i = 1; i <= 5; i++)
-                      GestureDetector(
-                        onTap: () => setState(() => _rating = i),
-                        behavior: HitTestBehavior.opaque,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Icon(
-                            i <= _rating
-                                ? Icons.star_rounded
-                                : Icons.star_outline_rounded,
-                            size: 48,
-                            color: i <= _rating
-                                ? _starGold
-                                : AstraText.muted.withValues(alpha: 0.45),
+                AstraEntrance(
+                  index: 2,
+                  intervalMs: 130,
+                  offset: 20,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (var i = 1; i <= 5; i++)
+                        GestureDetector(
+                          onTap: () => setState(() => _rating = i),
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Icon(
+                              i <= _rating
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                              size: 48,
+                              color: i <= _rating
+                                  ? _starGold
+                                  : AstraText.muted.withValues(alpha: 0.45),
+                            ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
                 const Spacer(),
-                AstraGoldButton(
-                  isDark: false,
-                  label: 'DEĞERLENDİR VE DEVAM ET',
-                  enabled: canSubmit,
-                  onTap: () => widget.onSubmit(_rating),
+                AstraEntrance(
+                  index: 3,
+                  intervalMs: 130,
+                  offset: 20,
+                  child: AstraGoldButton(
+                    isDark: false,
+                    label: 'DEĞERLENDİR VE DEVAM ET',
+                    enabled: canSubmit,
+                    onTap: () => widget.onSubmit(_rating),
+                  ),
                 ),
                 const SizedBox(height: 22),
                 _PageDots(count: 4, activeIndex: 3),

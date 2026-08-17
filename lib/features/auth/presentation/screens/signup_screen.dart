@@ -224,9 +224,30 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                   ],
                                 ),
                               ),
-                              // The scene's baked ASTRA wordmark + moon fill the
-                              // top; this spacer drops the panel into the empty
-                              // lower area, keeping the wordmark above it.
+                              const SizedBox(height: 8),
+                              AstraEntrance(
+                                index: 0,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Text('ASTRA',
+                                    textAlign: TextAlign.center,
+                                    style:
+                                        AstraKit.wordmark(false, fontSize: 38)),
+                              ),
+                              const SizedBox(height: 6),
+                              AstraEntrance(
+                                index: 1,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Text(
+                                  isTr
+                                      ? 'Kendine bir alan aç.'
+                                      : 'Make space for yourself.',
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      AstraKit.mutedText(false, fontSize: 13.5),
+                                ),
+                              ),
                               const Spacer(),
                               _animated(_buildPanel(
                                   isDark, isTr, authState, errorMessage)),
