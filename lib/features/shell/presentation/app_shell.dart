@@ -164,10 +164,14 @@ class _AppShellState extends ConsumerState<AppShell>
   }
 }
 
-const _barDark = Color(0xFF211C30);
-const _barLight = Color(0xFFF6EAD3);
-const _lavender = Color(0xFFC084FC);
-const _lavenderDeep = Color(0xFF8B5CF6);
+// Fixed pink-glass bottom-bar tokens — one consistent Luma look instead of
+// the old dark-violet/warm-cream split, matching AstraGlassCard's blurred
+// glass treatment.
+const _barFill = Color(0xB3FFFFFF);
+const _barBorder = Color(0x8CFFFFFF);
+const _barRing = Color(0xFFFCEAF0);
+const _fabGradient = [Color(0xFFEAAAC8), Color(0xFFCE7CA6)];
+const _fabGlow = Color(0xFFCE7CA6);
 
 class _ShellBottomNav extends StatelessWidget {
   const _ShellBottomNav({
@@ -193,83 +197,89 @@ class _ShellBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final barColor = isDark ? _barDark : _barLight;
     final accent = AstraKit.primary(isDark);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: barColor,
-        border: Border(top: BorderSide(color: accent.withValues(alpha: isDark ? 0.3 : 0.45))),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: SizedBox(
-          height: 68,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _NavItem(
-                    icon: Icons.home_outlined,
-                    filledIcon: Icons.home_rounded,
-                    label: l10n.shellTabHome,
-                    isActive: active == _ActiveTab.home,
-                    isDark: isDark,
-                    accent: accent,
-                    onTap: onHome,
-                  ),
-                  _NavItem(
-                    icon: Icons.bar_chart_outlined,
-                    filledIcon: Icons.bar_chart_rounded,
-                    label: l10n.shellTabStats,
-                    isActive: false,
-                    isDark: isDark,
-                    accent: accent,
-                    onTap: onStats,
-                  ),
-                  const SizedBox(width: 56),
-                  _NavItem(
-                    icon: Icons.smart_toy_outlined,
-                    filledIcon: Icons.smart_toy_rounded,
-                    label: l10n.shellTabAi,
-                    isActive: false,
-                    isDark: isDark,
-                    accent: accent,
-                    onTap: onAi,
-                  ),
-                  _NavItem(
-                    icon: Icons.person_outline_rounded,
-                    filledIcon: Icons.person_rounded,
-                    label: l10n.shellTabProfile,
-                    isActive: active == _ActiveTab.profile,
-                    isDark: isDark,
-                    accent: accent,
-                    onTap: onProfile,
-                  ),
+    // The blurred bar and the raised quick-add button are siblings in an
+    // unclipped outer Stack: the button intentionally pokes up above the bar
+    // (Positioned top: -20), and BackdropFilter needs a ClipRect to bound
+    // where it samples — putting that ClipRect around the button too would
+    // cut off the part of it (including the star icon) that rises past the
+    // bar's own top edge.
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: _barFill,
+                border: Border(top: BorderSide(color: _barBorder, width: 1.1)),
+                boxShadow: [
+                  BoxShadow(color: Color(0x28C77D9B), blurRadius: 20, offset: Offset(0, -4)),
                 ],
               ),
-              Positioned(
-                top: -20,
-                child: _QuickAddButton(
-                  label: l10n.shellTabQuickAdd,
-                  isDark: isDark,
-                  barColor: barColor,
-                  anim: fabAnim,
-                  onTap: onQuickAdd,
+              child: SafeArea(
+                child: SizedBox(
+                  height: 68,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _NavItem(
+                        icon: Icons.home_outlined,
+                        filledIcon: Icons.home_rounded,
+                        label: l10n.shellTabHome,
+                        isActive: active == _ActiveTab.home,
+                        isDark: isDark,
+                        accent: accent,
+                        onTap: onHome,
+                      ),
+                      _NavItem(
+                        icon: Icons.bar_chart_outlined,
+                        filledIcon: Icons.bar_chart_rounded,
+                        label: l10n.shellTabStats,
+                        isActive: false,
+                        isDark: isDark,
+                        accent: accent,
+                        onTap: onStats,
+                      ),
+                      const SizedBox(width: 56),
+                      _NavItem(
+                        icon: Icons.smart_toy_outlined,
+                        filledIcon: Icons.smart_toy_rounded,
+                        label: l10n.shellTabAi,
+                        isActive: false,
+                        isDark: isDark,
+                        accent: accent,
+                        onTap: onAi,
+                      ),
+                      _NavItem(
+                        icon: Icons.person_outline_rounded,
+                        filledIcon: Icons.person_rounded,
+                        label: l10n.shellTabProfile,
+                        isActive: active == _ActiveTab.profile,
+                        isDark: isDark,
+                        accent: accent,
+                        onTap: onProfile,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
-      ),
+        Positioned(
+          top: -20,
+          child: _QuickAddButton(
+            label: l10n.shellTabQuickAdd,
+            isDark: isDark,
+            barColor: _barRing,
+            anim: fabAnim,
+            onTap: onQuickAdd,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -343,11 +353,9 @@ class _QuickAddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradient = isDark
-        ? const [_lavender, _lavenderDeep]
-        : const [Color(0xFFF0D68A), Color(0xFFB8860B)];
-    final glow = isDark ? _lavender : const Color(0xFFD4AF37);
-    final iconColor = isDark ? Colors.white : const Color(0xFF1A0F00);
+    const gradient = _fabGradient;
+    const glow = _fabGlow;
+    const iconColor = Color(0xFF3A1424);
     final spin = CurvedAnimation(parent: anim, curve: Curves.easeOutBack);
     return Semantics(
       button: true,
@@ -508,15 +516,11 @@ class _FabMenuItem extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xF01B1330) : const Color(0xF2FBF1DC),
+                  color: const Color(0xF2FCEEF3),
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: accent.withValues(alpha: isDark ? 0.4 : 0.55)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.14),
-                      blurRadius: 14,
-                      offset: const Offset(0, 6),
-                    ),
+                  border: Border.all(color: accent.withValues(alpha: 0.4)),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x28C77D9B), blurRadius: 14, offset: Offset(0, 6)),
                   ],
                 ),
                 child: Row(
