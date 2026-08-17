@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../../theme/luma_glass_theme.dart';
 import '../../../activities/presentation/screens/activities_screen.dart';
 import '../../../ai_questions/presentation/screens/ai_questions_screen.dart';
 import '../../../breathing/presentation/screens/breathing_screen.dart';
@@ -98,14 +99,13 @@ List<HomeFeatureItem> homeFeatureItems(
   ];
 }
 
-/// A responsive 2-column grid of frosted glass feature cards — the exact same
-/// [AstraGlassCard] look as the Journal Writing and Dream Journal cards above,
-/// so the whole Home page reads as one cohesive surface with no visual break.
+/// A responsive 2-column grid of frosted pink glass feature cards — restyled
+/// (Aug 2026) onto [LumaGlassCard] so the whole Home page reads as one
+/// cohesive pink surface; layout/content is otherwise the original grid.
 class HomeFeatureGrid extends StatelessWidget {
-  const HomeFeatureGrid({super.key, required this.items, required this.isDark});
+  const HomeFeatureGrid({super.key, required this.items});
 
   final List<HomeFeatureItem> items;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -119,44 +119,37 @@ class HomeFeatureGrid extends StatelessWidget {
         crossAxisSpacing: 12,
         childAspectRatio: 0.86,
       ),
-      itemBuilder: (context, index) => _FeatureCard(
-        item: items[index],
-        isDark: isDark,
-      ),
+      itemBuilder: (context, index) => _FeatureCard(item: items[index]),
     );
   }
 }
 
-/// A feature shortcut card: the shared frosted glass card with an outlined
-/// accent icon in the top-right corner and the title + description at the
-/// bottom — identical fill, border, blur and text colours to the other Home
-/// cards.
+/// A feature shortcut card: the shared frosted pink glass card with an
+/// outlined accent icon in the top-right corner and the title + description
+/// at the bottom — identical fill, border, blur and text colours to the
+/// other Home cards.
 class _FeatureCard extends StatelessWidget {
-  const _FeatureCard({required this.item, required this.isDark});
+  const _FeatureCard({required this.item});
 
   final HomeFeatureItem item;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final accent = AstraKit.primary(isDark);
     return AstraMorphContainer(
       borderRadius: 20,
       openBuilder: item.screenBuilder,
       closedBuilder: (context, open) => BouncyTap(
       onTap: open,
-      child: AstraGlassCard(
-      isDark: isDark,
-      primaryColor: accent,
+      child: LumaGlassCard(
       padding: EdgeInsets.zero,
-      borderRadius: 20,
+      radius: 20,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: null,
-          splashColor: accent.withValues(alpha: 0.14),
+          splashColor: LumaGlass.sparkle.withValues(alpha: 0.14),
           child: Stack(
             children: [
               // Outlined accent icon circle in the top-right corner.
@@ -169,11 +162,11 @@ class _FeatureCard extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: accent.withValues(alpha: 0.14),
+                    color: LumaGlass.sparkle.withValues(alpha: 0.14),
                     border: Border.all(
-                        color: accent.withValues(alpha: 0.4), width: 1.2),
+                        color: LumaGlass.sparkle.withValues(alpha: 0.4), width: 1.2),
                   ),
-                  child: Icon(item.primaryIcon, size: 20, color: accent),
+                  child: Icon(item.primaryIcon, size: 20, color: LumaGlass.sparkle),
                 ),
               ),
               if (item.badgeCount > 0)
@@ -210,17 +203,17 @@ class _FeatureCard extends StatelessWidget {
                       item.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AstraKit.heading2(isDark, fontSize: 16.5),
+                      style: LumaGlass.sans(fontSize: 16.5, fontWeight: FontWeight.w700, color: LumaGlass.cardTitle),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       item.description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AstraKit.mutedText(isDark, fontSize: 11.5),
+                      style: LumaGlass.sans(fontSize: 11.5, color: LumaGlass.subtitle),
                     ),
                     const SizedBox(height: 9),
-                    _SparkleDivider(accent: accent),
+                    const _SparkleDivider(),
                   ],
                 ),
               ),
@@ -237,28 +230,26 @@ class _FeatureCard extends StatelessWidget {
 /// A hairline divider with a small diamond sparkle in the middle, echoing
 /// the ornamental line under each card's title.
 class _SparkleDivider extends StatelessWidget {
-  const _SparkleDivider({required this.accent});
-
-  final Color accent;
+  const _SparkleDivider();
 
   @override
   Widget build(BuildContext context) {
-    Widget line() => Expanded(
-          child: Container(height: 1, color: accent.withValues(alpha: 0.35)),
+    Widget line() => Container(
+          height: 1,
+          color: LumaGlass.sparkle.withValues(alpha: 0.35),
         );
     return Row(
       children: [
-        line(),
+        Expanded(child: line()),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 7),
           child: Transform.rotate(
             angle: 0.785398,
-            child: Container(width: 5, height: 5, color: accent),
+            child: Container(width: 5, height: 5, color: LumaGlass.sparkle),
           ),
         ),
-        line(),
+        Expanded(child: line()),
       ],
     );
   }
 }
-

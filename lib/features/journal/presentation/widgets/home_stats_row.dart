@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../../theme/luma_glass_theme.dart';
 import '../screens/journal_entry_screen.dart';
 
 /// Gentle, inviting prompts encouraging the user to write down their thoughts.
@@ -22,7 +22,9 @@ const _promptsEn = [
 ];
 
 /// The main Journal Writing hero card on Home, positioned right between the
-/// motivation quote carousel and the dream journal banner.
+/// motivation quote carousel and the dream journal banner. Restyled
+/// (Aug 2026) onto the fixed [LumaGlass] pink glass theme — layout/content
+/// unchanged from the original card.
 class HomeStatsRow extends ConsumerWidget {
   const HomeStatsRow({super.key});
 
@@ -30,13 +32,6 @@ class HomeStatsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    // The app's theme accent, matching Profile: lavender on the moon scene,
-    // gold on the bright sun scene.
-    final accent = AstraKit.primary(isDark);
-    // Contrasting icon colour inside the accent emblem.
-    final emblemIcon =
-        isDark ? const Color(0xFF1A1030) : const Color(0xFFFFF6E4);
 
     // Rotate prompt gently by hour of day
     final promptIndex = DateTime.now().hour % _promptsTr.length;
@@ -47,11 +42,9 @@ class HomeStatsRow extends ConsumerWidget {
       openBuilder: (_) => const JournalEntryScreen(),
       closedBuilder: (context, open) => BouncyTap(
       onTap: open,
-      child: AstraGlassCard(
-      isDark: isDark,
-      primaryColor: accent,
+      child: LumaGlassCard(
       padding: EdgeInsets.zero,
-      borderRadius: 24,
+      radius: 24,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(24),
@@ -67,28 +60,25 @@ class HomeStatsRow extends ConsumerWidget {
                   width: 52,
                   height: 52,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        accent,
-                        accent.withValues(alpha: 0.65),
-                      ],
+                      colors: LumaGlass.accentGradient,
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: accent.withValues(alpha: 0.35),
+                        color: LumaGlass.accentShadow,
                         blurRadius: 14,
                         spreadRadius: 1,
                       ),
                     ],
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.edit_note_rounded,
                     size: 28,
-                    color: emblemIcon,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -101,7 +91,11 @@ class HomeStatsRow extends ConsumerWidget {
                         children: [
                           Text(
                             l10n.homeFeatureJournalTitle,
-                            style: AstraKit.heading2(isDark, fontSize: 17.5),
+                            style: LumaGlass.sans(
+                              fontSize: 17.5,
+                              fontWeight: FontWeight.w700,
+                              color: LumaGlass.cardTitle,
+                            ),
                           ),
                           const SizedBox(width: 6),
                           const Text('✨', style: TextStyle(fontSize: 14)),
@@ -112,7 +106,7 @@ class HomeStatsRow extends ConsumerWidget {
                         promptText,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: AstraKit.mutedText(isDark, fontSize: 12.5),
+                        style: LumaGlass.sans(fontSize: 12.5, color: LumaGlass.subtitle),
                       ),
                     ],
                   ),
@@ -122,27 +116,26 @@ class HomeStatsRow extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: accent.withValues(alpha: isDark ? 0.16 : 0.14),
+                    color: LumaGlass.sparkle.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: accent.withValues(alpha: 0.45)),
+                    border: Border.all(color: LumaGlass.sparkle.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         isTr ? 'Yaz' : 'Write',
-                        style: AstraKit.body(
-                          isDark,
+                        style: LumaGlass.sans(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          color: accent,
+                          color: LumaGlass.accentInk,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(
+                      const Icon(
                         Icons.arrow_forward_ios_rounded,
                         size: 11,
-                        color: accent,
+                        color: LumaGlass.accentInk,
                       ),
                     ],
                   ),

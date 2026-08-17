@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/providers/astra_palette_provider.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/providers/auth_listener.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../auth/presentation/providers/account_deletion_provider.dart';
@@ -384,20 +386,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 AstraEntrance(
-                  delayMs: 320,
-                  child: _MenuSwitchItem(
-                    icon: isDark
-                        ? Icons.dark_mode_rounded
-                        : Icons.light_mode_rounded,
-                    label: isTr ? 'Tema' : 'Theme',
-                    value: isDark,
+                  delayMs: 300,
+                  child: _PaletteThemeCard(
+                    isTr: isTr,
                     isDark: isDark,
-                    primary: primary,
-                    onChanged: (v) {
-                      ref.read(astraThemeProvider.notifier).setTheme(
-                            v ? AstraThemeMode.dark : AstraThemeMode.light,
-                          );
-                    },
+                    selectedId: ref.watch(astraPaletteProvider),
+                    onSelect: (id) =>
+                        ref.read(astraPaletteProvider.notifier).select(id),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -948,6 +943,84 @@ class _MenuSwitchItem extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Colour-theme picker: 7 swatches. Tapping one re-skins the whole app.
+class _PaletteThemeCard extends StatelessWidget {
+  const _PaletteThemeCard({
+    required this.isTr,
+    required this.isDark,
+    required this.selectedId,
+    required this.onSelect,
+  });
+
+  final bool isTr;
+  final bool isDark;
+  final AstraThemeId selectedId;
+  final ValueChanged<AstraThemeId> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: AstraKit.primary(isDark),
+      borderRadius: 18,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.palette_outlined,
+                  color: AstraKit.primary(isDark), size: 22),
+              const SizedBox(width: 14),
+              Text(
+                isTr ? 'Renk teması' : 'Colour theme',
+                style: AstraKit.body(isDark,
+                    fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 14,
+            runSpacing: 14,
+            children: [
+              for (final p in astraPalettes)
+                GestureDetector(
+                  onTap: () => onSelect(p.id),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: p.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: p.id == selectedId
+                            ? p.secondary
+                            : Colors.white.withValues(alpha: 0.7),
+                        width: p.id == selectedId ? 3 : 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: p.id == selectedId
+                        ? Icon(Icons.check_rounded,
+                            color: p.onPrimary, size: 22)
+                        : null,
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

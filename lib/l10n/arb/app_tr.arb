@@ -37,7 +37,7 @@
   "onboardingCompanionTitle": "Seni nazikçe dinleyen bir yoldaş",
   "onboardingCompanionBody": "Sen yazdıkça ASTRA, günlerindeki ve duygularındaki örüntüleri usulca fark eder — kendini daha iyi anlaman için nazik yansımalar sunar, ama seni gerçekten önemseyen insanların yerini asla tutmaz.",
   "onboardingPrivacyTitle": "Gerçekten sadece senin",
-  "onboardingPrivacyBody": "Yazdığın her kelime şifrelenir ve gizli tutulur — bu alan tamamen sana ait.",
+  "onboardingPrivacyBody": "Yazdığın her şey yalnızca sana ait ve gizli kalır — bu alan tamamen senin.",
   "shellTabHome": "Anasayfa",
   "shellTabStats": "İstatistikler",
   "shellTabAi": "AI",
@@ -548,8 +548,8 @@
   "dilemma29B": "Sevilmek",
   "dilemma30A": "Sakin bir hayat",
   "dilemma30B": "Heyecanlı bir hayat",
-"journalToneFeedbackTitle": "Günlük Tonu Geri Bildirimi",
-"journalToneNotNow": "Şimdi Değil",
-"journalToneWellnessPrompt": "Bu girdi hakkında nasıl hissediyorsunuz?",
-"journalToneCalmAction": "Sakinleşme Egzersizi Yap"
+  "journalToneFeedbackTitle": "Günlük Tonu Geri Bildirimi",
+  "journalToneNotNow": "Şimdi Değil",
+  "journalToneWellnessPrompt": "Bu girdi hakkında nasıl hissediyorsunuz?",
+  "journalToneCalmAction": "Sakinleşme Egzersizi Yap"
 }

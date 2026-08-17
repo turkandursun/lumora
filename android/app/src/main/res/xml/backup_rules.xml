@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and lower: keep OS backup enabled for non-sensitive files, but
+     exclude ASTRA's user data, auth/session state and local media cache. -->
+<full-backup-content>
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="file" path="app_flutter/" />
+    <exclude domain="external" path="." />
+
+    <exclude domain="device_database" path="." />
+    <exclude domain="device_sharedpref" path="." />
+    <exclude domain="device_file" path="app_flutter/" />
+</full-backup-content>

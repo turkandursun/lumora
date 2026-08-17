@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase
     show AuthState;
 
+import '../../../../core/providers/astra_palette_provider.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
@@ -42,7 +43,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isGoogleSubmitting = false;
-  bool _rememberMe = false;
   bool _obscurePassword = true;
   String? _formError;
   bool _didRouteAfterSignIn = false;
@@ -124,8 +124,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       await Supabase.instance.client.auth.resetPasswordForEmail(email);
       if (!mounted) return;
       _showSnack(isTr
-          ? 'Şifre sıfırlama bağlantısı mailine gönderildi.'
-          : 'A password reset link has been sent to your email.');
+          ? 'Mailine 6 haneli bir kod gönderildi.'
+          : 'A 6-digit code has been sent to your email.');
+      // Take the user to the code + new-password screen so the reset actually
+      // completes inside the app (no deep link needed).
+      context.push(AppRoutes.resetPassword, extra: email);
     } catch (_) {
       if (!mounted) return;
       _showSnack(isTr
@@ -139,9 +142,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     _didRouteAfterSignIn = true;
     await ref.read(cloudBackupServiceProvider).onSignIn();
     if (!mounted) return;
-    context.go(
-      AuthFlowRoutes.afterAuthentication(AuthFlowOrigin.existingLogin),
-    );
+    // Existing login → mood check-in (no signup intent).
+    context.go(AuthFlowRoutes.afterAuthentication(AuthFlowOrigin.existingLogin));
   }
 
   void _onSignUpTap() => context.go(AppRoutes.signup);
@@ -167,12 +169,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
 
-    // Entry scene shared with the theme-choice screen: the ASTRA wordmark and
-    // tagline are baked into the top, leaving a wide empty lower area where the
-    // sign-in panel sits — so the wordmark always stays clearly above it.
-    final bgAsset = isDark
-        ? 'assets/images/astra_entry_bg.png'
-        : 'assets/images/astra_sun_entry_g3.png';
+    // Background follows the user's chosen palette (picked during onboarding),
+    // so the auth screens match the rest of the app.
+    final palette = ref.watch(activePaletteProvider);
 
     final errorMessage =
         _formError ?? _serverError(l10n, authState.failureReason);
@@ -183,9 +182,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Hero(
-            tag: 'astra_bg',
-            child: Image.asset(bgAsset, fit: BoxFit.cover),
+          DecoratedBox(
+            decoration: BoxDecoration(gradient: palette.backgroundGradient),
           ),
           SafeArea(
             child: LayoutBuilder(
@@ -203,9 +201,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // The scene's baked ASTRA wordmark + moon fill the
-                              // top; this spacer drops the panel into the empty
-                              // lower area, keeping the wordmark above it.
+                              const SizedBox(height: 54),
+                              AstraEntrance(
+                                index: 0,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Text('ASTRA',
+                                    textAlign: TextAlign.center,
+                                    style:
+                                        AstraKit.wordmark(false, fontSize: 40)),
+                              ),
+                              const SizedBox(height: 6),
+                              AstraEntrance(
+                                index: 1,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Text(
+                                  isTr
+                                      ? 'Yaz. Konuş. Rahatla.'
+                                      : 'Write. Talk. Breathe.',
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      AstraKit.mutedText(false, fontSize: 13.5),
+                                ),
+                              ),
                               const Spacer(),
                               _animated(_buildPanel(
                                   isDark, isTr, authState, errorMessage)),
@@ -282,37 +301,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
           const SizedBox(height: 10),
 
-          // Beni Hatırla · Şifremi unuttum
+          // Şifremi unuttum (session is kept by Supabase; no misleading
+          // "remember me" toggle that doesn't actually change behavior).
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _rememberMe = !_rememberMe),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: Checkbox(
-                        value: _rememberMe,
-                        onChanged: (val) =>
-                            setState(() => _rememberMe = val ?? false),
-                        side: BorderSide(color: gold),
-                        activeColor: gold,
-                        checkColor: const Color(0xFF1A0F00),
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(isTr ? 'Beni Hatırla' : 'Remember me',
-                        style: AstraKit.body(isDark, fontSize: 13)),
-                  ],
-                ),
-              ),
               GestureDetector(
                 onTap: _onForgotPassword,
                 child: Text(

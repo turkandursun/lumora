@@ -72,8 +72,6 @@ class CloudBackupService {
     'hobbies_onboarded_v1',
     'letters_v1',
     'mood_log_v1',
-    'period_days_v1',
-    'period_symptoms_v1',
     'journal_streak_count',
     'journal_streak_last_entry_date',
   ];
@@ -143,7 +141,17 @@ class CloudBackupService {
     final uid = _userId;
     if (uid == null) return;
     final snapshot = await _exportSnapshot();
+
     if (_accountDeletionInProgress() || _userId != uid) return;
+
+    // Empty-overwrite guard: if this device currently holds NO records (e.g.
+    // storage was just wiped by a fresh browser profile) but the cloud backup
+    // still has real data, do NOT replace the good backup with an empty one.
+    if (!_dbHasRows(snapshot)) {
+      final cloud = await _fetchCloudSnapshot();
+      if (cloud != null && _dbHasRows(cloud)) return;
+    }
+
     await _client.from(_table).upsert({
       'user_id': uid,
       'data': snapshot,
@@ -151,6 +159,34 @@ class CloudBackupService {
     });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_syncedMarkerKey, DateTime.now().toIso8601String());
+  }
+
+  /// True if the snapshot has at least one row in any backed-up table.
+  bool _dbHasRows(Map snapshot) {
+    final db = snapshot['db'];
+    if (db is Map) {
+      for (final v in db.values) {
+        if (v is List && v.isNotEmpty) return true;
+      }
+    }
+    return false;
+  }
+
+  /// Reads the raw cloud snapshot map for the current user (or null).
+  Future<Map?> _fetchCloudSnapshot() async {
+    final uid = _userId;
+    if (uid == null) return null;
+    try {
+      final row = await _client
+          .from(_table)
+          .select('data')
+          .eq('user_id', uid)
+          .maybeSingle();
+      final data = row?['data'];
+      return data is Map ? data : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Whether the current user has a cloud backup available.
@@ -319,13 +355,27 @@ class CloudBackupService {
       return;
     }
 
-    // A genuine switch from a different account: wipe local data and pull
-    // this account's own cloud backup so the two accounts stay isolated.
+    // A genuine switch from a different account: wipe local data and pull this
+    // account's own cloud backup so the two accounts stay isolated.
     try {
+      final hasBackup = await hasCloudBackup();
       await _clearLocalData();
-      await restore();
+      if (hasBackup) {
+        final ok = await restore();
+        if (!ok) {
+          // Backup existed but couldn't be applied (e.g. transient error) —
+          // remember the user but DON'T write the synced marker, so the next
+          // startup retries the restore instead of leaving them empty.
+          await prefs.setString(_lastUserKey, uid);
+          return;
+        }
+      }
+      // No cloud backup: local is now correctly empty for this new account.
     } catch (_) {
-      // A sync hiccup must not block sign-in.
+      // A sync hiccup must not block sign-in; allow a later retry by not
+      // writing the synced marker here.
+      await prefs.setString(_lastUserKey, uid);
+      return;
     }
     await prefs.setString(_lastUserKey, uid);
     await prefs.setString(_syncedMarkerKey, DateTime.now().toIso8601String());

@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../../theme/luma_glass_theme.dart';
 import '../../../reminders/presentation/providers/reminders_providers.dart';
 
 String _timeOfDayGreeting(AppLocalizations l10n, DateTime now, String? name) {
@@ -22,9 +22,9 @@ String _timeOfDayGreeting(AppLocalizations l10n, DateTime now, String? name) {
 
 /// Home's header: a small date + weather "eyebrow" line above a soft, elegant
 /// time-of-day greeting, plus a notification bell that badges when a reminder
-/// is enabled. Theme-aware: warm light text + lavender accent on the dark/moon
-/// scene, deep-ink text + gold accent on the light/sun scene, so it stays
-/// legible — and feels premium — in both.
+/// is enabled. Restyled (Aug 2026) onto the fixed [LumaGlass] pink theme —
+/// no photo behind it anymore, so the old moon/sun text shadows are gone;
+/// layout/content is otherwise unchanged from the original Home header.
 class HomeHeader extends ConsumerWidget {
   const HomeHeader({super.key, required this.firstName});
 
@@ -38,15 +38,6 @@ class HomeHeader extends ConsumerWidget {
     // Editorial "eyebrow" line — upper-cased and letter-spaced so it reads as a
     // quiet label rather than a heavy second heading.
     final dateLabel = DateFormat('d MMMM · EEEE', locale).format(now).toUpperCase();
-    final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final accent = AstraKit.primary(isDark);
-    // A soft halo lifts the text off the busy photo — dark on the light scene,
-    // light on the dark scene.
-    final textShadow = Shadow(
-      color: isDark ? const Color(0x99000000) : const Color(0x66FFFFFF),
-      blurRadius: 8,
-      offset: const Offset(0, 1),
-    );
     final hasUnreadReminders = ref.watch(remindersStreamProvider).maybeWhen(
           data: (rows) => rows.any((r) => r.enabled),
           orElse: () => false,
@@ -65,12 +56,8 @@ class HomeHeader extends ConsumerWidget {
               // Eyebrow: a quiet date label.
               Text(
                 dateLabel,
-                style: AstraKit.body(isDark, fontSize: 11, fontWeight: FontWeight.w600)
-                    .copyWith(
-                      color: AstraKit.muted(isDark),
-                      letterSpacing: 1.4,
-                      shadows: [textShadow],
-                    ),
+                style: LumaGlass.sans(fontSize: 11, fontWeight: FontWeight.w600)
+                    .copyWith(color: LumaGlass.subtitle, letterSpacing: 1.4),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -81,8 +68,8 @@ class HomeHeader extends ConsumerWidget {
                   Flexible(
                     child: Text(
                       _timeOfDayGreeting(l10n, now, firstName),
-                      style: AstraKit.heading1(isDark, fontSize: 26, fontWeight: FontWeight.w600)
-                          .copyWith(letterSpacing: 0.2, height: 1.1, shadows: [textShadow]),
+                      style: LumaGlass.sans(fontSize: 26, fontWeight: FontWeight.w700, color: LumaGlass.heroInk)
+                          .copyWith(letterSpacing: 0.2, height: 1.1),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -90,10 +77,10 @@ class HomeHeader extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Icon(
                     Icons.auto_awesome,
-                    color: accent,
+                    color: LumaGlass.sparkle,
                     size: 17,
                     shadows: [
-                      Shadow(color: accent.withValues(alpha: 0.55), blurRadius: 12),
+                      Shadow(color: LumaGlass.sparkle.withValues(alpha: 0.55), blurRadius: 12),
                     ],
                   ),
                 ],
@@ -109,8 +96,6 @@ class HomeHeader extends ConsumerWidget {
           offset: 16,
           child: _NotificationBell(
           hasUnread: hasUnreadReminders,
-          isDark: isDark,
-          accent: accent,
           onTap: () => context.push(AppRoutes.reminders),
         ),
         ),
@@ -120,11 +105,9 @@ class HomeHeader extends ConsumerWidget {
 }
 
 class _NotificationBell extends StatelessWidget {
-  const _NotificationBell({required this.hasUnread, required this.isDark, required this.accent, required this.onTap});
+  const _NotificationBell({required this.hasUnread, required this.onTap});
 
   final bool hasUnread;
-  final bool isDark;
-  final Color accent;
   final VoidCallback onTap;
 
   @override
@@ -138,15 +121,15 @@ class _NotificationBell extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: accent.withValues(alpha: isDark ? 0.22 : 0.18),
+              color: LumaGlass.sparkle.withValues(alpha: 0.18),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Material(
-        color: isDark ? const Color(0x40231845) : const Color(0xD9FCF4E2),
-        shape: CircleBorder(side: BorderSide(color: accent.withValues(alpha: 0.32))),
+        color: Colors.white.withValues(alpha: 0.55),
+        shape: CircleBorder(side: BorderSide(color: Colors.white.withValues(alpha: 0.6))),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
@@ -155,7 +138,7 @@ class _NotificationBell extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(Icons.notifications_none_rounded, color: accent, size: 20),
+                const Icon(Icons.notifications_none_rounded, color: LumaGlass.sparkle, size: 20),
                 if (hasUnread)
                   Positioned(
                     top: -1,

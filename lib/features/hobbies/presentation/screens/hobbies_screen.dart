@@ -211,7 +211,12 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
 
   void _finishOnboarding() {
     if (!mounted) return;
-    context.go(AuthFlowRoutes.afterSignupHobbies, extra: true);
+    // Sign-up flow: the greeting (first welcome) hands off to the AI-rating
+    // step, then the final "all set" screen, then Home.
+    context.go(
+      AuthFlowRoutes.afterSignupHobbies,
+      extra: const {'first': true, 'next': AuthFlowRoutes.aiRating},
+    );
   }
 }
 

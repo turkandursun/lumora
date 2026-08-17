@@ -148,9 +148,9 @@
   "@onboardingPrivacyTitle": {
     "description": "Heading on the privacy onboarding page."
   },
-  "onboardingPrivacyBody": "Every word you write is encrypted and kept private — this space belongs entirely to you.",
+  "onboardingPrivacyBody": "Everything you write stays private to you — this space belongs entirely to you.",
   "@onboardingPrivacyBody": {
-    "description": "Reassuring copy about encryption and privacy on the final onboarding page."
+    "description": "Reassuring copy about privacy on the final onboarding page (no encryption claim)."
   },
   "shellTabHome": "Home",
   "@shellTabHome": {

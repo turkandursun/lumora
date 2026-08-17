@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../../theme/luma_glass_theme.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../../dreams/presentation/providers/dreams_providers.dart';
 import '../../../profile/presentation/providers/visit_tracker_providers.dart';
@@ -21,10 +22,13 @@ import '../widgets/home_stats_row.dart';
 import '../widgets/motivation_quote_carousel.dart';
 
 /// Home — a personalized greeting + mock weather, a rotating motivational
-/// quote, a compact stats row (streak / mood / goal / self-care), a
-/// 2-column feature shortcut grid, and a Dream Journal banner, all over the
-/// same ASTRA moon/sun scene every other screen uses. Journal writing
-/// itself lives on its own dedicated, individually PIN-gateable screen (see
+/// quote, a Journal Writing hero card, a 2-column feature shortcut grid, and
+/// a Dream Journal banner. Restyled (Aug 2026) onto the fixed [LumaGlass]
+/// pink glassmorphism theme — a flat pink wash instead of the ASTRA
+/// mountain photo, and every card swapped from [AstraGlassCard] to
+/// [LumaGlassCard] — while keeping this screen's original layout, section
+/// order and content exactly as they were. Journal writing itself lives on
+/// its own dedicated, individually PIN-gateable screen (see
 /// [JournalEntryScreen]), reached via the feature grid's "Journal Writing"
 /// card.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -90,21 +94,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final firstName = _userFirstName;
-    final mode = ref.watch(astraThemeProvider);
-    final isDark = mode == AstraThemeMode.dark;
     // "Daily streak" here means how many days the user has shown up — the same
     // visit-day counter the rest of the app uses — not the journaling streak.
     final streakCount = ref.watch(visitDaysCountProvider).maybeWhen(
           data: (v) => v,
           orElse: () => 0,
         );
+    // Only [DailyStreakBanner] (an intentionally distinct fiery-orange
+    // celebratory toast, left as-is) still needs the moon/sun flag — every
+    // other surface on this screen is fixed pink now.
+    final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          AstraMountainBackground(
-            isDark: isDark,
+          LumaGlassBackground(
             child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
@@ -126,7 +131,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         delayMs: 310,
                         child: HomeFeatureGrid(
                           items: homeFeatureItems(context, ref, l10n),
-                          isDark: isDark,
                         ),
                       ),
                     ],

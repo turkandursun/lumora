@@ -16,8 +16,11 @@ enum AstraThemeMode {
 class AstraThemeNotifier extends StateNotifier<AstraThemeMode> {
   AstraThemeNotifier(this._client)
       : _userId = _client.auth.currentUser?.id,
-        super(AstraThemeMode.dark) {
-    unawaited(_loadTheme());
+        super(AstraThemeMode.light) {
+    // The app moved to the 7-family light pastel palette system. Light/dark
+    // mode is deprecated; the whole app is now light so screen colours stay
+    // readable on the pastel backgrounds. We no longer read the saved mode.
+    // (setTheme is kept for compatibility but is unused by the UI.)
   }
 
   final SupabaseClient _client;

@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/database/app_database.dart';
-import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../../theme/luma_glass_theme.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../domain/daily_content.dart';
 import '../../domain/quote.dart';
@@ -158,10 +158,11 @@ _Memory? _findMemory(List<JournalEntryRow> entries, DateTime now, bool isTr) {
   return _Memory(label: label, text: text.trim());
 }
 
-/// Accent used across this card's slides — the app's theme accent, matching the
-/// Profile screen: soft lavender on the moon scene, gold on the bright sun
-/// scene.
-Color _accent(bool isDark) => AstraKit.primary(isDark);
+/// Accent used across this card's slides. Restyled (Aug 2026) onto the fixed
+/// [LumaGlass] pink theme — no longer moon/sun-aware, so `isDark` is ignored
+/// (kept as a parameter purely so every existing call site below is
+/// untouched).
+Color _accent(bool isDark) => LumaGlass.sparkle;
 
 int? _mostCommonMoodLast7(Map<DateTime, int> log) {
   final today = DateTime.now();
@@ -253,7 +254,12 @@ class _MotivationQuoteCarouselState
     }
     final dayQuote =
         rotationQuotes[dailyRotationIndex(now, rotationQuotes.length)];
-    final themeDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
+    // This card is now a fixed pink glass surface (see [LumaGlassCard] below)
+    // rather than the moon/sun-aware mountain-scene glass, so every slide
+    // below is forced onto the light-glass branch of its `isDark`-driven
+    // styling — always readable on this card — instead of watching the
+    // app's theme.
+    const themeDark = false;
     final accent = _accent(themeDark);
 
     // Personalization signals: dominant recent mood + an "on this day" memory.
@@ -279,11 +285,9 @@ class _MotivationQuoteCarouselState
     final total = slides.length;
     final page = _page.clamp(0, total - 1);
 
-    return AstraGlassCard(
-      isDark: themeDark,
-      primaryColor: accent,
+    return LumaGlassCard(
       padding: const EdgeInsets.fromLTRB(20, 18, 16, 14),
-      borderRadius: 24,
+      radius: 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

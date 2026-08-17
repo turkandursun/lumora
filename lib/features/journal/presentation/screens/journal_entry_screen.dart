@@ -131,10 +131,11 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       lastDate: DateTime(2030),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: Color(0xFFC084FC),
-            onPrimary: Colors.black,
-            surface: Color(0xFF1A1233),
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFFCE7CA6),
+            onPrimary: Colors.white,
+            surface: Color(0xFFFCE8EE),
+            onSurface: Color(0xFF34121F),
           ),
         ),
         child: child!,
@@ -430,8 +431,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       ..showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          backgroundColor:
-              isDark ? const Color(0xF01A1233) : const Color(0xF0FFF8EE),
+          backgroundColor: const Color(0xF0FCE8EE),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(color: primary.withValues(alpha: 0.4)),
@@ -448,9 +448,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                 style: GoogleFonts.outfit(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? const Color(0xFFF6ECD2)
-                      : const Color(0xFF1A1005),
+                  color: const Color(0xFF34121F),
                 ),
               ),
             ],
@@ -562,9 +560,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                               style: GoogleFonts.outfit(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w700,
-                                                color: isDark
-                                                    ? const Color(0xFFF6ECD2)
-                                                    : const Color(0xFF1A1005),
+                                                color: const Color(0xFF34121F),
                                               ),
                                             ),
                                           ),
@@ -608,9 +604,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                       style: GoogleFonts.outfit(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
-                                        color: isDark
-                                            ? const Color(0xFFF6ECD2)
-                                            : const Color(0xFF1A1005),
+                                        color: const Color(0xFF34121F),
                                       ),
                                       cursorColor: primary,
                                       maxLines: 1,
@@ -629,9 +623,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                             : 'Summary...',
                                         hintStyle: GoogleFonts.outfit(
                                           fontSize: 13,
-                                          color: isDark
-                                              ? const Color(0x99D9B24A)
-                                              : const Color(0x99A07A1E),
+                                          color: const Color(0x997A4058),
                                         ),
                                       ),
                                     ),
@@ -661,9 +653,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                   textAlignVertical: TextAlignVertical.top,
                                   style: GoogleFonts.outfit(
                                     fontSize: 16,
-                                    color: isDark
-                                        ? const Color(0xFFF6ECD2)
-                                        : const Color(0xFF1A1005),
+                                    color: const Color(0xFF34121F),
                                     height: 1.5,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -684,9 +674,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                         : 'Write what is on your mind today...',
                                     hintStyle: GoogleFonts.outfit(
                                       fontSize: 15,
-                                      color: isDark
-                                          ? const Color(0x99D9B24A)
-                                          : const Color(0x99A07A1E),
+                                      color: const Color(0x997A4058),
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
@@ -701,9 +689,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                     style: GoogleFonts.outfit(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: isDark
-                                          ? const Color(0x88C0A8FF)
-                                          : const Color(0x88996600),
+                                      color: const Color(0x886B3550),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
@@ -751,9 +737,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                     style: GoogleFonts.outfit(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
-                                      color: isDark
-                                          ? const Color(0xFFEDE0FF)
-                                          : const Color(0xFF1A1005),
+                                      color: const Color(0xFF34121F),
                                     ),
                                   ),
                                 ],
@@ -765,9 +749,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                     : 'Speak to write — your words become text.',
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
-                                  color: isDark
-                                      ? const Color(0x99C0A8FF)
-                                      : const Color(0x99664400),
+                                  color: const Color(0x996B3550),
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -857,21 +839,15 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
 
               // ── Bottom Action Bar + Save Button (fixed at bottom)
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: isDark
-                        ? [
-                            const Color(0x00000000),
-                            const Color(0xCC0D0818),
-                            const Color(0xFF0B0716),
-                          ]
-                        : [
-                            const Color(0x00000000),
-                            const Color(0xCCFAF0D8),
-                            const Color(0xFFF5E8C8),
-                          ],
+                    colors: [
+                      Color(0x00000000),
+                      Color(0xCCF8DCE6),
+                      Color(0xFFF1D1DE),
+                    ],
                   ),
                 ),
                 padding: EdgeInsets.fromLTRB(
@@ -922,9 +898,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                               : 'Your journal is safe & private with you.',
                           style: GoogleFonts.outfit(
                             fontSize: 11,
-                            color: isDark
-                                ? const Color(0x88C0A8FF)
-                                : const Color(0x88664400),
+                            color: const Color(0x886B3550),
                           ),
                         ),
                       ],
@@ -968,23 +942,33 @@ class _GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Frosted glass: a soft blur of the mountain scene behind each card keeps
-    // the writing legible while preserving the premium, airy look. The light
-    // (sun) theme uses a warmer, more opaque fill so dark text stays crisp
-    // over the bright golden scene.
+    // Real frosted glass, matching Home's LumaGlass cards: a backdrop blur
+    // plus a soft translucent-white gradient fill and border, rather than a
+    // flat tinted box.
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0x59181026) : const Color(0x9EFBF1DD),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0x8CFFFFFF), Color(0x47FFFFFF)],
+            ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: primary.withValues(alpha: 0.40),
               width: 1.2,
             ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x28C77D9B),
+                blurRadius: 22,
+                offset: Offset(0, 10),
+              ),
+            ],
           ),
           child: child,
         ),
@@ -1029,9 +1013,7 @@ class _PhotoPreviewCard extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: isDark
-                      ? const Color(0xFFF6ECD2)
-                      : const Color(0xFF1A1005),
+                  color: const Color(0xFF34121F),
                 ),
               ),
               const Spacer(),
@@ -1059,10 +1041,10 @@ class _PhotoPreviewCard extends StatelessWidget {
   }
 }
 
-/// Full-bleed background for the journal screen: the app's signature mountain
-/// scene (moon over the peaks for the dark theme, sun for the light theme),
-/// shown vividly and crossfading whenever the user switches themes. A gentle
-/// top scrim keeps the app-bar icons readable while the scene stays vivid.
+/// Full-bleed background for the journal screen: the app's LumaGlass pink
+/// gradient, matching Home and every other screen. `isDark` is accepted only
+/// for call-site compatibility and no longer changes anything — the app's
+/// theme is always this soft pink now.
 class _MountainBackground extends StatelessWidget {
   const _MountainBackground({required this.isDark, required this.child});
 
@@ -1071,53 +1053,16 @@ class _MountainBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset = isDark
-        ? 'assets/images/app_theme_dark.jpeg'
-        : 'assets/images/app_theme_light.jpeg';
-    return ColoredBox(
-      color: isDark ? const Color(0xFF0F0B1A) : const Color(0xFFFDF6E9),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 450),
-            layoutBuilder: (current, previous) => Stack(
-              fit: StackFit.expand,
-              children: [...previous, if (current != null) current],
-            ),
-            child: SizedBox.expand(
-              key: ValueKey(asset),
-              child: Image.asset(
-                asset,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
-          ),
-          // Softens the busy scene (rocks, rays, foliage) so it reads as an
-          // atmosphere behind the cards rather than competing detail.
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-            child: const SizedBox.expand(),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: isDark
-                    ? const [Color(0x55000000), Color(0x00000000)]
-                    : const [Color(0x1F000000), Color(0x00000000)],
-                stops: const [0.0, 0.30],
-              ),
-            ),
-          ),
-          child,
-        ],
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFCE8EE), Color(0xFFF8DCE6), Color(0xFFF1D1DE)],
+          stops: [0.0, 0.55, 1.0],
+        ),
       ),
+      child: child,
     );
   }
 }
@@ -1146,7 +1091,7 @@ class _CircleBtn extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isDark ? const Color(0x44231845) : const Color(0x55FFF8EE),
+          color: Colors.white.withValues(alpha: 0.5),
           border: Border.all(color: primary.withValues(alpha: 0.3)),
         ),
         child: Icon(icon, size: 18, color: primary),
@@ -1219,7 +1164,7 @@ class _PhotoChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            color: isDark ? const Color(0x66231845) : const Color(0x88FFF8EE),
+            color: Colors.white.withValues(alpha: 0.55),
             border: Border.all(
               color: (hasPhoto ? Colors.greenAccent : primary)
                   .withValues(alpha: 0.45),
@@ -1227,7 +1172,7 @@ class _PhotoChip extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.10),
+                color: Colors.black.withValues(alpha: 0.10),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -1251,9 +1196,7 @@ class _PhotoChip extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? const Color(0xFFF6ECD2)
-                      : const Color(0xFF1A1005),
+                  color: const Color(0xFF34121F),
                 ),
               ),
             ],
@@ -1282,19 +1225,13 @@ class _SealButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lavender pill on the dark theme (matching the home page's accent), gold
-    // on the light theme.
-    final gradient = isDark
-        ? const LinearGradient(
-            colors: [Color(0xFFC9A7F5), Color(0xFF9B6FE0), Color(0xFF7C4DB8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )
-        : const LinearGradient(
-            colors: [Color(0xFFFFD966), Color(0xFFD4A820), Color(0xFFAA8010)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          );
+    // The app's signature rose-pink pill, matching every other primary CTA
+    // (Home's quick-add, AI chat's send button) — no more theme branching.
+    const gradient = LinearGradient(
+      colors: [Color(0xFFEAAAC8), Color(0xFFCE7CA6)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 200),
@@ -1307,10 +1244,8 @@ class _SealButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(30),
             gradient: enabled
                 ? gradient
-                : LinearGradient(
-                    colors: isDark
-                        ? [const Color(0x44C084FC), const Color(0x228B5CF6)]
-                        : [const Color(0x44D4AF37), const Color(0x22B8860B)],
+                : const LinearGradient(
+                    colors: [Color(0x44CE7CA6), Color(0x22CE7CA6)],
                   ),
             boxShadow: enabled
                 ? [
@@ -1333,9 +1268,9 @@ class _SealButton extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: Colors.black.withValues(alpha: 0.18),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.local_florist_rounded,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: Colors.white,
                   size: 20,
                 ),
               ),
@@ -1350,7 +1285,7 @@ class _SealButton extends StatelessWidget {
                       style: GoogleFonts.playfairDisplay(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : const Color(0xFF1A0F00),
+                        color: Colors.white,
                       ),
                     ),
                     Text(
@@ -1360,16 +1295,13 @@ class _SealButton extends StatelessWidget {
                       style: GoogleFonts.outfit(
                         fontSize: 11,
                         fontWeight: FontWeight.w400,
-                        color:
-                            isDark ? Colors.white70 : const Color(0x99331100),
+                        color: Colors.white70,
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.auto_awesome,
-                  color: isDark ? Colors.white : const Color(0xFF1A0F00),
-                  size: 18),
+              const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
               const SizedBox(width: 18),
             ],
           ),

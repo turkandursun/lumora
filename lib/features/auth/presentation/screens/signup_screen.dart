@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase
     show AuthState;
 
+import '../../../../core/providers/astra_palette_provider.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
@@ -181,12 +182,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
 
-    // Entry scene shared with the login / theme-choice screens: the ASTRA
-    // wordmark and tagline are baked into the top, leaving a wide empty lower
-    // area where the panel sits — so the wordmark always stays above it.
-    final bgAsset = isDark
-        ? 'assets/images/astra_entry_bg.png'
-        : 'assets/images/astra_sun_entry_g3.png';
+    // Background follows the user's chosen palette so the auth screens match
+    // the rest of the app.
+    final palette = ref.watch(activePaletteProvider);
 
     final errorMessage =
         _formError ?? _serverError(l10n, authState.failureReason);
@@ -197,9 +195,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Hero(
-            tag: 'astra_bg',
-            child: Image.asset(bgAsset, fit: BoxFit.cover),
+          DecoratedBox(
+            decoration: BoxDecoration(gradient: palette.backgroundGradient),
           ),
           SafeArea(
             child: LayoutBuilder(
@@ -227,9 +224,30 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                   ],
                                 ),
                               ),
-                              // The scene's baked ASTRA wordmark + moon fill the
-                              // top; this spacer drops the panel into the empty
-                              // lower area, keeping the wordmark above it.
+                              const SizedBox(height: 8),
+                              AstraEntrance(
+                                index: 0,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Text('ASTRA',
+                                    textAlign: TextAlign.center,
+                                    style:
+                                        AstraKit.wordmark(false, fontSize: 38)),
+                              ),
+                              const SizedBox(height: 6),
+                              AstraEntrance(
+                                index: 1,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Text(
+                                  isTr
+                                      ? 'Kendine bir alan aç.'
+                                      : 'Make space for yourself.',
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      AstraKit.mutedText(false, fontSize: 13.5),
+                                ),
+                              ),
                               const Spacer(),
                               _animated(_buildPanel(
                                   isDark, isTr, authState, errorMessage)),

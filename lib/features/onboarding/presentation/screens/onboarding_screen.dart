@@ -45,9 +45,9 @@ const List<_Beat> _beats = [
     titleTr: 'Anlarını mühürle',
     titleEn: 'Seal your moments',
     bodyTr:
-        'Aklından geçenleri yaz ya da sesinle anlat. Her günlük şifreli ve kilitli; yalnızca sana ait.',
+        'Aklından geçenleri yaz ya da sesinle anlat. Her günlük yalnızca sana ait ve gizli kalır.',
     bodyEn:
-        'Write what is on your mind, or speak it aloud. Every entry is encrypted and locked — yours alone.',
+        'Write what is on your mind, or speak it aloud. Every entry stays private — yours alone.',
   ),
   _Beat(
     icon: Icons.spa_rounded,
@@ -63,9 +63,9 @@ const List<_Beat> _beats = [
     titleTr: 'Yolculuk seninle güvende',
     titleEn: 'The journey is safe with you',
     bodyTr:
-        'Verilerin şifreli, günlüklerin sadece senin. Hazırsan, ilk adımı birlikte atalım.',
+        'Günlüklerin sadece senin, bu alan tamamen sana ait. Hazırsan, ilk adımı birlikte atalım.',
     bodyEn:
-        'Your data is encrypted, your journals only yours. When you are ready, we take the first step together.',
+        'Your journals are yours alone, this space is entirely yours. When you are ready, we take the first step together.',
   ),
 ];
 
@@ -137,7 +137,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return Scaffold(
       body: AstraMountainBackground(
         isDark: isDark,
-        useEntryScene: true,
         child: SafeArea(
           child: ResponsiveContent(
             child: Column(

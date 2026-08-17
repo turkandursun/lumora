@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASTRA · Tasarım Sistemi</title>
+<style>
+  :root{
+    --title:#1D1A22; --body:#2C2731; --muted:#4A4452;
+    --ink-soft: rgba(29,26,34,.06);
+    --page-top:#F7F2FF; --page-bottom:#E8DDFB;
+    --radius-lg:26px; --radius-md:18px; --radius-sm:12px;
+    --shadow-soft: 0 10px 30px rgba(29,26,34,.08), 0 2px 8px rgba(29,26,34,.05);
+    --shadow-card: 0 8px 24px rgba(29,26,34,.07);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--font); color:var(--body);
+    background:linear-gradient(180deg,var(--page-top),var(--page-bottom) 60%,#EFE7FB);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased; line-height:1.55;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:56px 24px 96px}
+  h1,h2,h3,h4{color:var(--title);letter-spacing:-.02em;line-height:1.15;margin:0}
+  h1{font-size:44px;font-weight:800}
+  h2{font-size:28px;font-weight:800;margin:0 0 6px}
+  h3{font-size:19px;font-weight:750}
+  p{margin:.5em 0}
+  .sub{color:var(--muted)}
+  .lead{font-size:17px;color:var(--body)}
+  .eyebrow{font-size:12.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#8E6FD6}
+  section{margin-top:64px}
+  .panel{
+    background:rgba(255,255,255,.72);
+    border:1px solid rgba(29,26,34,.06);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-card);
+    padding:28px;
+    backdrop-filter:blur(8px);
+  }
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+  .pill{display:inline-block;padding:4px 12px;border-radius:999px;background:rgba(142,111,214,.12);color:#7A5BC7;font-size:12.5px;font-weight:700}
+  .divider{height:1px;background:rgba(29,26,34,.08);margin:22px 0}
+  ul.clean{list-style:none;padding:0;margin:.4em 0}
+  ul.clean li{padding:7px 0 7px 26px;position:relative;color:var(--body)}
+  ul.clean li:before{content:"";position:absolute;left:2px;top:14px;width:8px;height:8px;border-radius:50%;background:#B59AE8}
+
+  /* type scale */
+  .type-row{display:flex;align-items:baseline;gap:18px;padding:10px 0;border-bottom:1px dashed rgba(29,26,34,.1)}
+  .type-row:last-child{border-bottom:0}
+  .type-label{width:150px;color:var(--muted);font-size:13px;flex:none}
+
+  /* token chips */
+  .tokens{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:820px){.tokens{grid-template-columns:repeat(2,1fr)}}
+  .tok{display:flex;align-items:center;gap:10px;font-size:12.5px}
+  .sw{width:34px;height:34px;border-radius:10px;flex:none;border:1px solid rgba(29,26,34,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+  .tok b{display:block;color:var(--title);font-weight:700;font-size:12.5px}
+  .tok span{color:var(--muted);font-size:11px;letter-spacing:.02em}
+
+  /* theme block */
+  .theme{--c-primary:#CBB7F6}
+  .theme-head{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+  .theme-dot{width:46px;height:46px;border-radius:14px;box-shadow:var(--shadow-soft)}
+  .theme-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:26px;align-items:start}
+  @media(max-width:820px){.theme-grid{grid-template-columns:1fr}}
+
+  /* phone preview, themed via scoped CSS vars */
+  .phone{
+    border-radius:30px;padding:16px 14px 12px;
+    background:linear-gradient(180deg, var(--p-top), var(--p-bottom));
+    box-shadow:var(--shadow-soft), inset 0 0 0 1px rgba(255,255,255,.5);
+    min-height:330px;display:flex;flex-direction:column;gap:12px;
+  }
+  .p-brand{text-align:center;font-weight:800;letter-spacing:.24em;font-size:11px;color:var(--title);opacity:.7;margin-top:4px}
+  .p-h{font-size:20px;font-weight:800;color:var(--title);line-height:1.2;margin-top:4px}
+  .p-sub{font-size:12px;color:var(--muted)}
+  .glass{
+    background:rgba(255,255,255,.72);border:1px solid var(--p-border);
+    border-radius:18px;box-shadow:0 8px 20px rgba(29,26,34,.08);
+    padding:14px;backdrop-filter:blur(6px);
+  }
+  .p-input{background:var(--p-input);border-radius:12px;padding:11px 12px;color:var(--muted);font-size:12px;border:1px solid var(--p-border)}
+  .p-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .btn{border:0;border-radius:999px;padding:9px 16px;font-weight:800;font-size:12px;cursor:default}
+  .btn-primary{background:var(--p-primary);color:var(--p-on)}
+  .btn-secondary{background:var(--p-secondary-btn);color:var(--title);border:1px solid var(--p-border)}
+  .chip{padding:7px 13px;border-radius:999px;font-size:11.5px;font-weight:700}
+  .chip.sel{background:var(--p-primary);color:var(--p-on)}
+  .chip.un{background:var(--p-chip-un);color:var(--muted)}
+  .icocon{width:30px;height:30px;border-radius:9px;background:var(--p-ico);display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+  .p-nav{margin-top:auto;display:flex;justify-content:space-around;align-items:center;background:rgba(255,255,255,.66);border:1px solid var(--p-border);border-radius:18px;padding:9px 6px}
+  .p-nav .n{font-size:17px}
+  .p-nav .active{color:var(--p-nav-active)}
+  .p-nav .inactive{color:var(--p-nav-inactive);opacity:.9}
+
+  .note{background:rgba(142,111,214,.08);border:1px solid rgba(142,111,214,.16);border-radius:16px;padding:16px 18px}
+  code{background:rgba(29,26,34,.06);padding:2px 7px;border-radius:6px;font-size:13px}
+  .step{display:flex;gap:14px;padding:12px 0;border-bottom:1px dashed rgba(29,26,34,.1)}
+  .step:last-child{border-bottom:0}
+  .step .num{width:30px;height:30px;flex:none;border-radius:9px;background:#CBB7F6;color:#3A2B63;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .footer{margin-top:70px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <header>
+    <div class="eyebrow">ASTRA · Tasarım Sistemi v1</div>
+    <h1 style="margin-top:12px">Sakin. Zarif. Premium.</h1>
+    <p class="lead" style="max-width:680px;margin-top:14px">
+      ASTRA için baştan sona, yumuşak cam ve hafif kil hissini birleştiren, nefes alan,
+      okunabilirliği her şeyin önünde tutan bir görsel sistem. Amaç: uygulamayı daha
+      akıcı, sade ve yüksek albenili yapmak — mevcut akışları, route'ları ve işlevleri
+      hiç bozmadan. Değişen tek şey görsel dil: arka plan, renk, kart, input, buton,
+      ikon kapları, navigasyon ve genel his.
+    </p>
+    <div style="margin-top:16px">
+      <span class="pill">Soft glassmorphism</span>
+      <span class="pill">Soft claymorphism</span>
+      <span class="pill">7 pastel tema</span>
+      <span class="pill">Yüksek okunabilirlik</span>
+    </div>
+  </header>
+
+  <!-- PRINCIPLES -->
+  <section>
+    <div class="eyebrow">01 · Yön</div>
+    <h2>Tasarım karakteri</h2>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="panel">
+        <h3>Ne olmalı</h3>
+        <ul class="clean">
+          <li>Ferah, sakin, ilk bakışta anlaşılır — her ekran “nefes alan” boşluk düzenine sahip.</li>
+          <li>Kartlar belli ama sert çerçeveli değil: yumuşak radius, ince border, hafif blur, yumuşak gölge.</li>
+          <li>Yumuşak gradyanlı arka planlar; içerik daima ön planda, arka plan asla baskın değil.</li>
+          <li>Premium ama ulaşılabilir; yetişkin ama yumuşak — çocuksu değil.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Ne olmamalı</h3>
+        <ul class="clean">
+          <li>Kalın çizgili klasik kutular, sert gölgeler, parlak/neon renkler.</li>
+          <li>Yoğun kozmos/desen, görsel gürültü, fazla dolu ekranlar.</li>
+          <li>Aşırı ince fontlar veya düşük kontrastlı, okunması zor metinler.</li>
+          <li>“Güzel ama işlevi zorlaştıran” süsleme.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note" style="margin-top:18px">
+      <b>Tek cümlede:</b> Kutu olduğu belli ama çok “çizilmiş” gibi durmayan yumuşak paneller;
+      hafif katman hissi; sakin pudramsı renkler; koyu, net yazı.
+    </div>
+  </section>
+
+  <!-- TYPOGRAPHY -->
+  <section>
+    <div class="eyebrow">02 · Tipografi</div>
+    <h2>Yazı sistemi</h2>
+    <p class="sub" style="max-width:680px">Premium ama kolay okunur bir sans-serif (Inter / SF / Segoe).
+      Başlıklar güçlü ve net; alt metinler yumuşak ama okunaklı. Metin renkleri temadan bağımsız sabittir,
+      böylece açık pastel yüzeylerde okunabilirlik hiç bozulmaz.</p>
+    <div class="panel" style="margin-top:16px">
+      <div class="type-row"><div class="type-label">Display / H1 · 800</div><div style="font-size:34px;font-weight:800;color:var(--title)">Zihnine bir alan aç</div></div>
+      <div class="type-row"><div class="type-label">Başlık / H2 · 800</div><div style="font-size:24px;font-weight:800;color:var(--title)">Bugün neler hissediyorsun?</div></div>
+      <div class="type-row"><div class="type-label">Alt başlık · 700</div><div style="font-size:18px;font-weight:700;color:var(--title)">Günlük · Duygu · Luma</div></div>
+      <div class="type-row"><div class="type-label">Gövde · 500</div><div style="font-size:15px;color:var(--body)">Düşüncelerini yaz ya da sesli anlat; burada güvendesin.</div></div>
+      <div class="type-row"><div class="type-label">İkincil · 500</div><div style="font-size:13px;color:var(--muted)">Luma burada, seni dinliyor.</div></div>
+      <div class="divider"></div>
+      <div class="tokens">
+        <div class="tok"><span class="sw" style="background:#1D1A22"></span><div><b>Başlık</b><span>#1D1A22</span></div></div>
+        <div class="tok"><span class="sw" style="background:#2C2731"></span><div><b>Gövde</b><span>#2C2731</span></div></div>
+        <div class="tok"><span class="sw" style="background:#4A4452"></span><div><b>İkincil</b><span>#4A4452</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- THEMES -->
+  <section>
+    <div class="eyebrow">03 · Temalar</div>
+    <h2>7 özgün pastel tema</h2>
+    <p class="sub" style="max-width:720px">Uygulama tek renkli değil. Kullanıcı Profil/Ayarlar'dan temayı değiştirdiğinde
+      sadece bir butonun rengi değil, uygulamanın <b>tüm havası</b> o renge uyarlanır. Her tema pudramsı,
+      sakin ve premium. Her kartta solda tam token seti, sağda o temayla renklenmiş canlı bir mini ekran var.</p>
+
+    <!-- 1 Soft Lilac Mist -->
+    <div class="panel theme" style="margin-top:22px">
+      <div class="theme-head">
+        <div class="theme-dot" style="background:#CBB7F6"></div>
+        <div><h3>1 · Soft Lilac Mist</h3><div class="sub">Sakin, zarif lila</div></div>
+      </div>
+      <div class="theme-grid">
+        <div class="tokens">
+          <div class="tok"><span class="sw" style="background:#CBB7F6"></span><div><b>primary</b><span>#CBB7F6</span></div></div>
+          <div class="tok"><span class="sw" style="background:#B59AE8"></span><div><b>secondary</b><span>#B59AE8</span></div></div>
+          <div class="tok"><span class="sw" style="background:#F5F0FF"></span><div><b>surface</b><span>#F5F0FF</span></div></div>
+          <div class="tok"><span class="sw" style="background:#FCFAFF"></span><div><b>surface+</b><span>#FCFAFF</span></div></div>
+          <div class="tok"><span class="sw" style="background:linear-gradient(#F7F2FF,#E8DDFB)"></span><div><b>bg gradient</b><span>#F7F2FF→#E8DDFB</span></div></div>
+          <div class="tok"><span class="sw" style="background:#E8DDFB"></span><div><b>icon kabı</b><span>#E8DDFB</span></div></div>
+          <div class="tok"><span class="sw" style="background:#B59AE8"></span><div><b>active accent</b><span>#B59AE8</span></div></div>
+          <div class="tok"><span class="sw" style="background:#8E6FD6"></span><div><b>nav aktif</b><span>#8E6FD6</span></div></div>
+          <div class="tok"><span class="sw" style="background:#A79FB4"></span><div><b>nav pasif</b><span>#A79FB4</span></div></div>
+        </div>
+        <div class="phone" style="--p-top:#F7F2FF;--p-bottom:#E8DDFB;--p-primary:#CBB7F6;--p-on:#3A2B63;--p-secondary-btn:#F0EAFB;--p-border:rgba(181,154,232,.28);--p-input:#F3EEFC;--p-ico:#E8DDFB;--p-chip-un:#EFEAFA;--p-nav-active:#8E6FD6;--p-nav-inactive:#A79FB4">
+          <div class="p-brand">✦ ASTRA</div>
+          <div class="p-h">Bugün neler<br>hissediyorsun?</div>
+          <div class="glass">
+            <div style="display:flex;gap:10px;align-items:center"><span class="icocon">✎</span><b style="font-size:13px;color:var(--title)">Günlük</b></div>
+            <div class="p-input" style="margin-top:10px">Düşüncelerini yaz ya da anlat…</div>
+            <div class="p-row"><span class="btn btn-primary">Yaz</span><span class="btn btn-secondary">Sesli anlat</span></div>
+          </div>
+          <div class="p-row"><span class="chip sel">Sakin</span><span class="chip un">Yorgun</span><span class="chip un">Umutlu</span></div>
+          <div class="p-nav"><span class="n active">✦</span><span class="n inactive">☾</span><span class="n inactive">✎</span><span class="n inactive">◔</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 Dusty Rose Haze -->
+    <div class="panel theme" style="margin-top:18px">
+      <div class="theme-head">
+        <div class="theme-dot" style="background:#D7A9B8"></div>
+        <div><h3>2 · Dusty Rose Haze</h3><div class="sub">Yetişkin, tozlu pembe</div></div>
+      </div>
+      <div class="theme-grid">
+        <div class="tokens">
+          <div class="tok"><span class="sw" style="background:#D7A9B8"></span><div><b>primary</b><span>#D7A9B8</span></div></div>
+          <div class="tok"><span class="sw" style="background:#C78DA3"></span><div><b>secondary</b><span>#C78DA3</span></div></div>
+          <div class="tok"><span class="sw" style="background:#FAEEF2"></span><div><b>surface</b><span>#FAEEF2</span></div></div>
+          <div class="tok"><span class="sw" style="background:#FFFAFC"></span><div><b>surface+</b><span>#FFFAFC</span></div></div>
+          <div class="tok"><span class="sw" style="background:linear-gradient(#FBF0F4,#F1D8E0)"></span><div><b>bg gradient</b><span>#FBF0F4→#F1D8E0</span></div></div>
+          <div class="tok"><span class="sw" style="background:#F1D8E0"></span><div><b>icon kabı</b><span>#F1D8E0</span></div></div>
+          <div class="tok"><span class="sw" style="background:#C78DA3"></span><div><b>active accent</b><span>#C78DA3</span></div></div>
+          <div class="tok"><span class="sw" style="background:#B56F86"></span><div><b>nav aktif</b><span>#B56F86</span></div></div>
+          <div class="tok"><span class="sw" style="background:#B29AA2"></span><div><b>nav pasif</b><span>#B29AA2</span></div></div>
+        </div>
+        <div class="phone" style="--p-top:#FBF0F4;--p-bottom:#F1D8E0;--p-primary:#D7A9B8;--p-on:#4A2632;--p-secondary-btn:#F6E4EA;--p-border:rgba(199,141,163,.28);--p-input:#F8EAEF;--p-ico:#F1D8E0;--p-chip-un:#F4E2E8;--p-nav-active:#B56F86;--p-nav-inactive:#B29AA2">
+          <div class="p-brand">✦ ASTRA</div>
+          <div class="p-h">Bugün neler<br>hissediyorsun?</div>
+          <div class="glass">
+            <div style="display:flex;gap:10px;align-items:center"><span class="icocon">✎</span><b style="font-size:13px;color:var(--title)">Günlük</b></div>
+            <div class="p-input" style="margin-top:10px">Düşüncelerini yaz ya da anlat…</div>
+            <div class="p-row"><span class="btn btn-primary">Yaz</span><span class="btn btn-secondary">Sesli anlat</span></div>
+          </div>
+          <div class="p-row"><span class="chip sel">Sakin</span><span class="chip un">Yorgun</span><span class="chip un">Umutlu</span></div>
+          <div class="p-nav"><span class="n active">✦</span><span class="n inactive">☾</span><span class="n inactive">✎</span><span class="n inactive">◔</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 Sage Veil -->
+    <div class="panel theme" style="margin-top:18px">
+      <div class="theme-head">
+        <div class="theme-dot" style="background:#AFC8B2"></div>
+        <div><h3>3 · Sage Veil</h3><div class="sub">Huzurlu, doğal yeşil</div></div>
+      </div>
+      <div class="theme-grid">
+        <div class="tokens">
+          <div class="tok"><span class="sw" style="background:#AFC8B2"></span><div><b>primary</b><span>#AFC8B2</span></div></div>
+          <div class="tok"><span class="sw" style="background:#8EAD92"></span><div><b>secondary</b><span>#8EAD92</span></div></div>
+          <div class="tok"><span class="sw" style="background:#F1F7F2"></span><div><b>surface</b><span>#F1F7F2</span></div></div>
+          <div class="tok"><span class="sw" style="background:#FBFEFB"></span><div><b>surface+</b><span>#FBFEFB</span></div></div>
+          <div class="tok"><span class="sw" style="background:linear-gradient(#F2F9F3,#DDE9DF)"></span><div><b>bg gradient</b><span>#F2F9F3→#DDE9DF</span></div></div>
+          <div class="tok"><span class="sw" style="background:#DDE9DF"></span><div><b>icon kabı</b><span>#DDE9DF</span></div></div>
+          <div class="tok"><span class="sw" style="background:#8EAD92"></span><div><b>active accent</b><span>#8EAD92</span></div></div>
+          <div class="tok"><span class="sw" style="background:#6E9173"></span><div><b>nav aktif</b><span>#6E9173</span></div></div>
+          <div class="tok"><span class="sw" style="background:#9CA99E"></span><div><b>nav pasif</b><span>#9CA99E</span></div></div>
+        </div>
+        <div class="phone" style="--p-top:#F2F9F3;--p-bottom:#DDE9DF;--p-primary:#AFC8B2;--p-on:#1F3A25;--p-secondary-btn:#E6F1E8;--p-border:rgba(142,173,146,.30);--p-input:#EDF4EE;--p-ico:#DDE9DF;--p-chip-un:#E4EEE6;--p-nav-active:#6E9173;--p-nav-inactive:#9CA99E">
+          <div class="p-brand">✦ ASTRA</div>
+          <div class="p-h">Bugün neler<br>hissediyorsun?</div>
+          <div class="glass">
+            <div style="display:flex;gap:10px;align-items:center"><span class="icocon">✎</span><b style="font-size:13px;color:var(--title)">Günlük</b></div>
+            <div class="p-input" style="margin-top:10px">Düşüncelerini yaz ya da anlat…</div>
+            <div class="p-row"><span class="btn btn-primary">Yaz</span><span class="btn btn-secondary">Sesli anlat</span></div>
+          </div>
+          <div class="p-row"><span class="chip sel">Sakin</span><span class="chip un">Yorgun</span><span class="chip un">Umutlu</span></div>
+          <div class="p-nav"><span class="n active">✦</span><span class="n inactive">☾</span><span class="n inactive">✎</span><span class="n inactive">◔</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 Muted Sky Bloom -->
+    <div class="panel theme" style="margin-top:18px">
+      <div class="theme-head">
+        <div class="theme-dot" style="background:#AFC7DE"></div>
+        <div><h3>4 · Muted Sky Bloom</h3><div class="sub">Yumuşak, tozlu mavi</div></div>
+      </div>
+      <div class="theme-grid">
+        <div class="tokens">
+          <div class="tok"><span class="sw" style="background:#AFC7DE"></span><div><b>primary</b><span>#AFC7DE</span></div></div>
+          <div class="tok"><span class="sw" style="background:#8EABC7"></span><div><b>secondary</b><span>#8EABC7</span></div></div>
+          <div class="tok"><span class="sw" style="background:#F3F8FC"></span><div><b>surface</b><span>#F3F8FC</span></div></div>
+          <div class="tok"><span class="sw" style="background:#FAFCFE"></span><div><b>surface+</b><span>#FAFCFE</span></div></div>
+          <div class="tok"><span class="sw" style="background:linear-gradient(#F3F8FC,#DCE9F4)"></span><div><b>bg gradient</b><span>#F3F8FC→#DCE9F4</span></div></div>
+          <div class="tok"><span class="sw" style="background:#DCE9F4"></span><div><b>icon kabı</b><span>#DCE9F4</span></div></div>
+          <div class="tok"><span class="sw" style="background:#8EABC7"></span><div><b>active accent</b><span>#8EABC7</span></div></div>
+          <div class="tok"><span class="sw" style="background:#6C90B3"></span><div><b>nav aktif</b><span>#6C90B3</span></div></div>
+          <div class="tok"><span class="sw" style="background:#9AA7B4"></span><div><b>nav pasif</b><span>#9AA7B4</span></div></div>
+        </div>
+        <div class="phone" style="--p-top:#F3F8FC;--p-bottom:#DCE9F4;--p-primary:#AFC7DE;--p-on:#1E3346;--p-secondary-btn:#E6EFF7;--p-border:rgba(142,171,199,.30);--p-input:#EDF3FA;--p-ico:#DCE9F4;--p-chip-un:#E3EDF6;--p-nav-active:#6C90B3;--p-nav-inactive:#9AA7B4">
+          <div class="p-brand">✦ ASTRA</div>
+          <div class="p-h">Bugün neler<br>hissediyorsun?</div>
+          <div class="glass">
+            <div style="display:flex;gap:10px;align-items:center"><span class="icocon">✎</span><b style="font-size:13px;color:var(--title)">Günlük</b></div>
+            <div class="p-input" style="margin-top:10px">Düşüncelerini yaz ya da anlat…</div>
+            <div class="p-row"><span class="btn btn-primary">Yaz</span><span class="btn btn-secondary">Sesli anlat</span></div>
+          </div>
+          <div class="p-row"><span class="chip sel">Sakin</span><span class="chip un">Yorgun</span><span class="chip un">Umutlu</span></div>
+          <div class="p-nav"><span class="n active">✦</span><span class="n inactive">☾</span><span class="n inactive">✎</span><span class="n inactive">◔</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 Apricot Cloud -->
+    <div class="panel theme" style="margin-top:18px">
+      <div class="theme-head">
+        <div class="theme-dot" style="background:#E5B28E"></div>
+        <div><h3>5 · Apricot Cloud</h3><div class="sub">Sıcak, sakin pastel turuncu</div></div>
+      </div>
+      <div class="theme-grid">
+        <div class="tokens">
+          <div class="tok"><span class="sw" style="background:#E5B28E"></span><div><b>primary</b><span>#E5B28E</span></div></div>
+          <div class="tok"><span class="sw" style="background:#D99868"></span><div><b>secondary</b><span>#D99868</span></div></div>
+          <div class="tok"><span class="sw" style="background:#FFF5EF"></span><div><b>surface</b><span>#FFF5EF</span></div></div>
+          <div class="tok"><span class="sw" style="background:#FFFBF8"></span><div><b>surface+</b><span>#FFFBF8</span></div></div>
+          <div class="tok"><span class="sw" style="background:linear-gradient(#FFF6F0,#F5DDCC)"></span><div><b>bg gradient</b><span>#FFF6F0→#F5DDCC</span></div></div>
+          <div class="tok"><span class="sw" style="background:#F5DDCC"></span><div><b>icon kabı</b><span>#F5DDCC</span></div></div>
+          <div class="tok"><span class="sw" style="background:#D99868"></span><div><b>active accent</b><span>#D99868</span></div></div>
+          <div class="tok"><span class="sw" style="background:#C67F4C"></span><div><b>nav aktif</b><span>#C67F4C</span></div></div>
+          <div class="tok"><span class="sw" style="background:#BAA091"></span><div><b>nav pasif</b><span>#BAA091</span></div></div>
+        </div>
+        <div class="phone" style="--p-top:#FFF6F0;--p-bottom:#F5DDCC;--p-primary:#E5B28E;--p-on:#4A2E17;--p-secondary-btn:#FAE6D8;--p-border:rgba(217,152,104,.30);--p-input:#FBEDE3;--p-ico:#F5DDCC;--p-chip-un:#F8E4D6;--p-nav-active:#C67F4C;--p-nav-inactive:#BAA091">
+          <div class="p-brand">✦ ASTRA</div>
+          <div class="p-h">Bugün neler<br>hissediyorsun?</div>
+          <div class="glass">
+            <div style="display:flex;gap:10px;align-items:center"><span class="icocon">✎</span><b style="font-size:13px;color:var(--title)">Günlük</b></div>
+            <div class="p-input" style="margin-top:10px">Düşüncelerini yaz ya da anlat…</div>
+            <div class="p-row"><span class="btn btn-primary">Yaz</span><span class="btn btn-secondary">Sesli anlat</span></div>
+          </div>
+          <div class="p-row"><span class="chip sel">Sakin</span><span class="chip un">Yorgun</span><span class="chip un">Umutlu</span></div>
+          <div class="p-nav"><span class="n active">✦</span><span class="n inactive">☾</span><span class="n inactive">✎</span><span class="n inactive">◔</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 Berry Sand -->
+    <div class="panel theme" style="margin-top:18px">
+      <div class="theme-head">
+        <div class="theme-dot" style="background:#C98E97"></div>
+        <div><h3>6 · Berry Sand</h3><div class="sub">Sakin, soft berry</div></div>
+      </div>
+      <div class="theme-grid">
+        <div class="tokens">
+          <div class="tok"><span class="sw" style="background:#C98E97"></span><div><b>primary</b><span>#C98E97</span></div></div>
+          <div class="tok"><span class="sw" style="background:#B96F7D"></span><div><b>secondary</b><span>#B96F7D</span></div></div>
+          <div class="tok"><span class="sw" style="background:#FAF2F4"></span><div><b>surface</b><span>#FAF2F4</span></div></div>
+          <div class="tok"><span class="sw" style="background:#FFFAFB"></span><div><b>surface+</b><span>#FFFAFB</span></div></div>
+          <div class="tok"><span class="sw" style="background:linear-gradient(#FBF3F5,#EBD2D6)"></span><div><b>bg gradient</b><span>#FBF3F5→#EBD2D6</span></div></div>
+          <div class="tok"><span class="sw" style="background:#EBD2D6"></span><div><b>icon kabı</b><span>#EBD2D6</span></div></div>
+          <div class="tok"><span class="sw" style="background:#B96F7D"></span><div><b>active accent</b><span>#B96F7D</span></div></div>
+          <div class="tok"><span class="sw" style="background:#A85B6A"></span><div><b>nav aktif</b><span>#A85B6A</span></div></div>
+          <div class="tok"><span class="sw" style="background:#B39AA0"></span><div><b>nav pasif</b><span>#B39AA0</span></div></div>
+        </div>
+        <div class="phone" style="--p-top:#FBF3F5;--p-bottom:#EBD2D6;--p-primary:#C98E97;--p-on:#43222A;--p-secondary-btn:#F4E2E5;--p-border:rgba(185,111,125,.30);--p-input:#F7EAEC;--p-ico:#EBD2D6;--p-chip-un:#F2E0E3;--p-nav-active:#A85B6A;--p-nav-inactive:#B39AA0">
+          <div class="p-brand">✦ ASTRA</div>
+          <div class="p-h">Bugün neler<br>hissediyorsun?</div>
+          <div class="glass">
+            <div style="display:flex;gap:10px;align-items:center"><span class="icocon">✎</span><b style="font-size:13px;color:var(--title)">Günlük</b></div>
+            <div class="p-input" style="margin-top:10px">Düşüncelerini yaz ya da anlat…</div>
+            <div class="p-row"><span class="btn btn-primary">Yaz</span><span class="btn btn-secondary">Sesli anlat</span></div>
+          </div>
+          <div class="p-row"><span class="chip sel">Sakin</span><span class="chip un">Yorgun</span><span class="chip un">Umutlu</span></div>
+          <div class="p-nav"><span class="n active">✦</span><span class="n inactive">☾</span><span class="n inactive">✎</span><span class="n inactive">◔</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7 Smoky Teal Aura -->
+    <div class="panel theme" style="margin-top:18px">
+      <div class="theme-head">
+        <div class="theme-dot" style="background:#8FB8B4"></div>
+        <div><h3>7 · Smoky Teal Aura</h3><div class="sub">Sofistike mavi-yeşil</div></div>
+      </div>
+      <div class="theme-grid">
+        <div class="tokens">
+          <div class="tok"><span class="sw" style="background:#8FB8B4"></span><div><b>primary</b><span>#8FB8B4</span></div></div>
+          <div class="tok"><span class="sw" style="background:#6F9C97"></span><div><b>secondary</b><span>#6F9C97</span></div></div>
+          <div class="tok"><span class="sw" style="background:#EFF7F6"></span><div><b>surface</b><span>#EFF7F6</span></div></div>
+          <div class="tok"><span class="sw" style="background:#F9FDFC"></span><div><b>surface+</b><span>#F9FDFC</span></div></div>
+          <div class="tok"><span class="sw" style="background:linear-gradient(#F0F8F7,#D5E8E6)"></span><div><b>bg gradient</b><span>#F0F8F7→#D5E8E6</span></div></div>
+          <div class="tok"><span class="sw" style="background:#D5E8E6"></span><div><b>icon kabı</b><span>#D5E8E6</span></div></div>
+          <div class="tok"><span class="sw" style="background:#6F9C97"></span><div><b>active accent</b><span>#6F9C97</span></div></div>
+          <div class="tok"><span class="sw" style="background:#548078"></span><div><b>nav aktif</b><span>#548078</span></div></div>
+          <div class="tok"><span class="sw" style="background:#90A5A2"></span><div><b>nav pasif</b><span>#90A5A2</span></div></div>
+        </div>
+        <div class="phone" style="--p-top:#F0F8F7;--p-bottom:#D5E8E6;--p-primary:#8FB8B4;--p-on:#173330;--p-secondary-btn:#DFEFED;--p-border:rgba(111,156,151,.32);--p-input:#E8F3F1;--p-ico:#D5E8E6;--p-chip-un:#DCECEA;--p-nav-active:#548078;--p-nav-inactive:#90A5A2">
+          <div class="p-brand">✦ ASTRA</div>
+          <div class="p-h">Bugün neler<br>hissediyorsun?</div>
+          <div class="glass">
+            <div style="display:flex;gap:10px;align-items:center"><span class="icocon">✎</span><b style="font-size:13px;color:var(--title)">Günlük</b></div>
+            <div class="p-input" style="margin-top:10px">Düşüncelerini yaz ya da anlat…</div>
+            <div class="p-row"><span class="btn btn-primary">Yaz</span><span class="btn btn-secondary">Sesli anlat</span></div>
+          </div>
+          <div class="p-row"><span class="chip sel">Sakin</span><span class="chip un">Yorgun</span><span class="chip un">Umutlu</span></div>
+          <div class="p-nav"><span class="n active">✦</span><span class="n inactive">☾</span><span class="n inactive">✎</span><span class="n inactive">◔</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:20px">
+      <b>Tam token listesi</b> (her tema için): primary · secondary · surface · surface elevated · background gradient ·
+      card background (cam: beyaz %72) · input background · active accent · soft border (accent %20) · icon container ·
+      bottom nav active · bottom nav inactive · button primary · button secondary · chip selected · chip unselected ·
+      divider soft (accent %13) · focus glow (primary %40). Kesin değerler <code>lib/theme/astra_design_tokens.dart</code>
+      dosyasında Flutter <code>Color</code> olarak tanımlı.
+    </div>
+  </section>
+
+  <!-- COMPONENTS -->
+  <section>
+    <div class="eyebrow">04 · Bileşenler</div>
+    <h2>Bileşen kuralları</h2>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="panel">
+        <h3>Kart / Panel</h3>
+        <ul class="clean">
+          <li>Fill: beyaz %72 (cam) · radius 18–26 · ince soft border (accent %20).</li>
+          <li>Gölge yumuşak ve tek katman: <code>0 8px 24px rgba(29,26,34,.07)</code>.</li>
+          <li>Arka plan zaten hafif blur'lu; kart üstünde ekstra ağır blur yok (performans).</li>
+          <li>“Panel olduğu belli” ama kalın çerçeve yok; tıklanabilir kartlar hafif basış animasyonu alır.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Buton</h3>
+        <ul class="clean">
+          <li>Primary: dolu <code>buttonPrimary</code>, pill (radius 999) · metin okunur (koyu/beyaz otomatik).</li>
+          <li>Secondary: <code>surface</code> zemin + soft border · daha sessiz.</li>
+          <li>Basışta hafif ölçek + focus glow; parlak/neon yok.</li>
+        </ul>
+        <div style="margin-top:10px"><span class="btn btn-primary" style="--p-primary:#CBB7F6;--p-on:#3A2B63">Yolculuğa başla</span>
+          <span class="btn btn-secondary" style="--p-secondary-btn:#F0EAFB;--p-border:rgba(181,154,232,.3);margin-left:8px">Daha sonra</span></div>
+      </div>
+      <div class="panel">
+        <h3>Input</h3>
+        <ul class="clean">
+          <li>Zemin <code>inputBackground</code>, radius 12–14, geniş iç boşluk, rahat satır yüksekliği.</li>
+          <li>Placeholder <code>muted</code> tonunda, net okunur.</li>
+          <li>Odakta ince accent border + yumuşak <code>focus glow</code>; yazma deneyimi huzurlu.</li>
+        </ul>
+        <div class="p-input" style="--p-input:#F3EEFC;--p-border:rgba(181,154,232,.3);margin-top:6px">Düşüncelerini yaz ya da anlat…</div>
+      </div>
+      <div class="panel">
+        <h3>Chip · Toggle · Seçim</h3>
+        <ul class="clean">
+          <li>Seçili: <code>chipSelected</code> (primary) + okunur metin. Seçilmemiş: <code>chipUnselected</code> açık ton.</li>
+          <li>Pill form; seçim geçişi 150–200 ms yumuşak.</li>
+        </ul>
+        <div class="p-row" style="--p-primary:#CBB7F6;--p-on:#3A2B63;--p-chip-un:#EFEAFA">
+          <span class="chip sel">Sakin</span><span class="chip un">Yorgun</span><span class="chip un">Umutlu</span><span class="chip un">Kaygılı</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Bottom Navigation</h3>
+        <ul class="clean">
+          <li>Sade, dengeli; yarı saydam yüzey + soft border. Aktif sekme <code>bottomNavActive</code> ile net.</li>
+          <li>Pasif ikonlar <code>bottomNavInactive</code>; parlama/gürültü yok. İkonlar modern ve ince çizgili.</li>
+        </ul>
+        <div class="p-nav" style="--p-border:rgba(181,154,232,.3);--p-nav-active:#8E6FD6;--p-nav-inactive:#A79FB4;max-width:260px">
+          <span class="n active">✦</span><span class="n inactive">☾</span><span class="n inactive">✎</span><span class="n inactive">◔</span><span class="n inactive">◑</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Modal · Bottom Sheet · Popup</h3>
+        <ul class="clean">
+          <li>Üstte tutamaç (handle), büyük radius (24+), <code>surfaceElevated</code> zemin.</li>
+          <li>Arka planda yumuşak koyu scrim (%25–35) + hafif blur; içerik yine nefes alan boşlukta.</li>
+          <li>Birincil aksiyon altta tam genişlik primary buton.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN GUIDANCE -->
+  <section>
+    <div class="eyebrow">05 · Ekran yönlendirmeleri</div>
+    <h2>Ekran bazında layout</h2>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="panel"><h3>Ana sayfa</h3><p class="sub">Üstte kişisel selamlama + küçük ASTRA marka işareti. Altında tek büyük “Bugün neler hissediyorsun?” cam kartı (yaz / sesli anlat / AI). Sonra yatay carousel: ruh hali, seri, hızlı erişim. Bol boşluk, en fazla 2–3 birincil öğe ekranda.</p></div>
+      <div class="panel"><h3>Günlük yazma</h3><p class="sub">Ekranın çoğu yazma alanı: geniş, sessiz, tek büyük input yüzeyi. Araçlar (sesli, AI, kaydet) altta sabit ince bir bar. Dikkat dağıtan hiçbir kart yok; kağıt gibi sakin bir yüzey.</p></div>
+      <div class="panel"><h3>AI sohbet (Luma)</h3><p class="sub">Baloncuklar cam kartlar: kullanıcı primary tonlu, Luma surface tonlu. Üstte Luma yıldız avatarı. Altta yumuşak input + gönder. Tonlar sakin, baloncuklar yumuşak radius, sıkışık değil.</p></div>
+      <div class="panel"><h3>Profil</h3><p class="sub">Üstte profil kartı (avatar + isim + seri). Altında bölümler: İstatistik özet kartı, Başarımlar (yatay), Tema seçimi (7 renk dairesi), Ayarlar listesi. Her bölüm ayrı yumuşak kart, aralarında nefes.</p></div>
+      <div class="panel"><h3>Onboarding</h3><p class="sub">Tam ekran yumuşak gradyan, ortada tek net başlık + kısa alt metin, altta tek primary buton ve nokta göstergesi. Her adımda tek fikir; kalabalık yok.</p></div>
+      <div class="panel"><h3>Boş durumlar</h3><p class="sub">Küçük yumuşak illüstrasyon/ikon + tek cümle sıcak metin + tek aksiyon. Asla boş beyaz ekran; her zaman nazik bir yönlendirme.</p></div>
+    </div>
+  </section>
+
+  <!-- TRANSFORMATION PLAN -->
+  <section>
+    <div class="eyebrow">06 · Dönüşüm planı</div>
+    <h2>Kodu bozmadan geçiş</h2>
+    <p class="sub" style="max-width:720px">Route, işlev, veri mantığı ve kullanıcı akışı aynı kalır. Yalnızca renkler, yüzeyler, kenarlar ve boşluklar merkezi token'lardan gelir. Sıra:</p>
+    <div class="panel" style="margin-top:16px">
+      <div class="step"><div class="num">1</div><div><b>Token temeli</b> — <code>astra_design_tokens.dart</code> eklendi (7 palet, tam token seti). Hiçbir yere bağlı değil, bu yüzden hiçbir şeyi bozmaz.</div></div>
+      <div class="step"><div class="num">2</div><div><b>Aktif palet sağlayıcı</b> — kullanıcının seçtiği <code>AstraThemeId</code>'yi okuyan bir Riverpod provider. Profil/Ayarlar'daki 7 renk dairesi bunu değiştirir.</div></div>
+      <div class="step"><div class="num">3</div><div><b>Ortak yapı taşları</b> — <code>astra_screen_kit.dart</code> (arka plan, cam kart, buton, input, chip, nav) sabit renkler yerine aktif paletten okur. Tek dosya değişince 30+ ekran birden yenilenir.</div></div>
+      <div class="step"><div class="num">4</div><div><b>Ekran ekran ince ayar</b> — her ekranın kendi widget'ları/akışı durur; sadece kalan sabit renkler token'a çevrilir. Her adımda çalıştır-test et.</div></div>
+      <div class="step"><div class="num">5</div><div><b>Tema seçici</b> — Profil'e 7 renk dairesi; seçim cihazda saklanır + hesaba senkron. Anında tüm uygulama o havaya geçer.</div></div>
+    </div>
+    <div class="note" style="margin-top:16px">
+      <b>Neden güvenli:</b> Görsel sistem tek bir kaynaktan (token + ortak kit) beslendiği için değişiklik merkezîdir;
+      iş mantığına dokunulmaz. Mevcut açık/koyu görselli tema, 7 pastel tema sistemine yumuşak geçişle devredilebilir.
+    </div>
+  </section>
+
+  <!-- COMPONENT LOGIC -->
+  <section>
+    <div class="eyebrow">07 · Tutarlılık mimarisi</div>
+    <h2>Tüm ekranlar tek sisteme ait görünsün</h2>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="panel"><h3>Tek kaynak</h3><p class="sub">Renk/yüzey/kenar/gölge yalnızca token'lardan. Hiçbir ekranda elle hex yazılmaz. Böylece tema değişince istisna kalmaz.</p></div>
+      <div class="panel"><h3>Paylaşılan bileşenler</h3><p class="sub"><code>AstraCard</code>, <code>AstraPrimaryButton</code>, <code>AstraInput</code>, <code>AstraChip</code>, <code>AstraBottomSheet</code>, <code>AstraBottomNav</code> — her ekran bunları kullanır, kendi tek seferlik stilini üretmez.</p></div>
+      <div class="panel"><h3>Sabit metin kontrastı</h3><p class="sub">Başlık/gövde/ikincil metin renkleri temadan bağımsız (#1D1A22 / #2C2731 / #4A4452). Pastel yüzeylerde okunabilirlik her zaman korunur.</p></div>
+      <div class="panel"><h3>Ortak ritim</h3><p class="sub">Radius ölçeği (12/18/26), boşluk ölçeği (8/12/16/24), tek gölge reçetesi, tek blur değeri. Bu ritim tüm ekranları görsel olarak birbirine bağlar.</p></div>
+    </div>
+  </section>
+
+  <div class="footer">
+    ASTRA · Tasarım Sistemi v1 — sakin, zarif, premium. Token'lar: <code>lib/theme/astra_design_tokens.dart</code>
+  </div>
+
+</div>
+</body>
+</html>

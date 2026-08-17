@@ -14,26 +14,37 @@ enum AuthFlowOrigin {
 /// creation; existing login and restored sessions can never enter onboarding.
 abstract final class AuthFlowRoutes {
   static const nameEntry = '/name-entry';
+  static const themeSelect = '/theme-select';
   static const onboarding = '/onboarding';
   static const mood = '/welcome';
   static const hobbiesOnboarding = '/hobbies-onboarding';
   static const greeting = '/greeting';
+  static const aiRating = '/ai-rating';
+  static const onboardingComplete = '/onboarding-complete';
+  static const dailyReflection = '/daily-reflection';
   static const home = '/home';
 
   static String afterAuthentication(AuthFlowOrigin origin) => switch (origin) {
         AuthFlowOrigin.freshPasswordSignup => nameEntry,
         AuthFlowOrigin.freshOAuthSignup => nameEntry,
+        // Existing users (fresh login or a restored session on app open) now
+        // land on Luma's "I missed you" greeting first; it then hands off to
+        // the daily mood check-in (which self-gates to once per day).
+        // Theme + onboarding now happen BEFORE auth, so after authenticating
+        // we go straight to the daily mood check-in.
         AuthFlowOrigin.existingLogin || AuthFlowOrigin.restoredSession => mood,
       };
 
-  static String get afterNameEntry => onboarding;
+  // Sign-up: after the nickname → mood check-in.
+  static String get afterNameEntry => mood;
 
   static String get afterSignupHobbies => greeting;
 
   static String get afterOnboarding => mood;
 
-  static String afterMood({required bool isNewSignup}) =>
-      isNewSignup ? hobbiesOnboarding : greeting;
+  // After the mood check-in everyone gets the "why do you feel this way today?"
+  // reflection screen, then Home.
+  static String afterMood({required bool isNewSignup}) => dailyReflection;
 
   static String get afterGreeting => home;
 
