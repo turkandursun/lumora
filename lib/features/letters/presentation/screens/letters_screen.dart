@@ -17,8 +17,7 @@ class LettersScreen extends ConsumerStatefulWidget {
 class _LettersScreenState extends ConsumerState<LettersScreen> {
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
-  late DateTime _openAt =
-      DateTime.now().add(const Duration(days: 30));
+  late DateTime _openAt = DateTime.now().add(const Duration(days: 30));
 
   @override
   void initState() {
@@ -50,7 +49,9 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     if (_bodyController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isTr ? 'Önce mektubunu yaz.' : 'Write your letter first.')),
+        SnackBar(
+            content: Text(
+                isTr ? 'Önce mektubunu yaz.' : 'Write your letter first.')),
       );
       return;
     }
@@ -65,7 +66,8 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
     _bodyController.clear();
     setState(() => _openAt = DateTime.now().add(const Duration(days: 30)));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(isTr ? 'Mektup mühürlendi 💌' : 'Letter sealed 💌')),
+      SnackBar(
+          content: Text(isTr ? 'Mektup mühürlendi 💌' : 'Letter sealed 💌')),
     );
   }
 
@@ -95,7 +97,9 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
     );
 
     if (confirmed == true && mounted) {
-      await ref.read(lettersProvider.notifier).delete(letter.id, supabaseId: letter.supabaseId);
+      await ref
+          .read(lettersProvider.notifier)
+          .delete(letter.id, supabaseId: letter.supabaseId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(isTr ? 'Mektup silindi' : 'Letter deleted')),
@@ -120,12 +124,18 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (letter.title.trim().isNotEmpty) ...[
-                  Text(letter.title, style: AstraKit.heading2(isDark, fontSize: 19)),
+                  Text(letter.title,
+                      style: AstraKit.heading2(context, isDark, fontSize: 19)),
                   const SizedBox(height: 8),
                 ],
-                Text(DateFormat('d MMMM yyyy', locale).format(letter.createdAt), style: AstraKit.mutedText(isDark, fontSize: 12)),
+                Text(DateFormat('d MMMM yyyy', locale).format(letter.createdAt),
+                    style: AstraKit.mutedText(context, isDark, fontSize: 12)),
                 const SizedBox(height: 14),
-                Text(letter.body, style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w500, height: 1.5)),
+                Text(letter.body,
+                    style: AstraKit.body(context, isDark,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        height: 1.5)),
               ],
             ),
           ),
@@ -141,7 +151,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
     final letters = ref.watch(lettersProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -162,7 +172,9 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(isTr ? 'Geleceğe Mektup' : 'Letter to future self', style: AstraKit.heading1(isDark, fontSize: 20)),
+                    Text(isTr ? 'Geleceğe Mektup' : 'Letter to future self',
+                        style:
+                            AstraKit.heading1(context, isDark, fontSize: 20)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -182,7 +194,9 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
                       ),
                       const SizedBox(height: 18),
                       if (letters.isNotEmpty)
-                        Text(isTr ? 'Mektuplarım' : 'My letters', style: AstraKit.heading2(isDark, fontSize: 16)),
+                        Text(isTr ? 'Mektuplarım' : 'My letters',
+                            style: AstraKit.heading2(context, isDark,
+                                fontSize: 16)),
                       const SizedBox(height: 8),
                       for (final letter in letters)
                         _LetterCard(
@@ -191,7 +205,8 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
                           isTr: isTr,
                           isDark: isDark,
                           primary: primary,
-                          onOpen: () => _openLetter(letter, locale, isDark, primary),
+                          onOpen: () =>
+                              _openLetter(letter, locale, isDark, primary),
                           onDelete: () => _confirmDelete(letter),
                         ),
                     ],
@@ -229,12 +244,14 @@ class _ComposeCard extends StatelessWidget {
   final VoidCallback onPickDate;
   final VoidCallback onSave;
 
-  InputDecoration _decoration(String hint) => InputDecoration(
+  InputDecoration _decoration(BuildContext context, String hint) =>
+      InputDecoration(
         hintText: hint,
-        hintStyle: AstraKit.mutedText(isDark, fontSize: 14),
+        hintStyle: AstraKit.mutedText(context, isDark, fontSize: 14),
         filled: true,
         fillColor: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: primary.withValues(alpha: 0.35)),
@@ -260,23 +277,29 @@ class _ComposeCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isTr ? 'Gelecekteki kendine bir mektup yaz' : 'Write a letter to your future self',
-            style: AstraKit.heading2(isDark, fontSize: 16),
+            isTr
+                ? 'Gelecekteki kendine bir mektup yaz'
+                : 'Write a letter to your future self',
+            style: AstraKit.heading2(context, isDark, fontSize: 16),
           ),
           const SizedBox(height: 14),
           TextField(
             controller: titleController,
-            style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w500),
+            style: AstraKit.body(context, isDark,
+                fontSize: 14, fontWeight: FontWeight.w500),
             cursorColor: primary,
-            decoration: _decoration(isTr ? 'Başlık (isteğe bağlı)' : 'Title (optional)'),
+            decoration: _decoration(
+                context, isTr ? 'Başlık (isteğe bağlı)' : 'Title (optional)'),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: bodyController,
             maxLines: 6,
-            style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w500),
+            style: AstraKit.body(context, isDark,
+                fontSize: 14, fontWeight: FontWeight.w500),
             cursorColor: primary,
-            decoration: _decoration(isTr ? 'Sevgili gelecekteki ben...' : 'Dear future me...'),
+            decoration: _decoration(context,
+                isTr ? 'Sevgili gelecekteki ben...' : 'Dear future me...'),
           ),
           const SizedBox(height: 12),
           InkWell(
@@ -288,19 +311,26 @@ class _ComposeCard extends StatelessWidget {
                 children: [
                   Icon(Icons.lock_clock_rounded, size: 18, color: primary),
                   const SizedBox(width: 8),
-                  Text(isTr ? 'Açılış: ' : 'Opens: ', style: AstraKit.mutedText(isDark, fontSize: 13)),
+                  Text(isTr ? 'Açılış: ' : 'Opens: ',
+                      style: AstraKit.mutedText(context, isDark, fontSize: 13)),
                   Text(
                     DateFormat('d MMMM yyyy', locale).format(openAt),
-                    style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w700),
+                    style: AstraKit.body(context, isDark,
+                        fontSize: 13.5, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(width: 6),
-                  Icon(Icons.edit_calendar_rounded, size: 15, color: AstraKit.muted(isDark)),
+                  Icon(Icons.edit_calendar_rounded,
+                      size: 15, color: AstraKit.muted(context, isDark)),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 12),
-          AstraGoldButton(isDark: isDark, label: isTr ? 'Mühürle' : 'Seal it', icon: Icons.lock_rounded, onTap: onSave),
+          AstraGoldButton(
+              isDark: isDark,
+              label: isTr ? 'Mühürle' : 'Seal it',
+              icon: Icons.lock_rounded,
+              onTap: onSave),
         ],
       ),
     );
@@ -351,8 +381,10 @@ class _LetterCard extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(
-                    unlocked ? Icons.mark_email_read_rounded : Icons.lock_rounded,
-                    color: unlocked ? primary : AstraKit.muted(isDark),
+                    unlocked
+                        ? Icons.mark_email_read_rounded
+                        : Icons.lock_rounded,
+                    color: unlocked ? primary : AstraKit.muted(context, isDark),
                     size: 22,
                   ),
                   const SizedBox(width: 12),
@@ -360,23 +392,32 @@ class _LetterCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AstraKit.body(isDark, fontSize: 14.5, fontWeight: FontWeight.w700)),
+                        Text(title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AstraKit.body(context, isDark,
+                                fontSize: 14.5, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 3),
                         Text(
                           unlocked
                               ? (isTr ? 'Okumak için dokun' : 'Tap to read')
-                              : (isTr ? '$openLabel tarihinde açılacak' : 'Opens on $openLabel'),
-                          style: AstraKit.mutedText(isDark, fontSize: 12),
+                              : (isTr
+                                  ? '$openLabel tarihinde açılacak'
+                                  : 'Opens on $openLabel'),
+                          style:
+                              AstraKit.mutedText(context, isDark, fontSize: 12),
                         ),
                       ],
                     ),
                   ),
                   if (unlocked) ...[
-                    Icon(Icons.chevron_right_rounded, color: AstraKit.muted(isDark)),
+                    Icon(Icons.chevron_right_rounded,
+                        color: AstraKit.muted(context, isDark)),
                     const SizedBox(width: 4),
                   ],
                   IconButton(
-                    icon: Icon(Icons.delete_outline_rounded, size: 20, color: AstraKit.muted(isDark)),
+                    icon: Icon(Icons.delete_outline_rounded,
+                        size: 20, color: AstraKit.muted(context, isDark)),
                     onPressed: onDelete,
                     tooltip: isTr ? 'Mektubu Sil' : 'Delete Letter',
                   ),

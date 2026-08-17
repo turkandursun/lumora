@@ -596,6 +596,7 @@
   "@breathingCompletionContinue": {
     "description": "Button label on the completion message that returns the user to the duration selector."
   },
+  "profileDarkMode": "Dark Mode",
   "profileTitle": "Profile",
   "@profileTitle": {
     "description": "Heading at the top of the profile tab's menu screen."
@@ -1791,6 +1792,14 @@
   "@greetingFirstWelcome": {
     "description": "First welcome spoken by LUMA after a fresh registration."
   },
+  "greetingPreAuth": "Hi, I'm LUMA ✨\nThis will be a small space of your own.\nLet's begin when you're ready.",
+  "greetingPostSignup": "I'm glad you're here, {nickname} ✨\nThis space is yours now.\nI can't wait to get to know you better.",
+  "@greetingPostSignup": {"placeholders": {"nickname": {"type": "String"}}},
+  "greetingPostSignupNoName": "I'm glad you're here ✨\nThis space is yours now.\nI can't wait to get to know you better.",
+  "greetingReturning": "I missed you, {nickname} ✨\nWhere have you been?\nI've been wondering how you are today.",
+  "@greetingReturning": {"placeholders": {"nickname": {"type": "String"}}},
+  "greetingReturningNoName": "I missed you ✨\nWhere have you been?\nI've been wondering how you are today.",
+  "greetingTapToContinue": "Tap to continue",
   "homeFeatureDilemmaTitle": "Dilemma",
   "homeFeatureDilemmaDesc": "Swipe to pick a side",
   "dilemmaTitle": "Dilemmas",

@@ -41,111 +41,120 @@ class HomeStatsRow extends ConsumerWidget {
       borderRadius: 24,
       openBuilder: (_) => const JournalEntryScreen(),
       closedBuilder: (context, open) => BouncyTap(
-      onTap: open,
-      child: LumaGlassCard(
-      padding: EdgeInsets.zero,
-      radius: 24,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(24),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-            child: Row(
-              children: [
-                // Glowing pencil/book emblem
-                Container(
-                  width: 52,
-                  height: 52,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: LumaGlass.accentGradient,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: LumaGlass.accentShadow,
-                        blurRadius: 14,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.edit_note_rounded,
-                    size: 28,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Title + Inviting Prompt Subtitle
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            l10n.homeFeatureJournalTitle,
-                            style: LumaGlass.sans(
-                              fontSize: 17.5,
-                              fontWeight: FontWeight.w700,
-                              color: LumaGlass.cardTitle,
-                            ),
+        onTap: open,
+        child: LumaGlassCard(
+          padding: EdgeInsets.zero,
+          radius: 24,
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: null,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                child: Row(
+                  children: [
+                    // Glowing pencil/book emblem
+                    Container(
+                      width: 52,
+                      height: 52,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: LumaGlass.accentGradient(context),
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: LumaGlass.accentShadow(context),
+                            blurRadius: 14,
+                            spreadRadius: 1,
                           ),
-                          const SizedBox(width: 6),
-                          const Text('✨', style: TextStyle(fontSize: 14)),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        promptText,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: LumaGlass.sans(fontSize: 12.5, color: LumaGlass.subtitle),
+                      child: const Icon(
+                        Icons.edit_note_rounded,
+                        size: 28,
+                        color: Colors.white,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Title + Inviting Prompt Subtitle
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                l10n.homeFeatureJournalTitle,
+                                style: LumaGlass.sans(
+                                  context,
+                                  fontSize: 17.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: LumaGlass.cardTitle(context),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text('✨', style: TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            promptText,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: LumaGlass.sans(context,
+                                fontSize: 12.5,
+                                color: LumaGlass.subtitle(context)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Action Arrow Button / Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color:
+                            LumaGlass.sparkle(context).withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                            color: LumaGlass.sparkle(context)
+                                .withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            isTr ? 'Yaz' : 'Write',
+                            style: LumaGlass.sans(
+                              context,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: LumaGlass.accentInk(context),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 11,
+                            color: LumaGlass.accentInk(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                // Action Arrow Button / Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: LumaGlass.sparkle.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: LumaGlass.sparkle.withValues(alpha: 0.4)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        isTr ? 'Yaz' : 'Write',
-                        style: LumaGlass.sans(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: LumaGlass.accentInk,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 11,
-                        color: LumaGlass.accentInk,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
-      ),
       ),
     );
   }

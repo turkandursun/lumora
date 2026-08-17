@@ -23,7 +23,16 @@ class DilemmaCoachScreen extends ConsumerStatefulWidget {
 class _DilemmaCoachScreenState extends ConsumerState<DilemmaCoachScreen> {
   // One controller per possible field; only the two selected prompts are shown.
   final _c = <String, TextEditingController>{
-    for (final k in ['dilemma', 'A', 'B', 'widen', 'values', 'tenTen', 'regret', 'friend'])
+    for (final k in [
+      'dilemma',
+      'A',
+      'B',
+      'widen',
+      'values',
+      'tenTen',
+      'regret',
+      'friend'
+    ])
       k: TextEditingController(),
   };
 
@@ -161,7 +170,7 @@ class _DilemmaCoachScreenState extends ConsumerState<DilemmaCoachScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     final tr = _tr(context);
 
     return PopScope(
@@ -205,7 +214,9 @@ class _DilemmaCoachScreenState extends ConsumerState<DilemmaCoachScreen> {
                       ),
                       child: KeyedSubtree(
                         key: ValueKey(
-                          _onSynthesis ? 'synthesis-$_loading-$_failed' : 'step-$_step',
+                          _onSynthesis
+                              ? 'synthesis-$_loading-$_failed'
+                              : 'step-$_step',
                         ),
                         child: _onSynthesis
                             ? _buildSynthesis(isDark, primary, tr)
@@ -289,25 +300,33 @@ class _DilemmaCoachScreenState extends ConsumerState<DilemmaCoachScreen> {
         helper: tr
             ? 'İkili seçim çoğu zaman bir tuzaktır. A ve B dışında bir olasılık hayal et.'
             : 'A binary choice is often a trap. Imagine a possibility beyond A and B.',
-        hint: tr ? 'Aklına gelen üçüncü seçenek…' : 'A third option that comes to mind…',
+        hint: tr
+            ? 'Aklına gelen üçüncü seçenek…'
+            : 'A third option that comes to mind…',
       ),
       _FwSpec(
         key: 'values',
         badge: tr ? 'DEĞERLER' : 'VALUES',
-        title: tr ? 'Hangi değerlerin çatışıyor?' : 'Which values are in tension?',
+        title:
+            tr ? 'Hangi değerlerin çatışıyor?' : 'Which values are in tension?',
         helper: tr
             ? 'Zor kararlar genelde iki değerin çarpışmasıdır — ör. güvenlik ↔ özgürlük.'
             : 'Hard decisions are usually two values colliding — e.g. security ↔ freedom.',
-        hint: tr ? 'İçinde çarpışan iki değer…' : 'Two values pulling against each other…',
+        hint: tr
+            ? 'İçinde çarpışan iki değer…'
+            : 'Two values pulling against each other…',
       ),
       _FwSpec(
         key: 'tenTen',
         badge: '10 · 10 · 10',
-        title: tr ? '10 dakika, 10 ay, 10 yıl' : '10 minutes, 10 months, 10 years',
+        title:
+            tr ? '10 dakika, 10 ay, 10 yıl' : '10 minutes, 10 months, 10 years',
         helper: tr
             ? 'Seçimini yapsan, 10 dakika / 10 ay / 10 yıl sonra nasıl hissederdin?'
             : 'If you chose, how would you feel in 10 min / 10 months / 10 years?',
-        hint: tr ? 'Zaman içinde nasıl hissederdin…' : 'How it would feel over time…',
+        hint: tr
+            ? 'Zaman içinde nasıl hissederdin…'
+            : 'How it would feel over time…',
       ),
       _FwSpec(
         key: 'regret',
@@ -321,7 +340,8 @@ class _DilemmaCoachScreenState extends ConsumerState<DilemmaCoachScreen> {
       _FwSpec(
         key: 'friend',
         badge: tr ? 'MESAFE' : 'DISTANCE',
-        title: tr ? 'Bir arkadaşına ne derdin?' : 'What would you tell a friend?',
+        title:
+            tr ? 'Bir arkadaşına ne derdin?' : 'What would you tell a friend?',
         helper: tr
             ? 'Aynı ikilemi yaşayan en yakın arkadaşına ne tavsiye ederdin?'
             : 'What would you advise your closest friend in the same spot?',
@@ -378,11 +398,12 @@ class _Header extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(title, style: AstraKit.heading1(isDark, fontSize: 22)),
+              child: Text(title,
+                  style: AstraKit.heading1(context, isDark, fontSize: 22)),
             ),
             if (step < total)
               Text('${step + 1}/$total',
-                  style: AstraKit.mutedText(isDark, fontSize: 13)),
+                  style: AstraKit.mutedText(context, isDark, fontSize: 13)),
           ],
         ),
         const SizedBox(height: 12),
@@ -435,13 +456,13 @@ class _WriteStep extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(tr ? 'Seni ne ikileme düşürdü?' : 'What are you torn about?',
-                style: AstraKit.heading2(isDark, fontSize: 19)),
+                style: AstraKit.heading2(context, isDark, fontSize: 19)),
             const SizedBox(height: 8),
             Text(
               tr
                   ? 'Kararını yaz. Sonra sadece iki kısa soru, ardından Luma’nın yansıması.'
                   : 'Write your decision. Then just two short questions and Luma’s reflection.',
-              style: AstraKit.mutedText(isDark, fontSize: 13.5),
+              style: AstraKit.mutedText(context, isDark, fontSize: 13.5),
             ),
             const SizedBox(height: 18),
             _Field(
@@ -463,7 +484,8 @@ class _WriteStep extends StatelessWidget {
                     isDark: isDark,
                     primary: primary,
                     controller: optionA,
-                    hint: tr ? 'Seçenek A (isteğe bağlı)' : 'Option A (optional)',
+                    hint:
+                        tr ? 'Seçenek A (isteğe bağlı)' : 'Option A (optional)',
                     minLines: 1,
                     maxLines: 2,
                   ),
@@ -474,7 +496,8 @@ class _WriteStep extends StatelessWidget {
                     isDark: isDark,
                     primary: primary,
                     controller: optionB,
-                    hint: tr ? 'Seçenek B (isteğe bağlı)' : 'Option B (optional)',
+                    hint:
+                        tr ? 'Seçenek B (isteğe bağlı)' : 'Option B (optional)',
                     minLines: 1,
                     maxLines: 2,
                   ),
@@ -535,9 +558,11 @@ class _FrameworkStep extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            Text(title, style: AstraKit.heading2(isDark, fontSize: 20)),
+            Text(title,
+                style: AstraKit.heading2(context, isDark, fontSize: 20)),
             const SizedBox(height: 8),
-            Text(helper, style: AstraKit.mutedText(isDark, fontSize: 13.5)),
+            Text(helper,
+                style: AstraKit.mutedText(context, isDark, fontSize: 13.5)),
             const SizedBox(height: 18),
             _Field(
               isDark: isDark,
@@ -597,15 +622,15 @@ class _Field extends StatelessWidget {
         maxLines: maxLines,
         autofocus: autofocus,
         onChanged: onChanged,
-        style: AstraKit.body(isDark, fontSize: 15, height: 1.5),
+        style: AstraKit.body(context, isDark, fontSize: 15, height: 1.5),
         cursorColor: primary,
         decoration: InputDecoration(
           border: InputBorder.none,
           isCollapsed: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           hintText: hint,
-          hintStyle: AstraKit.mutedText(isDark, fontSize: 14.5)
-              .copyWith(color: AstraKit.faint(isDark)),
+          hintStyle: AstraKit.mutedText(context, isDark, fontSize: 14.5)
+              .copyWith(color: AstraKit.faint(context, isDark)),
         ),
       ),
     );
@@ -639,7 +664,8 @@ class _NavBar extends StatelessWidget {
           TextButton(
             onPressed: onSkip,
             child: Text(tr ? 'Atla' : 'Skip',
-                style: AstraKit.mutedText(isDark, fontSize: 14, fontWeight: FontWeight.w700)),
+                style: AstraKit.mutedText(context, isDark,
+                    fontSize: 14, fontWeight: FontWeight.w700)),
           ),
         const Spacer(),
         AstraGoldButton(
@@ -701,14 +727,14 @@ class _CoachLoadingState extends State<_CoachLoading>
           const SizedBox(height: 18),
           Text(
             widget.tr ? 'Luma düşünüyor…' : 'Luma is thinking…',
-            style: AstraKit.heading2(widget.isDark, fontSize: 17),
+            style: AstraKit.heading2(context, widget.isDark, fontSize: 17),
           ),
           const SizedBox(height: 8),
           Text(
             widget.tr
                 ? 'Cevaplarını bir araya getiriyor.'
                 : 'Bringing your answers together.',
-            style: AstraKit.mutedText(widget.isDark, fontSize: 13.5),
+            style: AstraKit.mutedText(context, widget.isDark, fontSize: 13.5),
           ),
         ],
       ),
@@ -734,12 +760,16 @@ class _CoachFailed extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.cloud_off_rounded, size: 40, color: primary.withValues(alpha: 0.7)),
+          Icon(Icons.cloud_off_rounded,
+              size: 40, color: primary.withValues(alpha: 0.7)),
           const SizedBox(height: 14),
           Text(
-            tr ? 'Luma şu an yanıt veremedi.' : 'Luma couldn’t respond right now.',
+            tr
+                ? 'Luma şu an yanıt veremedi.'
+                : 'Luma couldn’t respond right now.',
             textAlign: TextAlign.center,
-            style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w500),
+            style: AstraKit.body(context, isDark,
+                fontSize: 15, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 16),
           AstraGoldButton(
@@ -781,10 +811,12 @@ class _SynthesisView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Image.asset('assets/images/luma_star_closed.png', width: 26, height: 26),
+              Image.asset('assets/images/luma_star_closed.png',
+                  width: 26, height: 26),
               const SizedBox(width: 10),
               Text(tr ? 'Luma’nın yansıması' : 'Luma’s reflection',
-                  style: AstraKit.mutedText(isDark, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  style: AstraKit.mutedText(context, isDark,
+                      fontSize: 12.5, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 12),
@@ -794,7 +826,7 @@ class _SynthesisView extends StatelessWidget {
               fontSize: 25,
               fontWeight: FontWeight.w700,
               height: 1.2,
-              color: AstraKit.heading(isDark),
+              color: AstraKit.heading(context, isDark),
             ),
           ),
           const SizedBox(height: 14),
@@ -804,7 +836,8 @@ class _SynthesisView extends StatelessWidget {
             padding: const EdgeInsets.all(18),
             child: Text(
               result.reflection,
-              style: AstraKit.body(isDark, fontSize: 15.5, height: 1.6),
+              style:
+                  AstraKit.body(context, isDark, fontSize: 15.5, height: 1.6),
             ),
           ),
           const SizedBox(height: 12),
@@ -822,7 +855,8 @@ class _SynthesisView extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(result.lean,
-                      style: AstraKit.body(isDark, fontSize: 14.5, height: 1.5)),
+                      style: AstraKit.body(context, isDark,
+                          fontSize: 14.5, height: 1.5)),
                 ),
               ],
             ),
@@ -834,13 +868,14 @@ class _SynthesisView extends StatelessWidget {
               fontSize: 18,
               fontStyle: FontStyle.italic,
               height: 1.4,
-              color: AstraKit.heading(isDark),
+              color: AstraKit.heading(context, isDark),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             tr ? 'Karar senin.' : 'The choice is yours.',
-            style: AstraKit.mutedText(isDark, fontSize: 13, fontWeight: FontWeight.w700),
+            style: AstraKit.mutedText(context, isDark,
+                fontSize: 13, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 24),
           AstraGoldButton(
@@ -855,7 +890,8 @@ class _SynthesisView extends StatelessWidget {
           TextButton(
             onPressed: onClose,
             child: Text(tr ? 'Kapat' : 'Close',
-                style: AstraKit.mutedText(isDark, fontSize: 13, fontWeight: FontWeight.w700)),
+                style: AstraKit.mutedText(context, isDark,
+                    fontSize: 13, fontWeight: FontWeight.w700)),
           ),
         ],
       ),

@@ -9,6 +9,7 @@ import '../../../core/providers/astra_theme_provider.dart';
 import '../../../core/providers/cloud_backup_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../theme/astra_design_tokens.dart';
 import '../../../theme/astra_screen_kit.dart';
 import '../../../theme/luma_chat_sheet.dart';
 import '../../journal/presentation/screens/home_screen.dart';
@@ -43,7 +44,8 @@ class _AppShellState extends ConsumerState<AppShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _fabAnim = AnimationController(vsync: this, duration: const Duration(milliseconds: 360));
+    _fabAnim = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 360));
   }
 
   void _switchTab(_ActiveTab tab) {
@@ -164,15 +166,6 @@ class _AppShellState extends ConsumerState<AppShell>
   }
 }
 
-// Fixed pink-glass bottom-bar tokens — one consistent Luma look instead of
-// the old dark-violet/warm-cream split, matching AstraGlassCard's blurred
-// glass treatment.
-const _barFill = Color(0xB3FFFFFF);
-const _barBorder = Color(0x8CFFFFFF);
-const _barRing = Color(0xFFFCEAF0);
-const _fabGradient = [Color(0xFFEAAAC8), Color(0xFFCE7CA6)];
-const _fabGlow = Color(0xFFCE7CA6);
-
 class _ShellBottomNav extends StatelessWidget {
   const _ShellBottomNav({
     required this.isDark,
@@ -197,7 +190,10 @@ class _ShellBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final accent = AstraKit.primary(isDark);
+    final palette = AstraKit.palette(context);
+    final accent = AstraKit.primary(context, isDark);
+    final barFill = palette.surfaceElevated.withValues(alpha: 0.72);
+    final barBorder = palette.softBorder.withValues(alpha: 0.72);
     // The blurred bar and the raised quick-add button are siblings in an
     // unclipped outer Stack: the button intentionally pokes up above the bar
     // (Positioned top: -20), and BackdropFilter needs a ClipRect to bound
@@ -212,11 +208,14 @@ class _ShellBottomNav extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: DecoratedBox(
-              decoration: const BoxDecoration(
-                color: _barFill,
-                border: Border(top: BorderSide(color: _barBorder, width: 1.1)),
+              decoration: BoxDecoration(
+                color: barFill,
+                border: Border(top: BorderSide(color: barBorder, width: 1.1)),
                 boxShadow: [
-                  BoxShadow(color: Color(0x28C77D9B), blurRadius: 20, offset: Offset(0, -4)),
+                  BoxShadow(
+                      color: palette.focusGlow,
+                      blurRadius: 20,
+                      offset: const Offset(0, -4)),
                 ],
               ),
               child: SafeArea(
@@ -274,7 +273,9 @@ class _ShellBottomNav extends StatelessWidget {
           child: _QuickAddButton(
             label: l10n.shellTabQuickAdd,
             isDark: isDark,
-            barColor: _barRing,
+            barColor: palette.iconContainer,
+            gradientColors: [palette.buttonPrimary, palette.secondary],
+            glowColor: palette.focusGlow,
             anim: fabAnim,
             onTap: onQuickAdd,
           ),
@@ -305,7 +306,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? accent : AstraKit.muted(isDark);
+    final color = isActive ? accent : AstraKit.muted(context, isDark);
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -322,6 +323,7 @@ class _NavItem extends StatelessWidget {
               Text(
                 label,
                 style: AstraKit.body(
+                  context,
                   isDark,
                   fontSize: 10.5,
                   fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
@@ -341,6 +343,8 @@ class _QuickAddButton extends StatelessWidget {
     required this.label,
     required this.isDark,
     required this.barColor,
+    required this.gradientColors,
+    required this.glowColor,
     required this.anim,
     required this.onTap,
   });
@@ -348,14 +352,14 @@ class _QuickAddButton extends StatelessWidget {
   final String label;
   final bool isDark;
   final Color barColor;
+  final List<Color> gradientColors;
+  final Color glowColor;
   final Animation<double> anim;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    const gradient = _fabGradient;
-    const glow = _fabGlow;
-    const iconColor = Color(0xFF3A1424);
+    final iconColor = AstraThemeTokens.of(context).textOnAccent;
     final spin = CurvedAnimation(parent: anim, curve: Curves.easeOutBack);
     return Semantics(
       button: true,
@@ -368,13 +372,13 @@ class _QuickAddButton extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: gradient,
+              colors: gradientColors,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: glow.withValues(alpha: 0.5),
+                color: glowColor.withValues(alpha: 0.5),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -395,14 +399,16 @@ class _QuickAddButton extends StatelessWidget {
                         width: 34,
                         height: 34,
                         child: Image(
-                          image: AssetImage('assets/images/luma_star_closed.png'),
+                          image:
+                              AssetImage('assets/images/luma_star_closed.png'),
                           fit: BoxFit.contain,
                         ),
                       ),
                     ),
                     Opacity(
                       opacity: anim.value.clamp(0.0, 1.0),
-                      child: Icon(Icons.close_rounded, color: iconColor, size: 26),
+                      child:
+                          Icon(Icons.close_rounded, color: iconColor, size: 26),
                     ),
                   ],
                 ),
@@ -432,8 +438,16 @@ class _FabMenuOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final items = <(IconData, String, String)>[
-      (Icons.edit_note_rounded, isTr ? 'Günlük Yaz' : 'Write journal', AppRoutes.journalEntry),
-      (Icons.nightlight_round, isTr ? 'Yeni Rüya' : 'New dream', AppRoutes.newDream),
+      (
+        Icons.edit_note_rounded,
+        isTr ? 'Günlük Yaz' : 'Write journal',
+        AppRoutes.journalEntry
+      ),
+      (
+        Icons.nightlight_round,
+        isTr ? 'Yeni Rüya' : 'New dream',
+        AppRoutes.newDream
+      ),
       (Icons.spa_rounded, isTr ? 'Sakinleş' : 'Calm', AppRoutes.calm),
       (Icons.dynamic_feed_rounded, isTr ? 'Akış' : 'Feed', AppRoutes.feed),
     ];
@@ -450,7 +464,8 @@ class _FabMenuOverlay extends StatelessWidget {
                 onTap: onClose,
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 14 * v, sigmaY: 14 * v),
-                  child: Container(color: Colors.black.withValues(alpha: 0.42 * v)),
+                  child: Container(
+                      color: Colors.black.withValues(alpha: 0.42 * v)),
                 ),
               ),
               Positioned(
@@ -465,7 +480,8 @@ class _FabMenuOverlay extends StatelessWidget {
                         icon: items[i].$1,
                         label: items[i].$2,
                         isDark: isDark,
-                        progress: _staggered(v, items.length - 1 - i, items.length),
+                        progress:
+                            _staggered(v, items.length - 1 - i, items.length),
                         onTap: () => onAction(items[i].$3),
                       ),
                   ],
@@ -502,7 +518,7 @@ class _FabMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = AstraKit.primary(isDark);
+    final accent = AstraKit.primary(context, isDark);
     return Opacity(
       opacity: progress.clamp(0.0, 1.0),
       child: Transform.translate(
@@ -514,13 +530,17 @@ class _FabMenuItem extends StatelessWidget {
             child: BouncyTap(
               onTap: onTap,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
                 decoration: BoxDecoration(
                   color: const Color(0xF2FCEEF3),
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(color: accent.withValues(alpha: 0.4)),
                   boxShadow: const [
-                    BoxShadow(color: Color(0x28C77D9B), blurRadius: 14, offset: Offset(0, 6)),
+                    BoxShadow(
+                        color: Color(0x28C77D9B),
+                        blurRadius: 14,
+                        offset: Offset(0, 6)),
                   ],
                 ),
                 child: Row(
@@ -531,7 +551,7 @@ class _FabMenuItem extends StatelessWidget {
                     Text(
                       label,
                       style: TextStyle(
-                        color: AstraKit.heading(isDark),
+                        color: AstraKit.heading(context, isDark),
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
                       ),

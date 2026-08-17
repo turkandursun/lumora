@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/providers/auth_listener.dart';
+import 'core/providers/astra_palette_provider.dart';
+import 'core/providers/astra_theme_provider.dart';
 import 'core/router/app_router.dart';
+import 'features/auth/domain/registration_flow_state.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'theme/app_theme.dart';
 
@@ -30,6 +33,10 @@ class _LumoraAppState extends ConsumerState<LumoraApp> {
       if (event == AuthChangeEvent.signedOut) {
         debugPrint(
             '[AuthListener] User signed out -> clearing local DB & invalidating user providers');
+        // Palette is visible app-wide, so reset it before slower local cleanup.
+        ref.invalidate(astraPaletteProvider);
+        ref.invalidate(astraThemeProvider);
+        await registrationFlowStore.clearForUser(_lastAuthenticatedUserId);
         await clearLocalUserData(
           ref,
           userId: _lastAuthenticatedUserId,
@@ -55,10 +62,19 @@ class _LumoraAppState extends ConsumerState<LumoraApp> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ref.watch(activePaletteProvider);
+    final appearance = ref.watch(astraThemeProvider);
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'ASTRA',
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.forPalette(
+        palette,
+        brightness: appearance == AstraThemeMode.dark
+            ? Brightness.dark
+            : Brightness.light,
+      ),
+      themeAnimationDuration: const Duration(milliseconds: 300),
+      themeAnimationCurve: Curves.easeInOut,
       routerConfig: appRouter,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

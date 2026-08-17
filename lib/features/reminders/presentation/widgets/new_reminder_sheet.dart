@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/database/tables/reminders_table.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/lumora_palette.dart';
 import '../../../../theme/premium_button.dart';
 import '../providers/reminders_providers.dart';
@@ -67,12 +68,15 @@ class _NewReminderSheetState extends ConsumerState<NewReminderSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final tokens = AstraThemeTokens.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: LumoraPalette.nightBackground,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: tokens.isDark
+              ? tokens.palette.surfaceElevated
+              : LumoraPalette.nightBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: SafeArea(
           top: false,
@@ -89,7 +93,9 @@ class _NewReminderSheetState extends ConsumerState<NewReminderSheet> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: tokens.isDark
+                            ? tokens.textMuted.withValues(alpha: 0.35)
+                            : Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -97,10 +103,10 @@ class _NewReminderSheetState extends ConsumerState<NewReminderSheet> {
                   const SizedBox(height: 18),
                   Text(
                     l10n.remindersNewSheetTitle,
-                    style: LumoraPalette.bodyStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: tokens.isDark ? tokens.textPrimary : Colors.white,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -112,31 +118,37 @@ class _NewReminderSheetState extends ConsumerState<NewReminderSheet> {
                   const SizedBox(height: 20),
                   _FrequencySelector(
                     selected: _frequency,
-                    onSelected: (frequency) => setState(() => _frequency = frequency),
+                    onSelected: (frequency) =>
+                        setState(() => _frequency = frequency),
                   ),
                   if (_frequency == ReminderFrequency.weekly) ...[
                     const SizedBox(height: 18),
                     Text(
                       l10n.remindersNewWeekdayPrompt,
-                      style: LumoraPalette.bodyStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.75),
+                        color: tokens.isDark
+                            ? tokens.textSecondary
+                            : Colors.white.withValues(alpha: 0.75),
                       ),
                     ),
                     const SizedBox(height: 10),
                     _WeekdaySelector(
                       selected: _weekday,
-                      onSelected: (weekday) => setState(() => _weekday = weekday),
+                      onSelected: (weekday) =>
+                          setState(() => _weekday = weekday),
                     ),
                   ],
                   const SizedBox(height: 18),
                   Text(
                     l10n.remindersNewTimePrompt,
-                    style: LumoraPalette.bodyStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.75),
+                      color: tokens.isDark
+                          ? tokens.textSecondary
+                          : Colors.white.withValues(alpha: 0.75),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -170,38 +182,62 @@ class _TitleField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AstraThemeTokens.of(context);
     return TextFormField(
       controller: controller,
       textInputAction: TextInputAction.done,
-      style: LumoraPalette.bodyStyle(color: Colors.white),
-      cursorColor: LumoraPalette.lightPurple,
+      style: TextStyle(
+        color: tokens.isDark ? tokens.textSecondary : Colors.white,
+      ),
+      cursorColor: tokens.isDark
+          ? tokens.palette.activeAccent
+          : LumoraPalette.lightPurple,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: LumoraPalette.bodyStyle(
+        hintStyle: TextStyle(
           fontSize: 15,
-          color: Colors.white.withValues(alpha: 0.45),
+          color: tokens.isDark
+              ? tokens.textMuted
+              : Colors.white.withValues(alpha: 0.45),
         ),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        fillColor: tokens.isDark
+            ? tokens.palette.inputBackground
+            : Colors.white.withValues(alpha: 0.05),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+          borderSide: BorderSide(
+            color: tokens.isDark
+                ? tokens.palette.softBorder
+                : Colors.white.withValues(alpha: 0.16),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+          borderSide: BorderSide(
+            color: tokens.isDark
+                ? tokens.palette.softBorder
+                : Colors.white.withValues(alpha: 0.16),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: LumoraPalette.lightPurple, width: 1.5),
+          borderSide: BorderSide(
+            color: tokens.isDark
+                ? tokens.palette.activeAccent
+                : LumoraPalette.lightPurple,
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: LumoraPalette.accentPink.withValues(alpha: 0.7)),
+          borderSide: const BorderSide(color: Color(0xFFBE3D4C)),
         ),
       ),
-      validator: (value) => (value ?? '').trim().isEmpty ? validationEmpty : null,
+      validator: (value) =>
+          (value ?? '').trim().isEmpty ? validationEmpty : null,
     );
   }
 }
@@ -225,7 +261,8 @@ class _FrequencySelector extends StatelessWidget {
         for (final entry in options.entries)
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(right: entry.key == ReminderFrequency.once ? 0 : 8),
+              padding: EdgeInsets.only(
+                  right: entry.key == ReminderFrequency.once ? 0 : 8),
               child: _Pill(
                 label: entry.value,
                 isSelected: entry.key == selected,
@@ -249,10 +286,13 @@ class _WeekdaySelector extends StatelessWidget {
     final locale = Localizations.localeOf(context).toString();
     return Row(
       children: [
-        for (var weekday = DateTime.monday; weekday <= DateTime.sunday; weekday++)
+        for (var weekday = DateTime.monday;
+            weekday <= DateTime.sunday;
+            weekday++)
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(right: weekday == DateTime.sunday ? 0 : 6),
+              padding:
+                  EdgeInsets.only(right: weekday == DateTime.sunday ? 0 : 6),
               child: _Pill(
                 label: DateFormat.E(locale).format(
                   DateTime(2024, 1, 1).add(Duration(days: weekday - 1)),
@@ -283,6 +323,7 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AstraThemeTokens.of(context);
     return Semantics(
       selected: isSelected,
       button: true,
@@ -299,21 +340,29 @@ class _Pill extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
               color: isSelected
-                  ? LumoraPalette.primaryPurple.withValues(alpha: 0.9)
-                  : Colors.white.withValues(alpha: 0.06),
+                  ? (tokens.isDark
+                      ? tokens.palette.chipSelected
+                      : LumoraPalette.primaryPurple.withValues(alpha: 0.9))
+                  : (tokens.isDark
+                      ? tokens.palette.chipUnselected
+                      : Colors.white.withValues(alpha: 0.06)),
               border: Border.all(
                 color: isSelected
-                    ? LumoraPalette.lightPurple
-                    : Colors.white.withValues(alpha: 0.16),
+                    ? (tokens.isDark
+                        ? tokens.palette.activeAccent
+                        : LumoraPalette.lightPurple)
+                    : (tokens.isDark
+                        ? tokens.palette.softBorder
+                        : Colors.white.withValues(alpha: 0.16)),
                 width: 1.1,
               ),
             ),
             child: Text(
               label,
-              style: LumoraPalette.bodyStyle(
+              style: TextStyle(
                 fontSize: dense ? 12.5 : 13.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: Colors.white,
+                color: tokens.isDark ? tokens.textSecondary : Colors.white,
               ),
             ),
           ),
@@ -331,6 +380,7 @@ class _TimeField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AstraThemeTokens.of(context);
     final label =
         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
     return Material(
@@ -341,20 +391,32 @@ class _TimeField extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: tokens.isDark
+                ? tokens.palette.inputBackground
+                : Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+            border: Border.all(
+              color: tokens.isDark
+                  ? tokens.palette.softBorder
+                  : Colors.white.withValues(alpha: 0.16),
+            ),
           ),
           child: Row(
             children: [
-              const Icon(Icons.schedule_outlined, size: 20, color: LumoraPalette.lightPurple),
+              Icon(
+                Icons.schedule_outlined,
+                size: 20,
+                color: tokens.isDark
+                    ? tokens.palette.activeAccent
+                    : LumoraPalette.lightPurple,
+              ),
               const SizedBox(width: 12),
               Text(
                 label,
-                style: LumoraPalette.bodyStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: tokens.isDark ? tokens.textSecondary : Colors.white,
                 ),
               ),
             ],
@@ -366,7 +428,8 @@ class _TimeField extends StatelessWidget {
 }
 
 class _SubmitButton extends StatelessWidget {
-  const _SubmitButton({required this.label, required this.isSaving, required this.onTap});
+  const _SubmitButton(
+      {required this.label, required this.isSaving, required this.onTap});
 
   final String label;
   final bool isSaving;

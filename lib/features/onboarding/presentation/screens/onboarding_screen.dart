@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../../auth/domain/auth_flow_routes.dart';
+import '../../../auth/domain/registration_flow_state.dart';
 
 /// One storytelling beat of the onboarding flow.
 class _Beat {
@@ -75,11 +75,12 @@ const List<_Beat> _beats = [
 /// frosted gold-glass cards — the same world as the login and journal screens,
 /// so the whole first run reads as one continuous experience.
 class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({super.key, this.isNewSignup = false});
+  const OnboardingScreen({
+    super.key,
+    required this.registrationIntent,
+  });
 
-  /// True when reached from the sign-up flow — carried through to the mood
-  /// check-in so the hobbies step is shown only for new registrations.
-  final bool isNewSignup;
+  final FreshRegistrationIntent? registrationIntent;
 
   @override
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -105,12 +106,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
-  void _completeOnboarding() {
-    final hasSession = Supabase.instance.client.auth.currentSession != null;
-    if (hasSession) {
-      context.go(AuthFlowRoutes.afterOnboarding, extra: widget.isNewSignup);
-    } else {
-      context.go(AppRoutes.login);
+  Future<void> _completeOnboarding() async {
+    final current = widget.registrationIntent;
+    if (current == null) {
+      if (mounted) context.go(AppRoutes.home);
+      return;
+    }
+    try {
+      final next = await registrationFlowStore.advance(
+        current,
+        RegistrationStep.mood,
+      );
+      if (mounted) {
+        context.go(
+          AuthFlowRoutes.afterOnboarding,
+          extra: MoodRouteData(
+            MoodFlow.signup,
+            registrationIntent: next,
+          ),
+        );
+      }
+    } on RegistrationIntentMismatchException {
+      if (mounted) context.go(AppRoutes.home);
     }
   }
 
@@ -131,7 +148,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final gold = AstraKit.gold(isDark);
+    final gold = AstraKit.gold(context, isDark);
     final isLastPage = _page.round() == _pageCount - 1;
 
     return Scaffold(
@@ -190,10 +207,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ignoring: isLastPage,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: _completeOnboarding,
+                onTap: () => _completeOnboarding(),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   child: Text(
                     isTr ? 'Atla' : 'Skip',
                     style: GoogleFonts.outfit(
@@ -258,13 +275,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 Text(
                   isTr ? beat.titleTr : beat.titleEn,
                   textAlign: TextAlign.center,
-                  style: AstraKit.heading1(isDark, fontSize: 23),
+                  style: AstraKit.heading1(context, isDark, fontSize: 23),
                 ),
                 const SizedBox(height: 14),
                 Text(
                   isTr ? beat.bodyTr : beat.bodyEn,
                   textAlign: TextAlign.center,
                   style: AstraKit.body(
+                    context,
                     isDark,
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
@@ -312,7 +330,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 /// A frosted, gold-ringed circle framing each beat's icon — glowing softly so
 /// it reads as a small celestial emblem over the mountain scene.
 class _Medallion extends StatelessWidget {
-  const _Medallion({required this.icon, required this.gold, required this.isDark});
+  const _Medallion(
+      {required this.icon, required this.gold, required this.isDark});
 
   final IconData icon;
   final Color gold;

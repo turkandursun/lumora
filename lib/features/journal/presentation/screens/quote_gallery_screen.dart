@@ -49,7 +49,7 @@ class _QuoteGalleryScreenState extends ConsumerState<QuoteGalleryScreen> {
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     final favorites = ref.watch(quoteFavoritesProvider);
     final activeQuote = famousQuotes[_current];
     final isFav = favorites.contains(activeQuote.id);
@@ -72,7 +72,9 @@ class _QuoteGalleryScreenState extends ConsumerState<QuoteGalleryScreen> {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(isTr ? 'Sözler' : 'Quotes', style: AstraKit.heading1(isDark, fontSize: 22)),
+                    Text(isTr ? 'Sözler' : 'Quotes',
+                        style:
+                            AstraKit.heading1(context, isDark, fontSize: 22)),
                   ],
                 ),
               ),
@@ -127,10 +129,14 @@ class _QuoteGalleryScreenState extends ConsumerState<QuoteGalleryScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _CircleAction(
-                    icon: isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    icon: isFav
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
                     isDark: isDark,
                     primary: primary,
-                    onTap: () => ref.read(quoteFavoritesProvider.notifier).toggle(activeQuote.id),
+                    onTap: () => ref
+                        .read(quoteFavoritesProvider.notifier)
+                        .toggle(activeQuote.id),
                   ),
                   const SizedBox(width: 20),
                   _CircleAction(
@@ -138,7 +144,8 @@ class _QuoteGalleryScreenState extends ConsumerState<QuoteGalleryScreen> {
                     isDark: isDark,
                     primary: primary,
                     big: true,
-                    onTap: () => _ShareOptionsSheet.show(context, activeQuote, isTr, ref),
+                    onTap: () => _ShareOptionsSheet.show(
+                        context, activeQuote, isTr, ref),
                   ),
                 ],
               ),
@@ -154,7 +161,11 @@ class _QuoteGalleryScreenState extends ConsumerState<QuoteGalleryScreen> {
 /// A single quote card: darkened image background, 32px soft corners, and a
 /// word-by-word reveal that replays whenever the card scrolls to centre.
 class _QuoteCard extends StatefulWidget {
-  const _QuoteCard({required this.quote, required this.index, required this.controller, required this.isTr});
+  const _QuoteCard(
+      {required this.quote,
+      required this.index,
+      required this.controller,
+      required this.isTr});
 
   final FamousQuote quote;
   final int index;
@@ -165,21 +176,25 @@ class _QuoteCard extends StatefulWidget {
   State<_QuoteCard> createState() => _QuoteCardState();
 }
 
-class _QuoteCardState extends State<_QuoteCard> with SingleTickerProviderStateMixin {
+class _QuoteCardState extends State<_QuoteCard>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _reveal;
   bool _wasActive = false;
 
   @override
   void initState() {
     super.initState();
-    _reveal = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    _reveal = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 900));
     widget.controller.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _onScroll());
   }
 
   void _onScroll() {
     if (!mounted) return;
-    final page = widget.controller.hasClients ? (widget.controller.page ?? widget.controller.initialPage.toDouble()) : widget.controller.initialPage.toDouble();
+    final page = widget.controller.hasClients
+        ? (widget.controller.page ?? widget.controller.initialPage.toDouble())
+        : widget.controller.initialPage.toDouble();
     final active = page.round() == widget.index;
     if (active && !_wasActive) {
       _wasActive = true;
@@ -205,7 +220,10 @@ class _QuoteCardState extends State<_QuoteCard> with SingleTickerProviderStateMi
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset('assets/images/app_theme_dark.jpeg', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const ColoredBox(color: Color(0xFF1B1330))),
+            Image.asset('assets/images/app_theme_dark.jpeg',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const ColoredBox(color: Color(0xFF1B1330))),
             // Darkening gradient so the words stay legible.
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -223,7 +241,8 @@ class _QuoteCardState extends State<_QuoteCard> with SingleTickerProviderStateMi
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.format_quote_rounded, color: Color(0xAAE3C264), size: 40),
+                  const Icon(Icons.format_quote_rounded,
+                      color: Color(0xAAE3C264), size: 40),
                   const SizedBox(height: 12),
                   _WordReveal(
                     text: widget.quote.text(widget.isTr),
@@ -239,15 +258,20 @@ class _QuoteCardState extends State<_QuoteCard> with SingleTickerProviderStateMi
                   AnimatedBuilder(
                     animation: _reveal,
                     builder: (context, child) {
-                      final a = Curves.easeOutBack.transform(_reveal.value.clamp(0.0, 1.0));
+                      final a = Curves.easeOutBack
+                          .transform(_reveal.value.clamp(0.0, 1.0));
                       return Opacity(
                         opacity: _reveal.value.clamp(0.0, 1.0),
-                        child: Transform.translate(offset: Offset(0, 16 * (1 - a)), child: child),
+                        child: Transform.translate(
+                            offset: Offset(0, 16 * (1 - a)), child: child),
                       );
                     },
                     child: Text(
                       '— ${widget.quote.author}',
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFFE3C264)),
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFE3C264)),
                     ),
                   ),
                 ],
@@ -263,7 +287,8 @@ class _QuoteCardState extends State<_QuoteCard> with SingleTickerProviderStateMi
 /// Word-by-word "reveal from below" — each word fades in and springs up in
 /// sequence, driven by a shared [reveal] controller.
 class _WordReveal extends StatelessWidget {
-  const _WordReveal({required this.text, required this.reveal, required this.style});
+  const _WordReveal(
+      {required this.text, required this.reveal, required this.style});
 
   final String text;
   final Animation<double> reveal;
@@ -279,7 +304,8 @@ class _WordReveal extends StatelessWidget {
           spacing: 7,
           runSpacing: 2,
           children: [
-            for (var i = 0; i < words.length; i++) _buildWord(words[i], i, words.length),
+            for (var i = 0; i < words.length; i++)
+              _buildWord(words[i], i, words.length),
           ],
         );
       },
@@ -303,7 +329,12 @@ class _WordReveal extends StatelessWidget {
 
 /// Round bouncy action button used under the carousel.
 class _CircleAction extends StatelessWidget {
-  const _CircleAction({required this.icon, required this.isDark, required this.primary, required this.onTap, this.big = false});
+  const _CircleAction(
+      {required this.icon,
+      required this.isDark,
+      required this.primary,
+      required this.onTap,
+      this.big = false});
 
   final IconData icon;
   final bool isDark;
@@ -323,13 +354,26 @@ class _CircleAction extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: big
-              ? LinearGradient(colors: [primary, primary.withValues(alpha: 0.6)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+              ? LinearGradient(
+                  colors: [primary, primary.withValues(alpha: 0.6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight)
               : null,
-          color: big ? null : (isDark ? const Color(0x44231845) : const Color(0xCCFCF4E2)),
+          color: big
+              ? null
+              : (isDark ? const Color(0x44231845) : const Color(0xCCFCF4E2)),
           border: Border.all(color: primary.withValues(alpha: 0.4)),
-          boxShadow: big ? [BoxShadow(color: primary.withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 6))] : null,
+          boxShadow: big
+              ? [
+                  BoxShadow(
+                      color: primary.withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6))
+                ]
+              : null,
         ),
-        child: Icon(icon, color: big ? Colors.white : primary, size: big ? 26 : 22),
+        child: Icon(icon,
+            color: big ? Colors.white : primary, size: big ? 26 : 22),
       ),
     );
   }
@@ -337,13 +381,15 @@ class _CircleAction extends StatelessWidget {
 
 /// Bottom sheet whose share options spring in one after another (staggered).
 class _ShareOptionsSheet extends StatelessWidget {
-  const _ShareOptionsSheet({required this.quote, required this.isTr, required this.ref});
+  const _ShareOptionsSheet(
+      {required this.quote, required this.isTr, required this.ref});
 
   final FamousQuote quote;
   final bool isTr;
   final WidgetRef ref;
 
-  static Future<void> show(BuildContext context, FamousQuote quote, bool isTr, WidgetRef ref) {
+  static Future<void> show(
+      BuildContext context, FamousQuote quote, bool isTr, WidgetRef ref) {
     return showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -359,14 +405,19 @@ class _ShareOptionsSheet extends StatelessWidget {
         label: isTr ? 'Görsel olarak paylaş' : 'Share as image',
         onTap: () {
           Navigator.of(context).pop();
-          ShareQuoteCard.share(context: context, quoteText: quote.text(isTr), isTr: isTr, author: quote.author);
+          ShareQuoteCard.share(
+              context: context,
+              quoteText: quote.text(isTr),
+              isTr: isTr,
+              author: quote.author);
         },
       ),
       _OptionRow(
         icon: Icons.copy_rounded,
         label: isTr ? 'Metni kopyala' : 'Copy text',
         onTap: () {
-          Clipboard.setData(ClipboardData(text: '"${quote.text(isTr)}" — ${quote.author}'));
+          Clipboard.setData(
+              ClipboardData(text: '"${quote.text(isTr)}" — ${quote.author}'));
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(isTr ? 'Kopyalandı' : 'Copied')),
@@ -394,12 +445,23 @@ class _ShareOptionsSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 8), decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+          Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2))),
           for (var i = 0; i < rows.length; i++)
             rows[i]
                 .animate()
                 .fadeIn(delay: (i * 70).ms, duration: 300.ms)
-                .slideY(begin: 0.4, end: 0, delay: (i * 70).ms, duration: 420.ms, curve: Curves.easeOutBack),
+                .slideY(
+                    begin: 0.4,
+                    end: 0,
+                    delay: (i * 70).ms,
+                    duration: 420.ms,
+                    curve: Curves.easeOutBack),
         ],
       ),
     );
@@ -407,7 +469,8 @@ class _ShareOptionsSheet extends StatelessWidget {
 }
 
 class _OptionRow extends StatelessWidget {
-  const _OptionRow({required this.icon, required this.label, required this.onTap});
+  const _OptionRow(
+      {required this.icon, required this.label, required this.onTap});
 
   final IconData icon;
   final String label;
@@ -423,7 +486,11 @@ class _OptionRow extends StatelessWidget {
           children: [
             Icon(icon, color: const Color(0xFFC084FC), size: 22),
             const SizedBox(width: 16),
-            Text(label, style: const TextStyle(color: Color(0xFFF4EEFF), fontSize: 15, fontWeight: FontWeight.w600)),
+            Text(label,
+                style: const TextStyle(
+                    color: Color(0xFFF4EEFF),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600)),
           ],
         ),
       ),

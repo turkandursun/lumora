@@ -17,7 +17,7 @@ class FavoritesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     final favoritesAsync = ref.watch(favoriteQuotesProvider);
     final quotes = favoritesAsync.valueOrNull ?? const <Quote>[];
 
@@ -43,7 +43,7 @@ class FavoritesScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Text(
                         isTr ? 'Favorilerim' : 'My favorites',
-                        style: AstraKit.heading1(isDark, fontSize: 22),
+                        style: AstraKit.heading1(context, isDark, fontSize: 22),
                       ),
                     ],
                   ),
@@ -73,6 +73,7 @@ class FavoritesScreen extends ConsumerWidget {
                                           : 'No favorite quotes yet. Tap the heart on the Home quote card to save one here.',
                                       textAlign: TextAlign.center,
                                       style: AstraKit.mutedText(
+                                        context,
                                         isDark,
                                         fontSize: 14,
                                       ),
@@ -143,6 +144,7 @@ class _FavoriteQuoteCard extends StatelessWidget {
             Text(
               quote.text(isTr),
               style: AstraKit.body(
+                context,
                 isDark,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -153,7 +155,7 @@ class _FavoriteQuoteCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 '— ${quote.author}',
-                style: AstraKit.label(isDark, fontSize: 12.5),
+                style: AstraKit.label(context, isDark, fontSize: 12.5),
               ),
             ],
             const SizedBox(height: 6),

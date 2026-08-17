@@ -18,7 +18,8 @@ class SealedJournalsScreen extends ConsumerStatefulWidget {
   const SealedJournalsScreen({super.key});
 
   @override
-  ConsumerState<SealedJournalsScreen> createState() => _SealedJournalsScreenState();
+  ConsumerState<SealedJournalsScreen> createState() =>
+      _SealedJournalsScreenState();
 }
 
 class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
@@ -27,39 +28,50 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
 
   DateTime _dayKey(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  Future<bool> _confirmDelete(BuildContext context, JournalEntryRow entry, bool isTr, bool isDark, Color primary) async {
+  Future<bool> _confirmDelete(BuildContext context, JournalEntryRow entry,
+      bool isTr, bool isDark, Color primary) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
+        backgroundColor:
+            isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(isTr ? 'Günlüğü sil' : 'Delete entry', style: AstraKit.heading2(isDark, fontSize: 18)),
+        title: Text(isTr ? 'Günlüğü sil' : 'Delete entry',
+            style: AstraKit.heading2(context, isDark, fontSize: 18)),
         content: Text(
-          isTr ? 'Bu günlük kaydı kalıcı olarak silinecek. Emin misin?' : 'This entry will be permanently deleted. Are you sure?',
-          style: AstraKit.mutedText(isDark, fontSize: 14),
+          isTr
+              ? 'Bu günlük kaydı kalıcı olarak silinecek. Emin misin?'
+              : 'This entry will be permanently deleted. Are you sure?',
+          style: AstraKit.mutedText(context, isDark, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(isDark)),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel',
+                style: AstraKit.mutedText(context, isDark)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(isTr ? 'Sil' : 'Delete',
-                style: AstraKit.body(isDark, fontWeight: FontWeight.w700, color: const Color(0xFFE07A7A))),
+                style: AstraKit.body(context, isDark,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFE07A7A))),
           ),
         ],
       ),
     );
     if (confirmed == true) {
-      await ref.read(journalEntriesRepositoryProvider).delete(entry.id, supabaseId: entry.supabaseId);
+      await ref
+          .read(journalEntriesRepositoryProvider)
+          .delete(entry.id, supabaseId: entry.supabaseId);
       return true;
     }
     return false;
   }
 
   /// Opens the entry as a premium "sheet of paper" that drops onto the screen.
-  void _openEntry(JournalEntryRow entry, String localeStr, bool isTr, bool isDark, Color primary) {
+  void _openEntry(JournalEntryRow entry, String localeStr, bool isTr,
+      bool isDark, Color primary) {
     Navigator.of(context).push(_paperDropRoute(
       _JournalDetailPage(
         entry: entry,
@@ -68,7 +80,8 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
         isDark: isDark,
         primary: primary,
         onDelete: () async {
-          final deleted = await _confirmDelete(context, entry, isTr, isDark, primary);
+          final deleted =
+              await _confirmDelete(context, entry, isTr, isDark, primary);
           if (deleted && mounted) Navigator.of(context).pop();
         },
       ),
@@ -80,7 +93,7 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final localeStr = Localizations.localeOf(context).toString();
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     final entriesAsync = ref.watch(allJournalEntriesProvider);
 
     return Scaffold(
@@ -89,9 +102,14 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
         isDark: isDark,
         child: SafeArea(
           child: entriesAsync.when(
-            loading: () => Center(child: CircularProgressIndicator(color: primary)),
+            loading: () =>
+                Center(child: CircularProgressIndicator(color: primary)),
             error: (_, __) => Center(
-              child: Text(isTr ? 'Günlükler yüklenemedi.' : 'Could not load your journals.', style: AstraKit.mutedText(isDark)),
+              child: Text(
+                  isTr
+                      ? 'Günlükler yüklenemedi.'
+                      : 'Could not load your journals.',
+                  style: AstraKit.mutedText(context, isDark)),
             ),
             data: (entries) {
               // Map of day → entries, plus the set of days that have entries.
@@ -101,8 +119,11 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
               }
               // Default selection: the most recent day that has an entry.
               final selected = _selectedDay ??
-                  (entries.isNotEmpty ? _dayKey(entries.first.createdAt) : _dayKey(DateTime.now()));
-              final dayEntries = byDay[_dayKey(selected)] ?? const <JournalEntryRow>[];
+                  (entries.isNotEmpty
+                      ? _dayKey(entries.first.createdAt)
+                      : _dayKey(DateTime.now()));
+              final dayEntries =
+                  byDay[_dayKey(selected)] ?? const <JournalEntryRow>[];
 
               return ResponsiveContent(
                 child: Column(
@@ -131,7 +152,8 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
                     ),
                     Expanded(
                       child: dayEntries.isEmpty
-                          ? _EmptyDay(isDark: isDark, isTr: isTr, primary: primary)
+                          ? _EmptyDay(
+                              isDark: isDark, isTr: isTr, primary: primary)
                           : ListView.builder(
                               padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
                               itemCount: dayEntries.length,
@@ -145,8 +167,10 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
                                   primary: primary,
                                   localeStr: localeStr,
                                   isTr: isTr,
-                                  onOpen: () => _openEntry(dayEntries[i], localeStr, isTr, isDark, primary),
-                                  onDelete: () => _confirmDelete(context, dayEntries[i], isTr, isDark, primary),
+                                  onOpen: () => _openEntry(dayEntries[i],
+                                      localeStr, isTr, isDark, primary),
+                                  onDelete: () => _confirmDelete(context,
+                                      dayEntries[i], isTr, isDark, primary),
                                 ),
                               ),
                             ),
@@ -163,7 +187,8 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.isDark, required this.isTr, required this.primary});
+  const _Header(
+      {required this.isDark, required this.isTr, required this.primary});
 
   final bool isDark;
   final bool isTr;
@@ -185,9 +210,13 @@ class _Header extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(isTr ? 'Günlüklerim' : 'My Journals', style: AstraKit.heading1(isDark, fontSize: 22)),
-              Text(isTr ? 'Bir tarih seç, o günün günlükleri gelsin.' : 'Pick a date to see that day’s entries.',
-                  style: AstraKit.mutedText(isDark, fontSize: 12)),
+              Text(isTr ? 'Günlüklerim' : 'My Journals',
+                  style: AstraKit.heading1(context, isDark, fontSize: 22)),
+              Text(
+                  isTr
+                      ? 'Bir tarih seç, o günün günlükleri gelsin.'
+                      : 'Pick a date to see that day’s entries.',
+                  style: AstraKit.mutedText(context, isDark, fontSize: 12)),
             ],
           ),
         ],
@@ -217,8 +246,8 @@ class _Calendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = AstraKit.ink(isDark);
-    final muted = AstraKit.muted(isDark);
+    final text = AstraKit.ink(context, isDark);
+    final muted = AstraKit.muted(context, isDark);
     return TableCalendar<Object>(
       firstDay: DateTime(2020),
       lastDay: DateTime(2035),
@@ -234,11 +263,11 @@ class _Calendar extends StatelessWidget {
         titleCentered: true,
         leftChevronIcon: Icon(Icons.chevron_left_rounded, color: primary),
         rightChevronIcon: Icon(Icons.chevron_right_rounded, color: primary),
-        titleTextStyle: AstraKit.heading2(isDark, fontSize: 16),
+        titleTextStyle: AstraKit.heading2(context, isDark, fontSize: 16),
       ),
       daysOfWeekStyle: DaysOfWeekStyle(
-        weekdayStyle: AstraKit.mutedText(isDark, fontSize: 11.5),
-        weekendStyle: AstraKit.mutedText(isDark, fontSize: 11.5),
+        weekdayStyle: AstraKit.mutedText(context, isDark, fontSize: 11.5),
+        weekendStyle: AstraKit.mutedText(context, isDark, fontSize: 11.5),
       ),
       calendarStyle: CalendarStyle(
         defaultTextStyle: TextStyle(color: text, fontWeight: FontWeight.w600),
@@ -250,9 +279,12 @@ class _Calendar extends StatelessWidget {
           border: Border.all(color: primary.withValues(alpha: 0.5)),
         ),
         todayTextStyle: TextStyle(color: text, fontWeight: FontWeight.w700),
-        selectedDecoration: BoxDecoration(shape: BoxShape.circle, color: primary),
-        selectedTextStyle: const TextStyle(color: Color(0xFF1A0F00), fontWeight: FontWeight.w800),
-        markerDecoration: BoxDecoration(shape: BoxShape.circle, color: primary.withValues(alpha: 0.9)),
+        selectedDecoration:
+            BoxDecoration(shape: BoxShape.circle, color: primary),
+        selectedTextStyle: const TextStyle(
+            color: Color(0xFF1A0F00), fontWeight: FontWeight.w800),
+        markerDecoration: BoxDecoration(
+            shape: BoxShape.circle, color: primary.withValues(alpha: 0.9)),
         markersMaxCount: 1,
         markerSize: 5,
         markerMargin: const EdgeInsets.only(top: 6),
@@ -288,7 +320,9 @@ class _EntryTile extends StatelessWidget {
     final rawTitle = entry.title?.trim();
     final title = (rawTitle != null && rawTitle.isNotEmpty)
         ? rawTitle
-        : (entry.content.trim().isNotEmpty ? entry.content.trim() : (isTr ? 'Günlük' : 'Entry'));
+        : (entry.content.trim().isNotEmpty
+            ? entry.content.trim()
+            : (isTr ? 'Günlük' : 'Entry'));
     final hasAudio = entry.audioPath != null && entry.audioPath!.isNotEmpty;
     final photoUrl = entry.photoUrl;
     final hasPhoto = photoUrl != null && photoUrl.trim().isNotEmpty;
@@ -309,21 +343,32 @@ class _EntryTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.schedule_rounded, size: 12, color: primary.withValues(alpha: 0.85)),
+                        Icon(Icons.schedule_rounded,
+                            size: 12, color: primary.withValues(alpha: 0.85)),
                         const SizedBox(width: 5),
-                        Text(time, style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w700, color: primary)),
+                        Text(time,
+                            style: AstraKit.body(context, isDark,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: primary)),
                         if (hasPhoto) ...[
                           const SizedBox(width: 9),
-                          Icon(Icons.photo_rounded, size: 13, color: primary.withValues(alpha: 0.7)),
+                          Icon(Icons.photo_rounded,
+                              size: 13, color: primary.withValues(alpha: 0.7)),
                         ],
                         if (hasAudio) ...[
                           const SizedBox(width: 7),
-                          Icon(Icons.graphic_eq_rounded, size: 13, color: primary.withValues(alpha: 0.7)),
+                          Icon(Icons.graphic_eq_rounded,
+                              size: 13, color: primary.withValues(alpha: 0.7)),
                         ],
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AstraKit.heading2(isDark, fontSize: 16)),
+                    Text(title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            AstraKit.heading2(context, isDark, fontSize: 16)),
                   ],
                 ),
               ),
@@ -332,10 +377,12 @@ class _EntryTile extends StatelessWidget {
                 radius: 20,
                 child: Padding(
                   padding: const EdgeInsets.all(6),
-                  child: Icon(Icons.delete_outline_rounded, size: 19, color: AstraKit.muted(isDark)),
+                  child: Icon(Icons.delete_outline_rounded,
+                      size: 19, color: AstraKit.muted(context, isDark)),
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: primary.withValues(alpha: 0.7)),
+              Icon(Icons.chevron_right_rounded,
+                  color: primary.withValues(alpha: 0.7)),
             ],
           ),
         ),
@@ -382,8 +429,14 @@ class _PaperPalette {
         spine: primary.withValues(alpha: 0.55),
         accent: primary,
         shadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.55), blurRadius: 44, offset: const Offset(0, 22)),
-          BoxShadow(color: primary.withValues(alpha: 0.16), blurRadius: 34, spreadRadius: 1),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.55),
+              blurRadius: 44,
+              offset: const Offset(0, 22)),
+          BoxShadow(
+              color: primary.withValues(alpha: 0.16),
+              blurRadius: 34,
+              spreadRadius: 1),
         ],
       );
     }
@@ -397,8 +450,10 @@ class _PaperPalette {
       spine: primary.withValues(alpha: 0.38),
       accent: primary,
       shadow: const [
-        BoxShadow(color: Color(0x59000000), blurRadius: 46, offset: Offset(0, 22)),
-        BoxShadow(color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 2)),
+        BoxShadow(
+            color: Color(0x59000000), blurRadius: 46, offset: Offset(0, 22)),
+        BoxShadow(
+            color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 2)),
       ],
     );
   }
@@ -428,8 +483,9 @@ class _JournalDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = _PaperPalette.of(isDark, primary);
-    final dateEyebrow =
-        DateFormat('d MMMM yyyy', localeStr).format(entry.createdAt).toUpperCase();
+    final dateEyebrow = DateFormat('d MMMM yyyy', localeStr)
+        .format(entry.createdAt)
+        .toUpperCase();
     final weekday = DateFormat('EEEE', localeStr).format(entry.createdAt);
     final time = DateFormat('HH:mm', localeStr).format(entry.createdAt);
     final hasTitle = entry.title != null && entry.title!.trim().isNotEmpty;
@@ -493,7 +549,8 @@ class _JournalDetailPage extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         dateEyebrow,
@@ -516,7 +573,10 @@ class _JournalDetailPage extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                _PaperIconBtn(icon: Icons.delete_outline_rounded, palette: p, onTap: onDelete),
+                                _PaperIconBtn(
+                                    icon: Icons.delete_outline_rounded,
+                                    palette: p,
+                                    onTap: onDelete),
                                 const SizedBox(width: 6),
                                 _PaperIconBtn(
                                   icon: Icons.close_rounded,
@@ -528,7 +588,9 @@ class _JournalDetailPage extends StatelessWidget {
                             const SizedBox(height: 18),
                             // ── Title
                             Text(
-                              hasTitle ? entry.title!.trim() : (isTr ? 'Bugünden' : 'From today'),
+                              hasTitle
+                                  ? entry.title!.trim()
+                                  : (isTr ? 'Bugünden' : 'From today'),
                               style: GoogleFonts.playfairDisplay(
                                 fontSize: 27,
                                 fontWeight: FontWeight.w700,
@@ -558,13 +620,15 @@ class _JournalDetailPage extends StatelessWidget {
                             if (hasAudio) ...[
                               const SizedBox(height: 18),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
                                   color: p.frame,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: p.hairline),
                                 ),
-                                child: VoiceEntryPlayer(audioPath: entry.audioPath!),
+                                child: VoiceEntryPlayer(
+                                    audioPath: entry.audioPath!),
                               ),
                             ],
                             const SizedBox(height: 24),
@@ -601,7 +665,8 @@ class _OrnamentRule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget line() => Expanded(
-          child: Container(height: 1, color: palette.softInk.withValues(alpha: 0.35)),
+          child: Container(
+              height: 1, color: palette.softInk.withValues(alpha: 0.35)),
         );
     return Row(
       children: [
@@ -639,7 +704,10 @@ class _FramedPhoto extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: palette.hairline),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.14), blurRadius: 14, offset: const Offset(0, 6)),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.14),
+              blurRadius: 14,
+              offset: const Offset(0, 6)),
         ],
       ),
       child: ClipRRect(
@@ -658,7 +726,8 @@ class _FramedPhoto extends StatelessWidget {
                 child: SizedBox(
                   width: 22,
                   height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: palette.accent),
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: palette.accent),
                 ),
               ),
             );
@@ -671,7 +740,8 @@ class _FramedPhoto extends StatelessWidget {
 }
 
 class _PaperIconBtn extends StatelessWidget {
-  const _PaperIconBtn({required this.icon, required this.palette, required this.onTap});
+  const _PaperIconBtn(
+      {required this.icon, required this.palette, required this.onTap});
 
   final IconData icon;
   final _PaperPalette palette;
@@ -708,8 +778,13 @@ Route<T> _paperDropRoute<T>(Widget page) {
     reverseTransitionDuration: const Duration(milliseconds: 260),
     pageBuilder: (_, __, ___) => page,
     transitionsBuilder: (context, animation, secondary, child) {
-      final settle = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
-      final fade = CurvedAnimation(parent: animation, curve: const Interval(0.0, 0.55, curve: Curves.easeOut));
+      final settle = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic);
+      final fade = CurvedAnimation(
+          parent: animation,
+          curve: const Interval(0.0, 0.55, curve: Curves.easeOut));
       return FadeTransition(
         opacity: fade,
         child: AnimatedBuilder(
@@ -719,7 +794,10 @@ Route<T> _paperDropRoute<T>(Widget page) {
             final v = settle.value;
             return Transform.translate(
               offset: Offset(0, -20 * (1 - v)),
-              child: Transform.scale(scale: 0.96 + 0.04 * v, alignment: Alignment.topCenter, child: c),
+              child: Transform.scale(
+                  scale: 0.96 + 0.04 * v,
+                  alignment: Alignment.topCenter,
+                  child: c),
             );
           },
         ),
@@ -729,7 +807,8 @@ Route<T> _paperDropRoute<T>(Widget page) {
 }
 
 class _EmptyDay extends StatelessWidget {
-  const _EmptyDay({required this.isDark, required this.isTr, required this.primary});
+  const _EmptyDay(
+      {required this.isDark, required this.isTr, required this.primary});
 
   final bool isDark;
   final bool isTr;
@@ -743,18 +822,21 @@ class _EmptyDay extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.event_note_rounded, size: 44, color: primary.withValues(alpha: 0.7)),
+            Icon(Icons.event_note_rounded,
+                size: 44, color: primary.withValues(alpha: 0.7)),
             const SizedBox(height: 14),
             Text(
               isTr ? 'Bu güne ait günlük yok' : 'No entries for this day',
               textAlign: TextAlign.center,
-              style: AstraKit.heading2(isDark, fontSize: 17),
+              style: AstraKit.heading2(context, isDark, fontSize: 17),
             ),
             const SizedBox(height: 6),
             Text(
-              isTr ? 'Takvimde noktalı günler günlük içerir.' : 'Dotted days on the calendar have entries.',
+              isTr
+                  ? 'Takvimde noktalı günler günlük içerir.'
+                  : 'Dotted days on the calendar have entries.',
               textAlign: TextAlign.center,
-              style: AstraKit.mutedText(isDark, fontSize: 13),
+              style: AstraKit.mutedText(context, isDark, fontSize: 13),
             ),
           ],
         ),

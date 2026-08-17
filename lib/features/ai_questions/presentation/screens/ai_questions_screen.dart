@@ -155,7 +155,7 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -176,7 +176,9 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(isTr ? 'AI Soruları' : 'AI Questions', style: AstraKit.heading1(isDark, fontSize: 22)),
+                    Text(isTr ? 'AI Soruları' : 'AI Questions',
+                        style:
+                            AstraKit.heading1(context, isDark, fontSize: 22)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -190,7 +192,8 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
                           isTr
                               ? 'Birkaç soruyu yanıtla, Luma ruh haline dair kısa bir analiz yapsın.'
                               : 'Answer a few questions and Luma will give a short read on your mood.',
-                          style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500),
+                          style: AstraKit.body(context, isDark,
+                              fontSize: 13.5, fontWeight: FontWeight.w500),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -230,9 +233,7 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
                         AstraGoldButton(
                           isDark: isDark,
                           label: _loading
-                              ? (isTr
-                                  ? 'Analiz ediliyor...'
-                                  : 'Analyzing...')
+                              ? (isTr ? 'Analiz ediliyor...' : 'Analyzing...')
                               : (isTr
                                   ? 'Luma ile analiz et'
                                   : 'Analyze with Luma'),
@@ -247,7 +248,11 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
                         AstraEntrance(
                           offset: 26,
                           scaleFrom: 0.96,
-                          child: _AnalysisCard(isTr: isTr, text: _analysis!, isDark: isDark, primary: primary),
+                          child: _AnalysisCard(
+                              isTr: isTr,
+                              text: _analysis!,
+                              isDark: isDark,
+                              primary: primary),
                         ),
                       ],
                       const SizedBox(height: 8),
@@ -288,7 +293,9 @@ class _QuestionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${index + 1}. $question', style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700)),
+          Text('${index + 1}. $question',
+              style: AstraKit.body(context, isDark,
+                  fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           TextField(
             minLines: 2,
@@ -296,17 +303,17 @@ class _QuestionCard extends StatelessWidget {
             textInputAction: TextInputAction.newline,
             onChanged: onChanged,
             style: AstraKit.body(
+              context,
               isDark,
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
               hintText: isTr ? 'Cevabını yaz...' : 'Write your answer...',
-              hintStyle: AstraKit.mutedText(isDark, fontSize: 13),
+              hintStyle: AstraKit.mutedText(context, isDark, fontSize: 13),
               filled: true,
-              fillColor: isDark
-                  ? const Color(0x33231845)
-                  : const Color(0x73FBF1DC),
+              fillColor:
+                  isDark ? const Color(0x33231845) : const Color(0x73FBF1DC),
               contentPadding: const EdgeInsets.all(14),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -360,7 +367,7 @@ class _QuestionsLoadingCard extends StatelessWidget {
                   ? 'Luma bugünün sorularını hazırlıyor...'
                   : "Luma is preparing today's questions...",
               textAlign: TextAlign.center,
-              style: AstraKit.mutedText(isDark, fontSize: 13.5),
+              style: AstraKit.mutedText(context, isDark, fontSize: 13.5),
             ),
           ],
         ),
@@ -397,6 +404,7 @@ class _QuestionsErrorCard extends StatelessWidget {
             message,
             textAlign: TextAlign.center,
             style: AstraKit.body(
+              context,
               isDark,
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
@@ -409,6 +417,7 @@ class _QuestionsErrorCard extends StatelessWidget {
             label: Text(
               isTr ? 'Tekrar dene' : 'Try again',
               style: AstraKit.body(
+                context,
                 isDark,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -447,11 +456,14 @@ class _AnalysisCard extends StatelessWidget {
             children: [
               Icon(Icons.spa_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(isTr ? 'Luma\'nın analizi' : "Luma's analysis", style: AstraKit.label(isDark, fontSize: 12.5)),
+              Text(isTr ? 'Luma\'nın analizi' : "Luma's analysis",
+                  style: AstraKit.label(context, isDark, fontSize: 12.5)),
             ],
           ),
           const SizedBox(height: 10),
-          Text(text, style: AstraKit.body(isDark, fontSize: 14.5, fontWeight: FontWeight.w500, height: 1.45)),
+          Text(text,
+              style: AstraKit.body(context, isDark,
+                  fontSize: 14.5, fontWeight: FontWeight.w500, height: 1.45)),
         ],
       ),
     );

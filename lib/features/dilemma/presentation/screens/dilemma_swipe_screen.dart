@@ -153,7 +153,7 @@ class _DilemmaSwipeScreenState extends ConsumerState<DilemmaSwipeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     final done = !_ready || _index >= _todays.length;
     final dilemma = done ? null : _todays[_index];
 
@@ -176,17 +176,19 @@ class _DilemmaSwipeScreenState extends ConsumerState<DilemmaSwipeScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(l10n.dilemmaTitle,
-                        style: AstraKit.heading1(isDark, fontSize: 24)),
+                        style:
+                            AstraKit.heading1(context, isDark, fontSize: 24)),
                     const Spacer(),
                     if (!done)
                       Text('${_index + 1}/${_todays.length}',
-                          style: AstraKit.mutedText(isDark, fontSize: 13)),
+                          style: AstraKit.mutedText(context, isDark,
+                              fontSize: 13)),
                   ],
                 ),
                 const SizedBox(height: 6),
                 if (!done)
                   Text(l10n.dilemmaSubtitle,
-                      style: AstraKit.mutedText(isDark, fontSize: 13)),
+                      style: AstraKit.mutedText(context, isDark, fontSize: 13)),
                 const SizedBox(height: 12),
                 _CoachEntryBanner(isDark: isDark, primary: primary),
                 const SizedBox(height: 6),
@@ -277,14 +279,17 @@ class _CoachEntryBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(tr ? 'Gerçek bir kararın mı var?' : 'Facing a real decision?',
-                      style: AstraKit.heading2(isDark, fontSize: 15)),
+                  Text(
+                      tr
+                          ? 'Gerçek bir kararın mı var?'
+                          : 'Facing a real decision?',
+                      style: AstraKit.heading2(context, isDark, fontSize: 15)),
                   const SizedBox(height: 2),
                   Text(
                     tr
                         ? 'Kendi ikilemini Luma’yla adım adım çöz'
                         : 'Work your own dilemma through with Luma',
-                    style: AstraKit.mutedText(isDark, fontSize: 12.5),
+                    style: AstraKit.mutedText(context, isDark, fontSize: 12.5),
                   ),
                 ],
               ),
@@ -369,7 +374,7 @@ class _SwipeCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 Text('←   ↔   →',
-                    style: AstraKit.mutedText(isDark, fontSize: 16)),
+                    style: AstraKit.mutedText(context, isDark, fontSize: 16)),
               ],
             ),
           ),
@@ -415,7 +420,7 @@ class _OptionPanel extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: AstraKit.body(isDark,
+          style: AstraKit.body(context, isDark,
               fontSize: 17, fontWeight: FontWeight.w700, height: 1.25),
         ),
       ),
@@ -463,7 +468,7 @@ class _ResultView extends StatelessWidget {
           children: [
             Text(l10n.dilemmaResultAgree(agreePct),
                 textAlign: TextAlign.center,
-                style: AstraKit.heading2(isDark, fontSize: 18)),
+                style: AstraKit.heading2(context, isDark, fontSize: 18)),
             const SizedBox(height: 6),
             if (loading)
               SizedBox(
@@ -477,7 +482,7 @@ class _ResultView extends StatelessWidget {
                 hasReal
                     ? '${stats!.total} ${Localizations.localeOf(context).languageCode == 'tr' ? 'oy' : 'votes'}'
                     : ' ',
-                style: AstraKit.mutedText(isDark, fontSize: 11.5),
+                style: AstraKit.mutedText(context, isDark, fontSize: 11.5),
               ),
             const SizedBox(height: 16),
             _ResultBar(
@@ -544,12 +549,12 @@ class _ResultBar extends StatelessWidget {
             ],
             Expanded(
               child: Text(text,
-                  style: AstraKit.body(isDark,
+                  style: AstraKit.body(context, isDark,
                       fontSize: 14,
                       fontWeight: chosen ? FontWeight.w800 : FontWeight.w600)),
             ),
             Text('%$pct',
-                style: AstraKit.body(isDark,
+                style: AstraKit.body(context, isDark,
                     fontSize: 14, fontWeight: FontWeight.w800, color: primary)),
           ],
         ),
@@ -633,12 +638,13 @@ class _SummaryView extends StatelessWidget {
               const SizedBox(height: 16),
               Text(l10n.dilemmaDoneTitle,
                   textAlign: TextAlign.center,
-                  style: AstraKit.heading1(isDark, fontSize: 22)),
+                  style: AstraKit.heading1(context, isDark, fontSize: 22)),
               const SizedBox(height: 10),
               if (total > 0)
                 Text(l10n.dilemmaSummaryLine(majority, total),
                     textAlign: TextAlign.center,
-                    style: AstraKit.body(isDark, fontSize: 15, height: 1.35)),
+                    style: AstraKit.body(context, isDark,
+                        fontSize: 15, height: 1.35)),
               const SizedBox(height: 22),
               SizedBox(
                 width: double.infinity,
@@ -673,7 +679,7 @@ class _SummaryView extends StatelessWidget {
                 onPressed: onRestart,
                 child: Text(l10n.dilemmaRestart,
                     style: TextStyle(
-                        color: AstraKit.muted(isDark),
+                        color: AstraKit.muted(context, isDark),
                         fontWeight: FontWeight.w700)),
               ),
             ],

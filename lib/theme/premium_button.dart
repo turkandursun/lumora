@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
+import 'astra_design_tokens.dart';
 import 'sakura_home_palette.dart';
 
 /// A tactile, premium-feeling primary button: a soft gradient fill, a gentle
@@ -12,7 +13,7 @@ class PremiumButton extends StatefulWidget {
     required this.label,
     required this.onPressed,
     this.icon,
-    this.gradient = SakuraHomePalette.ctaGradient,
+    this.gradient,
     this.loading = false,
     this.expand = true,
   });
@@ -20,7 +21,7 @@ class PremiumButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
-  final List<Color> gradient;
+  final List<Color>? gradient;
   final bool loading;
 
   /// Whether the button stretches to fill its parent's width.
@@ -42,6 +43,11 @@ class _PremiumButtonState extends State<PremiumButton> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AstraThemeTokens.of(context);
+    final gradient = widget.gradient ??
+        (tokens.isDark
+            ? [tokens.palette.buttonPrimary, tokens.palette.secondary]
+            : SakuraHomePalette.ctaGradient);
     return GestureDetector(
       onTapDown: (_) => _setPressed(true),
       onTapUp: (_) => _setPressed(false),
@@ -60,13 +66,13 @@ class _PremiumButtonState extends State<PremiumButton> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               gradient: LinearGradient(
-                colors: widget.gradient,
+                colors: gradient,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: widget.gradient.first.withValues(alpha: 0.45),
+                  color: gradient.first.withValues(alpha: 0.45),
                   blurRadius: _pressed ? 10 : 20,
                   offset: Offset(0, _pressed ? 3 : 9),
                 ),
@@ -77,17 +83,17 @@ class _PremiumButtonState extends State<PremiumButton> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (widget.loading)
-                  const SizedBox(
+                  SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.2,
-                      valueColor: AlwaysStoppedAnimation(Colors.white),
+                      valueColor: AlwaysStoppedAnimation(tokens.textOnAccent),
                     ),
                   )
                 else ...[
                   if (widget.icon != null) ...[
-                    Icon(widget.icon, color: Colors.white, size: 19),
+                    Icon(widget.icon, color: tokens.textOnAccent, size: 19),
                     const SizedBox(width: 8),
                   ],
                   Text(
@@ -95,7 +101,7 @@ class _PremiumButtonState extends State<PremiumButton> {
                     style: AppTheme.bodyFont(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: tokens.textOnAccent,
                     ),
                   ),
                 ],

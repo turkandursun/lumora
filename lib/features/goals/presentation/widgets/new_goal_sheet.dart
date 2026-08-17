@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/tables/goals_table.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/lumora_palette.dart';
 import '../../../../theme/premium_button.dart';
 import '../../presentation/screens/goals_screen.dart' show unitLabelForUnit;
@@ -67,12 +68,15 @@ class _NewGoalSheetState extends ConsumerState<NewGoalSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final tokens = AstraThemeTokens.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: LumoraPalette.nightBackground,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: tokens.isDark
+              ? tokens.palette.surfaceElevated
+              : LumoraPalette.nightBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: SafeArea(
           top: false,
@@ -89,7 +93,9 @@ class _NewGoalSheetState extends ConsumerState<NewGoalSheet> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: tokens.isDark
+                            ? tokens.textMuted.withValues(alpha: 0.35)
+                            : Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -97,10 +103,10 @@ class _NewGoalSheetState extends ConsumerState<NewGoalSheet> {
                   const SizedBox(height: 18),
                   Text(
                     l10n.goalsNewSheetTitle,
-                    style: LumoraPalette.bodyStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: tokens.isDark ? tokens.textPrimary : Colors.white,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -131,10 +137,12 @@ class _NewGoalSheetState extends ConsumerState<NewGoalSheet> {
                   const SizedBox(height: 18),
                   Text(
                     l10n.goalsNewUnitPrompt,
-                    style: LumoraPalette.bodyStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.75),
+                      color: tokens.isDark
+                          ? tokens.textSecondary
+                          : Colors.white.withValues(alpha: 0.75),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -155,10 +163,12 @@ class _NewGoalSheetState extends ConsumerState<NewGoalSheet> {
                   const SizedBox(height: 18),
                   Text(
                     l10n.goalsNewFrequencyPrompt,
-                    style: LumoraPalette.bodyStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.75),
+                      color: tokens.isDark
+                          ? tokens.textSecondary
+                          : Colors.white.withValues(alpha: 0.75),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -198,39 +208,59 @@ class _TextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AstraThemeTokens.of(context);
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       textInputAction: TextInputAction.done,
-      style: LumoraPalette.bodyStyle(color: Colors.white),
-      cursorColor: LumoraPalette.lightPurple,
+      style: TextStyle(
+        color: tokens.isDark ? tokens.textSecondary : Colors.white,
+      ),
+      cursorColor: tokens.isDark
+          ? tokens.palette.activeAccent
+          : LumoraPalette.lightPurple,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: LumoraPalette.bodyStyle(
+        hintStyle: TextStyle(
           fontSize: 15,
-          color: Colors.white.withValues(alpha: 0.45),
+          color: tokens.isDark
+              ? tokens.textMuted
+              : Colors.white.withValues(alpha: 0.45),
         ),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
+        fillColor: tokens.isDark
+            ? tokens.palette.inputBackground
+            : Colors.white.withValues(alpha: 0.05),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+          borderSide: BorderSide(
+            color: tokens.isDark
+                ? tokens.palette.softBorder
+                : Colors.white.withValues(alpha: 0.16),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+          borderSide: BorderSide(
+            color: tokens.isDark
+                ? tokens.palette.softBorder
+                : Colors.white.withValues(alpha: 0.16),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide:
-              const BorderSide(color: LumoraPalette.lightPurple, width: 1.5),
+          borderSide: BorderSide(
+            color: tokens.isDark
+                ? tokens.palette.activeAccent
+                : LumoraPalette.lightPurple,
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(
-              color: LumoraPalette.accentPink.withValues(alpha: 0.7)),
+          borderSide: const BorderSide(color: Color(0xFFBE3D4C)),
         ),
       ),
       validator: validator,
@@ -318,6 +348,7 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AstraThemeTokens.of(context);
     return Semantics(
       selected: isSelected,
       button: true,
@@ -335,21 +366,29 @@ class _Pill extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
               color: isSelected
-                  ? LumoraPalette.primaryPurple.withValues(alpha: 0.9)
-                  : Colors.white.withValues(alpha: 0.06),
+                  ? (tokens.isDark
+                      ? tokens.palette.chipSelected
+                      : LumoraPalette.primaryPurple.withValues(alpha: 0.9))
+                  : (tokens.isDark
+                      ? tokens.palette.chipUnselected
+                      : Colors.white.withValues(alpha: 0.06)),
               border: Border.all(
                 color: isSelected
-                    ? LumoraPalette.lightPurple
-                    : Colors.white.withValues(alpha: 0.16),
+                    ? (tokens.isDark
+                        ? tokens.palette.activeAccent
+                        : LumoraPalette.lightPurple)
+                    : (tokens.isDark
+                        ? tokens.palette.softBorder
+                        : Colors.white.withValues(alpha: 0.16)),
                 width: 1.1,
               ),
             ),
             child: Text(
               label,
-              style: LumoraPalette.bodyStyle(
+              style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: Colors.white,
+                color: tokens.isDark ? tokens.textSecondary : Colors.white,
               ),
             ),
           ),

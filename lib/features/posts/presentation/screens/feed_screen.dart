@@ -49,8 +49,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
   Future<void> _takePhoto() async {
     try {
-      final picked = await ImagePicker()
-          .pickImage(source: ImageSource.camera, maxWidth: 1600, imageQuality: 82);
+      final picked = await ImagePicker().pickImage(
+          source: ImageSource.camera, maxWidth: 1600, imageQuality: 82);
       if (picked == null || !mounted) return;
       setState(() {
         if (_images.length < 9) _images.add(picked);
@@ -117,9 +117,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           duration: const Duration(seconds: 8),
-          content: Text(isTr
-              ? 'Paylaşılamadı: $e'
-              : "Couldn't share: $e"),
+          content: Text(isTr ? 'Paylaşılamadı: $e' : "Couldn't share: $e"),
         ),
       );
     }
@@ -133,7 +131,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final moderation = ref.watch(feedModerationProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -154,7 +152,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(isTr ? 'Paylaşımlar' : 'Feed', style: AstraKit.heading1(isDark, fontSize: 22)),
+                    Text(isTr ? 'Paylaşımlar' : 'Feed',
+                        style:
+                            AstraKit.heading1(context, isDark, fontSize: 22)),
                     const Spacer(),
                     AstraCircleIconButton(
                       icon: Icons.refresh_rounded,
@@ -181,8 +181,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         posting: _posting,
                         onPickPhotos: _pickPhotos,
                         onTakePhoto: _takePhoto,
-                        onRemovePhoto: (i) => setState(() => _images.removeAt(i)),
-                        onVisibilityChanged: (v) => setState(() => _isPublic = v),
+                        onRemovePhoto: (i) =>
+                            setState(() => _images.removeAt(i)),
+                        onVisibilityChanged: (v) =>
+                            setState(() => _isPublic = v),
                         onShare: _share,
                       ),
                       const SizedBox(height: 16),
@@ -190,24 +192,37 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         data: (posts) {
                           final visible = posts
                               .where((p) =>
-                                  !moderation.blockedNames.contains(p.displayName) &&
+                                  !moderation.blockedNames
+                                      .contains(p.displayName) &&
                                   !moderation.hiddenPostIds.contains(p.id))
                               .toList();
                           return visible.isEmpty
-                              ? _hint(isTr ? 'Henüz paylaşım yok. İlk sen paylaş!' : 'No posts yet. Be the first!', isDark)
+                              ? _hint(
+                                  isTr
+                                      ? 'Henüz paylaşım yok. İlk sen paylaş!'
+                                      : 'No posts yet. Be the first!',
+                                  isDark)
                               : Column(
                                   children: [
                                     for (final post in visible)
-                                      _PostCard(post: post, locale: locale, isDark: isDark, primary: primary),
+                                      _PostCard(
+                                          post: post,
+                                          locale: locale,
+                                          isDark: isDark,
+                                          primary: primary),
                                   ],
                                 );
                         },
                         loading: () => Padding(
                           padding: const EdgeInsets.symmetric(vertical: 30),
-                          child: Center(child: CircularProgressIndicator(color: primary)),
+                          child: Center(
+                              child: CircularProgressIndicator(color: primary)),
                         ),
                         error: (_, __) => _hint(
-                            isTr ? 'Akış yüklenemedi. (Sunucu kurulumu gerekebilir.)' : "Couldn't load the feed.", isDark),
+                            isTr
+                                ? 'Akış yüklenemedi. (Sunucu kurulumu gerekebilir.)'
+                                : "Couldn't load the feed.",
+                            isDark),
                       ),
                     ],
                   ),
@@ -223,7 +238,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   Widget _hint(String text, bool isDark) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Center(
-          child: Text(text, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 13)),
+          child: Text(text,
+              textAlign: TextAlign.center,
+              style: AstraKit.mutedText(context, isDark, fontSize: 13)),
         ),
       );
 }
@@ -276,7 +293,8 @@ class _ComposeCard extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (context, i) {
                   if (i == images.length) {
-                    return _AddThumb(onTap: onPickPhotos, isDark: isDark, primary: primary);
+                    return _AddThumb(
+                        onTap: onPickPhotos, isDark: isDark, primary: primary);
                   }
                   return Stack(
                     alignment: Alignment.topRight,
@@ -284,16 +302,20 @@ class _ComposeCard extends StatelessWidget {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: kIsWeb
-                            ? Image.network(images[i].path, width: 84, height: 84, fit: BoxFit.cover)
-                            : Image.file(File(images[i].path), width: 84, height: 84, fit: BoxFit.cover),
+                            ? Image.network(images[i].path,
+                                width: 84, height: 84, fit: BoxFit.cover)
+                            : Image.file(File(images[i].path),
+                                width: 84, height: 84, fit: BoxFit.cover),
                       ),
                       GestureDetector(
                         onTap: () => onRemovePhoto(i),
                         child: Container(
                           margin: const EdgeInsets.all(4),
                           padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black54),
-                          child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
+                          decoration: const BoxDecoration(
+                              shape: BoxShape.circle, color: Colors.black54),
+                          child: const Icon(Icons.close_rounded,
+                              size: 14, color: Colors.white),
                         ),
                       ),
                     ],
@@ -315,7 +337,10 @@ class _ComposeCard extends StatelessWidget {
                     onPressed: onPickPhotos,
                     icon: const Icon(Icons.photo_library_rounded, size: 18),
                     label: Text(isTr ? 'Galeri' : 'Gallery',
-                        style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w700, color: primary)),
+                        style: AstraKit.body(context, isDark,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: primary)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -329,7 +354,10 @@ class _ComposeCard extends StatelessWidget {
                     onPressed: onTakePhoto,
                     icon: const Icon(Icons.photo_camera_rounded, size: 18),
                     label: Text(isTr ? 'Kamera' : 'Camera',
-                        style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w700, color: primary)),
+                        style: AstraKit.body(context, isDark,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: primary)),
                   ),
                 ),
               ],
@@ -338,13 +366,15 @@ class _ComposeCard extends StatelessWidget {
           TextField(
             controller: controller,
             maxLines: 2,
-            style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w500),
+            style: AstraKit.body(context, isDark,
+                fontSize: 14, fontWeight: FontWeight.w500),
             cursorColor: primary,
             decoration: InputDecoration(
               hintText: isTr ? 'Bir şeyler yaz...' : 'Write a caption...',
-              hintStyle: AstraKit.mutedText(isDark, fontSize: 14),
+              hintStyle: AstraKit.mutedText(context, isDark, fontSize: 14),
               filled: true,
-              fillColor: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
+              fillColor:
+                  isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
               contentPadding: const EdgeInsets.all(14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -361,7 +391,12 @@ class _ComposeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          _VisibilityToggle(isTr: isTr, isDark: isDark, primary: primary, isPublic: isPublic, onChanged: onVisibilityChanged),
+          _VisibilityToggle(
+              isTr: isTr,
+              isDark: isDark,
+              primary: primary,
+              isPublic: isPublic,
+              onChanged: onVisibilityChanged),
           const SizedBox(height: 12),
           AstraGoldButton(
             isDark: isDark,
@@ -378,7 +413,8 @@ class _ComposeCard extends StatelessWidget {
 }
 
 class _AddThumb extends StatelessWidget {
-  const _AddThumb({required this.onTap, required this.isDark, required this.primary});
+  const _AddThumb(
+      {required this.onTap, required this.isDark, required this.primary});
   final VoidCallback onTap;
   final bool isDark;
   final Color primary;
@@ -429,12 +465,14 @@ class _VisibilityToggle extends StatelessWidget {
       child: Row(
         children: [
           _seg(
+            context: context,
             selected: isPublic,
             icon: Icons.public_rounded,
             label: isTr ? 'Herkese görünür' : 'Everyone',
             onTap: () => onChanged(true),
           ),
           _seg(
+            context: context,
             selected: !isPublic,
             icon: Icons.lock_outline_rounded,
             label: isTr ? 'Sadece ben' : 'Only me',
@@ -446,6 +484,7 @@ class _VisibilityToggle extends StatelessWidget {
   }
 
   Widget _seg({
+    required BuildContext context,
     required bool selected,
     required IconData icon,
     required String label,
@@ -457,20 +496,25 @@ class _VisibilityToggle extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? primary.withValues(alpha: 0.22) : Colors.transparent,
+            color:
+                selected ? primary.withValues(alpha: 0.22) : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 15, color: selected ? primary : AstraKit.muted(isDark)),
+              Icon(icon,
+                  size: 15,
+                  color: selected ? primary : AstraKit.muted(context, isDark)),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   label,
                   overflow: TextOverflow.ellipsis,
-                  style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w700,
-                      color: selected ? null : AstraKit.muted(isDark)),
+                  style: AstraKit.body(context, isDark,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? null : AstraKit.muted(context, isDark)),
                 ),
               ),
             ],
@@ -482,7 +526,11 @@ class _VisibilityToggle extends StatelessWidget {
 }
 
 class _PostCard extends ConsumerStatefulWidget {
-  const _PostCard({required this.post, required this.locale, required this.isDark, required this.primary});
+  const _PostCard(
+      {required this.post,
+      required this.locale,
+      required this.isDark,
+      required this.primary});
 
   final Post post;
   final String locale;
@@ -585,7 +633,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final likes = ref.watch(postLikesProvider);
     final liked = likes.valueOrNull?.likedBy(post.id) ?? false;
     final likeCount = likes.valueOrNull?.countFor(post.id) ?? 0;
-    final comments = ref.watch(commentsProvider(post.id)).valueOrNull ?? const [];
+    final comments =
+        ref.watch(commentsProvider(post.id)).valueOrNull ?? const [];
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -608,20 +657,29 @@ class _PostCardState extends ConsumerState<_PostCard> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: LinearGradient(colors: [primary, primary.withValues(alpha: 0.6)]),
+                      gradient: LinearGradient(
+                          colors: [primary, primary.withValues(alpha: 0.6)]),
                     ),
                     child: Text(
-                      post.displayName.isEmpty ? '?' : post.displayName.characters.first.toUpperCase(),
-                      style: AstraKit.heading2(isDark, fontSize: 15).copyWith(color: Colors.white),
+                      post.displayName.isEmpty
+                          ? '?'
+                          : post.displayName.characters.first.toUpperCase(),
+                      style: AstraKit.heading2(context, isDark, fontSize: 15)
+                          .copyWith(color: Colors.white),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(post.displayName, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w700)),
+                    child: Text(post.displayName,
+                        style: AstraKit.body(context, isDark,
+                            fontSize: 13.5, fontWeight: FontWeight.w700)),
                   ),
-                  Text(DateFormat('d MMM', widget.locale).format(post.createdAt), style: AstraKit.mutedText(isDark, fontSize: 11)),
+                  Text(
+                      DateFormat('d MMM', widget.locale).format(post.createdAt),
+                      style: AstraKit.mutedText(context, isDark, fontSize: 11)),
                   PopupMenuButton<String>(
-                    icon: Icon(Icons.more_horiz_rounded, size: 20, color: AstraKit.muted(isDark)),
+                    icon: Icon(Icons.more_horiz_rounded,
+                        size: 20, color: AstraKit.muted(context, isDark)),
                     padding: EdgeInsets.zero,
                     tooltip: isTr ? 'Seçenekler' : 'Options',
                     onSelected: (v) {
@@ -635,7 +693,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
                           children: [
                             const Icon(Icons.flag_outlined, size: 18),
                             const SizedBox(width: 10),
-                            Text(isTr ? 'Şikayet et ve gizle' : 'Report & hide'),
+                            Text(
+                                isTr ? 'Şikayet et ve gizle' : 'Report & hide'),
                           ],
                         ),
                       ),
@@ -658,7 +717,9 @@ class _PostCardState extends ConsumerState<_PostCard> {
             if (post.caption.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-                child: Text(post.caption, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500)),
+                child: Text(post.caption,
+                    style: AstraKit.body(context, isDark,
+                        fontSize: 13.5, fontWeight: FontWeight.w500)),
               ),
             // Photos
             if (photos.isNotEmpty)
@@ -671,11 +732,18 @@ class _PostCardState extends ConsumerState<_PostCard> {
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
               child: Row(
                 children: [
-                  Icon(post.isPublic ? Icons.public_rounded : Icons.lock_outline_rounded, size: 14, color: AstraKit.muted(isDark)),
+                  Icon(
+                      post.isPublic
+                          ? Icons.public_rounded
+                          : Icons.lock_outline_rounded,
+                      size: 14,
+                      color: AstraKit.muted(context, isDark)),
                   const SizedBox(width: 5),
                   Text(
-                    post.isPublic ? (isTr ? 'Herkese görünür' : 'Visible to everyone') : (isTr ? 'Sadece sen' : 'Only you'),
-                    style: AstraKit.mutedText(isDark, fontSize: 11),
+                    post.isPublic
+                        ? (isTr ? 'Herkese görünür' : 'Visible to everyone')
+                        : (isTr ? 'Sadece sen' : 'Only you'),
+                    style: AstraKit.mutedText(context, isDark, fontSize: 11),
                   ),
                 ],
               ),
@@ -686,15 +754,17 @@ class _PostCardState extends ConsumerState<_PostCard> {
               child: Row(
                 children: [
                   _ActionButton(
-                    icon: liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: liked ? primary : AstraKit.muted(isDark),
+                    icon: liked
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: liked ? primary : AstraKit.muted(context, isDark),
                     label: '$likeCount',
                     isDark: isDark,
                     onTap: () => _toggleLike(liked),
                   ),
                   _ActionButton(
                     icon: Icons.mode_comment_outlined,
-                    color: AstraKit.muted(isDark),
+                    color: AstraKit.muted(context, isDark),
                     label: '${comments.length}',
                     isDark: isDark,
                     onTap: () => setState(() => _expanded = true),
@@ -711,7 +781,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
     );
   }
 
-  Widget _buildComments(bool isTr, List<PostComment> comments, bool isDark, Color primary) {
+  Widget _buildComments(
+      bool isTr, List<PostComment> comments, bool isDark, Color primary) {
     final showList =
         _expanded ? comments : comments.take(2).toList(growable: false);
     return Padding(
@@ -724,9 +795,12 @@ class _PostCardState extends ConsumerState<_PostCard> {
               padding: const EdgeInsets.only(bottom: 5),
               child: RichText(
                 text: TextSpan(
-                  style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w500),
+                  style: AstraKit.body(context, isDark,
+                      fontSize: 12.5, fontWeight: FontWeight.w500),
                   children: [
-                    TextSpan(text: '${c.displayName}  ', style: const TextStyle(fontWeight: FontWeight.w800)),
+                    TextSpan(
+                        text: '${c.displayName}  ',
+                        style: const TextStyle(fontWeight: FontWeight.w800)),
                     TextSpan(text: c.text),
                   ],
                 ),
@@ -738,8 +812,11 @@ class _PostCardState extends ConsumerState<_PostCard> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 2, bottom: 4),
                 child: Text(
-                  isTr ? '${comments.length} yorumun tümünü görüntüle' : 'View all ${comments.length} comments',
-                  style: AstraKit.mutedText(isDark, fontSize: 12.5, fontWeight: FontWeight.w600),
+                  isTr
+                      ? '${comments.length} yorumun tümünü görüntüle'
+                      : 'View all ${comments.length} comments',
+                  style: AstraKit.mutedText(context, isDark,
+                      fontSize: 12.5, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -751,22 +828,29 @@ class _PostCardState extends ConsumerState<_PostCard> {
                   controller: _commentController,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => _sendComment(),
-                  style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w500),
+                  style: AstraKit.body(context, isDark,
+                      fontSize: 13, fontWeight: FontWeight.w500),
                   cursorColor: primary,
                   decoration: InputDecoration(
                     isDense: true,
                     hintText: isTr ? 'Yorum ekle...' : 'Add a comment...',
-                    hintStyle: AstraKit.mutedText(isDark, fontSize: 13),
+                    hintStyle:
+                        AstraKit.mutedText(context, isDark, fontSize: 13),
                     filled: true,
-                    fillColor: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    fillColor: isDark
+                        ? const Color(0x33231845)
+                        : const Color(0x55FFF8EE),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(999),
-                      borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
+                      borderSide:
+                          BorderSide(color: primary.withValues(alpha: 0.3)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(999),
-                      borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
+                      borderSide:
+                          BorderSide(color: primary.withValues(alpha: 0.3)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(999),
@@ -781,7 +865,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
                     ? SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: primary),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: primary),
                       )
                     : Icon(Icons.send_rounded, color: primary, size: 20),
               ),
@@ -822,7 +907,9 @@ class _ActionButton extends StatelessWidget {
             children: [
               Icon(icon, size: 20, color: color),
               const SizedBox(width: 6),
-              Text(label, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700)),
+              Text(label,
+                  style: AstraKit.body(context, isDark,
+                      fontSize: 13, fontWeight: FontWeight.w700)),
             ],
           ),
         ),
@@ -848,7 +935,8 @@ class _PhotoGrid extends StatelessWidget {
     );
   }
 
-  Widget _img(String url, {double? height}) => Image.network(
+  Widget _img(BuildContext context, String url, {double? height}) =>
+      Image.network(
         url,
         width: double.infinity,
         height: height,
@@ -857,7 +945,8 @@ class _PhotoGrid extends StatelessWidget {
           height: height ?? 120,
           color: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
           alignment: Alignment.center,
-          child: Icon(Icons.broken_image_rounded, color: AstraKit.muted(isDark)),
+          child: Icon(Icons.broken_image_rounded,
+              color: AstraKit.muted(context, isDark)),
         ),
       );
 
@@ -868,7 +957,7 @@ class _PhotoGrid extends StatelessWidget {
         onTap: () => _open(context, 0),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: _img(urls.first, height: 280),
+          child: _img(context, urls.first, height: 280),
         ),
       );
     }
@@ -886,7 +975,7 @@ class _PhotoGrid extends StatelessWidget {
         onTap: () => _open(context, i),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: _img(urls[i]),
+          child: _img(context, urls[i]),
         ),
       ),
     );

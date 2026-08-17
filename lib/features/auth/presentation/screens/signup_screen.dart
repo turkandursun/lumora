@@ -17,6 +17,7 @@ import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../domain/auth_flow_routes.dart';
+import '../../domain/registration_flow_state.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/google_sign_in_button.dart';
 
@@ -50,6 +51,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   bool _obscureConfirmPassword = true;
   bool _isGoogleSubmitting = false;
   bool _isGoogleSignInFlow = false;
+  bool _didRouteAfterGoogleSignIn = false;
   String? _formError;
   StreamSubscription<supabase.AuthState>? _authStateSubscription;
 
@@ -66,13 +68,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     // own await never resumes there — instead we listen for the session
     // Supabase detects once the browser returns (or, on native, once the
     // system browser hands control back to the running app).
-    _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange
-        .listen((state) {
+    _authStateSubscription =
+        Supabase.instance.client.auth.onAuthStateChange.listen((state) {
       if (_isGoogleSignInFlow && state.event == AuthChangeEvent.signedIn) {
         _isGoogleSignInFlow = false;
         _routeAfterGoogleSignIn();
       }
     });
+    // Web OAuth can recreate this screen after a full-page redirect. The
+    // one-shot persisted OAuth origin is consumed by the same guarded helper.
+    if (Supabase.instance.client.auth.currentSession != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_routeAfterGoogleSignIn());
+      });
+    }
   }
 
   @override
@@ -110,20 +119,41 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
     // The name is collected on the next screen so this panel stays short enough
     // to show the ASTRA wordmark + tagline.
-    final success = await ref
+    final result = await ref
         .read(authControllerProvider.notifier)
         .signUpWithPassword(email: email, password: password);
-    if (!success || !mounted) return;
+    if (!result.succeeded || !mounted) return;
+
+    final userId = result.userId;
+    if (userId == null) return;
+    final intent = await registrationFlowStore.begin(userId);
+    if (!mounted) return;
+
+    if (!result.hasSession) {
+      // Email confirmation is enabled: keep the user-scoped pending step, but
+      // never enter authenticated onboarding without a real session. The next
+      // successful login restores this exact account's registration.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).loginErrorEmailNotConfirmed,
+          ),
+        ),
+      );
+      context.go(AppRoutes.login);
+      return;
+    }
 
     // Fresh account: wipe any local data left by a previous account on this
     // device so the new user starts clean and account-isolated.
     await ref.read(cloudBackupServiceProvider).onSignIn();
+    await bootstrapAstraPaletteForCurrentUser(ref);
     if (!mounted) return;
     context.go(
       AuthFlowRoutes.afterAuthentication(
         AuthFlowOrigin.freshPasswordSignup,
       ),
-      extra: true,
+      extra: intent,
     );
   }
 
@@ -133,12 +163,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       _isGoogleSubmitting = true;
       _isGoogleSignInFlow = true;
     });
+    await registrationFlowStore.markOAuthSignupAttempt();
     final launched =
         await ref.read(authControllerProvider.notifier).signInWithGoogle();
     if (!mounted) return;
     setState(() {
       _isGoogleSubmitting = false;
-      if (!launched) _isGoogleSignInFlow = false;
+      if (!launched) {
+        _isGoogleSignInFlow = false;
+        unawaited(registrationFlowStore.clearOAuthSignupAttempt());
+      }
     });
   }
 
@@ -146,18 +180,42 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   /// Only a user created during this sign-up attempt receives onboarding;
   /// returning Google users continue through the normal login flow.
   Future<void> _routeAfterGoogleSignIn() async {
+    if (_didRouteAfterGoogleSignIn) return;
+    _didRouteAfterGoogleSignIn = true;
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      _didRouteAfterGoogleSignIn = false;
+      return;
+    }
+    final signupOrigin =
+        await registrationFlowStore.consumeOAuthSignupAttempt();
+    final isFreshSignup = signupOrigin &&
+        AuthFlowRoutes.isFirstOAuthAuthentication(
+          createdAt: user.createdAt,
+          lastSignInAt: user.lastSignInAt,
+        );
+    final FreshRegistrationIntent? intent;
+    if (isFreshSignup) {
+      intent = await registrationFlowStore.begin(user.id);
+    } else {
+      await registrationFlowStore.clearForUser(user.id);
+      intent = null;
+    }
+
     await ref.read(cloudBackupServiceProvider).onSignIn();
+    await bootstrapAstraPaletteForCurrentUser(ref);
     if (!mounted) return;
-    final isFreshSignup = AuthFlowRoutes.isFreshOAuthAccount(
-      createdAt: Supabase.instance.client.auth.currentUser?.createdAt,
-    );
-    final origin = isFreshSignup
-        ? AuthFlowOrigin.freshOAuthSignup
-        : AuthFlowOrigin.existingLogin;
-    context.go(
-      AuthFlowRoutes.afterAuthentication(origin),
-      extra: isFreshSignup ? true : null,
-    );
+    if (isFreshSignup && intent != null) {
+      context.go(
+        AuthFlowRoutes.afterAuthentication(AuthFlowOrigin.freshOAuthSignup),
+        extra: intent,
+      );
+    } else {
+      context.go(
+        AuthFlowRoutes.greeting,
+        extra: const LumaGreetingRouteData.returning(),
+      );
+    }
   }
 
   void _onLoginTap() => context.go(AppRoutes.login);
@@ -184,7 +242,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
     // Background follows the user's chosen palette so the auth screens match
     // the rest of the app.
-    final palette = ref.watch(activePaletteProvider);
+    final palette = AstraKit.palette(context);
 
     final errorMessage =
         _formError ?? _serverError(l10n, authState.failureReason);
@@ -219,8 +277,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                 padding: const EdgeInsets.only(top: 4),
                                 child: Row(
                                   children: [
-                                    _CircleBack(onTap: () =>
-                                        Navigator.of(context).maybePop()),
+                                    _CircleBack(
+                                        onTap: () =>
+                                            Navigator.of(context).maybePop()),
                                   ],
                                 ),
                               ),
@@ -231,8 +290,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                 offset: 20,
                                 child: Text('ASTRA',
                                     textAlign: TextAlign.center,
-                                    style:
-                                        AstraKit.wordmark(false, fontSize: 38)),
+                                    style: AstraKit.wordmark(context, false,
+                                        fontSize: 38)),
                               ),
                               const SizedBox(height: 6),
                               AstraEntrance(
@@ -244,8 +303,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                       ? 'Kendine bir alan aç.'
                                       : 'Make space for yourself.',
                                   textAlign: TextAlign.center,
-                                  style:
-                                      AstraKit.mutedText(false, fontSize: 13.5),
+                                  style: AstraKit.mutedText(context, false,
+                                      fontSize: 13.5),
                                 ),
                               ),
                               const Spacer(),
@@ -275,8 +334,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     return FadeTransition(
       opacity: anim,
       child: SlideTransition(
-        position: Tween<Offset>(
-                begin: const Offset(0, 0.06), end: Offset.zero)
+        position: Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
             .animate(anim),
         child: child,
       ),
@@ -286,7 +344,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   Widget _buildPanel(
       bool isDark, bool isTr, AuthState authState, String? errorMessage) {
     final loading = authState.isSubmitting || _isGoogleSubmitting;
-    final gold = AstraKit.gold(isDark);
+    final gold = AstraKit.gold(context, isDark);
 
     return AstraGlassCard(
       isDark: isDark,
@@ -317,8 +375,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
             suffixIcon: _visibilityToggle(
               obscured: _obscurePassword,
               color: gold,
-              onTap: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
+              onTap: () => setState(() => _obscurePassword = !_obscurePassword),
             ),
           ),
           const SizedBox(height: 14),
@@ -381,11 +438,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                   text: isTr
                       ? 'Zaten hesabın var mı? '
                       : 'Already have an account? ',
-                  style: AstraKit.mutedText(isDark, fontSize: 13.5),
+                  style: AstraKit.mutedText(context, isDark, fontSize: 13.5),
                   children: [
                     TextSpan(
                       text: isTr ? 'Giriş yap' : 'Sign in',
-                      style: AstraKit.body(isDark, fontSize: 13.5, color: gold)
+                      style: AstraKit.body(context, isDark,
+                              fontSize: 13.5, color: gold)
                           .copyWith(
                         fontWeight: FontWeight.w700,
                         decoration: TextDecoration.underline,
@@ -441,7 +499,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
             child: Text(
               message,
               style: const TextStyle(
-                  color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -503,5 +563,3 @@ class _CircleBack extends StatelessWidget {
     );
   }
 }
-
-

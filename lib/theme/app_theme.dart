@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'astra_design_tokens.dart';
+
 /// Central theme definition for Lumora — a soft purple & white,
 /// calm/premium aesthetic inspired by Calm, Notion and Reflectly.
 class AppTheme {
@@ -56,39 +58,62 @@ class AppTheme {
     );
   }
 
-  static ThemeData get lightTheme {
+  static ThemeData forPalette(
+    AstraPalette palette, {
+    Brightness brightness = Brightness.light,
+  }) {
+    final tokens = AstraThemeTokens.fromPalette(
+      palette,
+      brightness: brightness,
+    );
+    final appearance = tokens.palette;
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: primaryPurple,
-      brightness: Brightness.light,
-      primary: primaryPurple,
-      surface: backgroundWhite,
+      seedColor: appearance.primary,
+      brightness: brightness,
+      primary: appearance.primary,
+      secondary: appearance.secondary,
+      surface: appearance.surfaceElevated,
+      onPrimary: tokens.textOnAccent,
+      onSurface: tokens.textSecondary,
+    );
+
+    final textTheme = TextTheme(
+      displaySmall: TextStyle(
+        fontSize: 40,
+        fontWeight: FontWeight.w700,
+        color: tokens.textPrimary,
+        letterSpacing: 0.5,
+      ),
+      headlineSmall: TextStyle(color: tokens.textPrimary),
+      titleLarge: TextStyle(color: tokens.textPrimary),
+      titleMedium: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: tokens.textSecondary,
+      ),
+      titleSmall: TextStyle(color: tokens.textSecondary),
+      bodyLarge: TextStyle(color: tokens.textSecondary),
+      bodyMedium: TextStyle(fontSize: 14, color: tokens.textSecondary),
+      bodySmall: TextStyle(color: tokens.textMuted),
+      labelLarge: TextStyle(color: tokens.textPrimary),
+      labelMedium: TextStyle(color: tokens.textSecondary),
+      labelSmall: TextStyle(color: tokens.textMuted),
     );
 
     return ThemeData(
       useMaterial3: true,
+      brightness: brightness,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: backgroundWhite,
+      scaffoldBackgroundColor: appearance.surface,
+      canvasColor: appearance.surface,
+      extensions: [tokens],
       fontFamily: 'Roboto',
-      textTheme: const TextTheme(
-        displaySmall: TextStyle(
-          fontSize: 40,
-          fontWeight: FontWeight.w700,
-          color: textPrimary,
-          letterSpacing: 0.5,
-        ),
-        titleMedium: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          color: textSecondary,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          color: textPrimary,
-        ),
-      ),
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
+      iconTheme: IconThemeData(color: tokens.textSecondary),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: softLavender,
+        fillColor: appearance.inputBackground,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 18,
@@ -99,24 +124,27 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: appearance.softBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: primaryPurple, width: 1.5),
+          borderSide: BorderSide(color: appearance.activeAccent, width: 1.5),
         ),
-        hintStyle: const TextStyle(color: textSecondary),
+        hintStyle: TextStyle(color: tokens.textMuted),
+        labelStyle: TextStyle(color: tokens.textSecondary),
+        prefixIconColor: tokens.textMuted,
+        suffixIconColor: tokens.textMuted,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryPurple,
-          foregroundColor: Colors.white,
+          backgroundColor: appearance.buttonPrimary,
+          foregroundColor: tokens.textOnAccent,
           minimumSize: const Size.fromHeight(56),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
           elevation: 3,
-          shadowColor: glowShadow,
+          shadowColor: appearance.focusGlow,
           textStyle: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -129,13 +157,14 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          foregroundColor: Colors.white,
+          backgroundColor: appearance.buttonPrimary,
+          foregroundColor: tokens.textOnAccent,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
           elevation: 3,
-          shadowColor: glowShadow,
+          shadowColor: appearance.focusGlow,
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -148,9 +177,9 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: textPrimary,
+          foregroundColor: tokens.textPrimary,
           minimumSize: const Size.fromHeight(56),
-          side: const BorderSide(color: Color(0xFFE3DFF2), width: 1.2),
+          side: BorderSide(color: appearance.softBorder, width: 1.2),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -162,13 +191,98 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: primaryPurple,
+          foregroundColor: appearance.activeAccent,
           textStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
         ),
       ),
+      cardTheme: CardThemeData(
+        color: appearance.cardBackground,
+        surfaceTintColor: Colors.transparent,
+      ),
+      dividerColor: appearance.dividerSoft,
+      dividerTheme: DividerThemeData(color: appearance.dividerSoft),
+      dialogTheme: DialogThemeData(
+        backgroundColor: appearance.surfaceElevated,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
+          color: tokens.textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
+        contentTextStyle: TextStyle(color: tokens.textSecondary),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: appearance.surfaceElevated,
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: appearance.surfaceElevated,
+        modalBarrierColor: Colors.black.withValues(alpha: 0.48),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: appearance.cardBackground,
+        indicatorColor: appearance.iconContainer,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? appearance.bottomNavActive
+                : appearance.bottomNavInactive,
+          ),
+        ),
+        labelTextStyle: WidgetStatePropertyAll(
+          TextStyle(color: tokens.textSecondary),
+        ),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: appearance.cardBackground,
+        selectedItemColor: appearance.bottomNavActive,
+        unselectedItemColor: appearance.bottomNavInactive,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: appearance.chipUnselected,
+        selectedColor: appearance.chipSelected,
+        side: BorderSide(color: appearance.softBorder),
+        labelStyle: TextStyle(color: tokens.textSecondary),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? appearance.activeAccent
+              : tokens.textMuted,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? appearance.activeAccent.withValues(alpha: 0.38)
+              : appearance.inputBackground,
+        ),
+        trackOutlineColor: WidgetStatePropertyAll(appearance.softBorder),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: appearance.surfaceElevated,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: appearance.iconContainer,
+        headerForegroundColor: tokens.textPrimary,
+        dayForegroundColor: WidgetStatePropertyAll(tokens.textSecondary),
+        todayForegroundColor: WidgetStatePropertyAll(appearance.activeAccent),
+        todayBorder: BorderSide(color: appearance.activeAccent),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: appearance.surfaceElevated,
+        surfaceTintColor: Colors.transparent,
+        textStyle: TextStyle(color: tokens.textSecondary),
+      ),
+      listTileTheme: ListTileThemeData(
+        textColor: tokens.textSecondary,
+        iconColor: appearance.activeAccent,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: appearance.surfaceElevated,
+        contentTextStyle: TextStyle(color: tokens.textPrimary),
+      ),
+      focusColor: appearance.focusGlow,
     );
   }
+
+  static ThemeData get lightTheme => forPalette(astraSoftLilacMist);
 }

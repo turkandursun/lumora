@@ -134,7 +134,7 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
     final remindersAsync = ref.watch(remindersStreamProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -164,7 +164,8 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                       ),
                       const SizedBox(width: 12),
                       Text(l10n.remindersTitle,
-                          style: AstraKit.heading1(isDark, fontSize: 24)),
+                          style:
+                              AstraKit.heading1(context, isDark, fontSize: 24)),
                     ],
                   ),
                 ),
@@ -172,8 +173,8 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                   controller: _tabController,
                   indicatorColor: primary,
                   indicatorWeight: 3,
-                  labelColor: AstraKit.ink(isDark),
-                  unselectedLabelColor: AstraKit.muted(isDark),
+                  labelColor: AstraKit.ink(context, isDark),
+                  unselectedLabelColor: AstraKit.muted(context, isDark),
                   labelStyle: GoogleFonts.outfit(
                       fontSize: 14, fontWeight: FontWeight.w700),
                   unselectedLabelStyle: GoogleFonts.outfit(
@@ -213,7 +214,7 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                         child: CircularProgressIndicator(color: primary)),
                     error: (_, __) => Center(
                       child: Text(l10n.remindersLoadError,
-                          style: AstraKit.mutedText(isDark)),
+                          style: AstraKit.mutedText(context, isDark)),
                     ),
                   ),
                 ),
@@ -246,7 +247,8 @@ class _ReminderList extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Text(emptyText,
-              textAlign: TextAlign.center, style: AstraKit.mutedText(isDark)),
+              textAlign: TextAlign.center,
+              style: AstraKit.mutedText(context, isDark)),
         ),
       );
     }
@@ -274,26 +276,26 @@ class _ReminderCard extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF15102A),
+        backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(color: primary.withValues(alpha: 0.3)),
         ),
         title: Text(
           isTr ? 'Hatırlatıcıyı Sil' : 'Delete Reminder',
-          style: AstraKit.heading2(isDark, fontSize: 18),
+          style: AstraKit.heading2(context, isDark, fontSize: 18),
         ),
         content: Text(
           isTr
               ? 'Bu hatırlatıcıyı silmek istediğine emin misin?'
               : 'Are you sure you want to delete this reminder?',
-          style: AstraKit.mutedText(isDark, fontSize: 14),
+          style: AstraKit.mutedText(context, isDark, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(isTr ? 'Vazgeç' : 'Cancel',
-                style: AstraKit.mutedText(isDark)),
+                style: AstraKit.mutedText(context, isDark)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -340,11 +342,12 @@ class _ReminderCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(reminder.title,
-                      style: AstraKit.body(isDark,
+                      style: AstraKit.body(context, isDark,
                           fontSize: 15, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   Text(frequencyTimeLabel(context, l10n, reminder),
-                      style: AstraKit.mutedText(isDark, fontSize: 12.5)),
+                      style:
+                          AstraKit.mutedText(context, isDark, fontSize: 12.5)),
                 ],
               ),
             ),
@@ -362,7 +365,7 @@ class _ReminderCard extends ConsumerWidget {
               IconButton(
                 icon: Icon(
                   Icons.delete_outline_rounded,
-                  color: AstraKit.muted(isDark),
+                  color: AstraKit.muted(context, isDark),
                   size: 20,
                 ),
                 onPressed: () => _confirmDelete(context, ref),

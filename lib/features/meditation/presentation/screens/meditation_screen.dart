@@ -358,7 +358,8 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
 
     // Try the natural ElevenLabs voice; fall back to the device's built-in
     // text-to-speech if it's unavailable (no key, offline, quota, etc.).
-    final bytes = await _voice.voiceBytes(text, voiceId: voiceIdForKey(_voiceKey));
+    final bytes =
+        await _voice.voiceBytes(text, voiceId: voiceIdForKey(_voiceKey));
     if (!mounted || _stage != _Stage.running) return;
     if (bytes != null) {
       try {
@@ -476,7 +477,7 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -589,11 +590,11 @@ class _SetupView extends StatelessWidget {
         children: [
           const SizedBox(height: 12),
           Text(isTr ? 'Meditasyon' : 'Meditation',
-              style: AstraKit.heading1(isDark, fontSize: 26)),
+              style: AstraKit.heading1(context, isDark, fontSize: 26)),
           const SizedBox(height: 8),
           Text(
             isTr ? 'Bugün neye ihtiyacın var?' : 'What do you need today?',
-            style: AstraKit.mutedText(isDark, fontSize: 15),
+            style: AstraKit.mutedText(context, isDark, fontSize: 15),
           ),
           const SizedBox(height: 18),
           // Focus / intention picker.
@@ -615,7 +616,7 @@ class _SetupView extends StatelessWidget {
           ),
           const SizedBox(height: 26),
           Text(isTr ? 'Ne kadar süre?' : 'How long?',
-              style: AstraKit.mutedText(isDark, fontSize: 15)),
+              style: AstraKit.mutedText(context, isDark, fontSize: 15)),
           const SizedBox(height: 14),
           Wrap(
             spacing: 12,
@@ -661,7 +662,8 @@ class _SetupView extends StatelessWidget {
                     child: Column(
                       children: [
                         Text(isTr ? 'Rehber sesi' : 'Guide voice',
-                            style: AstraKit.mutedText(isDark, fontSize: 13)),
+                            style: AstraKit.mutedText(context, isDark,
+                                fontSize: 13)),
                         const SizedBox(height: 8),
                         Wrap(
                           spacing: 10,
@@ -744,6 +746,7 @@ class _FocusChip extends StatelessWidget {
               Text(
                 label,
                 style: AstraKit.body(
+                  context,
                   isDark,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
@@ -802,7 +805,7 @@ class _VoiceChip extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: AstraKit.body(isDark,
+                style: AstraKit.body(context, isDark,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: selected ? const Color(0xFF1A0F00) : null),
@@ -849,7 +852,7 @@ class _MinutePill extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: AstraKit.body(isDark,
+            style: AstraKit.body(context, isDark,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: selected ? const Color(0xFF1A0F00) : null),
@@ -893,7 +896,7 @@ class _ToggleRow extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
               child: Text(label,
-                  style: AstraKit.body(isDark,
+                  style: AstraKit.body(context, isDark,
                       fontSize: 14, fontWeight: FontWeight.w600))),
           Switch(value: value, activeThumbColor: primary, onChanged: onChanged),
         ],
@@ -947,7 +950,7 @@ class _RunningView extends StatelessWidget {
             child: Text(
               affirmation,
               textAlign: TextAlign.center,
-              style: AstraKit.body(isDark,
+              style: AstraKit.body(context, isDark,
                   fontSize: 18, fontWeight: FontWeight.w600, height: 1.4),
             ),
           ),
@@ -992,6 +995,7 @@ class _RunningView extends StatelessWidget {
                       breathLabel,
                       key: ValueKey(breathLabel),
                       style: AstraKit.body(
+                        context,
                         isDark,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -1005,13 +1009,14 @@ class _RunningView extends StatelessWidget {
           },
         ),
         const SizedBox(height: 40),
-        Text(_time, style: AstraKit.heading1(isDark, fontSize: 34)),
+        Text(_time, style: AstraKit.heading1(context, isDark, fontSize: 34)),
         const SizedBox(height: 26),
         TextButton.icon(
           onPressed: onStop,
-          icon: Icon(Icons.stop_rounded, color: AstraKit.muted(isDark)),
+          icon:
+              Icon(Icons.stop_rounded, color: AstraKit.muted(context, isDark)),
           label: Text(isTr ? 'Bitir' : 'End',
-              style: AstraKit.mutedText(isDark,
+              style: AstraKit.mutedText(context, isDark,
                   fontSize: 14, fontWeight: FontWeight.w700)),
         ),
       ],
@@ -1040,14 +1045,14 @@ class _DoneView extends StatelessWidget {
         Icon(Icons.self_improvement_rounded, color: primary, size: 60),
         const SizedBox(height: 18),
         Text(isTr ? 'Tamamlandı 🌸' : 'Complete 🌸',
-            style: AstraKit.heading1(isDark, fontSize: 24)),
+            style: AstraKit.heading1(context, isDark, fontSize: 24)),
         const SizedBox(height: 10),
         Text(
           isTr
               ? 'Kendine bu anı ayırdığın için teşekkürler. Bu huzuru yanında taşı.'
               : 'Thank you for giving yourself this moment. Carry this calm with you.',
           textAlign: TextAlign.center,
-          style: AstraKit.mutedText(isDark, fontSize: 14.5),
+          style: AstraKit.mutedText(context, isDark, fontSize: 14.5),
         ),
         const SizedBox(height: 30),
         AstraGoldButton(

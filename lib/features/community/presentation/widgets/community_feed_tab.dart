@@ -12,7 +12,8 @@ import '../providers/community_providers.dart';
 /// reactions and supportive replies. Every write passes through
 /// [ContentModeration] first (no phone numbers, links or hurtful language).
 class CommunityFeedTab extends ConsumerStatefulWidget {
-  const CommunityFeedTab({super.key, required this.isDark, required this.primary});
+  const CommunityFeedTab(
+      {super.key, required this.isDark, required this.primary});
 
   final bool isDark;
   final Color primary;
@@ -68,7 +69,8 @@ class _CommunityFeedTabState extends ConsumerState<CommunityFeedTab> {
     }
   }
 
-  Future<void> _toggleReaction(CommunityPost post, String kind, bool isOn) async {
+  Future<void> _toggleReaction(
+      CommunityPost post, String kind, bool isOn) async {
     try {
       await ref.read(communityRepositoryProvider).toggleReaction(
             postId: post.id,
@@ -88,7 +90,8 @@ class _CommunityFeedTabState extends ConsumerState<CommunityFeedTab> {
 
     return RefreshIndicator(
       color: primary,
-      backgroundColor: isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
+      backgroundColor:
+          isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
       onRefresh: () async {
         ref.invalidate(communityPostsProvider);
         await ref.read(communityPostsProvider.future);
@@ -109,9 +112,10 @@ class _CommunityFeedTabState extends ConsumerState<CommunityFeedTab> {
           postsAsync.when(
             data: (posts) => posts.isEmpty
                 ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 28, horizontal: 8),
                     child: Text(l10n.communityPostEmpty,
-                        style: AstraKit.mutedText(isDark)),
+                        style: AstraKit.mutedText(context, isDark)),
                   )
                 : Column(
                     children: [
@@ -132,7 +136,8 @@ class _CommunityFeedTabState extends ConsumerState<CommunityFeedTab> {
             ),
             error: (_, __) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
-              child: Text(l10n.communityLoadError, style: AstraKit.mutedText(isDark)),
+              child: Text(l10n.communityLoadError,
+                  style: AstraKit.mutedText(context, isDark)),
             ),
           ),
         ],
@@ -162,9 +167,9 @@ class _CommunityFeedTabState extends ConsumerState<CommunityFeedTab> {
         backgroundColor:
             widget.isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
         title: Text(l10n.communityReportConfirmTitle,
-            style: TextStyle(color: AstraKit.ink(widget.isDark))),
+            style: TextStyle(color: AstraKit.ink(context, widget.isDark))),
         content: Text(l10n.communityReportConfirmBody,
-            style: TextStyle(color: AstraKit.muted(widget.isDark))),
+            style: TextStyle(color: AstraKit.muted(context, widget.isDark))),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -229,13 +234,13 @@ class _Composer extends StatelessWidget {
             minLines: 2,
             maxLines: 6,
             maxLength: 500,
-            style: AstraKit.body(isDark, fontSize: 14),
+            style: AstraKit.body(context, isDark, fontSize: 14),
             cursorColor: primary,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: AstraKit.mutedText(isDark),
+              hintStyle: AstraKit.mutedText(context, isDark),
               border: InputBorder.none,
-              counterStyle: AstraKit.mutedText(isDark, fontSize: 10),
+              counterStyle: AstraKit.mutedText(context, isDark, fontSize: 10),
             ),
           ),
           const SizedBox(height: 4),
@@ -297,13 +302,13 @@ class _PostCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(post.displayName,
-                      style: AstraKit.body(isDark,
+                      style: AstraKit.body(context, isDark,
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: primary)),
                 ),
                 Text(communityRelativeTime(l10n, post.createdAt),
-                    style: AstraKit.mutedText(isDark, fontSize: 11)),
+                    style: AstraKit.mutedText(context, isDark, fontSize: 11)),
                 const SizedBox(width: 4),
                 InkWell(
                   onTap: onReport,
@@ -312,7 +317,7 @@ class _PostCard extends StatelessWidget {
                     padding: const EdgeInsets.all(4),
                     child: Icon(Icons.flag_outlined,
                         size: 16,
-                        color: AstraKit.muted(isDark),
+                        color: AstraKit.muted(context, isDark),
                         semanticLabel: l10n.communityReportTooltip),
                   ),
                 ),
@@ -320,7 +325,7 @@ class _PostCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(post.body,
-                style: AstraKit.body(isDark,
+                style: AstraKit.body(context, isDark,
                     fontSize: 13.5, fontWeight: FontWeight.w500, height: 1.4)),
             const SizedBox(height: 12),
             Row(
@@ -356,10 +361,11 @@ class _PostCard extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(Icons.mode_comment_outlined,
-                            size: 16, color: AstraKit.muted(isDark)),
+                            size: 16, color: AstraKit.muted(context, isDark)),
                         const SizedBox(width: 6),
                         Text(l10n.communityReplyCountLabel(post.replyCount),
-                            style: AstraKit.mutedText(isDark, fontSize: 12)),
+                            style: AstraKit.mutedText(context, isDark,
+                                fontSize: 12)),
                       ],
                     ),
                   ),
@@ -401,17 +407,21 @@ class _ReactionChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           color: active
               ? primary.withValues(alpha: 0.16)
-              : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04)),
+              : (isDark
+                  ? Colors.white10
+                  : Colors.black.withValues(alpha: 0.04)),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: active ? primary : AstraKit.muted(isDark)),
+            Icon(icon,
+                size: 16,
+                color: active ? primary : AstraKit.muted(context, isDark)),
             const SizedBox(width: 6),
             Text('$count',
-                style: AstraKit.body(isDark,
+                style: AstraKit.body(context, isDark,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: active ? primary : AstraKit.muted(isDark))),
+                    color: active ? primary : AstraKit.muted(context, isDark))),
           ],
         ),
       ),
@@ -502,13 +512,14 @@ class _RepliesSheetState extends ConsumerState<_RepliesSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: AstraKit.muted(isDark).withValues(alpha: 0.4),
+                    color:
+                        AstraKit.muted(context, isDark).withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               Text(l10n.communityRepliesTitle,
-                  style: AstraKit.heading2(isDark, fontSize: 16)),
+                  style: AstraKit.heading2(context, isDark, fontSize: 16)),
               const SizedBox(height: 8),
               Flexible(
                 child: repliesAsync.when(
@@ -516,7 +527,7 @@ class _RepliesSheetState extends ConsumerState<_RepliesSheet> {
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 20),
                           child: Text(l10n.communityRepliesEmpty,
-                              style: AstraKit.mutedText(isDark)),
+                              style: AstraKit.mutedText(context, isDark)),
                         )
                       : ListView(
                           shrinkWrap: true,
@@ -530,7 +541,8 @@ class _RepliesSheetState extends ConsumerState<_RepliesSheet> {
                                     Row(
                                       children: [
                                         Text(r.displayName,
-                                            style: AstraKit.body(isDark,
+                                            style: AstraKit.body(
+                                                context, isDark,
                                                 fontSize: 12.5,
                                                 fontWeight: FontWeight.w700,
                                                 color: primary)),
@@ -538,13 +550,14 @@ class _RepliesSheetState extends ConsumerState<_RepliesSheet> {
                                         Text(
                                             communityRelativeTime(
                                                 l10n, r.createdAt),
-                                            style: AstraKit.mutedText(isDark,
+                                            style: AstraKit.mutedText(
+                                                context, isDark,
                                                 fontSize: 10.5)),
                                       ],
                                     ),
                                     const SizedBox(height: 3),
                                     Text(r.body,
-                                        style: AstraKit.body(isDark,
+                                        style: AstraKit.body(context, isDark,
                                             fontSize: 13, height: 1.35)),
                                   ],
                                 ),
@@ -559,7 +572,7 @@ class _RepliesSheetState extends ConsumerState<_RepliesSheet> {
                   error: (_, __) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Text(l10n.communityLoadError,
-                        style: AstraKit.mutedText(isDark)),
+                        style: AstraKit.mutedText(context, isDark)),
                   ),
                 ),
               ),
@@ -572,11 +585,11 @@ class _RepliesSheetState extends ConsumerState<_RepliesSheet> {
                       minLines: 1,
                       maxLines: 4,
                       maxLength: 300,
-                      style: AstraKit.body(isDark, fontSize: 13.5),
+                      style: AstraKit.body(context, isDark, fontSize: 13.5),
                       cursorColor: primary,
                       decoration: InputDecoration(
                         hintText: l10n.communityReplyHint,
-                        hintStyle: AstraKit.mutedText(isDark),
+                        hintStyle: AstraKit.mutedText(context, isDark),
                         counterText: '',
                         filled: true,
                         fillColor: isDark

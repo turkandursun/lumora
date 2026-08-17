@@ -21,6 +21,9 @@ void main() {
       'journal_streak_count': 5,
       'astra_bg_theme_user-a': 'dark',
       'astra_bg_theme_user-b': 'light',
+      'astra_palette_id_v1': 'berrySand',
+      'astra_palette_id_v2_user-a': 'berry_sand',
+      'astra_palette_id_v2_user-b': 'sage_veil',
       'hobbies_user-a_v1': <String>['reading'],
       'hobbies_user-b_v1': <String>['walking'],
       'quote_favorites_migrated_v1_user-a': true,
@@ -30,6 +33,7 @@ void main() {
       'visit_last_date_v1_user-a': '2026-08-12',
       'cloud_last_user_id': 'user-a',
       'cloud_synced_marker_v1': 'now',
+      'registration_oauth_signup_attempt_v1': 123,
       'luma_ambient_sound_muted': true,
       'breathing_last_mode': 'box',
     });
@@ -92,14 +96,18 @@ void main() {
     expect(prefs.get('period_days_v1'), isNull);
     expect(prefs.get('journal_streak_count'), isNull);
     expect(prefs.get('astra_bg_theme_user-a'), isNull);
+    expect(prefs.get('astra_palette_id_v1'), isNull);
+    expect(prefs.get('astra_palette_id_v2_user-a'), isNull);
     expect(prefs.get('hobbies_user-a_v1'), isNull);
     expect(prefs.get('quote_favorites_migrated_v1_user-a'), isNull);
     expect(prefs.get('goals_streak_count_user-a'), isNull);
     expect(prefs.get('visit_last_date_v1_user-a'), isNull);
     expect(prefs.get('cloud_last_user_id'), isNull);
     expect(prefs.get('cloud_synced_marker_v1'), isNull);
+    expect(prefs.get('registration_oauth_signup_attempt_v1'), isNull);
 
     expect(prefs.getString('astra_bg_theme_user-b'), 'light');
+    expect(prefs.getString('astra_palette_id_v2_user-b'), 'sage_veil');
     expect(prefs.getStringList('hobbies_user-b_v1'), ['walking']);
     expect(prefs.getBool('quote_favorites_migrated_v1_user-b'), true);
     expect(prefs.getInt('goals_streak_count_user-b'), 4);
@@ -122,6 +130,15 @@ void main() {
           .get(),
       isEmpty,
     );
+  });
+
+  test('ordinary logout retains the scoped palette fast cache', () async {
+    await cleaner.clearSignedOutAccount('user-a');
+    final prefs = await SharedPreferences.getInstance();
+
+    expect(prefs.get('astra_palette_id_v1'), isNull);
+    expect(prefs.getString('astra_palette_id_v2_user-a'), 'berry_sand');
+    expect(prefs.getString('astra_palette_id_v2_user-b'), 'sage_veil');
   });
 }
 

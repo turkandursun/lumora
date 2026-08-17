@@ -12,12 +12,18 @@ import '../../../reminders/presentation/providers/reminders_providers.dart';
 String _timeOfDayGreeting(AppLocalizations l10n, DateTime now, String? name) {
   final hour = now.hour;
   if (hour < 12) {
-    return name == null ? l10n.homeGreetingMorningNoName : l10n.homeGreetingMorning(name);
+    return name == null
+        ? l10n.homeGreetingMorningNoName
+        : l10n.homeGreetingMorning(name);
   }
   if (hour < 18) {
-    return name == null ? l10n.homeGreetingAfternoonNoName : l10n.homeGreetingAfternoon(name);
+    return name == null
+        ? l10n.homeGreetingAfternoonNoName
+        : l10n.homeGreetingAfternoon(name);
   }
-  return name == null ? l10n.homeGreetingEveningNoName : l10n.homeGreetingEvening(name);
+  return name == null
+      ? l10n.homeGreetingEveningNoName
+      : l10n.homeGreetingEvening(name);
 }
 
 /// Home's header: a small date + weather "eyebrow" line above a soft, elegant
@@ -37,7 +43,8 @@ class HomeHeader extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     // Editorial "eyebrow" line — upper-cased and letter-spaced so it reads as a
     // quiet label rather than a heavy second heading.
-    final dateLabel = DateFormat('d MMMM · EEEE', locale).format(now).toUpperCase();
+    final dateLabel =
+        DateFormat('d MMMM · EEEE', locale).format(now).toUpperCase();
     final hasUnreadReminders = ref.watch(remindersStreamProvider).maybeWhen(
           data: (rows) => rows.any((r) => r.enabled),
           orElse: () => false,
@@ -51,42 +58,51 @@ class HomeHeader extends ConsumerWidget {
           child: AstraEntrance(
             offset: 16,
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Eyebrow: a quiet date label.
-              Text(
-                dateLabel,
-                style: LumaGlass.sans(fontSize: 11, fontWeight: FontWeight.w600)
-                    .copyWith(color: LumaGlass.subtitle, letterSpacing: 1.4),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 7),
-              // Hero greeting — larger, airier, with a gently glowing sparkle.
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      _timeOfDayGreeting(l10n, now, firstName),
-                      style: LumaGlass.sans(fontSize: 26, fontWeight: FontWeight.w700, color: LumaGlass.heroInk)
-                          .copyWith(letterSpacing: 0.2, height: 1.1),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Eyebrow: a quiet date label.
+                Text(
+                  dateLabel,
+                  style: LumaGlass.sans(context,
+                          fontSize: 11, fontWeight: FontWeight.w600)
+                      .copyWith(
+                          color: LumaGlass.subtitle(context),
+                          letterSpacing: 1.4),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 7),
+                // Hero greeting — larger, airier, with a gently glowing sparkle.
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _timeOfDayGreeting(l10n, now, firstName),
+                        style: LumaGlass.sans(context,
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                color: LumaGlass.heroInk(context))
+                            .copyWith(letterSpacing: 0.2, height: 1.1),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.auto_awesome,
-                    color: LumaGlass.sparkle,
-                    size: 17,
-                    shadows: [
-                      Shadow(color: LumaGlass.sparkle.withValues(alpha: 0.55), blurRadius: 12),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.auto_awesome,
+                      color: LumaGlass.sparkle(context),
+                      size: 17,
+                      shadows: [
+                        Shadow(
+                            color: LumaGlass.sparkle(context)
+                                .withValues(alpha: 0.55),
+                            blurRadius: 12),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -95,9 +111,9 @@ class HomeHeader extends ConsumerWidget {
           delayMs: 90,
           offset: 16,
           child: _NotificationBell(
-          hasUnread: hasUnreadReminders,
-          onTap: () => context.push(AppRoutes.reminders),
-        ),
+            hasUnread: hasUnreadReminders,
+            onTap: () => context.push(AppRoutes.reminders),
+          ),
         ),
       ],
     );
@@ -121,39 +137,42 @@ class _NotificationBell extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: LumaGlass.sparkle.withValues(alpha: 0.18),
+              color: LumaGlass.sparkle(context).withValues(alpha: 0.18),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Material(
-        color: Colors.white.withValues(alpha: 0.55),
-        shape: CircleBorder(side: BorderSide(color: Colors.white.withValues(alpha: 0.6))),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(11),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.notifications_none_rounded, color: LumaGlass.sparkle, size: 20),
-                if (hasUnread)
-                  Positioned(
-                    top: -1,
-                    right: -1,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFEF4444)),
+          color: Colors.white.withValues(alpha: 0.55),
+          shape: CircleBorder(
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.6))),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(11),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(Icons.notifications_none_rounded,
+                      color: LumaGlass.sparkle(context), size: 20),
+                  if (hasUnread)
+                    Positioned(
+                      top: -1,
+                      right: -1,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                            shape: BoxShape.circle, color: Color(0xFFEF4444)),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

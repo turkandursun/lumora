@@ -186,12 +186,12 @@ class _ToneSheetShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     return SafeArea(
       top: false,
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF171025) : const Color(0xFFFFF8E9),
+          color: AstraKit.palette(context).surfaceElevated,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           border: Border(
             top: BorderSide(color: primary.withValues(alpha: 0.34)),
@@ -208,7 +208,8 @@ class _ToneSheetShell extends StatelessWidget {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AstraKit.muted(isDark).withValues(alpha: 0.25),
+                    color:
+                        AstraKit.muted(context, isDark).withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -233,7 +234,7 @@ class _ToneLoadingBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 18),
       child: Column(
@@ -243,7 +244,7 @@ class _ToneLoadingBody extends StatelessWidget {
           Text(
             isTr ? 'Luma günlüğünü okuyor…' : 'Luma is reading your journal…',
             textAlign: TextAlign.center,
-            style: AstraKit.heading2(isDark, fontSize: 17),
+            style: AstraKit.heading2(context, isDark, fontSize: 17),
           ),
           const SizedBox(height: 8),
           Text(
@@ -251,7 +252,7 @@ class _ToneLoadingBody extends StatelessWidget {
                 ? 'Birkaç saniye içinde küçük bir yansıma hazır olacak.'
                 : 'A small reflection will be ready in a few seconds.',
             textAlign: TextAlign.center,
-            style: AstraKit.mutedText(isDark, fontSize: 13.5),
+            style: AstraKit.mutedText(context, isDark, fontSize: 13.5),
           ),
         ],
       ),
@@ -270,7 +271,7 @@ class _ToneFallbackBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     return Column(
       children: [
         Container(
@@ -290,14 +291,16 @@ class _ToneFallbackBody extends StatelessWidget {
               ? 'Luma şu an düşüncelerini toparlayamadı — ama günlüğün güvende. 💜'
               : "Luma couldn't gather her thoughts right now — but your journal is safe. 💜",
           textAlign: TextAlign.center,
-          style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w500, height: 1.5),
+          style: AstraKit.body(context, isDark,
+              fontSize: 15, fontWeight: FontWeight.w500, height: 1.5),
         ),
         const SizedBox(height: 18),
         TextButton(
           onPressed: onDismiss,
           child: Text(
             isTr ? 'Tamam' : 'Okay',
-            style: AstraKit.mutedText(isDark, fontSize: 13, fontWeight: FontWeight.w700),
+            style: AstraKit.mutedText(context, isDark,
+                fontSize: 13, fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -323,7 +326,7 @@ class _ToneResultBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     // A hard day always surfaces the same four supportive next steps, no matter
     // which suggestions (if any) the model returned.
     final showSupport = analysis.tone == JournalTone.lowMood;
@@ -349,14 +352,15 @@ class _ToneResultBody extends StatelessWidget {
             Expanded(
               child: Text(
                 l10n.journalToneFeedbackTitle,
-                style: AstraKit.heading2(isDark, fontSize: 18),
+                style: AstraKit.heading2(context, isDark, fontSize: 18),
               ),
             ),
             IconButton(
               key: const ValueKey('journal-tone-close'),
               tooltip: l10n.journalToneNotNow,
               onPressed: onDismiss,
-              icon: Icon(Icons.close_rounded, color: AstraKit.muted(isDark)),
+              icon: Icon(Icons.close_rounded,
+                  color: AstraKit.muted(context, isDark)),
             ),
           ],
         ),
@@ -372,6 +376,7 @@ class _ToneResultBody extends StatelessWidget {
             analysis.message,
             key: const ValueKey('journal-tone-message'),
             style: AstraKit.body(
+              context,
               isDark,
               fontSize: 15,
               fontWeight: FontWeight.w500,
@@ -383,7 +388,8 @@ class _ToneResultBody extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             l10n.journalToneWellnessPrompt,
-            style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w600),
+            style: AstraKit.body(context, isDark,
+                fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           for (final suggestion in _lowMoodSupportOptions) ...[
@@ -403,7 +409,8 @@ class _ToneResultBody extends StatelessWidget {
           onPressed: onDismiss,
           child: Text(
             l10n.journalToneNotNow,
-            style: AstraKit.mutedText(isDark, fontSize: 13, fontWeight: FontWeight.w700),
+            style: AstraKit.mutedText(context, isDark,
+                fontSize: 13, fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -516,6 +523,7 @@ class _SuggestionButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         textStyle: AstraKit.body(
+          context,
           isDark,
           fontSize: 14,
           fontWeight: FontWeight.w700,
