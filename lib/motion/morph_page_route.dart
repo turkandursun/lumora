@@ -146,6 +146,9 @@ class MorphPageRoute<T> extends PageRoute<T> {
   bool get opaque => true;
 
   @override
+  bool get maintainState => true;
+
+  @override
   bool get barrierDismissible => false;
 
   @override
