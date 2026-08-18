@@ -18,6 +18,10 @@ class DreamJournalBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    // Theme-aware moon colour: the brightness-adjusted palette accent, so the
+    // crescent stays a soft, pretty moon in both light and dark themes
+    // (previously a fixed bronze that read as an ugly orange blob in the dark).
+    final accent = AstraKit.primary(context, false);
 
     // Container transform: tapping the banner morphs the card itself outward
     // until it fills the whole Dream Journal screen (and back again on pop),
@@ -40,10 +44,15 @@ class DreamJournalBanner extends ConsumerWidget {
           radius: 22,
           child: Row(
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 52,
                 height: 52,
-                child: CustomPaint(painter: _MoonStarsPainter()),
+                child: CustomPaint(
+                  painter: _MoonStarsPainter(
+                    moonColor: accent,
+                    starColor: accent.withValues(alpha: 0.72),
+                  ),
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -85,14 +94,14 @@ class DreamJournalBanner extends ConsumerWidget {
 /// (the banner no longer switches with the moon/sun app theme, so this no
 /// longer takes an `isDark` flag).
 class _MoonStarsPainter extends CustomPainter {
-  const _MoonStarsPainter();
+  const _MoonStarsPainter({required this.moonColor, required this.starColor});
 
-  static const _moonColor = Color(0xFF95610F);
-  static const _starColor = Color(0xCC7A4E12);
+  final Color moonColor;
+  final Color starColor;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final moonPaint = Paint()..color = _moonColor;
+    final moonPaint = Paint()..color = moonColor;
     final moonCenter = Offset(size.width * 0.42, size.height * 0.48);
     canvas.drawCircle(moonCenter, size.width * 0.32, moonPaint);
 
@@ -108,7 +117,7 @@ class _MoonStarsPainter extends CustomPainter {
     );
     canvas.restore();
 
-    final starPaint = Paint()..color = _starColor;
+    final starPaint = Paint()..color = starColor;
     _star(
         canvas, Offset(size.width * 0.82, size.height * 0.22), 3.2, starPaint);
     _star(canvas, Offset(size.width * 0.9, size.height * 0.55), 2.2, starPaint);
@@ -135,5 +144,6 @@ class _MoonStarsPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _MoonStarsPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _MoonStarsPainter oldDelegate) =>
+      oldDelegate.moonColor != moonColor || oldDelegate.starColor != starColor;
 }

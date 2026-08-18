@@ -9,10 +9,10 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supabase
     show AuthState;
 
 import '../../../../core/providers/astra_palette_provider.dart';
-import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
@@ -234,22 +234,28 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
   @override
   Widget build(BuildContext context) {
+    // The registration screen always presents in the light theme, even when the
+    // rest of the app is in dark mode. We override this subtree's palette tokens
+    // to the always-light variant and render everything below it, so every
+    // context-driven AstraKit colour resolves light regardless of app theme.
+    final basePalette = ref.watch(activePaletteProvider);
+    final lightTokens =
+        AstraThemeTokens.fromPalette(basePalette, brightness: Brightness.light);
+    return Theme(
+      data: Theme.of(context).copyWith(
+        extensions: [lightTokens],
+      ),
+      child: Builder(
+        builder: (context) => _buildContent(context, basePalette),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, AstraPalette palette) {
+    const isDark = false;
     final authState = ref.watch(authControllerProvider);
     final l10n = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final mode = ref.watch(astraThemeProvider);
-    final isDark = mode == AstraThemeMode.dark;
-
-    // Background follows the user's chosen palette so the auth screens match
-<<<<<<< Updated upstream
-    // the rest of the app.
-    final palette = AstraKit.palette(context);
-=======
-    // the rest of the app; publish it to the shared kit so the panel + fields
-    // render palette-light.
-    final palette = ref.watch(activePaletteProvider);
-    AstraKit.active = palette;
->>>>>>> Stashed changes
 
     final errorMessage =
         _formError ?? _serverError(l10n, authState.failureReason);
@@ -316,7 +322,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                               ),
                               const Spacer(),
                               _animated(_buildPanel(
-                                  isDark, isTr, authState, errorMessage)),
+                                  context, isDark, isTr, authState, errorMessage)),
                               const SizedBox(height: 12),
                             ],
                           ),
@@ -348,15 +354,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     );
   }
 
-  Widget _buildPanel(
-      bool isDark, bool isTr, AuthState authState, String? errorMessage) {
+  Widget _buildPanel(BuildContext context, bool isDark, bool isTr,
+      AuthState authState, String? errorMessage) {
     final loading = authState.isSubmitting || _isGoogleSubmitting;
-<<<<<<< Updated upstream
     final gold = AstraKit.gold(context, isDark);
-=======
-    // Accent for links: palette's deeper tone when active, else branded gold.
-    final gold = AstraKit.active?.secondary ?? AstraKit.gold(isDark);
->>>>>>> Stashed changes
 
     return AstraGlassCard(
       isDark: isDark,

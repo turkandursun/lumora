@@ -12,7 +12,9 @@ import '../../../letters/presentation/providers/letter_providers.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 import '../../domain/journal_text_stats.dart';
+import '../providers/weekly_summary_provider.dart';
 import '../widgets/weekly_summary_card.dart';
+import '../../../../theme/mood_gradients.dart';
 
 const List<Color> _moodColors = [
   Color(0xFFF4C95D), // happy
@@ -616,16 +618,17 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
 
   Future<void> _run() async {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final rows = ref.read(allJournalEntriesProvider).valueOrNull ?? const [];
-    final recent = rows.take(10).map((e) => e.content).toList();
+    // Statistics-based weekly review (not raw entries): the stats analysis
+    // summarises the whole week from the numbers.
+    final summary = ref.read(weeklySummaryProvider);
 
-    if (recent.isEmpty) {
+    if (summary.isEmpty) {
       setState(() {
         _loading = false;
         _error = false;
         _result = isTr
-            ? 'Analiz için önce birkaç günlük yaz.'
-            : 'Write a few entries first for an analysis.';
+            ? 'Bu hafta analiz için önce ruh hali seç ya da birkaç günlük yaz.'
+            : 'Log a mood or write a few entries this week for an analysis.';
       });
       return;
     }
@@ -636,11 +639,46 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
       _result = null;
     });
 
-    final joined = recent.join('\n---\n');
-    final trimmed = joined.length > 1800 ? joined.substring(0, 1800) : joined;
+    String moodLabel(AppMood m) => switch (m) {
+          AppMood.happy => isTr ? 'mutlu' : 'happy',
+          AppMood.calm => isTr ? 'sakin' : 'calm',
+          AppMood.tired => isTr ? 'yorgun' : 'tired',
+          AppMood.sad => isTr ? 'üzgün' : 'sad',
+          AppMood.anxious => isTr ? 'endişeli' : 'anxious',
+        };
+    const trDays = [
+      'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'
+    ];
+    const enDays = [
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+      'Sunday'
+    ];
+    String weekday(int w) => (isTr ? trDays : enDays)[(w - 1).clamp(0, 6)];
+    final dist = summary.moodCounts.entries
+        .map((e) => '${moodLabel(e.key)}: ${e.value}')
+        .join(', ');
+    final top =
+        summary.topMood != null ? moodLabel(summary.topMood!) : (isTr ? 'yok' : 'none');
+    final hard = summary.lowestDayWeekday != null
+        ? weekday(summary.lowestDayWeekday!)
+        : (isTr ? 'yok' : 'none');
+    final statsContext = isTr
+        ? 'Bu haftanın istatistikleri:\n'
+            '- 7 günün ${summary.daysJournaled} gününde günlük yazıldı (toplam ${summary.entriesThisWeek} giriş).\n'
+            '- Ruh hali kaydı olan gün: ${summary.moodDays}. Dağılım: ${dist.isEmpty ? 'yok' : dist}.\n'
+            '- En sık his: $top.\n'
+            '- En zor gün: $hard.\n'
+            '- Günlük serisi: ${summary.streak} gün.'
+        : "This week's statistics:\n"
+            '- Journaled on ${summary.daysJournaled} of 7 days (${summary.entriesThisWeek} entries).\n'
+            '- Days with a logged mood: ${summary.moodDays}. Distribution: ${dist.isEmpty ? 'none' : dist}.\n'
+            '- Most frequent feeling: $top.\n'
+            '- Hardest day: $hard.\n'
+            '- Journaling streak: ${summary.streak} days.';
+    final trimmed = statsContext;
     final message = isTr
-        ? 'Son günlük yazılarımı ve ruh halimi nazikçe analiz eder misin? Kısa bir özet ve fark ettiğin duygu ya da temaları paylaş.'
-        : 'Could you gently analyze my recent journal entries and mood? Share a short summary and any emotions or themes you notice.';
+        ? 'Yukarıdaki HAFTALIK İSTATİSTİKLERE göre nazik ve kısa bir haftalık değerlendirme yap: genel gidişat, dikkat çeken bir duygu ya da örüntü, ve nazik bir öneri. Tek tek günlükleri okuma; sadece bu istatistiklere dayan.'
+        : 'Based on the WEEKLY STATISTICS above, give a gentle, short weekly review: overall trend, a notable emotion or pattern, and one kind suggestion. Do not read individual entries; rely only on these statistics.';
 
     try {
       final reply = await AiService().sendLumaMessage(
@@ -685,8 +723,8 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
           const SizedBox(height: 8),
           Text(
             isTr
-                ? 'Bu analiz için son günlüklerin Luma\'ya (yapay zeka) gönderilir.'
-                : 'Your recent entries are sent to Luma (AI) for this analysis.',
+                ? 'Bu haftanın istatistikleri (kaç gün yazdın, duygu dağılımı, seri…) Luma\'ya gönderilir ve haftalık bir değerlendirme çıkarılır.'
+                : 'This week\'s statistics (days journaled, mood distribution, streak…) are sent to Luma (AI) for a weekly review.',
             style: AstraKit.mutedText(context, isDark, fontSize: 11.5),
           ),
           const SizedBox(height: 12),

@@ -8,11 +8,8 @@ import 'core/providers/auth_listener.dart';
 import 'core/providers/astra_palette_provider.dart';
 import 'core/providers/astra_theme_provider.dart';
 import 'core/router/app_router.dart';
-<<<<<<< Updated upstream
-import 'features/auth/domain/registration_flow_state.dart';
-=======
 import 'core/services/smart_reminders_service.dart';
->>>>>>> Stashed changes
+import 'features/auth/domain/registration_flow_state.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'theme/app_theme.dart';
 

@@ -108,42 +108,6 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
     }
   }
 
-  void _openLetter(Letter letter, String locale, bool isDark, Color primary) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: AstraGlassCard(
-          isDark: isDark,
-          primaryColor: primary,
-          borderRadius: 24,
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (letter.title.trim().isNotEmpty) ...[
-                  Text(letter.title,
-                      style: AstraKit.heading2(context, isDark, fontSize: 19)),
-                  const SizedBox(height: 8),
-                ],
-                Text(DateFormat('d MMMM yyyy', locale).format(letter.createdAt),
-                    style: AstraKit.mutedText(context, isDark, fontSize: 12)),
-                const SizedBox(height: 14),
-                Text(letter.body,
-                    style: AstraKit.body(context, isDark,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        height: 1.5)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
@@ -198,17 +162,41 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
                             style: AstraKit.heading2(context, isDark,
                                 fontSize: 16)),
                       const SizedBox(height: 8),
+                      // An unlocked letter's card morphs open (Reflectly-style
+                      // container transform) into a full-screen reader, then
+                      // shrinks back to the card on close. Locked letters stay
+                      // a plain, non-opening card.
                       for (final letter in letters)
-                        _LetterCard(
-                          letter: letter,
-                          locale: locale,
-                          isTr: isTr,
-                          isDark: isDark,
-                          primary: primary,
-                          onOpen: () =>
-                              _openLetter(letter, locale, isDark, primary),
-                          onDelete: () => _confirmDelete(letter),
-                        ),
+                        if (letter.isUnlocked)
+                          AstraMorphContainer(
+                            borderRadius: 18,
+                            openBuilder: (_) => _LetterReaderPage(
+                              letter: letter,
+                              locale: locale,
+                              isTr: isTr,
+                              isDark: isDark,
+                              primary: primary,
+                            ),
+                            closedBuilder: (context, open) => _LetterCard(
+                              letter: letter,
+                              locale: locale,
+                              isTr: isTr,
+                              isDark: isDark,
+                              primary: primary,
+                              onOpen: open,
+                              onDelete: () => _confirmDelete(letter),
+                            ),
+                          )
+                        else
+                          _LetterCard(
+                            letter: letter,
+                            locale: locale,
+                            isTr: isTr,
+                            isDark: isDark,
+                            primary: primary,
+                            onOpen: () {},
+                            onDelete: () => _confirmDelete(letter),
+                          ),
                     ],
                   ),
                 ),
@@ -423,6 +411,108 @@ class _LetterCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-screen reader that an unlocked letter's list card morphs open into via
+/// the shared [AstraMorphContainer] container transform. Replaces the old small
+/// pop-up dialog with a calm, full-page reading surface that eases back to the
+/// card on close.
+class _LetterReaderPage extends StatelessWidget {
+  const _LetterReaderPage({
+    required this.letter,
+    required this.locale,
+    required this.isTr,
+    required this.isDark,
+    required this.primary,
+  });
+
+  final Letter letter;
+  final String locale;
+  final bool isTr;
+  final bool isDark;
+  final Color primary;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasTitle = letter.title.trim().isNotEmpty;
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: AstraMountainBackground(
+        isDark: isDark,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    AstraCircleIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      isDark: isDark,
+                      primaryColor: primary,
+                      onTap: () => Navigator.of(context).maybePop(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        isTr ? 'Mektubun' : 'Your letter',
+                        style: AstraKit.heading1(context, isDark, fontSize: 20),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: AstraGlassCard(
+                      isDark: isDark,
+                      primaryColor: primary,
+                      borderRadius: 24,
+                      padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (hasTitle) ...[
+                            Text(letter.title,
+                                style: AstraKit.heading2(context, isDark,
+                                    fontSize: 21)),
+                            const SizedBox(height: 8),
+                          ],
+                          Row(
+                            children: [
+                              Icon(Icons.mark_email_read_rounded,
+                                  size: 16, color: primary),
+                              const SizedBox(width: 6),
+                              Text(
+                                DateFormat('d MMMM yyyy', locale)
+                                    .format(letter.createdAt),
+                                style: AstraKit.mutedText(context, isDark,
+                                    fontSize: 12.5),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          Text(
+                            letter.body,
+                            style: AstraKit.body(context, isDark,
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w500,
+                                height: 1.6),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

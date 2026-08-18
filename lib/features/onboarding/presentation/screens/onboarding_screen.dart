@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../core/providers/astra_palette_provider.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../../auth/domain/auth_flow_routes.dart';
@@ -138,15 +139,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       return;
     }
     _pageController.nextPage(
-      duration: const Duration(milliseconds: 480),
+      duration: const Duration(milliseconds: 560),
       curve: Curves.easeInOutCubic,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final mode = ref.watch(astraThemeProvider);
-    final isDark = mode == AstraThemeMode.dark;
+    // The onboarding journey always presents in the light theme — a branded
+    // pre-app experience — even when the app itself is in dark mode. We override
+    // this subtree's palette tokens to the always-light variant so every
+    // context-driven AstraKit colour resolves light regardless of app theme.
+    final basePalette = ref.watch(activePaletteProvider);
+    final lightTokens =
+        AstraThemeTokens.fromPalette(basePalette, brightness: Brightness.light);
+    return Theme(
+      data: Theme.of(context).copyWith(extensions: [lightTokens]),
+      child: Builder(builder: (context) => _buildContent(context)),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    const isDark = false;
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final gold = AstraKit.gold(context, isDark);
     final isLastPage = _page.round() == _pageCount - 1;
@@ -166,7 +180,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     itemBuilder: (context, index) {
                       return _buildAnimatedPage(
                         index,
-                        _buildBeat(_beats[index], isDark, gold, isTr),
+                        _buildBeat(context, _beats[index], isDark, gold, isTr),
                       );
                     },
                   ),
@@ -231,19 +245,31 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  /// Gentle fade + rise as a beat settles into place — calm rather than snappy.
+  /// Reflectly-style page motion: as a beat leaves it eases back (scales down),
+  /// softly fades and drifts, while the arriving beat blooms up to full size and
+  /// full opacity. Layered over the PageView's own horizontal glide this reads
+  /// as a smooth, springy cross-fade rather than a flat slide.
   Widget _buildAnimatedPage(int index, Widget child) {
-    final distance = (index - _page).clamp(-1.0, 1.0).abs();
+    final delta = index - _page; // signed distance from the settled page
+    final distance = delta.abs().clamp(0.0, 1.0);
+    final scale = 1 - distance * 0.16;
+    final opacity = (1 - distance * 0.9).clamp(0.0, 1.0);
     return Opacity(
-      opacity: 1 - (distance * 0.55),
+      opacity: opacity,
       child: Transform.translate(
-        offset: Offset(0, distance * 22),
-        child: child,
+        // A touch of horizontal parallax plus a gentle downward drift as the
+        // beat recedes — the incoming beat rises into place.
+        offset: Offset(delta * -26, distance * 26),
+        child: Transform.scale(
+          scale: scale,
+          child: child,
+        ),
       ),
     );
   }
 
-  Widget _buildBeat(_Beat beat, bool isDark, Color gold, bool isTr) {
+  Widget _buildBeat(
+      BuildContext context, _Beat beat, bool isDark, Color gold, bool isTr) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Column(
