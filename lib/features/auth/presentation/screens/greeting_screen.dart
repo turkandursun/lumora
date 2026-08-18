@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../theme/astra_liquid_background.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/luma_avatar.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
@@ -15,8 +16,9 @@ import '../../domain/auth_flow_routes.dart';
 import '../../domain/registration_flow_state.dart';
 
 /// A warm greeting beat shown right after the user picks their mood: Luma's
-/// star appears and "types" a hello, letter by letter, then hands off to Home.
-/// Uses the same theme-aware scene (sun / moon) as the rest of the app.
+/// star floats in over a gently undulating liquid background, and the greeting
+/// rises into place line by line (a calm, staggered reveal) rather than being
+/// typed out. Then it hands off to Home.
 class GreetingScreen extends ConsumerStatefulWidget {
   const GreetingScreen({
     super.key,
@@ -32,12 +34,10 @@ class GreetingScreen extends ConsumerStatefulWidget {
 }
 
 class _GreetingScreenState extends ConsumerState<GreetingScreen> {
-  String _shown = '';
-  int _i = 0;
   bool _done = false;
   bool _started = false;
-  String _full = '';
-  Timer? _typeTimer;
+  List<String> _lines = const [];
+  Timer? _doneTimer;
   Timer? _handoffTimer;
   bool _navigating = false;
 
@@ -52,7 +52,7 @@ class _GreetingScreenState extends ConsumerState<GreetingScreen> {
     final nickname = fullName == null || fullName.isEmpty
         ? null
         : fullName.split(RegExp(r'\s+')).first;
-    _full = switch (widget.variant) {
+    final full = switch (widget.variant) {
       LumaGreetingVariant.preAuth => l10n.greetingPreAuth,
       LumaGreetingVariant.postSignup => nickname == null
           ? l10n.greetingPostSignupNoName
@@ -61,20 +61,19 @@ class _GreetingScreenState extends ConsumerState<GreetingScreen> {
           ? l10n.greetingReturningNoName
           : l10n.greetingReturning(nickname),
     };
-    _typeTimer = Timer.periodic(const Duration(milliseconds: 55), (t) {
-      if (_i >= _full.length) {
-        t.cancel();
-        if (mounted) setState(() => _done = true);
-        // Linger on the greeting for a while before handing off to Home.
-        _handoffTimer = Timer(const Duration(seconds: 7), _goNext);
-        return;
-      }
-      if (mounted) {
-        setState(() {
-          _i++;
-          _shown = _full.substring(0, _i);
-        });
-      }
+    _lines = full
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
+    // Let the staggered reveal finish, then reveal the "tap to continue" hint
+    // and start the gentle auto-handoff.
+    final revealMs = 500 + _lines.length * 260 + 500;
+    _doneTimer = Timer(Duration(milliseconds: revealMs), () {
+      if (!mounted) return;
+      setState(() => _done = true);
+      _handoffTimer = Timer(const Duration(seconds: 7), _goNext);
     });
   }
 
@@ -113,11 +112,9 @@ class _GreetingScreenState extends ConsumerState<GreetingScreen> {
 
   void _skip() {
     if (!_done) {
-      _typeTimer?.cancel();
-      setState(() {
-        _shown = _full;
-        _done = true;
-      });
+      // Reveal everything at once, then a short beat before handing off.
+      _doneTimer?.cancel();
+      setState(() => _done = true);
       _handoffTimer?.cancel();
       _handoffTimer = Timer(const Duration(milliseconds: 900), _goNext);
     } else {
@@ -128,7 +125,7 @@ class _GreetingScreenState extends ConsumerState<GreetingScreen> {
 
   @override
   void dispose() {
-    _typeTimer?.cancel();
+    _doneTimer?.cancel();
     _handoffTimer?.cancel();
     super.dispose();
   }
@@ -136,35 +133,75 @@ class _GreetingScreenState extends ConsumerState<GreetingScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
+    final primary = AstraKit.primary(context, isDark);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: _skip,
-        child: AstraMountainBackground(
-          isDark: isDark,
+      body: AstraLiquidBackground(
+        intensity: 1.15,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _skip,
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  LumaAvatar(size: 132, speaking: !_done),
-                  const SizedBox(height: 32),
-                  Text(
-                    _shown,
-                    textAlign: TextAlign.center,
-                    style: AstraKit.heading1(context, isDark, fontSize: 22)
-                        .copyWith(height: 1.4),
+                  // Luma's star with a soft glow halo behind it for depth.
+                  AstraEntrance(
+                    index: 0,
+                    offset: 0,
+                    scaleFrom: 0.55,
+                    duration: const Duration(milliseconds: 720),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: primary.withValues(alpha: 0.32),
+                            blurRadius: 60,
+                            spreadRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: LumaAvatar(size: 132, speaking: !_done),
+                    ),
                   ),
                   const SizedBox(height: 40),
-                  AnimatedOpacity(
-                    opacity: _done ? 1 : 0,
-                    duration: const Duration(milliseconds: 400),
-                    child: Text(
-                      AppLocalizations.of(context).greetingTapToContinue,
-                      style: AstraKit.mutedText(context, isDark, fontSize: 13),
+                  // The greeting rises into place, one line at a time.
+                  for (var i = 0; i < _lines.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: AstraEntrance(
+                        index: i + 1,
+                        intervalMs: 260,
+                        offset: 26,
+                        scaleFrom: 0.92,
+                        duration: const Duration(milliseconds: 560),
+                        child: Text(
+                          _lines[i],
+                          textAlign: TextAlign.center,
+                          style:
+                              AstraKit.heading1(context, isDark, fontSize: 22)
+                                  .copyWith(height: 1.4),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 42),
+                  AnimatedSlide(
+                    offset: Offset(0, _done ? 0 : 0.4),
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeOut,
+                    child: AnimatedOpacity(
+                      opacity: _done ? 1 : 0,
+                      duration: const Duration(milliseconds: 400),
+                      child: _TapHint(
+                        label: l10n.greetingTapToContinue,
+                        isDark: isDark,
+                        primary: primary,
+                      ),
                     ),
                   ),
                 ],
@@ -172,6 +209,60 @@ class _GreetingScreenState extends ConsumerState<GreetingScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A gently pulsing "tap to continue" hint, so the idle state still feels alive.
+class _TapHint extends StatefulWidget {
+  const _TapHint({
+    required this.label,
+    required this.isDark,
+    required this.primary,
+  });
+
+  final String label;
+  final bool isDark;
+  final Color primary;
+
+  @override
+  State<_TapHint> createState() => _TapHintState();
+}
+
+class _TapHintState extends State<_TapHint>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, child) => Opacity(
+        opacity: 0.6 + 0.4 * _c.value,
+        child: child,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.touch_app_rounded,
+              size: 15, color: widget.primary.withValues(alpha: 0.8)),
+          const SizedBox(width: 6),
+          Text(
+            widget.label,
+            style:
+                AstraKit.mutedText(context, widget.isDark, fontSize: 13),
+          ),
+        ],
       ),
     );
   }

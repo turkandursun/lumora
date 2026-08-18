@@ -3,13 +3,14 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/services/crisis_region_service.dart';
 import '../l10n/generated/app_localizations.dart';
-import 'lumora_palette.dart';
+import 'luma_glass_theme.dart';
 
 /// Calm, non-alarming crisis support resource sheet — triggered purely by
 /// local keyword detection (see `CrisisDetectionService`) on journal
 /// entries and Luma chat messages, independent of any network/AI call so
 /// it always appears instantly, even offline. Never blocks the app: it's
 /// a standard dismissible bottom sheet with an explicit continue action.
+/// Restyled onto the app's current [LumaGlass] theme (theme-adaptive).
 class CrisisSupportSheet extends StatelessWidget {
   const CrisisSupportSheet({super.key});
 
@@ -33,9 +34,16 @@ class CrisisSupportSheet extends StatelessWidget {
         top: false,
         child: Container(
           margin: const EdgeInsets.fromLTRB(0, 40, 0, 0),
-          decoration: const BoxDecoration(
-            color: LumoraPalette.nightBackground,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [LumaGlass.bgTop(context), LumaGlass.bgBottom(context)],
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(color: LumaGlass.sparkle(context).withValues(alpha: 0.3)),
+            ),
           ),
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(22, 12, 22, 22),
@@ -48,7 +56,7 @@ class CrisisSupportSheet extends StatelessWidget {
                     width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: LumaGlass.subtitle(context).withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -58,25 +66,24 @@ class CrisisSupportSheet extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   l10n.crisisSupportOpeningLine,
-                  style: LumoraPalette.storyTitleStyle(fontSize: 21),
+                  style: LumaGlass.sans(context,
+                      fontSize: 21,
+                      fontWeight: FontWeight.w700,
+                      color: LumaGlass.cardTitle(context)),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   l10n.crisisSupportSubtitle,
-                  style: LumoraPalette.bodyStyle(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
+                  style: LumaGlass.sans(context,
+                      fontSize: 14, color: LumaGlass.subtitle(context)),
                 ),
                 const SizedBox(height: 22),
                 ..._resourcesFor(region, l10n),
                 const SizedBox(height: 6),
                 Text(
                   l10n.crisisSupportDisclaimer,
-                  style: LumoraPalette.bodyStyle(
-                    fontSize: 12.5,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
+                  style: LumaGlass.sans(context,
+                      fontSize: 12.5, color: LumaGlass.hint(context)),
                 ),
                 const SizedBox(height: 20),
                 _ContinueButton(
@@ -160,21 +167,17 @@ class _GlowIcon extends StatelessWidget {
       height: 46,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            Color.lerp(LumoraPalette.warmCream, LumoraPalette.lightPurple, 0.35)!,
-            LumoraPalette.lightPurple,
-          ],
-        ),
+        gradient: LinearGradient(colors: LumaGlass.accentGradient(context)),
         boxShadow: [
           BoxShadow(
-            color: LumoraPalette.lightPurple.withValues(alpha: 0.5),
+            color: LumaGlass.accentShadow(context),
             blurRadius: 20,
             spreadRadius: 2,
           ),
         ],
       ),
-      child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 22),
+      child: Icon(Icons.favorite_rounded,
+          color: LumaGlass.accentInk(context), size: 22),
     );
   }
 }
@@ -203,20 +206,22 @@ class _ResourceCard extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: LumaGlass.glassFillTop(context),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+            border: Border.all(color: LumaGlass.glassBorder(context)),
           ),
           child: Row(
             children: [
               Container(
                 width: 38,
                 height: 38,
-                decoration: const BoxDecoration(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(colors: LumoraPalette.ctaGradient),
+                  gradient:
+                      LinearGradient(colors: LumaGlass.accentGradient(context)),
                 ),
-                child: Icon(icon, color: Colors.white, size: 18),
+                child: Icon(icon, color: LumaGlass.accentInk(context), size: 18),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -225,20 +230,17 @@ class _ResourceCard extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: LumoraPalette.bodyStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
+                      style: LumaGlass.sans(context,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: LumaGlass.cardTitle(context)),
                     ),
                     if (description != null) ...[
                       const SizedBox(height: 3),
                       Text(
                         description!,
-                        style: LumoraPalette.bodyStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.6),
-                        ),
+                        style: LumaGlass.sans(context,
+                            fontSize: 12, color: LumaGlass.subtitle(context)),
                       ),
                     ],
                   ],
@@ -246,7 +248,7 @@ class _ResourceCard extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                color: Colors.white.withValues(alpha: 0.4),
+                color: LumaGlass.sparkle(context),
               ),
             ],
           ),
@@ -275,15 +277,14 @@ class _ContinueButton extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+            border: Border.all(color: LumaGlass.glassBorder(context)),
           ),
           child: Text(
             label,
-            style: LumoraPalette.bodyStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Colors.white.withValues(alpha: 0.85),
-            ),
+            style: LumaGlass.sans(context,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: LumaGlass.ink(context)),
           ),
         ),
       ),

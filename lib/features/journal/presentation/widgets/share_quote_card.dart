@@ -5,6 +5,8 @@ import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../theme/luma_glass_theme.dart';
+
 /// Turns the day's quote into a small, branded image and hands it to the OS
 /// share sheet — the "share as a beautiful card" flow other wellbeing apps use
 /// for their daily quote. Tapping share opens a preview of the card first, so
@@ -96,12 +98,14 @@ class _ShareSheetState extends State<_ShareSheet> {
                     onPressed: () => Navigator.of(context).maybePop(),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: Color(0x55C084FC)),
+                      side: BorderSide(color: LumaGlass.glassBorder(context)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     child: Text(
                       widget.isTr ? 'Kapat' : 'Close',
-                      style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.outfit(
+                          fontWeight: FontWeight.w600,
+                          color: LumaGlass.ink(context)),
                     ),
                   ),
                 ),
@@ -111,7 +115,8 @@ class _ShareSheetState extends State<_ShareSheet> {
                   child: FilledButton.icon(
                     onPressed: _busy ? null : _share,
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B5CF6),
+                      backgroundColor: LumaGlass.sparkle(context),
+                      foregroundColor: LumaGlass.accentInk(context),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
@@ -147,20 +152,26 @@ class _QuoteImageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const gold = Color(0xFFE3C264);
-    const ink = Color(0xFFF6EFDE);
+    // Themed to the app's current LumaGlass palette so the shared card matches
+    // the rest of the app instead of the old violet/gold look. Soft pink card,
+    // deep ink text, pink accent details.
+    final gold = LumaGlass.sparkle(context);
+    final ink = LumaGlass.heroInk(context);
+    final grad = LumaGlass.accentGradient(context);
     return Container(
       width: 340,
       height: 340,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2B1F4C), Color(0xFF160E2C), Color(0xFF0D0919)],
+        gradient: LinearGradient(
+          colors: [
+            Color.lerp(grad.first, Colors.white, 0.74)!,
+            Color.lerp(grad.last, Colors.white, 0.52)!,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          stops: [0.0, 0.58, 1.0],
         ),
-        border: Border.all(color: const Color(0x66C9A7F5), width: 1.5),
+        border: Border.all(color: LumaGlass.glassBorder(context), width: 1.5),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(30),
@@ -203,7 +214,7 @@ class _QuoteImageCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.auto_awesome, color: gold, size: 15),
+                      Icon(Icons.auto_awesome, color: gold, size: 15),
                       const SizedBox(width: 9),
                       Text(
                         'ASTRA',

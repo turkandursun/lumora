@@ -6,6 +6,7 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../../theme/luma_glass_theme.dart';
 import '../../domain/daily_content.dart';
 import '../providers/quote_favorites_provider.dart';
 import '../widgets/share_quote_card.dart';
@@ -380,7 +381,7 @@ class _CircleAction extends StatelessWidget {
 }
 
 /// Bottom sheet whose share options spring in one after another (staggered).
-class _ShareOptionsSheet extends StatelessWidget {
+class _ShareOptionsSheet extends StatefulWidget {
   const _ShareOptionsSheet(
       {required this.quote, required this.isTr, required this.ref});
 
@@ -398,15 +399,52 @@ class _ShareOptionsSheet extends StatelessWidget {
   }
 
   @override
+  State<_ShareOptionsSheet> createState() => _ShareOptionsSheetState();
+}
+
+class _ShareOptionsSheetState extends State<_ShareOptionsSheet>
+    with SingleTickerProviderStateMixin {
+  // Grows in / shrinks out like the "how are you feeling" mood box on entry.
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 340),
+  )..forward();
+  late final Animation<double> _scale = Tween<double>(begin: 0.86, end: 1.0)
+      .animate(CurvedAnimation(parent: _c, curve: Curves.easeOutBack));
+  late final Animation<double> _fade =
+      CurvedAnimation(parent: _c, curve: Curves.easeOut);
+  bool _closing = false;
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  Future<void> _dismiss() async {
+    if (_closing) return;
+    _closing = true;
+    await _c.reverse();
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isTr = widget.isTr;
+    final quote = widget.quote;
+    final ref = widget.ref;
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+
     final rows = <Widget>[
       _OptionRow(
         icon: Icons.image_rounded,
         label: isTr ? 'Görsel olarak paylaş' : 'Share as image',
-        onTap: () {
-          Navigator.of(context).pop();
+        onTap: () async {
+          await _dismiss();
+          if (!nav.mounted) return;
           ShareQuoteCard.share(
-              context: context,
+              context: nav.context,
               quoteText: quote.text(isTr),
               isTr: isTr,
               author: quote.author);
@@ -415,11 +453,11 @@ class _ShareOptionsSheet extends StatelessWidget {
       _OptionRow(
         icon: Icons.copy_rounded,
         label: isTr ? 'Metni kopyala' : 'Copy text',
-        onTap: () {
+        onTap: () async {
           Clipboard.setData(
               ClipboardData(text: '"${quote.text(isTr)}" — ${quote.author}'));
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
+          await _dismiss();
+          messenger.showSnackBar(
             SnackBar(content: Text(isTr ? 'Kopyalandı' : 'Copied')),
           );
         },
@@ -427,42 +465,61 @@ class _ShareOptionsSheet extends StatelessWidget {
       _OptionRow(
         icon: Icons.favorite_border_rounded,
         label: isTr ? 'Favorilere ekle' : 'Add to favorites',
-        onTap: () {
+        onTap: () async {
           ref.read(quoteFavoritesProvider.notifier).toggle(quote.id);
-          Navigator.of(context).pop();
+          await _dismiss();
         },
       ),
     ];
 
-    return Container(
-      margin: const EdgeInsets.all(14),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xF01B1330),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: const Color(0x55C084FC)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2))),
-          for (var i = 0; i < rows.length; i++)
-            rows[i]
-                .animate()
-                .fadeIn(delay: (i * 70).ms, duration: 300.ms)
-                .slideY(
-                    begin: 0.4,
-                    end: 0,
-                    delay: (i * 70).ms,
-                    duration: 420.ms,
-                    curve: Curves.easeOutBack),
-        ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _dismiss();
+      },
+      child: FadeTransition(
+        opacity: _fade,
+        child: ScaleTransition(
+          scale: _scale,
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            margin: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [LumaGlass.bgTop(context), LumaGlass.bgBottom(context)],
+              ),
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(
+                  color: LumaGlass.sparkle(context).withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                        color:
+                            LumaGlass.subtitle(context).withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(2))),
+                for (var i = 0; i < rows.length; i++)
+                  rows[i]
+                      .animate()
+                      .fadeIn(delay: (i * 70).ms, duration: 300.ms)
+                      .slideY(
+                          begin: 0.4,
+                          end: 0,
+                          delay: (i * 70).ms,
+                          duration: 420.ms,
+                          curve: Curves.easeOutBack),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -484,11 +541,11 @@ class _OptionRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFFC084FC), size: 22),
+            Icon(icon, color: LumaGlass.sparkle(context), size: 22),
             const SizedBox(width: 16),
             Text(label,
-                style: const TextStyle(
-                    color: Color(0xFFF4EEFF),
+                style: TextStyle(
+                    color: LumaGlass.cardTitle(context),
                     fontSize: 15,
                     fontWeight: FontWeight.w600)),
           ],
