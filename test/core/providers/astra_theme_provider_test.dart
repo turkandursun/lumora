@@ -25,6 +25,32 @@ void main() {
       AstraThemeNotifier.modeFromPreference('unknown'),
       AstraThemeMode.light,
     );
+    expect(
+      AstraThemeNotifier.modeFromPreference(null),
+      AstraThemeMode.light,
+    );
+  });
+
+  test('brand new user without local or cloud preference starts light',
+      () async {
+    SharedPreferences.setMockInitialValues({
+      'astra_bg_theme': 'dark',
+      'astra_bg_theme_guest': 'dark',
+      astraThemePrefsKeyForUser('previous-user'): 'dark',
+    });
+    final repository = _FakeThemeRepository(currentUserId: 'new-user');
+    final notifier = _notifier(repository);
+
+    await notifier.reloadForCurrentUser();
+
+    expect(notifier.state, AstraThemeMode.light);
+    expect(repository.fetches, ['new-user']);
+    expect(
+      (await SharedPreferences.getInstance())
+          .getString(astraThemePrefsKeyForUser('new-user')),
+      'light',
+    );
+    notifier.dispose();
   });
 
   test('auth null remains light and never persists an account preference',
@@ -117,6 +143,32 @@ void main() {
     await notifier.reloadForCurrentUser();
     expect(notifier.state, AstraThemeMode.dark);
     notifier.dispose();
+  });
+
+  test('persisted dark and light choices survive notifier restart', () async {
+    final repository = _FakeThemeRepository(
+      currentUserId: 'user-a',
+      cloudValues: {'user-a': 'dark'},
+    );
+    final first = _notifier(repository);
+
+    await first.setDarkMode(true);
+    await first.pendingPersistence;
+    first.dispose();
+
+    final darkRestart = _notifier(repository);
+    await darkRestart.reloadForCurrentUser();
+    expect(darkRestart.state, AstraThemeMode.dark);
+
+    await darkRestart.setDarkMode(false);
+    await darkRestart.pendingPersistence;
+    repository.cloudValues['user-a'] = 'light';
+    darkRestart.dispose();
+
+    final lightRestart = _notifier(repository);
+    await lightRestart.reloadForCurrentUser();
+    expect(lightRestart.state, AstraThemeMode.light);
+    lightRestart.dispose();
   });
 
   test('late user A cloud response cannot overwrite user B appearance',

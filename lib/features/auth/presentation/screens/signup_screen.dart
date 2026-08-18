@@ -16,6 +16,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../../profile/data/profile_repository.dart';
 import '../../domain/auth_flow_routes.dart';
 import '../../domain/registration_flow_state.dart';
 import '../providers/auth_provider.dart';
@@ -94,6 +95,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     super.dispose();
   }
 
+  Future<void> _initializeFreshProfileAppearance(String userId) async {
+    // Invalidate any in-flight cloud result from before/during sign-up and
+    // paint the fresh-registration flow light immediately.
+    await ref.read(astraThemeProvider.notifier).setTheme(AstraThemeMode.light);
+    try {
+      await ProfileRepository().initializeFreshProfileDefaults(userId);
+    } catch (error) {
+      // Registration remains usable offline. The user-scoped local light
+      // selection is already active and the DB default migration supplies the
+      // server-side safety net for future profile inserts.
+      debugPrint('[Profile] Fresh profile defaults could not be saved: $error');
+    }
+  }
+
   Future<void> _onCreateAccountPressed() async {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final email = _emailController.text.trim();
@@ -143,6 +158,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       context.go(AppRoutes.login);
       return;
     }
+
+    await _initializeFreshProfileAppearance(userId);
 
     // Fresh account: wipe any local data left by a previous account on this
     // device so the new user starts clean and account-isolated.
@@ -197,6 +214,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     final FreshRegistrationIntent? intent;
     if (isFreshSignup) {
       intent = await registrationFlowStore.begin(user.id);
+      await _initializeFreshProfileAppearance(user.id);
     } else {
       await registrationFlowStore.clearForUser(user.id);
       intent = null;

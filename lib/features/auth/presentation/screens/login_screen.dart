@@ -16,6 +16,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../../profile/data/profile_repository.dart';
 import '../../domain/auth_flow_routes.dart';
 import '../../domain/registration_flow_state.dart';
 import '../providers/auth_provider.dart';
@@ -146,18 +147,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
+  Future<void> _initializeResumedFreshProfileAppearance(String userId) async {
+    await ref.read(astraThemeProvider.notifier).setTheme(AstraThemeMode.light);
+    try {
+      await ProfileRepository().initializeFreshProfileDefaults(userId);
+    } catch (error) {
+      debugPrint('[Profile] Fresh profile defaults could not be saved: $error');
+    }
+  }
+
   Future<void> _routeAfterSignIn() async {
     if (_didRouteAfterSignIn) return;
     _didRouteAfterSignIn = true;
-    await ref.read(cloudBackupServiceProvider).onSignIn();
-    await bootstrapAstraPaletteForCurrentUser(ref);
-    if (!mounted) return;
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
       _didRouteAfterSignIn = false;
       return;
     }
     final intent = await registrationFlowStore.restore(userId);
+    if (!mounted || Supabase.instance.client.auth.currentUser?.id != userId) {
+      return;
+    }
+    // Email-confirmation sign-ups resume at name entry after their first real
+    // session. Initialize defaults only at that first step; later registration
+    // resumes must preserve a palette the user may already have selected.
+    if (intent?.step == RegistrationStep.nameEntry) {
+      await _initializeResumedFreshProfileAppearance(userId);
+    }
+    await ref.read(cloudBackupServiceProvider).onSignIn();
+    await bootstrapAstraPaletteForCurrentUser(ref);
     if (!mounted || Supabase.instance.client.auth.currentUser?.id != userId) {
       return;
     }
