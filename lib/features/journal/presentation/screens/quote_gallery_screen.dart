@@ -391,10 +391,16 @@ class _ShareOptionsSheet extends StatefulWidget {
 
   static Future<void> show(
       BuildContext context, FamousQuote quote, bool isTr, WidgetRef ref) {
-    return showModalBottomSheet<void>(
+    // Centered dialog (not a bottom sheet) so the box appears from the middle
+    // of the screen and grows/shrinks in place — like the mood picker box.
+    return showGeneralDialog<void>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ShareOptionsSheet(quote: quote, isTr: isTr, ref: ref),
+      barrierDismissible: true,
+      barrierLabel: 'share',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, __, ___) =>
+          _ShareOptionsSheet(quote: quote, isTr: isTr, ref: ref),
     );
   }
 
@@ -477,46 +483,54 @@ class _ShareOptionsSheetState extends State<_ShareOptionsSheet>
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _dismiss();
       },
-      child: FadeTransition(
-        opacity: _fade,
-        child: ScaleTransition(
-          scale: _scale,
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            margin: const EdgeInsets.all(14),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [LumaGlass.bgTop(context), LumaGlass.bgBottom(context)],
+      child: Center(
+        child: FadeTransition(
+          opacity: _fade,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Material(
+              type: MaterialType.transparency,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 360),
+                margin: const EdgeInsets.symmetric(horizontal: 28),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      LumaGlass.bgTop(context),
+                      LumaGlass.bgBottom(context)
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(
+                      color:
+                          LumaGlass.sparkle(context).withValues(alpha: 0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 30,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (var i = 0; i < rows.length; i++)
+                      rows[i]
+                          .animate()
+                          .fadeIn(delay: (i * 70).ms, duration: 300.ms)
+                          .slideY(
+                              begin: 0.4,
+                              end: 0,
+                              delay: (i * 70).ms,
+                              duration: 420.ms,
+                              curve: Curves.easeOutBack),
+                  ],
+                ),
               ),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(
-                  color: LumaGlass.sparkle(context).withValues(alpha: 0.3)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                        color:
-                            LumaGlass.subtitle(context).withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(2))),
-                for (var i = 0; i < rows.length; i++)
-                  rows[i]
-                      .animate()
-                      .fadeIn(delay: (i * 70).ms, duration: 300.ms)
-                      .slideY(
-                          begin: 0.4,
-                          end: 0,
-                          delay: (i * 70).ms,
-                          duration: 420.ms,
-                          curve: Curves.easeOutBack),
-              ],
             ),
           ),
         ),

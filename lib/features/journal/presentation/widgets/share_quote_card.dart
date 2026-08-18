@@ -20,11 +20,16 @@ class ShareQuoteCard {
     required bool isTr,
     String? author,
   }) async {
-    await showModalBottomSheet<void>(
+    // Centered dialog (not a bottom sheet) so the card appears from the middle
+    // of the screen and grows/shrinks in place — like the mood picker box.
+    await showGeneralDialog<void>(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => _ShareSheet(quoteText: quoteText, isTr: isTr, author: author),
+      barrierDismissible: true,
+      barrierLabel: 'share-card',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, __, ___) =>
+          _ShareSheet(quoteText: quoteText, isTr: isTr, author: author),
     );
   }
 }
@@ -40,9 +45,34 @@ class _ShareSheet extends StatefulWidget {
   State<_ShareSheet> createState() => _ShareSheetState();
 }
 
-class _ShareSheetState extends State<_ShareSheet> {
+class _ShareSheetState extends State<_ShareSheet>
+    with SingleTickerProviderStateMixin {
   final GlobalKey _cardKey = GlobalKey();
   bool _busy = false;
+  bool _closing = false;
+
+  // Grows in / shrinks out from the centre, like the mood picker box.
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 340),
+  )..forward();
+  late final Animation<double> _scale = Tween<double>(begin: 0.86, end: 1.0)
+      .animate(CurvedAnimation(parent: _c, curve: Curves.easeOutBack));
+  late final Animation<double> _fade =
+      CurvedAnimation(parent: _c, curve: Curves.easeOut);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  Future<void> _dismiss() async {
+    if (_closing) return;
+    _closing = true;
+    await _c.reverse();
+    if (mounted) Navigator.of(context).pop();
+  }
 
   Future<void> _share() async {
     if (_busy) return;
@@ -79,23 +109,35 @@ class _ShareSheetState extends State<_ShareSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // The captured card.
-            RepaintBoundary(
-              key: _cardKey,
-              child: _QuoteImageCard(quoteText: widget.quoteText, author: widget.author),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _dismiss();
+      },
+      child: Center(
+        child: FadeTransition(
+          opacity: _fade,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Material(
+              type: MaterialType.transparency,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // The captured card.
+                    RepaintBoundary(
+                      key: _cardKey,
+                      child: _QuoteImageCard(
+                          quoteText: widget.quoteText, author: widget.author),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _dismiss,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       side: BorderSide(color: LumaGlass.glassBorder(context)),
@@ -132,10 +174,14 @@ class _ShareSheetState extends State<_ShareSheet> {
                       style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15),
                     ),
                   ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );

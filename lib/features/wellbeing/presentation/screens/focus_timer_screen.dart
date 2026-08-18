@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,21 +38,13 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
     with SingleTickerProviderStateMixin {
   static const _presets = [_Preset(25, 5), _Preset(15, 3), _Preset(50, 10)];
 
-  // Ambient sound options — asset path per key ('rain', 'music'); null = off.
-  static const _sounds = <String, String>{
-    'rain': 'audio/rain_loop.mp3',
-    'music': 'audio/med/isik/calm_1.mp3',
-  };
-
   late final AnimationController _twinkle;
   final _task = TextEditingController();
-  final AudioPlayer _ambient = AudioPlayer();
 
   // Chosen durations (minutes). Presets just fill these; the steppers are the
   // single source of truth, so a custom length works exactly like a preset.
   int _focusMin = 25;
   int _breakMin = 5;
-  String? _sound; // null = off, otherwise a key of [_sounds]
 
   _Phase _phase = _Phase.idle;
   bool _running = false;
@@ -69,7 +60,6 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
     _twinkle =
         AnimationController(vsync: this, duration: const Duration(seconds: 4))
           ..repeat(reverse: true);
-    _ambient.setReleaseMode(ReleaseMode.loop);
   }
 
   @override
@@ -77,38 +67,11 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
     _timer?.cancel();
     _twinkle.dispose();
     _task.dispose();
-    _ambient.dispose();
     super.dispose();
   }
 
   double get _progress =>
       _phaseTotal <= 0 ? 0 : ((_phaseTotal - _remaining) / _phaseTotal).clamp(0.0, 1.0);
-
-  // ── Ambient sound ──────────────────────────────────────────────────────────
-
-  Future<void> _safeAudio(Future<void> Function() op) async {
-    try {
-      await op();
-    } catch (_) {
-      // Audio is a non-critical nicety — never let it break the timer.
-    }
-  }
-
-  void _startAmbient() {
-    final key = _sound;
-    if (key == null) return;
-    _safeAudio(() => _ambient.play(AssetSource(_sounds[key]!), volume: 0.6));
-  }
-
-  void _pickSound(String? key) {
-    setState(() => _sound = key);
-    if (_phase == _Phase.idle) return; // will start with the next session
-    if (key == null) {
-      _safeAudio(() => _ambient.stop());
-    } else if (_running) {
-      _safeAudio(() => _ambient.play(AssetSource(_sounds[key]!), volume: 0.6));
-    }
-  }
 
   void _startFocus() {
     setState(() {
@@ -118,7 +81,6 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
       _running = true;
       _round = 1;
     });
-    _startAmbient();
     _tick();
   }
 
@@ -173,17 +135,14 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
     if (_running) {
       _timer?.cancel();
       setState(() => _running = false);
-      _safeAudio(() => _ambient.pause());
     } else {
       setState(() => _running = true);
       _tick();
-      if (_sound != null) _safeAudio(() => _ambient.resume());
     }
   }
 
   void _finish() {
     _timer?.cancel();
-    _safeAudio(() => _ambient.stop());
     setState(() {
       _phase = _Phase.idle;
       _running = false;
@@ -326,40 +285,6 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
             hint: isTr ? 'Neye odaklanıyorsun? (isteğe bağlı)' : "What are you focusing on? (optional)",
             isDark: isDark,
             primary: primary,
-          ),
-          const SizedBox(height: 16),
-          // Ambient sound.
-          Text(isTr ? 'Ortam sesi' : 'Ambient sound',
-              style: AstraKit.mutedText(context, isDark,
-                  fontSize: 12.5, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            alignment: WrapAlignment.center,
-            children: [
-              _PresetPill(
-                label: isTr ? 'Kapalı' : 'Off',
-                selected: _sound == null,
-                isDark: isDark,
-                primary: primary,
-                onTap: () => _pickSound(null),
-              ),
-              _PresetPill(
-                label: isTr ? 'Yağmur' : 'Rain',
-                selected: _sound == 'rain',
-                isDark: isDark,
-                primary: primary,
-                onTap: () => _pickSound('rain'),
-              ),
-              _PresetPill(
-                label: isTr ? 'Hafif müzik' : 'Soft music',
-                selected: _sound == 'music',
-                isDark: isDark,
-                primary: primary,
-                onTap: () => _pickSound('music'),
-              ),
-            ],
           ),
           const SizedBox(height: 26),
           AstraGoldButton(
