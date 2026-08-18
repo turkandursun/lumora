@@ -157,9 +157,24 @@ class AstraMountainBackground extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (usePalette)
+              // Pixel-identical to Home's LumaGlassBackground: a soft, bright
+              // top→bottom palette wash (light top, gently deeper bottom, no
+              // dark scrim) so every screen reads exactly like the home page.
               DecoratedBox(
-                  decoration:
-                      BoxDecoration(gradient: palette.backgroundGradient))
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      palette.gradientTop,
+                      Color.lerp(
+                          palette.gradientTop, palette.gradientBottom, 0.5)!,
+                      palette.gradientBottom,
+                    ],
+                    stops: const [0.0, 0.55, 1.0],
+                  ),
+                ),
+              )
             else
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 450),
@@ -181,26 +196,31 @@ class AstraMountainBackground extends StatelessWidget {
                   ),
                 ),
               ),
-            // A soft mist over the scene — keeps it from competing with the UI
-            // without hiding it, so the sun scene stays bright and airy.
-            BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-              child: const SizedBox.expand(),
-            ),
-            // Only a gentle top scrim so status-bar text/greeting stays legible;
-            // the sun scene otherwise keeps its brightness.
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: isDark
-                      ? const [Color(0x55000000), Color(0x00000000)]
-                      : const [Color(0x2E000000), Color(0x00000000)],
-                  stops: const [0.0, 0.30],
+            // The mist + top scrim exist only to keep the UI legible over the
+            // photo entry scene (login/onboarding). The main-app palette
+            // background is already a soft, bright wash — the same look as
+            // Home's LumaGlassBackground — so it gets neither: no top
+            // darkening, same cheerful/bright background on every screen.
+            if (!usePalette) ...[
+              // A soft mist over the photo scene so it doesn't compete with UI.
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                child: const SizedBox.expand(),
+              ),
+              // A gentle top scrim so status-bar text stays legible on the photo.
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: isDark
+                        ? const [Color(0x55000000), Color(0x00000000)]
+                        : const [Color(0x2E000000), Color(0x00000000)],
+                    stops: const [0.0, 0.30],
+                  ),
                 ),
               ),
-            ),
+            ],
             child,
           ],
         ),
