@@ -48,10 +48,6 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
   // The wash behind the growing star matches the chosen palette.
   Color _fillColor = const Color(0xFFF8E3A6);
 
-  // The wash behind the growing star matches the chosen palette, so the burst
-  // blends straight into the themed onboarding screen that follows.
-  Color _fillColor = const Color(0xFFF8E3A6);
-
   Future<void> _finishRegistrationStep() async {
     if (_navigated) return;
     _navigated = true;
