@@ -350,7 +350,6 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     }
   }
 
-<<<<<<< Updated upstream
   Future<void> _speak(String text) async {
     if (!_voiceOn) return;
     _speaking = true;
@@ -376,12 +375,6 @@ class _MeditationScreenState extends ConsumerState<MeditationScreen>
     await _tts.stop();
     await _tts.speak(text);
   }
-=======
-  // Spoken guidance was removed (no ElevenLabs / device TTS): meditation runs
-  // silently. The guide lines are still shown on screen; the optional ambient
-  // nature sound is unaffected. Kept as a no-op so the call sites stay simple.
-  Future<void> _speak(String text) async {}
->>>>>>> Stashed changes
 
   /// Gentle fade-in of the ambient bed (0 → target over ~2.5s) so the session
   /// eases in instead of snapping on.
@@ -648,7 +641,6 @@ class _SetupView extends StatelessWidget {
             primary: primary,
             onChanged: onToggleSound,
           ),
-<<<<<<< Updated upstream
           const SizedBox(height: 12),
           _ToggleRow(
             icon: voiceOn
@@ -692,8 +684,6 @@ class _SetupView extends StatelessWidget {
                   )
                 : const SizedBox.shrink(),
           ),
-=======
->>>>>>> Stashed changes
           const SizedBox(height: 28),
           AstraGoldButton(
               isDark: isDark,

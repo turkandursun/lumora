@@ -44,8 +44,11 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
     });
 
   bool _bursting = false;
-<<<<<<< Updated upstream
   bool _navigated = false;
+
+  // The wash behind the growing star matches the chosen palette, so the burst
+  // blends straight into the themed onboarding screen that follows.
+  Color _fillColor = const Color(0xFFF8E3A6);
 
   Future<void> _finishRegistrationStep() async {
     if (_navigated) return;
@@ -65,11 +68,6 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
       if (mounted) context.go(AppRoutes.home);
     }
   }
-=======
-  // The wash behind the growing star matches the chosen palette, so the burst
-  // blends straight into the themed onboarding screen that follows.
-  Color _fillColor = const Color(0xFFF8E3A6);
->>>>>>> Stashed changes
 
   @override
   void dispose() {

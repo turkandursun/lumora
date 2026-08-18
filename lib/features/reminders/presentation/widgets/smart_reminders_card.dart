@@ -23,10 +23,12 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
   void initState() {
     super.initState();
     SmartRemindersService.instance.load().then((s) {
-      if (mounted) setState(() {
-            _s = s;
-            _loaded = true;
-          });
+      if (mounted) {
+        setState(() {
+          _s = s;
+          _loaded = true;
+        });
+      }
     });
   }
 
@@ -55,7 +57,7 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     final isTr = _isTr;
 
     return AstraGlassCard(
@@ -73,7 +75,7 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
               Expanded(
                 child: Text(
                   isTr ? 'Akıllı hatırlatmalar' : 'Smart reminders',
-                  style: AstraKit.body(isDark,
+                  style: AstraKit.body(context, isDark,
                       fontSize: 15, fontWeight: FontWeight.w700),
                 ),
               ),
@@ -81,9 +83,8 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
                 value: _s.enabled,
                 activeThumbColor: primary,
                 activeTrackColor: primary.withValues(alpha: 0.4),
-                onChanged: _loaded
-                    ? (v) => _persist(_s.copyWith(enabled: v))
-                    : null,
+                onChanged:
+                    _loaded ? (v) => _persist(_s.copyWith(enabled: v)) : null,
               ),
             ],
           ),
@@ -150,21 +151,22 @@ class _TimeRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label,
-                      style: AstraKit.body(isDark,
+                      style: AstraKit.body(context, isDark,
                           fontSize: 13.5, fontWeight: FontWeight.w600)),
-                  Text(hint, style: AstraKit.mutedText(isDark, fontSize: 11.5)),
+                  Text(hint,
+                      style:
+                          AstraKit.mutedText(context, isDark, fontSize: 11.5)),
                 ],
               ),
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(time,
-                  style: AstraKit.body(isDark,
+                  style: AstraKit.body(context, isDark,
                           fontSize: 14, fontWeight: FontWeight.w800)
                       .copyWith(color: primary)),
             ),
