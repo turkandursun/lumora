@@ -15,6 +15,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
+import '../../../../theme/luma_wave_avatar.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../domain/auth_flow_routes.dart';
 import '../../domain/registration_flow_state.dart';
@@ -216,6 +217,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final compact = constraints.maxHeight < 700;
+                final lumaSize = (constraints.maxWidth * 0.27).clamp(
+                  90.0,
+                  compact ? 96.0 : 110.0,
+                );
                 return SingleChildScrollView(
                   padding: EdgeInsets.only(
                       bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -229,9 +235,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const SizedBox(height: 54),
+                              SizedBox(height: compact ? 8 : 18),
                               AstraEntrance(
                                 index: 0,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Center(
+                                  child: LumaWaveAvatar(size: lumaSize),
+                                ),
+                              ),
+                              SizedBox(height: compact ? 2 : 6),
+                              AstraEntrance(
+                                index: 1,
                                 intervalMs: 130,
                                 offset: 20,
                                 child: Text('ASTRA',
@@ -241,7 +256,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               ),
                               const SizedBox(height: 6),
                               AstraEntrance(
-                                index: 1,
+                                index: 2,
                                 intervalMs: 130,
                                 offset: 20,
                                 child: Text(

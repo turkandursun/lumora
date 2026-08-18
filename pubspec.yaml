@@ -121,6 +121,7 @@ flutter:
     - assets/images/astra_sun_bg_g5.png
     - assets/images/luma_star_closed.png
     - assets/images/luma_star_open.png
+    - assets/images/luma/wave/
     - assets/images/astra_entry_bg.png
     - assets/images/app_theme_dark.jpeg
     - assets/images/app_theme_light.jpeg
