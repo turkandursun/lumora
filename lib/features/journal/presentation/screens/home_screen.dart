@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/providers/astra_palette_provider.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
@@ -93,11 +92,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch the selected palette so Home recolours the moment the theme
-    // changes (and publish it to the shared kit for the LumaGlass surfaces
-    // below). This is what makes the home screen follow the chosen colour
-    // instead of staying a fixed pink.
-    AstraKit.active = ref.watch(activePaletteProvider);
     final l10n = AppLocalizations.of(context);
     final firstName = _userFirstName;
     // "Daily streak" here means how many days the user has shown up — the same
