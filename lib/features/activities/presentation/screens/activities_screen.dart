@@ -67,19 +67,22 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
+      backgroundColor:
+          isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: Icon(Icons.photo_library_rounded, color: primary),
-              title: Text(isTr ? 'Galeriden seç' : 'Choose from gallery', style: AstraKit.body(isDark)),
+              title: Text(isTr ? 'Galeriden seç' : 'Choose from gallery',
+                  style: AstraKit.body(context, isDark)),
               onTap: () => Navigator.of(context).pop(ImageSource.gallery),
             ),
             ListTile(
               leading: Icon(Icons.photo_camera_rounded, color: primary),
-              title: Text(isTr ? 'Fotoğraf çek' : 'Take a photo', style: AstraKit.body(isDark)),
+              title: Text(isTr ? 'Fotoğraf çek' : 'Take a photo',
+                  style: AstraKit.body(context, isDark)),
               onTap: () => Navigator.of(context).pop(ImageSource.camera),
             ),
           ],
@@ -129,7 +132,11 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final labels = _selected.map((id) => _activityLabel(id, isTr)).toList();
     final text = labels.join(', ');
-    if (text.isEmpty && _activityPhotoPath == null && _activityPhotoBytes == null) return;
+    if (text.isEmpty &&
+        _activityPhotoPath == null &&
+        _activityPhotoBytes == null) {
+      return;
+    }
 
     await ref.read(activitiesProvider.notifier).add(Activity(
           createdAt: DateTime.now(),
@@ -156,7 +163,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     final activities = ref.watch(activitiesProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -177,7 +184,9 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(isTr ? 'Etkinliklerim' : 'My activities', style: AstraKit.heading1(isDark, fontSize: 22)),
+                    Text(isTr ? 'Etkinliklerim' : 'My activities',
+                        style:
+                            AstraKit.heading1(context, isDark, fontSize: 22)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -192,11 +201,19 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(isTr ? 'Bugün ne yaptın?' : 'What did you do today?', style: AstraKit.heading2(isDark, fontSize: 16)),
+                            Text(
+                                isTr
+                                    ? 'Bugün ne yaptın?'
+                                    : 'What did you do today?',
+                                style: AstraKit.heading2(context, isDark,
+                                    fontSize: 16)),
                             const SizedBox(height: 4),
                             Text(
-                              isTr ? 'Yaptıklarını seç (bunlar sadece sana özel).' : 'Pick what you did (these stay private to you).',
-                              style: AstraKit.mutedText(isDark, fontSize: 12),
+                              isTr
+                                  ? 'Yaptıklarını seç (bunlar sadece sana özel).'
+                                  : 'Pick what you did (these stay private to you).',
+                              style: AstraKit.mutedText(context, isDark,
+                                  fontSize: 12),
                             ),
                             const SizedBox(height: 12),
                             Wrap(
@@ -225,9 +242,12 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                               ],
                             ),
                             const SizedBox(height: 14),
-                            if (_activityPhotoPath != null || _activityPhotoBytes != null)
+                            if (_activityPhotoPath != null ||
+                                _activityPhotoBytes != null)
                               _PhotoPreview(
-                                file: _activityPhotoPath != null && !kIsWeb ? File(_activityPhotoPath!) : null,
+                                file: _activityPhotoPath != null && !kIsWeb
+                                    ? File(_activityPhotoPath!)
+                                    : null,
                                 bytes: _activityPhotoBytes,
                                 onRemove: () => setState(() {
                                   _activityPhotoPath = null;
@@ -239,23 +259,35 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: primary,
                                   side: BorderSide(color: primary),
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 16),
                                 ),
-                                onPressed: () => _pickActivityPhoto(isDark, primary),
-                                icon: const Icon(Icons.add_a_photo_rounded, size: 18),
+                                onPressed: () =>
+                                    _pickActivityPhoto(isDark, primary),
+                                icon: const Icon(Icons.add_a_photo_rounded,
+                                    size: 18),
                                 label: Text(
                                   isTr ? 'Fotoğraf ekle' : 'Add a photo',
-                                  style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w700, color: primary),
+                                  style: AstraKit.body(context, isDark,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: primary),
                                 ),
                               ),
                             const SizedBox(height: 14),
-                            AstraGoldButton(isDark: isDark, label: isTr ? 'Kaydet' : 'Save', icon: Icons.check_rounded, onTap: _saveActivity),
+                            AstraGoldButton(
+                                isDark: isDark,
+                                label: isTr ? 'Kaydet' : 'Save',
+                                icon: Icons.check_rounded,
+                                onTap: _saveActivity),
                           ],
                         ),
                       ),
                       const SizedBox(height: 18),
                       if (activities.isNotEmpty) ...[
-                        Text(isTr ? 'Geçmiş' : 'History', style: AstraKit.heading2(isDark, fontSize: 16)),
+                        Text(isTr ? 'Geçmiş' : 'History',
+                            style: AstraKit.heading2(context, isDark,
+                                fontSize: 16)),
                         const SizedBox(height: 8),
                         for (final a in activities)
                           _ActivityHistoryCard(
@@ -316,18 +348,25 @@ class _OptionChip extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? primary.withValues(alpha: 0.85) : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
+            color: selected
+                ? primary.withValues(alpha: 0.85)
+                : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: selected ? primary : primary.withValues(alpha: 0.25)),
+            border: Border.all(
+                color: selected ? primary : primary.withValues(alpha: 0.25)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: selected ? const Color(0xFF1A0F00) : primary),
+              Icon(icon,
+                  size: 16,
+                  color: selected ? const Color(0xFF1A0F00) : primary),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w600,
+                style: AstraKit.body(context, isDark,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
                     color: selected ? const Color(0xFF1A0F00) : null),
               ),
             ],
@@ -353,9 +392,11 @@ class _PhotoPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget imageWidget;
     if (bytes != null) {
-      imageWidget = Image.memory(bytes!, width: double.infinity, height: 190, fit: BoxFit.cover);
+      imageWidget = Image.memory(bytes!,
+          width: double.infinity, height: 190, fit: BoxFit.cover);
     } else if (file != null) {
-      imageWidget = Image.file(file!, width: double.infinity, height: 190, fit: BoxFit.cover);
+      imageWidget = Image.file(file!,
+          width: double.infinity, height: 190, fit: BoxFit.cover);
     } else {
       imageWidget = const SizedBox.shrink();
     }
@@ -373,8 +414,10 @@ class _PhotoPreview extends StatelessWidget {
             onTap: onRemove,
             child: Container(
               padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black45),
-              child: const Icon(Icons.close_rounded, size: 18, color: Colors.white),
+              decoration: const BoxDecoration(
+                  shape: BoxShape.circle, color: Colors.black45),
+              child: const Icon(Icons.close_rounded,
+                  size: 18, color: Colors.white),
             ),
           ),
         ),
@@ -408,7 +451,8 @@ class _ActivityHistoryCard extends StatelessWidget {
         height: 180,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          debugPrint('[ActivityHistoryCard] Error loading network image: $error');
+          debugPrint(
+              '[ActivityHistoryCard] Error loading network image: $error');
           return const SizedBox.shrink();
         },
       );
@@ -436,7 +480,8 @@ class _ActivityHistoryCard extends StatelessWidget {
           children: [
             if (photoWidget != null)
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(18)),
                 child: photoWidget,
               ),
             Padding(
@@ -449,12 +494,16 @@ class _ActivityHistoryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          DateFormat('d MMMM yyyy · HH:mm', locale).format(activity.createdAt),
-                          style: AstraKit.mutedText(isDark, fontSize: 11.5, fontWeight: FontWeight.w600),
+                          DateFormat('d MMMM yyyy · HH:mm', locale)
+                              .format(activity.createdAt),
+                          style: AstraKit.mutedText(context, isDark,
+                              fontSize: 11.5, fontWeight: FontWeight.w600),
                         ),
                         if (activity.text.isNotEmpty) ...[
                           const SizedBox(height: 6),
-                          Text(activity.text, style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w500)),
+                          Text(activity.text,
+                              style: AstraKit.body(context, isDark,
+                                  fontSize: 14, fontWeight: FontWeight.w500)),
                         ],
                       ],
                     ),
@@ -462,7 +511,8 @@ class _ActivityHistoryCard extends StatelessWidget {
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     onPressed: onDelete,
-                    icon: Icon(Icons.delete_outline_rounded, size: 20, color: AstraKit.muted(isDark)),
+                    icon: Icon(Icons.delete_outline_rounded,
+                        size: 20, color: AstraKit.muted(context, isDark)),
                   ),
                 ],
               ),

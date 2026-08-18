@@ -40,7 +40,9 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat(reverse: true);
+    _pulse =
+        AnimationController(vsync: this, duration: const Duration(seconds: 4))
+          ..repeat(reverse: true);
   }
 
   @override
@@ -121,7 +123,7 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     final isBreak = _phase == _Phase.breakTime;
 
     return Scaffold(
@@ -143,12 +145,16 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(isTr ? 'Odak' : 'Focus', style: AstraKit.heading1(isDark, fontSize: 20)),
+                      Text(isTr ? 'Odak' : 'Focus',
+                          style:
+                              AstraKit.heading1(context, isDark, fontSize: 20)),
                     ],
                   ),
                 ),
                 Expanded(
-                  child: _phase == _Phase.idle ? _buildSetup(isTr, isDark, primary) : _buildRunning(isTr, isDark, primary, isBreak),
+                  child: _phase == _Phase.idle
+                      ? _buildSetup(isTr, isDark, primary)
+                      : _buildRunning(isTr, isDark, primary, isBreak),
                 ),
               ],
             ),
@@ -163,7 +169,8 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
       child: Column(
         children: [
-          Text(isTr ? 'Ne kadar odaklanalım?' : 'How long to focus?', style: AstraKit.mutedText(isDark, fontSize: 15)),
+          Text(isTr ? 'Ne kadar odaklanalım?' : 'How long to focus?',
+              style: AstraKit.mutedText(context, isDark, fontSize: 15)),
           const SizedBox(height: 18),
           Wrap(
             spacing: 12,
@@ -172,7 +179,9 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
             children: [
               for (final p in _presets)
                 _PresetPill(
-                  label: isTr ? '${p.focus} dk odak · ${p.rest} dk mola' : '${p.focus}m focus · ${p.rest}m break',
+                  label: isTr
+                      ? '${p.focus} dk odak · ${p.rest} dk mola'
+                      : '${p.focus}m focus · ${p.rest}m break',
                   selected: p == _preset,
                   isDark: isDark,
                   primary: primary,
@@ -183,8 +192,11 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
           const SizedBox(height: 30),
           if (_completedToday > 0) ...[
             Text(
-              isTr ? 'Bugün $_completedToday seans tamamladın 🎉' : 'You finished $_completedToday sessions today 🎉',
-              style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w700, color: primary),
+              isTr
+                  ? 'Bugün $_completedToday seans tamamladın 🎉'
+                  : 'You finished $_completedToday sessions today 🎉',
+              style: AstraKit.body(context, isDark,
+                  fontSize: 14, fontWeight: FontWeight.w700, color: primary),
             ),
             const SizedBox(height: 20),
           ],
@@ -206,7 +218,8 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
       children: [
         Text(
           isBreak ? (isTr ? 'Mola' : 'Break') : (isTr ? 'Odaklan' : 'Focus'),
-          style: AstraKit.body(isDark, fontSize: 16, fontWeight: FontWeight.w700, color: primary),
+          style: AstraKit.body(context, isDark,
+              fontSize: 16, fontWeight: FontWeight.w700, color: primary),
         ),
         const SizedBox(height: 30),
         AnimatedBuilder(
@@ -222,41 +235,59 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    (isBreak ? const Color(0xFF7FD1B0) : primary).withValues(alpha: 0.9),
+                    (isBreak ? const Color(0xFF7FD1B0) : primary)
+                        .withValues(alpha: 0.9),
                     primary.withValues(alpha: 0.35),
                     primary.withValues(alpha: 0.0),
                   ],
                   stops: const [0.0, 0.6, 1.0],
                 ),
               ),
-              child: Text(_time, style: AstraKit.heading1(isDark, fontSize: 40)),
+              child: Text(_time,
+                  style: AstraKit.heading1(context, isDark, fontSize: 40)),
             );
           },
         ),
         const SizedBox(height: 30),
         Text(
           isBreak
-              ? (isTr ? 'Gözlerini dinlendir, biraz esne.' : 'Rest your eyes, stretch a little.')
-              : (isTr ? 'Tek bir işe odaklan. Yeterince iyi, yeterlidir.' : 'Focus on one thing. Good enough is enough.'),
+              ? (isTr
+                  ? 'Gözlerini dinlendir, biraz esne.'
+                  : 'Rest your eyes, stretch a little.')
+              : (isTr
+                  ? 'Tek bir işe odaklan. Yeterince iyi, yeterlidir.'
+                  : 'Focus on one thing. Good enough is enough.'),
           textAlign: TextAlign.center,
-          style: AstraKit.mutedText(isDark, fontSize: 13.5),
+          style: AstraKit.mutedText(context, isDark, fontSize: 13.5),
         ),
         const SizedBox(height: 26),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _RoundControl(icon: Icons.refresh_rounded, label: isTr ? 'Sıfırla' : 'Reset', isDark: isDark, primary: primary, onTap: _reset),
+            _RoundControl(
+                icon: Icons.refresh_rounded,
+                label: isTr ? 'Sıfırla' : 'Reset',
+                isDark: isDark,
+                primary: primary,
+                onTap: _reset),
             const SizedBox(width: 16),
             _RoundControl(
               icon: _running ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              label: _running ? (isTr ? 'Duraklat' : 'Pause') : (isTr ? 'Devam' : 'Resume'),
+              label: _running
+                  ? (isTr ? 'Duraklat' : 'Pause')
+                  : (isTr ? 'Devam' : 'Resume'),
               isDark: isDark,
               primary: primary,
               filled: true,
               onTap: _togglePause,
             ),
             const SizedBox(width: 16),
-            _RoundControl(icon: Icons.skip_next_rounded, label: isTr ? 'Geç' : 'Skip', isDark: isDark, primary: primary, onTap: _skipToBreakOrEnd),
+            _RoundControl(
+                icon: Icons.skip_next_rounded,
+                label: isTr ? 'Geç' : 'Skip',
+                isDark: isDark,
+                primary: primary,
+                onTap: _skipToBreakOrEnd),
           ],
         ),
       ],
@@ -265,7 +296,12 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
 }
 
 class _PresetPill extends StatelessWidget {
-  const _PresetPill({required this.label, required this.selected, required this.isDark, required this.primary, required this.onTap});
+  const _PresetPill(
+      {required this.label,
+      required this.selected,
+      required this.isDark,
+      required this.primary,
+      required this.onTap});
 
   final String label;
   final bool selected;
@@ -284,12 +320,19 @@ class _PresetPill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: selected ? primary.withValues(alpha: 0.85) : (isDark ? const Color(0x33231845) : const Color(0x99FBF1DD)),
-            border: Border.all(color: selected ? primary : primary.withValues(alpha: 0.25), width: 1.2),
+            color: selected
+                ? primary.withValues(alpha: 0.85)
+                : (isDark ? const Color(0x33231845) : const Color(0x99FBF1DD)),
+            border: Border.all(
+                color: selected ? primary : primary.withValues(alpha: 0.25),
+                width: 1.2),
           ),
           child: Text(
             label,
-            style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w700, color: selected ? const Color(0xFF1A0F00) : null),
+            style: AstraKit.body(context, isDark,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: selected ? const Color(0xFF1A0F00) : null),
           ),
         ),
       ),
@@ -326,14 +369,20 @@ class _RoundControl extends StatelessWidget {
             height: filled ? 64 : 52,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: filled ? primary : (isDark ? const Color(0x33231845) : const Color(0x99FBF1DD)),
+              color: filled
+                  ? primary
+                  : (isDark
+                      ? const Color(0x33231845)
+                      : const Color(0x99FBF1DD)),
               border: Border.all(color: primary.withValues(alpha: 0.4)),
             ),
-            child: Icon(icon, color: filled ? const Color(0xFF1A0F00) : primary, size: filled ? 30 : 24),
+            child: Icon(icon,
+                color: filled ? const Color(0xFF1A0F00) : primary,
+                size: filled ? 30 : 24),
           ),
         ),
         const SizedBox(height: 6),
-        Text(label, style: AstraKit.mutedText(isDark, fontSize: 11.5)),
+        Text(label, style: AstraKit.mutedText(context, isDark, fontSize: 11.5)),
       ],
     );
   }

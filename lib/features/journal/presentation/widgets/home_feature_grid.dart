@@ -139,89 +139,98 @@ class _FeatureCard extends StatelessWidget {
       borderRadius: 20,
       openBuilder: item.screenBuilder,
       closedBuilder: (context, open) => BouncyTap(
-      onTap: open,
-      child: LumaGlassCard(
-      padding: EdgeInsets.zero,
-      radius: 20,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: null,
-          splashColor: LumaGlass.sparkle.withValues(alpha: 0.14),
-          child: Stack(
-            children: [
-              // Outlined accent icon circle in the top-right corner.
-              Positioned(
-                right: 12,
-                top: 12,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: LumaGlass.sparkle.withValues(alpha: 0.14),
-                    border: Border.all(
-                        color: LumaGlass.sparkle.withValues(alpha: 0.4), width: 1.2),
-                  ),
-                  child: Icon(item.primaryIcon, size: 20, color: LumaGlass.sparkle),
-                ),
-              ),
-              if (item.badgeCount > 0)
-                Positioned(
-                  left: 12,
-                  top: 12,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
-                      borderRadius: BorderRadius.circular(999),
+        onTap: open,
+        child: LumaGlassCard(
+          padding: EdgeInsets.zero,
+          radius: 20,
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: null,
+              splashColor: LumaGlass.sparkle(context).withValues(alpha: 0.14),
+              child: Stack(
+                children: [
+                  // Outlined accent icon circle in the top-right corner.
+                  Positioned(
+                    right: 12,
+                    top: 12,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color:
+                            LumaGlass.sparkle(context).withValues(alpha: 0.14),
+                        border: Border.all(
+                            color: LumaGlass.sparkle(context)
+                                .withValues(alpha: 0.4),
+                            width: 1.2),
+                      ),
+                      child: Icon(item.primaryIcon,
+                          size: 20, color: LumaGlass.sparkle(context)),
                     ),
-                    child: Text(
-                      item.badgeCount > 9 ? '9+' : '${item.badgeCount}',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                  ),
+                  if (item.badgeCount > 0)
+                    Positioned(
+                      left: 12,
+                      top: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          item.badgeCount > 9 ? '9+' : '${item.badgeCount}',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
+                  // Title + description + a small sparkle divider, at the bottom.
+                  Positioned(
+                    left: 14,
+                    right: 14,
+                    bottom: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LumaGlass.sans(context,
+                              fontSize: 16.5,
+                              fontWeight: FontWeight.w700,
+                              color: LumaGlass.cardTitle(context)),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          item.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: LumaGlass.sans(context,
+                              fontSize: 11.5,
+                              color: LumaGlass.subtitle(context)),
+                        ),
+                        const SizedBox(height: 9),
+                        const _SparkleDivider(),
+                      ],
+                    ),
                   ),
-                ),
-              // Title + description + a small sparkle divider, at the bottom.
-              Positioned(
-                left: 14,
-                right: 14,
-                bottom: 12,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: LumaGlass.sans(fontSize: 16.5, fontWeight: FontWeight.w700, color: LumaGlass.cardTitle),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      item.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: LumaGlass.sans(fontSize: 11.5, color: LumaGlass.subtitle),
-                    ),
-                    const SizedBox(height: 9),
-                    const _SparkleDivider(),
-                  ],
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
-      ),
       ),
     );
   }
@@ -236,7 +245,7 @@ class _SparkleDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget line() => Container(
           height: 1,
-          color: LumaGlass.sparkle.withValues(alpha: 0.35),
+          color: LumaGlass.sparkle(context).withValues(alpha: 0.35),
         );
     return Row(
       children: [
@@ -245,7 +254,8 @@ class _SparkleDivider extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 7),
           child: Transform.rotate(
             angle: 0.785398,
-            child: Container(width: 5, height: 5, color: LumaGlass.sparkle),
+            child: Container(
+                width: 5, height: 5, color: LumaGlass.sparkle(context)),
           ),
         ),
         Expanded(child: line()),

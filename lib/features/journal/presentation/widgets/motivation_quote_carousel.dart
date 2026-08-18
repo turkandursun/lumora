@@ -162,7 +162,7 @@ _Memory? _findMemory(List<JournalEntryRow> entries, DateTime now, bool isTr) {
 /// [LumaGlass] pink theme — no longer moon/sun-aware, so `isDark` is ignored
 /// (kept as a parameter purely so every existing call site below is
 /// untouched).
-Color _accent(bool isDark) => LumaGlass.sparkle;
+Color _accent(BuildContext context, bool isDark) => LumaGlass.sparkle(context);
 
 int? _mostCommonMoodLast7(Map<DateTime, int> log) {
   final today = DateTime.now();
@@ -260,7 +260,7 @@ class _MotivationQuoteCarouselState
     // styling — always readable on this card — instead of watching the
     // app's theme.
     const themeDark = false;
-    final accent = _accent(themeDark);
+    final accent = _accent(context, themeDark);
 
     // Personalization signals: dominant recent mood + an "on this day" memory.
     final mood = _mostCommonMoodLast7(moodLog);
@@ -275,9 +275,15 @@ class _MotivationQuoteCarouselState
         isDark: themeDark,
         quote: dayQuote,
         isFavorite: favorites.contains(dayQuote.id),
-        onToggleFavorite: () => ref.read(quoteFavoritesProvider.notifier).toggle(dayQuote.id),
-        onShare: () => ShareQuoteCard.share(context: context, quoteText: dayQuote.text(isTr), isTr: isTr, author: dayQuote.author),
-        onOpen: () => context.push(AppRoutes.quotes, extra: dailyRotationIndex(now, famousQuotes.length)),
+        onToggleFavorite: () =>
+            ref.read(quoteFavoritesProvider.notifier).toggle(dayQuote.id),
+        onShare: () => ShareQuoteCard.share(
+            context: context,
+            quoteText: dayQuote.text(isTr),
+            isTr: isTr,
+            author: dayQuote.author),
+        onOpen: () => context.push(AppRoutes.quotes,
+            extra: dailyRotationIndex(now, famousQuotes.length)),
       ),
       _AffirmationSlide(isDark: themeDark, isTr: isTr, mood: mood),
       if (memory != null) _MemorySlide(isDark: themeDark, memory: memory),
@@ -372,26 +378,27 @@ class _QuoteSlide extends StatelessWidget {
                   behavior: HitTestBehavior.opaque,
                   onTap: onOpen,
                   child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      quote.text(isTr),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: AstraKit.body(isDark,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          height: 1.35),
-                    ),
-                    const SizedBox(height: 6),
-                    if (quote.author != null)
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       Text(
-                        '— ${quote.author}',
-                        style: AstraKit.label(isDark, fontSize: 12.5),
+                        quote.text(isTr),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: AstraKit.body(context, isDark,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            height: 1.35),
                       ),
-                  ],
-                ),
+                      const SizedBox(height: 6),
+                      if (quote.author != null)
+                        Text(
+                          '— ${quote.author}',
+                          style:
+                              AstraKit.label(context, isDark, fontSize: 12.5),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               Column(
@@ -417,7 +424,7 @@ class _QuoteSlide extends StatelessWidget {
                                   ? Icons.favorite_rounded
                                   : Icons.favorite_border_rounded,
                               key: ValueKey(isFavorite),
-                              color: _accent(isDark),
+                              color: _accent(context, isDark),
                               size: 20,
                             ),
                           ),
@@ -439,7 +446,7 @@ class _QuoteSlide extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(6),
                           child: Icon(Icons.ios_share_rounded,
-                              color: _accent(isDark), size: 19),
+                              color: _accent(context, isDark), size: 19),
                         ),
                       ),
                     ),
@@ -467,7 +474,7 @@ class _CarouselArrow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    final accent = _accent(isDark);
+    final accent = _accent(context, isDark);
     return InkResponse(
       onTap: onTap,
       radius: 20,
@@ -494,10 +501,11 @@ class _SlideHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: _accent(isDark), size: 20),
+        Icon(icon, color: _accent(context, isDark), size: 20),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(title, style: AstraKit.label(isDark, fontSize: 12.5)),
+          child: Text(title,
+              style: AstraKit.label(context, isDark, fontSize: 12.5)),
         ),
       ],
     );
@@ -553,7 +561,7 @@ class _AffirmationSlide extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(text,
-                style: AstraKit.body(isDark,
+                style: AstraKit.body(context, isDark,
                     fontSize: 16, fontWeight: FontWeight.w600, height: 1.4)),
           ),
         ),
@@ -585,7 +593,7 @@ class _MemorySlide extends StatelessWidget {
             memory.text,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: AstraKit.body(isDark,
+            style: AstraKit.body(context, isDark,
                     fontSize: 14.5, fontWeight: FontWeight.w600, height: 1.35)
                 .copyWith(fontStyle: FontStyle.italic),
           ),
@@ -665,7 +673,7 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = _accent(isDark);
+    final accent = _accent(context, isDark);
     return Material(
       color: isDark ? const Color(0x33231845) : const Color(0x59FBECCB),
       borderRadius: BorderRadius.circular(16),
@@ -684,7 +692,7 @@ class _ActionButton extends StatelessWidget {
               Icon(icon, color: accent, size: 22),
               const SizedBox(height: 6),
               Text(label,
-                  style: AstraKit.body(isDark,
+                  style: AstraKit.body(context, isDark,
                       fontSize: 12.5, fontWeight: FontWeight.w700)),
             ],
           ),

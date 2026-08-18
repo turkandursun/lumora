@@ -4,11 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/providers/cloud_backup_provider.dart';
-import '../../../../theme/app_theme.dart';
+import '../../../../core/providers/astra_palette_provider.dart';
+import '../../../../core/router/app_router.dart';
+import '../../../../theme/astra_screen_kit.dart';
 import '../../../auth/domain/auth_flow_routes.dart';
+import '../../../auth/domain/registration_flow_state.dart';
+import '../../../mood/presentation/providers/mood_providers.dart';
 
-/// Shown on app start. Restored sessions always enter the mood/welcome flow;
-/// onboarding is reserved for an explicit fresh-signup navigation intent.
+/// Auth bootstrap only: logged-out users enter Login, completed authenticated
+/// sessions enter Home, and an explicitly pending registration resumes safely.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -30,47 +34,75 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // The storytelling onboarding now comes *after* login/sign-up, so the
     // splash no longer gates on it here.
     final hasSession = Supabase.instance.client.auth.currentSession != null;
-    if (hasSession) {
-      // On a fresh device this pulls the user's cloud backup down before any
-      // screen reads local data, so nothing looks "lost" after a reinstall.
-      await ref.read(cloudBackupServiceProvider).syncOnStartup();
-      if (!mounted) return;
-    }
-    // Route logged-in users through the mood check-in. It gates itself to the
-    // first app entry of each calendar day, so on later opens the same day it
-    // silently forwards to home.
-    if (hasSession) {
-      // Logged in → Luma greeting ("welcome back") → daily mood → reflection.
+    if (!hasSession) {
       context.go(
-        AuthFlowRoutes.greeting,
-        extra: const {'first': false, 'next': AuthFlowRoutes.mood},
+        AppRoutes.greeting,
+        extra: const LumaGreetingRouteData.preAuth(),
+      );
+      return;
+    }
+
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      context.go(AppRoutes.login);
+      return;
+    }
+
+    // Avoid a default-palette flash: wait only for the fast user-scoped local
+    // cache. Cloud palette validation keeps running in the provider.
+    await bootstrapAstraPaletteForCurrentUser(ref);
+
+    // Preserve existing startup backup/sync before user-owned screens render.
+    await ref.read(cloudBackupServiceProvider).syncOnStartup();
+    if (!mounted || Supabase.instance.client.auth.currentUser?.id != user.id) {
+      return;
+    }
+
+    FreshRegistrationIntent? intent;
+    final signupOAuthOrigin =
+        await registrationFlowStore.consumeOAuthSignupAttempt();
+    if (signupOAuthOrigin &&
+        AuthFlowRoutes.isFirstOAuthAuthentication(
+          createdAt: user.createdAt,
+          lastSignInAt: user.lastSignInAt,
+        )) {
+      intent = await registrationFlowStore.begin(user.id);
+    } else {
+      intent = await registrationFlowStore.restore(user.id);
+    }
+    if (!mounted || Supabase.instance.client.auth.currentUser?.id != user.id) {
+      return;
+    }
+
+    if (intent != null) {
+      context.go(
+        AuthFlowRoutes.routeForRegistrationStep(intent.step),
+        extra: AuthFlowRoutes.routeDataForRegistration(intent),
       );
     } else {
-      // Logged out → the intro journey: Luma greeting → theme → onboarding →
-      // login/sign-up.
-      context.go(
-        AuthFlowRoutes.greeting,
-        extra: const {'first': true, 'next': AuthFlowRoutes.themeSelect},
-      );
+      final hasMood =
+          await ref.read(moodLogRepositoryProvider).hasMoodForToday();
+      if (!mounted ||
+          Supabase.instance.client.auth.currentUser?.id != user.id) {
+        return;
+      }
+      if (hasMood) {
+        context.go(AuthFlowRoutes.home);
+      } else {
+        context.go(
+          AuthFlowRoutes.greeting,
+          extra: const LumaGreetingRouteData.returning(),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final palette = AstraKit.palette(context);
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppTheme.gradientTop,
-              AppTheme.gradientMid,
-              AppTheme.gradientBottom,
-            ],
-            stops: [0.0, 0.55, 1.0],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: palette.backgroundGradient),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -80,37 +112,35 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.glassSurface,
-                  border: Border.all(color: AppTheme.glassBorder, width: 1.2),
-                  boxShadow: const [
+                  color: palette.cardBackground,
+                  border: Border.all(color: palette.softBorder, width: 1.2),
+                  boxShadow: [
                     BoxShadow(
-                      color: AppTheme.glowShadow,
+                      color: palette.focusGlow,
                       blurRadius: 24,
                       spreadRadius: 2,
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.spa_outlined,
-                  color: Colors.white,
+                  color: palette.activeAccent,
                   size: 34,
                 ),
               ),
               const SizedBox(height: 20),
               Text(
                 'ASTRA',
-                style: AppTheme.displayFont(
-                  fontSize: 32,
-                  color: AppTheme.onGradientText,
-                ),
+                style: AstraKit.wordmark(context, false, fontSize: 32),
               ),
               const SizedBox(height: 28),
-              const SizedBox(
+              SizedBox(
                 width: 28,
                 height: 28,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.4,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(palette.activeAccent),
                 ),
               ),
             ],

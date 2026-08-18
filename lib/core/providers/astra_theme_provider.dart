@@ -3,63 +3,160 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../features/theme_choice/presentation/screens/theme_choice_screen.dart';
+import '../../features/profile/data/astra_theme_repository.dart';
 
 /// Represents the active theme chosen by the user
 enum AstraThemeMode {
-  dark,  // Moon / Ay Teması (Mor alttonlu)
-  light, // Sun / Güneş Teması (Sarı alttonlu)
+  dark,
+  light,
 }
 
+typedef AstraThemePreferencesLoader = Future<SharedPreferences> Function();
+
+const String astraThemePrefsKeyPrefix = 'astra_bg_theme_';
+
+String astraThemePrefsKeyForUser(String userId) =>
+    '$astraThemePrefsKeyPrefix$userId';
+
 class AstraThemeNotifier extends StateNotifier<AstraThemeMode> {
-  AstraThemeNotifier(this._client)
-      : _userId = _client.auth.currentUser?.id,
+  AstraThemeNotifier({
+    required AstraThemeRepository repository,
+    AstraThemePreferencesLoader? preferencesLoader,
+    @visibleForTesting bool autoLoad = true,
+  })  : _repository = repository,
+        _preferencesLoader = preferencesLoader ?? SharedPreferences.getInstance,
         super(AstraThemeMode.light) {
-    // The app moved to the 7-family light pastel palette system. Light/dark
-    // mode is deprecated; the whole app is now light so screen colours stay
-    // readable on the pastel backgrounds. We no longer read the saved mode.
-    // (setTheme is kept for compatibility but is unused by the UI.)
+    if (autoLoad) unawaited(reloadForCurrentUser());
   }
 
-  final SupabaseClient _client;
-  final String? _userId;
+  final AstraThemeRepository _repository;
+  final AstraThemePreferencesLoader _preferencesLoader;
+  int _requestGeneration = 0;
   int _selectionVersion = 0;
   bool _disposed = false;
   Future<void> _saveQueue = Future<void>.value();
 
-  String get _storageKey => '${astraThemeKey}_${_userId ?? 'guest'}';
+  @visibleForTesting
+  Future<void> get pendingPersistence => _saveQueue;
 
-  static String _modeToString(AstraThemeMode mode) => mode.name;
+  /// `sakura` was a palette identity in the legacy model. Palette identity is
+  /// now stored in `palette_id`, so it safely maps to light appearance here.
+  @visibleForTesting
+  static AstraThemeMode modeFromPreference(Object? value) {
+    return switch (value) {
+      'light' => AstraThemeMode.light,
+      'dark' => AstraThemeMode.dark,
+      'sakura' => AstraThemeMode.light,
+      _ => AstraThemeMode.light,
+    };
+  }
+
+  static String preferenceForMode(AstraThemeMode mode) => mode.name;
+
+  bool _isCurrentRequest({
+    required String userId,
+    required int generation,
+    required int selectionVersion,
+  }) {
+    return !_disposed &&
+        _requestGeneration == generation &&
+        _selectionVersion == selectionVersion &&
+        _repository.currentUserId == userId;
+  }
+
+  /// Applies the current account's local value first, then validates it
+  /// against `profiles.theme_preference`. Pre-auth always stays light.
+  @visibleForTesting
+  Future<void> reloadForCurrentUser() async {
+    final generation = ++_requestGeneration;
+    final selectionVersion = _selectionVersion;
+    final userId = _repository.currentUserId;
+    if (!_disposed) state = AstraThemeMode.light;
+
+    if (userId == null) return;
+
+    try {
+      final prefs = await _preferencesLoader();
+      final localMode = modeFromPreference(
+        prefs.getString(astraThemePrefsKeyForUser(userId)),
+      );
+
+      if (_isCurrentRequest(
+        userId: userId,
+        generation: generation,
+        selectionVersion: selectionVersion,
+      )) {
+        state = localMode;
+      }
+
+      try {
+        final cloudRaw = await _repository.fetchThemePreference(userId);
+        final cloudMode = modeFromPreference(cloudRaw);
+        if (!_isCurrentRequest(
+          userId: userId,
+          generation: generation,
+          selectionVersion: selectionVersion,
+        )) {
+          return;
+        }
+        if (state != cloudMode) state = cloudMode;
+        await prefs.setString(
+          astraThemePrefsKeyForUser(userId),
+          preferenceForMode(cloudMode),
+        );
+      } on AstraThemeAccountChangedException {
+        // Expected when the authenticated account changes during the request.
+      } catch (error) {
+        debugPrint('[AstraTheme] Cloud theme load failed: $error');
+      }
+    } catch (error) {
+      debugPrint('[AstraTheme] Local theme load failed: $error');
+    }
+  }
 
   Future<void> setTheme(AstraThemeMode mode) {
+    final userId = _repository.currentUserId;
     _selectionVersion++;
+
+    // Account-independent appearance must never leak into pre-auth UI.
+    if (userId == null) {
+      state = AstraThemeMode.light;
+      return Future<void>.value();
+    }
+
     state = mode;
-    _saveQueue = _saveQueue.then((_) => _persistTheme(mode));
+    _saveQueue = _saveQueue.then(
+      (_) => _persistTheme(userId: userId, mode: mode),
+    );
     unawaited(_saveQueue);
     return Future<void>.value();
   }
 
-  Future<void> _persistTheme(AstraThemeMode mode) async {
-    final value = _modeToString(mode);
+  Future<void> setDarkMode(bool enabled) => setTheme(
+        enabled ? AstraThemeMode.dark : AstraThemeMode.light,
+      );
+
+  Future<void> _persistTheme({
+    required String userId,
+    required AstraThemeMode mode,
+  }) async {
+    final value = preferenceForMode(mode);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_storageKey, value);
+      final prefs = await _preferencesLoader();
+      await prefs.setString(astraThemePrefsKeyForUser(userId), value);
     } catch (error) {
       debugPrint('[AstraTheme] Local theme save failed: $error');
     }
 
-    final userId = _userId;
-    if (userId == null) return;
+    if (_disposed || _repository.currentUserId != userId) return;
 
     try {
-      await _client
-          .from('profiles')
-          .update({'theme_preference': value}).eq('id', userId);
+      await _repository.updateThemePreference(userId, value);
+    } on AstraThemeAccountChangedException {
+      // The captured account changed; never write its choice as another user.
     } catch (error) {
-      // The UI has already reacted locally; cloud sync can retry next launch.
       debugPrint('[AstraTheme] Cloud theme save failed: $error');
     }
   }
@@ -67,10 +164,18 @@ class AstraThemeNotifier extends StateNotifier<AstraThemeMode> {
   @override
   void dispose() {
     _disposed = true;
+    _requestGeneration++;
     super.dispose();
   }
 }
 
-final astraThemeProvider = StateNotifierProvider<AstraThemeNotifier, AstraThemeMode>((ref) {
-  return AstraThemeNotifier(Supabase.instance.client);
+final astraThemeRepositoryProvider = Provider<AstraThemeRepository>(
+  (ref) => SupabaseAstraThemeRepository(),
+);
+
+final astraThemeProvider =
+    StateNotifierProvider<AstraThemeNotifier, AstraThemeMode>((ref) {
+  return AstraThemeNotifier(
+    repository: ref.watch(astraThemeRepositoryProvider),
+  );
 });

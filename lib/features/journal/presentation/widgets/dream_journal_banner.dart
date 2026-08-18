@@ -30,7 +30,8 @@ class DreamJournalBanner extends ConsumerWidget {
       closedColor: Colors.transparent,
       openColor: Colors.transparent,
       middleColor: Colors.transparent,
-      closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      closedShape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       openBuilder: (context, _) => const DreamJournalScreen(),
       closedBuilder: (context, openContainer) => BouncyTap(
         onTap: openContainer,
@@ -51,20 +52,27 @@ class DreamJournalBanner extends ConsumerWidget {
                   children: [
                     Text(
                       l10n.homeDreamJournalTitle,
-                      style: LumaGlass.sans(fontSize: 16, fontWeight: FontWeight.w700, color: LumaGlass.cardTitle),
+                      style: LumaGlass.sans(context,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: LumaGlass.cardTitle(context)),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       l10n.homeDreamJournalDesc,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: LumaGlass.sans(fontSize: 11.5, fontWeight: FontWeight.w500, color: LumaGlass.subtitle),
+                      style: LumaGlass.sans(context,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: LumaGlass.subtitle(context)),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(Icons.chevron_right_rounded, color: LumaGlass.sparkle),
+              Icon(Icons.chevron_right_rounded,
+                  color: LumaGlass.sparkle(context)),
             ],
           ),
         ),
@@ -93,16 +101,19 @@ class _MoonStarsPainter extends CustomPainter {
     canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), Paint());
     canvas.drawCircle(moonCenter, size.width * 0.32, moonPaint);
     canvas.drawCircle(
-      Offset(moonCenter.dx + size.width * 0.14, moonCenter.dy - size.height * 0.08),
+      Offset(moonCenter.dx + size.width * 0.14,
+          moonCenter.dy - size.height * 0.08),
       size.width * 0.28,
       bitePaint,
     );
     canvas.restore();
 
     final starPaint = Paint()..color = _starColor;
-    _star(canvas, Offset(size.width * 0.82, size.height * 0.22), 3.2, starPaint);
+    _star(
+        canvas, Offset(size.width * 0.82, size.height * 0.22), 3.2, starPaint);
     _star(canvas, Offset(size.width * 0.9, size.height * 0.55), 2.2, starPaint);
-    _star(canvas, Offset(size.width * 0.68, size.height * 0.85), 2.6, starPaint);
+    _star(
+        canvas, Offset(size.width * 0.68, size.height * 0.85), 2.6, starPaint);
   }
 
   void _star(Canvas canvas, Offset center, double radius, Paint paint) {
@@ -110,7 +121,8 @@ class _MoonStarsPainter extends CustomPainter {
     for (var i = 0; i < 4; i++) {
       final angle = (pi / 2) * i;
       final tip = center + Offset(cos(angle), sin(angle)) * radius;
-      final mid1 = center + Offset(cos(angle + pi / 4), sin(angle + pi / 4)) * (radius * 0.32);
+      final mid1 = center +
+          Offset(cos(angle + pi / 4), sin(angle + pi / 4)) * (radius * 0.32);
       if (i == 0) {
         path.moveTo(tip.dx, tip.dy);
       } else {

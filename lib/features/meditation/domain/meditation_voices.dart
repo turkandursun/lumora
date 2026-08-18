@@ -9,7 +9,9 @@
 ///
 /// Paste your ElevenLabs API key below (from elevenlabs.io → Settings → API
 /// Key). While it's empty, meditation just uses the device's built-in voice.
-const String elevenLabsApiKey = 'sk_f9aebcf1b8574ab185c090443e7a454a301f54b1dcd42962';
+// Voice guidance was removed from meditation, so no ElevenLabs key ships in
+// the app anymore. Left empty on purpose.
+const String elevenLabsApiKey = '';
 
 class MeditationVoiceOption {
   const MeditationVoiceOption({

@@ -12,6 +12,7 @@ import '../../features/meditation/presentation/screens/meditation_screen.dart';
 import '../../features/activities/presentation/screens/activities_screen.dart';
 import '../../features/ai_questions/presentation/screens/ai_questions_screen.dart';
 import '../../features/auth/domain/auth_flow_routes.dart';
+import '../../features/auth/domain/registration_flow_state.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/name_entry_screen.dart';
@@ -116,7 +117,12 @@ class _AuthRefreshNotifier extends ChangeNotifier {
 /// Routes that require an authenticated Supabase session. Everything else
 /// (splash/onboarding/login/signup) is reachable while logged out.
 const _protectedRoutes = {
+  AppRoutes.nameEntry,
+  AppRoutes.themeSelect,
+  AppRoutes.onboarding,
   AppRoutes.welcome,
+  AppRoutes.aiRating,
+  AppRoutes.onboardingComplete,
   AppRoutes.home,
   AppRoutes.reminders,
   AppRoutes.goals,
@@ -148,22 +154,37 @@ const _protectedRoutes = {
 
 /// Lets screens (e.g. [AppShell]) become [RouteAware] so they can replay their
 /// entrance animation when a pushed screen is popped and they reappear.
-final RouteObserver<ModalRoute<void>> astraRouteObserver = RouteObserver<ModalRoute<void>>();
+final RouteObserver<ModalRoute<void>> astraRouteObserver =
+    RouteObserver<ModalRoute<void>>();
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.splash,
   observers: [astraRouteObserver],
   refreshListenable: _AuthRefreshNotifier(),
   redirect: (context, state) {
-    final isAuthenticated = Supabase.instance.client.auth.currentSession != null;
-    final targetRequiresFreshSignupIntent =
-        state.matchedLocation == AppRoutes.nameEntry ||
-            state.matchedLocation == AppRoutes.onboarding ||
-            state.matchedLocation == AppRoutes.hobbiesOnboarding;
-    if (targetRequiresFreshSignupIntent &&
-        !AuthFlowRoutes.hasFreshSignupIntent(state.extra)) {
-      return isAuthenticated ? AppRoutes.welcome : AppRoutes.login;
+    final client = Supabase.instance.client;
+    final isAuthenticated = client.auth.currentSession != null;
+    final currentUserId = client.auth.currentUser?.id;
+    if (state.matchedLocation == AppRoutes.greeting) {
+      final redirect = AuthFlowRoutes.greetingGuardRedirect(
+        extra: state.extra,
+        isAuthenticated: isAuthenticated,
+        hasActiveRegistration:
+            registrationFlowStore.hasActiveIntentFor(currentUserId ?? ''),
+      );
+      if (redirect != null) return redirect;
     }
+    final registrationIntent =
+        AuthFlowRoutes.registrationIntentFromExtra(state.extra);
+    final registrationRedirect = AuthFlowRoutes.registrationGuardRedirect(
+      route: state.matchedLocation,
+      isAuthenticated: isAuthenticated,
+      currentUserId: currentUserId,
+      extra: state.extra,
+      hasMatchingActiveRegistration: registrationIntent != null &&
+          registrationFlowStore.allows(registrationIntent),
+    );
+    if (registrationRedirect != null) return registrationRedirect;
     final targetIsProtected = _protectedRoutes.contains(state.matchedLocation);
     if (targetIsProtected && !isAuthenticated) {
       return AppRoutes.login;
@@ -177,12 +198,17 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.astraLanding,
-      pageBuilder: (context, state) => _smoothPage(state, const AstraLandingScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const AstraLandingScreen()),
     ),
     GoRoute(
       path: AppRoutes.onboarding,
-      pageBuilder: (context, state) =>
-          _smoothPage(state, const OnboardingScreen(isNewSignup: true)),
+      pageBuilder: (context, state) => _smoothPage(
+        state,
+        OnboardingScreen(
+          registrationIntent: state.extra as FreshRegistrationIntent?,
+        ),
+      ),
     ),
     GoRoute(
       path: AppRoutes.login,
@@ -196,51 +222,65 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.resetPassword,
       pageBuilder: (context, state) => _smoothPage(
         state,
-        ResetPasswordScreen(email: state.extra is String ? state.extra as String : ''),
+        ResetPasswordScreen(
+            email: state.extra is String ? state.extra as String : ''),
       ),
     ),
     GoRoute(
       path: AppRoutes.nameEntry,
-      pageBuilder: (context, state) => _smoothPage(state, const NameEntryScreen()),
+      pageBuilder: (context, state) => _smoothPage(
+        state,
+        NameEntryScreen(
+          registrationIntent: state.extra as FreshRegistrationIntent?,
+        ),
+      ),
     ),
     GoRoute(
       path: AppRoutes.themeSelect,
-      pageBuilder: (context, state) => _smoothPage(state, const OnboardingThemeScreen()),
+      pageBuilder: (context, state) => _smoothPage(
+        state,
+        OnboardingThemeScreen(
+          registrationIntent: state.extra as FreshRegistrationIntent?,
+        ),
+      ),
     ),
     GoRoute(
       path: AppRoutes.dailyReflection,
-      pageBuilder: (context, state) =>
-          _smoothPage(state, const DailyReflectionScreen()),
+      pageBuilder: (context, state) => _smoothPage(
+        state,
+        DailyReflectionScreen(
+          routeData: state.extra is DailyReflectionRouteData
+              ? state.extra! as DailyReflectionRouteData
+              : const DailyReflectionRouteData(
+                  DailyReflectionFlow.standalone,
+                ),
+        ),
+      ),
     ),
     GoRoute(
       path: AppRoutes.welcome,
       pageBuilder: (context, state) {
         final extra = state.extra;
-        final isNewSignup = extra is bool
+        final routeData = extra is MoodRouteData
             ? extra
-            : (extra is Map && extra['isNewSignup'] == true);
-        return _smoothPage(state, WelcomeScreen(isNewSignup: isNewSignup));
+            : const MoodRouteData(MoodFlow.dailyCheckIn);
+        return _smoothPage(
+          state,
+          WelcomeScreen(routeData: routeData),
+        );
       },
     ),
     GoRoute(
       path: AppRoutes.greeting,
       pageBuilder: (context, state) {
-        final extra = state.extra;
-        var isFirstWelcome = false;
-        var nextRoute = AppRoutes.home;
-        if (extra is bool) {
-          // Legacy: end of sign-up flow passes `true` → first welcome → Home.
-          isFirstWelcome = extra;
-        } else if (extra is Map) {
-          isFirstWelcome = extra['first'] == true;
-          final next = extra['next'];
-          if (next is String) nextRoute = next;
-        }
+        final data = state.extra is LumaGreetingRouteData
+            ? state.extra! as LumaGreetingRouteData
+            : const LumaGreetingRouteData.preAuth();
         return _smoothPage(
           state,
           GreetingScreen(
-            isFirstWelcome: isFirstWelcome,
-            nextRoute: nextRoute,
+            variant: data.variant,
+            registrationIntent: data.registrationIntent,
           ),
         );
       },
@@ -281,7 +321,8 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.reminders,
-      pageBuilder: (context, state) => _smoothPage(state, const RemindersScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const RemindersScreen()),
     ),
     GoRoute(
       path: AppRoutes.goals,
@@ -289,24 +330,28 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.breathing,
-      pageBuilder: (context, state) => _smoothPage(state, const BreathingScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const BreathingScreen()),
     ),
     GoRoute(
       path: AppRoutes.dreams,
-      pageBuilder: (context, state) => _smoothPage(state, const DreamJournalScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const DreamJournalScreen()),
     ),
     GoRoute(
       path: AppRoutes.newDream,
-      pageBuilder: (context, state) => _smoothPage(state, const NewDreamScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const NewDreamScreen()),
     ),
     GoRoute(
       path: AppRoutes.dreamReflection,
-      pageBuilder: (context, state) => _smoothPage(state, DreamReflectionScreen(dreamId: state.extra! as int)),
+      pageBuilder: (context, state) => _smoothPage(
+          state, DreamReflectionScreen(dreamId: state.extra! as int)),
     ),
     GoRoute(
       path: AppRoutes.featureComingSoon,
-      pageBuilder: (context, state) =>
-          _smoothPage(state, FeatureComingSoonScreen(args: state.extra! as FeatureComingSoonArgs)),
+      pageBuilder: (context, state) => _smoothPage(state,
+          FeatureComingSoonScreen(args: state.extra! as FeatureComingSoonArgs)),
     ),
     GoRoute(
       path: AppRoutes.exportData,
@@ -314,27 +359,33 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.community,
-      pageBuilder: (context, state) => _smoothPage(state, const CommunityScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const CommunityScreen()),
     ),
     GoRoute(
       path: AppRoutes.journalEntry,
-      pageBuilder: (context, state) => _smoothPage(state, const JournalEntryScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const JournalEntryScreen()),
     ),
     GoRoute(
       path: AppRoutes.sealedJournals,
-      pageBuilder: (context, state) => _smoothPage(state, const SealedJournalsScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const SealedJournalsScreen()),
     ),
     GoRoute(
       path: AppRoutes.calendar,
-      pageBuilder: (context, state) => _smoothPage(state, const CalendarScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const CalendarScreen()),
     ),
     GoRoute(
       path: AppRoutes.rewards,
-      pageBuilder: (context, state) => _smoothPage(state, const RewardsScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const RewardsScreen()),
     ),
     GoRoute(
       path: AppRoutes.letters,
-      pageBuilder: (context, state) => _smoothPage(state, const LettersScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const LettersScreen()),
     ),
     GoRoute(
       path: AppRoutes.stats,
@@ -342,23 +393,33 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.aiQuestions,
-      pageBuilder: (context, state) => _smoothPage(state, const AiQuestionsScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const AiQuestionsScreen()),
     ),
     GoRoute(
       path: AppRoutes.meditation,
-      pageBuilder: (context, state) => _smoothPage(state, const MeditationScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const MeditationScreen()),
     ),
     GoRoute(
       path: AppRoutes.hobbies,
-      pageBuilder: (context, state) => _smoothPage(state, const HobbiesScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const HobbiesScreen()),
     ),
     GoRoute(
       path: AppRoutes.hobbiesOnboarding,
-      pageBuilder: (context, state) => _smoothPage(state, const HobbiesScreen(onboarding: true)),
+      pageBuilder: (context, state) => _smoothPage(
+        state,
+        HobbiesScreen(
+          onboarding: true,
+          registrationIntent: state.extra as FreshRegistrationIntent?,
+        ),
+      ),
     ),
     GoRoute(
       path: AppRoutes.activities,
-      pageBuilder: (context, state) => _smoothPage(state, const ActivitiesScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const ActivitiesScreen()),
     ),
     GoRoute(
       path: AppRoutes.feed,
@@ -366,19 +427,23 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.calm,
-      pageBuilder: (context, state) => _smoothPage(state, const SosCalmScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const SosCalmScreen()),
     ),
     GoRoute(
       path: AppRoutes.focusTimer,
-      pageBuilder: (context, state) => _smoothPage(state, const FocusTimerScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const FocusTimerScreen()),
     ),
     GoRoute(
       path: AppRoutes.favorites,
-      pageBuilder: (context, state) => _smoothPage(state, const FavoritesScreen()),
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const FavoritesScreen()),
     ),
     GoRoute(
       path: AppRoutes.quotes,
-      pageBuilder: (context, state) => _smoothPage(state, QuoteGalleryScreen(initialIndex: (state.extra as int?) ?? 0)),
+      pageBuilder: (context, state) => _smoothPage(
+          state, QuoteGalleryScreen(initialIndex: (state.extra as int?) ?? 0)),
     ),
   ],
 );
@@ -398,8 +463,14 @@ CustomTransitionPage<void> _smoothPage(GoRouterState state, Widget child) {
       // • Being covered (secondaryAnimation 0→1): fade out + recede to 0.95.
       // • Revealed on pop (secondaryAnimation 1→0): the old screen grows
       //   0.95→1.0 and fades back in — no more static cut on back.
-      final inCurve = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
-      final outCurve = CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+      final inCurve = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic);
+      final outCurve = CurvedAnimation(
+          parent: secondaryAnimation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic);
 
       // Bold, unmistakable horizontal push: the new screen slides in from the
       // right while fading; the old one recedes to the left.
@@ -409,8 +480,9 @@ CustomTransitionPage<void> _smoothPage(GoRouterState state, Widget child) {
         child: FadeTransition(
           opacity: inCurve,
           child: SlideTransition(
-            position: Tween<Offset>(begin: Offset.zero, end: const Offset(-0.14, 0))
-                .animate(outCurve),
+            position:
+                Tween<Offset>(begin: Offset.zero, end: const Offset(-0.14, 0))
+                    .animate(outCurve),
             child: child,
           ),
         ),

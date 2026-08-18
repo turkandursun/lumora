@@ -7,13 +7,22 @@ import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/luma_avatar.dart';
 import '../../../../theme/mood_gradients.dart';
 import '../../../../theme/mood_theme_provider.dart';
+import '../../../auth/domain/auth_flow_routes.dart';
+import '../../../auth/domain/registration_flow_state.dart';
 import '../providers/journal_entries_provider.dart';
 
 /// Shown right after the mood check-in: "Why do you feel this way today?".
 /// A short, gentle journaling beat — what the user writes is saved to their
 /// journal, then they land on Home. Fully themed with the selected palette.
 class DailyReflectionScreen extends ConsumerStatefulWidget {
-  const DailyReflectionScreen({super.key});
+  const DailyReflectionScreen({
+    super.key,
+    this.routeData = const DailyReflectionRouteData(
+      DailyReflectionFlow.standalone,
+    ),
+  });
+
+  final DailyReflectionRouteData routeData;
 
   @override
   ConsumerState<DailyReflectionScreen> createState() =>
@@ -30,14 +39,30 @@ class _DailyReflectionScreenState extends ConsumerState<DailyReflectionScreen> {
     super.dispose();
   }
 
-  void _goHome() {
-    if (mounted) context.go(AppRoutes.home);
+  Future<void> _continueToDestination() async {
+    if (!mounted) return;
+    final current = widget.routeData.registrationIntent;
+    if (widget.routeData.flow != DailyReflectionFlow.signup ||
+        current == null) {
+      context.go(AppRoutes.home);
+      return;
+    }
+    try {
+      final next = await registrationFlowStore.advance(
+        current,
+        RegistrationStep.hobbies,
+      );
+      if (!mounted) return;
+      context.go(AuthFlowRoutes.afterSignupDailyReflection, extra: next);
+    } on RegistrationIntentMismatchException {
+      if (mounted) context.go(AppRoutes.home);
+    }
   }
 
   Future<void> _saveAndContinue() async {
     final text = _controller.text.trim();
     if (text.isEmpty) {
-      _goHome();
+      await _continueToDestination();
       return;
     }
     setState(() => _saving = true);
@@ -49,15 +74,13 @@ class _DailyReflectionScreenState extends ConsumerState<DailyReflectionScreen> {
     } catch (_) {
       // Never block the hand-off to Home on a save hiccup.
     }
-    _goHome();
+    await _continueToDestination();
   }
 
   /// The mood-specific question, e.g. "Bugün neden mutlu hissediyorsun?".
   String _prompt(AppMood? mood, bool isTr) {
     if (mood == null) {
-      return isTr
-          ? 'Bugün nasıl hissediyorsun?'
-          : 'How do you feel today?';
+      return isTr ? 'Bugün nasıl hissediyorsun?' : 'How do you feel today?';
     }
     const tr = {
       AppMood.happy: 'mutlu',
@@ -81,7 +104,7 @@ class _DailyReflectionScreenState extends ConsumerState<DailyReflectionScreen> {
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final primary = AstraKit.primary(false);
+    final primary = AstraKit.primary(context, false);
     final mood = ref.watch(moodThemeProvider);
 
     return Scaffold(
@@ -109,7 +132,7 @@ class _DailyReflectionScreenState extends ConsumerState<DailyReflectionScreen> {
                   child: Text(
                     _prompt(mood, isTr),
                     textAlign: TextAlign.center,
-                    style: AstraKit.heading1(false, fontSize: 24)
+                    style: AstraKit.heading1(context, false, fontSize: 24)
                         .copyWith(height: 1.25),
                   ),
                 ),
@@ -123,7 +146,7 @@ class _DailyReflectionScreenState extends ConsumerState<DailyReflectionScreen> {
                         ? 'İstersen birkaç cümle yaz. Burası tamamen sana ait.'
                         : 'Write a few lines if you like. This space is yours.',
                     textAlign: TextAlign.center,
-                    style: AstraKit.mutedText(false, fontSize: 13.5),
+                    style: AstraKit.mutedText(context, false, fontSize: 13.5),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -142,14 +165,15 @@ class _DailyReflectionScreenState extends ConsumerState<DailyReflectionScreen> {
                       textAlignVertical: TextAlignVertical.top,
                       keyboardType: TextInputType.multiline,
                       cursorColor: primary,
-                      style: AstraKit.body(false,
+                      style: AstraKit.body(context, false,
                           fontSize: 15, fontWeight: FontWeight.w500),
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: isTr
                             ? 'Bugün içinden geçenler…'
                             : "What's on your mind today…",
-                        hintStyle: AstraKit.mutedText(false, fontSize: 14),
+                        hintStyle:
+                            AstraKit.mutedText(context, false, fontSize: 14),
                       ),
                     ),
                   ),
@@ -163,10 +187,10 @@ class _DailyReflectionScreenState extends ConsumerState<DailyReflectionScreen> {
                 ),
                 const SizedBox(height: 8),
                 TextButton(
-                  onPressed: _saving ? null : _goHome,
+                  onPressed: _saving ? null : _continueToDestination,
                   child: Text(
                     isTr ? 'Şimdilik geç' : 'Skip for now',
-                    style: AstraKit.mutedText(false, fontSize: 13.5)
+                    style: AstraKit.mutedText(context, false, fontSize: 13.5)
                         .copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),

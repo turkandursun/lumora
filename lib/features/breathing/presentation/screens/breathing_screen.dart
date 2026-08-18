@@ -164,7 +164,7 @@ class _BreathingScreenState extends ConsumerState<BreathingScreen>
     final l10n = AppLocalizations.of(context);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -187,7 +187,8 @@ class _BreathingScreenState extends ConsumerState<BreathingScreen>
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(l10n.breathingTitle,
-                            style: AstraKit.heading1(isDark, fontSize: 22)),
+                            style: AstraKit.heading1(context, isDark,
+                                fontSize: 22)),
                       ),
                     ],
                   ),
@@ -271,7 +272,7 @@ class _ModeSelectorView extends StatelessWidget {
         Text(
           l10n.breathingModePrompt,
           textAlign: TextAlign.center,
-          style: AstraKit.mutedText(isDark,
+          style: AstraKit.mutedText(context, isDark,
               fontSize: 15, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 24),
@@ -351,7 +352,7 @@ class _ModeCard extends StatelessWidget {
                 Text(
                   label,
                   textAlign: TextAlign.center,
-                  style: AstraKit.body(isDark,
+                  style: AstraKit.body(context, isDark,
                       fontSize: 13,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500),
@@ -394,7 +395,7 @@ class _DurationSelectorView extends StatelessWidget {
         const SizedBox(height: 36),
         Text(
           l10n.breathingDurationPrompt,
-          style: AstraKit.mutedText(isDark,
+          style: AstraKit.mutedText(context, isDark,
               fontSize: 13, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 14),
@@ -470,7 +471,7 @@ class _DurationPill extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: AstraKit.body(isDark,
+              style: AstraKit.body(context, isDark,
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
             ),
@@ -509,7 +510,7 @@ class _OutlinePillButton extends StatelessWidget {
             border: Border.all(color: primary.withValues(alpha: 0.45)),
           ),
           child: Text(label,
-              style: AstraKit.body(isDark,
+              style: AstraKit.body(context, isDark,
                   fontSize: 15, fontWeight: FontWeight.w600)),
         ),
       ),
@@ -624,7 +625,8 @@ class _RunningViewState extends State<_RunningView> {
                   child: Text(
                     _phaseLabel(l10n, phase),
                     key: ValueKey(phase),
-                    style: AstraKit.heading1(widget.isDark, fontSize: 22),
+                    style:
+                        AstraKit.heading1(context, widget.isDark, fontSize: 22),
                   ),
                 ),
               ],
@@ -634,7 +636,7 @@ class _RunningViewState extends State<_RunningView> {
         const SizedBox(height: 20),
         Text(
           _formatCountdown(widget.remainingSeconds),
-          style: AstraKit.mutedText(widget.isDark,
+          style: AstraKit.mutedText(context, widget.isDark,
               fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 40),
@@ -672,7 +674,7 @@ class _CompletedView extends StatelessWidget {
         Text(
           l10n.breathingCompletionMessage,
           textAlign: TextAlign.center,
-          style: AstraKit.heading1(isDark, fontSize: 22),
+          style: AstraKit.heading1(context, isDark, fontSize: 22),
         ),
         const SizedBox(height: 40),
         AstraGoldButton(

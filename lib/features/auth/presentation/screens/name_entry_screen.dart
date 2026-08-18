@@ -2,19 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/providers/astra_palette_provider.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../../profile/data/profile_repository.dart';
 import '../../domain/auth_flow_routes.dart';
+import '../../domain/registration_flow_state.dart';
 
 /// Asked right after a fresh e-mail sign-up: a single "what should we call you?"
 /// field, kept out of the sign-up panel so that screen stays short enough to
 /// show the ASTRA wordmark + tagline. Saving is best-effort; the flow always
 /// continues into the storytelling onboarding.
 class NameEntryScreen extends ConsumerStatefulWidget {
-  const NameEntryScreen({super.key});
+  const NameEntryScreen({
+    super.key,
+    required this.registrationIntent,
+  });
+
+  final FreshRegistrationIntent? registrationIntent;
 
   @override
   ConsumerState<NameEntryScreen> createState() => _NameEntryScreenState();
@@ -42,16 +47,30 @@ class _NameEntryScreenState extends ConsumerState<NameEntryScreen> {
       }
     }
     if (!mounted) return;
-    context.go(AuthFlowRoutes.afterNameEntry, extra: true);
+    final current = widget.registrationIntent;
+    if (current == null) {
+      context.go(AuthFlowRoutes.home);
+      return;
+    }
+    try {
+      final next = await registrationFlowStore.advance(
+        current,
+        RegistrationStep.themeSelect,
+      );
+      if (!mounted) return;
+      context.go(AuthFlowRoutes.afterNameEntry, extra: next);
+    } on RegistrationIntentMismatchException {
+      if (mounted) context.go(AuthFlowRoutes.home);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final gold = AstraKit.gold(isDark);
+    final gold = AstraKit.gold(context, isDark);
 
-    final palette = ref.watch(activePaletteProvider);
+    final palette = AstraKit.palette(context);
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -94,7 +113,7 @@ class _NameEntryScreenState extends ConsumerState<NameEntryScreen> {
                                           ? 'Sana nasıl hitap edelim?'
                                           : 'What should we call you?',
                                       textAlign: TextAlign.center,
-                                      style: AstraKit.heading1(isDark,
+                                      style: AstraKit.heading1(context, isDark,
                                           fontSize: 20),
                                     ),
                                     const SizedBox(height: 6),
@@ -103,7 +122,7 @@ class _NameEntryScreenState extends ConsumerState<NameEntryScreen> {
                                           ? 'İstersen sonra profilinden değiştirebilirsin.'
                                           : 'You can change it later from your profile.',
                                       textAlign: TextAlign.center,
-                                      style: AstraKit.mutedText(isDark,
+                                      style: AstraKit.mutedText(context, isDark,
                                           fontSize: 13),
                                     ),
                                     const SizedBox(height: 18),

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../auth/domain/auth_flow_routes.dart';
+import '../../../auth/domain/registration_flow_state.dart';
 import '../providers/hobbies_providers.dart';
 
 /// (id, Turkish label, English label, icon)
@@ -45,7 +46,12 @@ const List<(String, String, String, IconData)> _presets = [
   ('pets', 'Evcil hayvan', 'Pets', Icons.pets_rounded),
   ('astronomy', 'Astronomi', 'Astronomy', Icons.nightlight_round),
   ('languages', 'Dil öğrenme', 'Languages', Icons.translate_rounded),
-  ('volunteering', 'Gönüllülük', 'Volunteering', Icons.volunteer_activism_rounded),
+  (
+    'volunteering',
+    'Gönüllülük',
+    'Volunteering',
+    Icons.volunteer_activism_rounded
+  ),
   ('shopping', 'Alışveriş', 'Shopping', Icons.shopping_bag_rounded),
   ('makeup', 'Makyaj', 'Makeup', Icons.face_retouching_natural_rounded),
   ('skincare', 'Cilt bakımı', 'Skincare', Icons.spa_rounded),
@@ -73,11 +79,16 @@ String hobbyLabel(String id, bool isTr) => _labelFor(id, isTr);
 IconData? hobbyIcon(String id) => _presetById(id)?.$4;
 
 class HobbiesScreen extends ConsumerStatefulWidget {
-  const HobbiesScreen({super.key, this.onboarding = false});
+  const HobbiesScreen({
+    super.key,
+    this.onboarding = false,
+    this.registrationIntent,
+  });
 
   /// When true, shown once during fresh registration: no back button, and a
   /// "Continue" button that hands off to LUMA's first welcome.
   final bool onboarding;
+  final FreshRegistrationIntent? registrationIntent;
 
   @override
   ConsumerState<HobbiesScreen> createState() => _HobbiesScreenState();
@@ -106,7 +117,7 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
     final selected = ref.watch(hobbiesProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -134,7 +145,7 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
                       widget.onboarding
                           ? (isTr ? 'Hobilerini seç' : 'Pick your hobbies')
                           : (isTr ? 'Hobilerim' : 'My hobbies'),
-                      style: AstraKit.heading1(isDark, fontSize: 22),
+                      style: AstraKit.heading1(context, isDark, fontSize: 22),
                     ),
                   ],
                 ),
@@ -146,7 +157,8 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
                         isTr
                             ? 'Sevdiğin hobileri seç; listede yoksa elle ekle.'
                             : 'Pick the hobbies you love; add your own if it isn\'t listed.',
-                        style: AstraKit.mutedText(isDark, fontSize: 13.5),
+                        style:
+                            AstraKit.mutedText(context, isDark, fontSize: 13.5),
                       ),
                       const SizedBox(height: 16),
                       _SelectedHobbiesSection(
@@ -165,7 +177,9 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
                         onAdd: _addCustom,
                       ),
                       const SizedBox(height: 20),
-                      Text(isTr ? 'Hobiler' : 'Hobbies', style: AstraKit.heading2(isDark, fontSize: 15)),
+                      Text(isTr ? 'Hobiler' : 'Hobbies',
+                          style:
+                              AstraKit.heading2(context, isDark, fontSize: 15)),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 10,
@@ -184,7 +198,9 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
                                 selected: selected.contains(p.$1),
                                 isDark: isDark,
                                 primary: primary,
-                                onTap: () => ref.read(hobbiesProvider.notifier).toggle(p.$1),
+                                onTap: () => ref
+                                    .read(hobbiesProvider.notifier)
+                                    .toggle(p.$1),
                               ),
                             ),
                         ],
@@ -209,14 +225,29 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
     );
   }
 
-  void _finishOnboarding() {
+  Future<void> _finishOnboarding() async {
     if (!mounted) return;
-    // Sign-up flow: the greeting (first welcome) hands off to the AI-rating
-    // step, then the final "all set" screen, then Home.
-    context.go(
-      AuthFlowRoutes.afterSignupHobbies,
-      extra: const {'first': true, 'next': AuthFlowRoutes.aiRating},
-    );
+    final current = widget.registrationIntent;
+    if (current == null) {
+      context.go(AuthFlowRoutes.home);
+      return;
+    }
+    try {
+      final next = await registrationFlowStore.advance(
+        current,
+        RegistrationStep.firstLumaGreeting,
+      );
+      if (!mounted) return;
+      context.go(
+        AuthFlowRoutes.afterSignupHobbies,
+        extra: LumaGreetingRouteData(
+          variant: LumaGreetingVariant.postSignup,
+          registrationIntent: next,
+        ),
+      );
+    } on RegistrationIntentMismatchException {
+      if (mounted) context.go(AuthFlowRoutes.home);
+    }
   }
 }
 
@@ -248,7 +279,7 @@ class _SelectedHobbiesSection extends StatelessWidget {
               children: [
                 Text(
                   isTr ? 'Seçtiklerin' : 'Your picks',
-                  style: AstraKit.heading2(isDark, fontSize: 15),
+                  style: AstraKit.heading2(context, isDark, fontSize: 15),
                 ),
                 const SizedBox(height: 10),
                 Wrap(
@@ -296,14 +327,18 @@ class _CustomAddRow extends StatelessWidget {
             controller: controller,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => onAdd(),
-            style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w500),
+            style: AstraKit.body(context, isDark,
+                fontSize: 14, fontWeight: FontWeight.w500),
             cursorColor: primary,
             decoration: InputDecoration(
-              hintText: isTr ? 'Başka bir hobi ekle...' : 'Add another hobby...',
-              hintStyle: AstraKit.mutedText(isDark, fontSize: 14),
+              hintText:
+                  isTr ? 'Başka bir hobi ekle...' : 'Add another hobby...',
+              hintStyle: AstraKit.mutedText(context, isDark, fontSize: 14),
               filled: true,
-              fillColor: isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              fillColor:
+                  isDark ? const Color(0x33231845) : const Color(0x55FFF8EE),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: primary.withValues(alpha: 0.35)),
@@ -320,7 +355,11 @@ class _CustomAddRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        AstraGoldButton(isDark: isDark, label: isTr ? 'Ekle' : 'Add', expand: false, onTap: onAdd),
+        AstraGoldButton(
+            isDark: isDark,
+            label: isTr ? 'Ekle' : 'Add',
+            expand: false,
+            onTap: onAdd),
       ],
     );
   }
@@ -354,9 +393,12 @@ class _HobbyChip extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? primary.withValues(alpha: 0.85) : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
+            color: selected
+                ? primary.withValues(alpha: 0.85)
+                : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: selected ? primary : primary.withValues(alpha: 0.25)),
+            border: Border.all(
+                color: selected ? primary : primary.withValues(alpha: 0.25)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -365,7 +407,10 @@ class _HobbyChip extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w600, color: selected ? Colors.white : null),
+                style: AstraKit.body(context, isDark,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? Colors.white : null),
               ),
             ],
           ),
@@ -376,7 +421,12 @@ class _HobbyChip extends StatelessWidget {
 }
 
 class _SelectedChip extends StatelessWidget {
-  const _SelectedChip({super.key, required this.label, required this.isDark, required this.primary, required this.onRemove});
+  const _SelectedChip(
+      {super.key,
+      required this.label,
+      required this.isDark,
+      required this.primary,
+      required this.onRemove});
 
   final String label;
   final bool isDark;
@@ -395,12 +445,15 @@ class _SelectedChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700)),
+          Text(label,
+              style: AstraKit.body(context, isDark,
+                  fontSize: 13, fontWeight: FontWeight.w700)),
           const SizedBox(width: 4),
           InkResponse(
             onTap: onRemove,
             radius: 16,
-            child: Icon(Icons.close_rounded, size: 16, color: AstraKit.muted(isDark)),
+            child: Icon(Icons.close_rounded,
+                size: 16, color: AstraKit.muted(context, isDark)),
           ),
         ],
       ),

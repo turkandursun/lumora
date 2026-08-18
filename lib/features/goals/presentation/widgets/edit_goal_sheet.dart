@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/tables/goals_table.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/lumora_palette.dart';
 import '../../../../theme/premium_button.dart';
 import '../screens/goals_screen.dart' show frequencyLabelFor, unitLabelForUnit;
@@ -86,25 +87,38 @@ class _EditGoalSheetState extends State<EditGoalSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final tokens = AstraThemeTokens.of(context);
     final fieldDecoration = InputDecoration(
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.05),
+      fillColor: tokens.isDark
+          ? tokens.palette.inputBackground
+          : Colors.white.withValues(alpha: 0.05),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+        borderSide: BorderSide(
+          color: tokens.isDark
+              ? tokens.palette.softBorder
+              : Colors.white.withValues(alpha: 0.16),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: LumoraPalette.lightPurple),
+        borderSide: BorderSide(
+          color: tokens.isDark
+              ? tokens.palette.activeAccent
+              : LumoraPalette.lightPurple,
+        ),
       ),
     );
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: LumoraPalette.nightBackground,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: tokens.isDark
+              ? tokens.palette.surfaceElevated
+              : LumoraPalette.nightBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: SafeArea(
           top: false,
@@ -117,16 +131,19 @@ class _EditGoalSheetState extends State<EditGoalSheet> {
                 children: [
                   Text(
                     l10n.goalsEditSheetTitle,
-                    style: LumoraPalette.bodyStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: tokens.isDark ? tokens.textPrimary : Colors.white,
                     ),
                   ),
                   const SizedBox(height: 18),
                   TextFormField(
                     controller: _titleController,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color:
+                          tokens.isDark ? tokens.textSecondary : Colors.white,
+                    ),
                     decoration: fieldDecoration.copyWith(
                       hintText: l10n.goalsNewTitleHint,
                     ),
@@ -138,7 +155,10 @@ class _EditGoalSheetState extends State<EditGoalSheet> {
                   TextFormField(
                     controller: _targetController,
                     keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color:
+                          tokens.isDark ? tokens.textSecondary : Colors.white,
+                    ),
                     decoration: fieldDecoration.copyWith(
                       hintText: l10n.goalsNewTargetHint,
                     ),
@@ -152,11 +172,19 @@ class _EditGoalSheetState extends State<EditGoalSheet> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<GoalUnit>(
                     initialValue: _unit,
-                    dropdownColor: LumoraPalette.nightBackground,
-                    style: const TextStyle(color: Colors.white),
+                    dropdownColor: tokens.isDark
+                        ? tokens.palette.surfaceElevated
+                        : LumoraPalette.nightBackground,
+                    style: TextStyle(
+                      color:
+                          tokens.isDark ? tokens.textSecondary : Colors.white,
+                    ),
                     decoration: fieldDecoration.copyWith(
                       labelText: l10n.goalsNewUnitPrompt,
-                      labelStyle: const TextStyle(color: Colors.white70),
+                      labelStyle: TextStyle(
+                        color:
+                            tokens.isDark ? tokens.textMuted : Colors.white70,
+                      ),
                     ),
                     items: [
                       for (final unit in GoalUnit.values)
@@ -177,7 +205,10 @@ class _EditGoalSheetState extends State<EditGoalSheet> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _customUnitController,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color:
+                            tokens.isDark ? tokens.textSecondary : Colors.white,
+                      ),
                       decoration: fieldDecoration.copyWith(
                         hintText: l10n.goalsNewCustomUnitHint,
                       ),
@@ -189,11 +220,19 @@ class _EditGoalSheetState extends State<EditGoalSheet> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<GoalFrequency>(
                     initialValue: _frequency,
-                    dropdownColor: LumoraPalette.nightBackground,
-                    style: const TextStyle(color: Colors.white),
+                    dropdownColor: tokens.isDark
+                        ? tokens.palette.surfaceElevated
+                        : LumoraPalette.nightBackground,
+                    style: TextStyle(
+                      color:
+                          tokens.isDark ? tokens.textSecondary : Colors.white,
+                    ),
                     decoration: fieldDecoration.copyWith(
                       labelText: l10n.goalsNewFrequencyPrompt,
-                      labelStyle: const TextStyle(color: Colors.white70),
+                      labelStyle: TextStyle(
+                        color:
+                            tokens.isDark ? tokens.textMuted : Colors.white70,
+                      ),
                     ),
                     items: [
                       for (final frequency in GoalFrequency.values)

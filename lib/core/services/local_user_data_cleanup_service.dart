@@ -81,10 +81,16 @@ class LocalUserDataCleanupService {
       await _db.delete(_db.dailyQuestionAnswers).go();
     });
 
-    await _clearPreferences(userId);
+    await _clearPreferences(
+      userId,
+      removeDurableAccountCache: includeGoals,
+    );
   }
 
-  Future<void> _clearPreferences(String userId) async {
+  Future<void> _clearPreferences(
+    String userId, {
+    required bool removeDurableAccountCache,
+  }) async {
     final prefs = await _preferencesLoader();
     const unscopedUserDataKeys = <String>{
       'activities_v1',
@@ -104,6 +110,9 @@ class LocalUserDataCleanupService {
       'goals_seeded',
       'journal_entry_photos',
       'cloud_synced_marker_v1',
+      // Owner is unknowable; never migrate this global palette cache.
+      'astra_palette_id_v1',
+      'registration_oauth_signup_attempt_v1',
     };
     final scopedKeys = <String>{
       'astra_bg_theme_$userId',
@@ -117,9 +126,14 @@ class LocalUserDataCleanupService {
       'goals_seeded_$userId',
       'pending_onboarding_$userId',
       'registration_pending_$userId',
+      'mood_log_v2_$userId',
       'reminders_gratitude_cleanup_v1_$userId',
       'reminders_default_disabled_fix_v1_$userId',
     };
+
+    if (removeDurableAccountCache) {
+      scopedKeys.add('astra_palette_id_v2_$userId');
+    }
 
     for (final key in {...unscopedUserDataKeys, ...scopedKeys}) {
       await prefs.remove(key);

@@ -29,7 +29,9 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
   void initState() {
     super.initState();
     // 16s box-breathing cycle: inhale · hold · exhale · hold, 4s each.
-    _box = AnimationController(vsync: this, duration: const Duration(seconds: 16))..repeat();
+    _box =
+        AnimationController(vsync: this, duration: const Duration(seconds: 16))
+          ..repeat();
   }
 
   @override
@@ -42,7 +44,7 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -63,7 +65,9 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(isTr ? 'Sakinleş' : 'Calm now', style: AstraKit.heading1(isDark, fontSize: 20)),
+                      Text(isTr ? 'Sakinleş' : 'Calm now',
+                          style:
+                              AstraKit.heading1(context, isDark, fontSize: 20)),
                     ],
                   ),
                 ),
@@ -88,7 +92,8 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
       children: [
         Text(
           isTr ? 'Benimle yavaşça nefes al.' : 'Breathe slowly with me.',
-          style: AstraKit.body(isDark, fontSize: 16, fontWeight: FontWeight.w600),
+          style: AstraKit.body(context, isDark,
+              fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 34),
         AnimatedBuilder(
@@ -123,7 +128,8 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        (isDark ? Colors.white : primary).withValues(alpha: 0.9),
+                        (isDark ? Colors.white : primary)
+                            .withValues(alpha: 0.9),
                         primary.withValues(alpha: 0.4),
                         primary.withValues(alpha: 0.0),
                       ],
@@ -132,7 +138,10 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
                   ),
                   child: Text(
                     label,
-                    style: AstraKit.body(isDark, fontSize: 17, fontWeight: FontWeight.w800, color: const Color(0xFF1A0F00)),
+                    style: AstraKit.body(context, isDark,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1A0F00)),
                   ),
                 ),
               ),
@@ -143,7 +152,8 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
         Text(
           isTr ? 'Hazır olduğunda devam et.' : 'Continue when you feel ready.',
           textAlign: TextAlign.center,
-          style: AstraKit.body(isDark, fontSize: 14.5, fontWeight: FontWeight.w500),
+          style: AstraKit.body(context, isDark,
+              fontSize: 14.5, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 16),
         AstraGoldButton(
@@ -180,7 +190,8 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
       children: [
         Text(
           isTr ? 'Şimdiye geri dön' : 'Come back to now',
-          style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700, color: primary),
+          style: AstraKit.body(context, isDark,
+              fontSize: 15, fontWeight: FontWeight.w700, color: primary),
         ),
         const SizedBox(height: 24),
         Container(
@@ -192,7 +203,8 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
             color: primary.withValues(alpha: 0.22),
             border: Border.all(color: primary.withValues(alpha: 0.6), width: 2),
           ),
-          child: Text(step.$1, style: AstraKit.heading1(isDark, fontSize: 52)),
+          child: Text(step.$1,
+              style: AstraKit.heading1(context, isDark, fontSize: 52)),
         ),
         const SizedBox(height: 28),
         Padding(
@@ -200,13 +212,16 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
           child: Text(
             step.$2,
             textAlign: TextAlign.center,
-            style: AstraKit.body(isDark, fontSize: 17, fontWeight: FontWeight.w600, height: 1.4),
+            style: AstraKit.body(context, isDark,
+                fontSize: 17, fontWeight: FontWeight.w600, height: 1.4),
           ),
         ),
         const SizedBox(height: 34),
         AstraGoldButton(
           isDark: isDark,
-          label: isLast ? (isTr ? 'Bitir' : 'Finish') : (isTr ? 'Sonraki' : 'Next'),
+          label: isLast
+              ? (isTr ? 'Bitir' : 'Finish')
+              : (isTr ? 'Sonraki' : 'Next'),
           expand: false,
           onTap: () {
             if (isLast) {
@@ -233,7 +248,8 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
                 ? 'Buradasın ve güvendesin. Bu dalga da geçecek. Kendinle gurur duy.'
                 : 'You are here and you are safe. This wave will pass too. Be proud of yourself.',
             textAlign: TextAlign.center,
-            style: AstraKit.body(isDark, fontSize: 16, fontWeight: FontWeight.w600, height: 1.45),
+            style: AstraKit.body(context, isDark,
+                fontSize: 16, fontWeight: FontWeight.w600, height: 1.45),
           ),
         ),
         const SizedBox(height: 30),
@@ -250,7 +266,9 @@ class _SosCalmScreenState extends ConsumerState<SosCalmScreen>
             _groundIndex = 0;
             _stage = _Stage.breathe;
           }),
-          child: Text(isTr ? 'Tekrar başla' : 'Start again', style: AstraKit.mutedText(isDark, fontWeight: FontWeight.w700)),
+          child: Text(isTr ? 'Tekrar başla' : 'Start again',
+              style: AstraKit.mutedText(context, isDark,
+                  fontWeight: FontWeight.w700)),
         ),
       ],
     );

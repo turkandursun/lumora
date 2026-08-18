@@ -21,14 +21,30 @@ class AstraText {
   static const muted = Color(0xFF4A4452);
 }
 
-/// The 6 selectable theme families.
+/// The 7 selectable palette families.
+///
+/// [wireValue] is the stable persistence contract shared by Supabase and
+/// SharedPreferences. Enum `.name` must never be persisted because a Dart
+/// rename must not silently change stored user data.
 enum AstraThemeId {
-  lumaPink,
-  softLilacMist,
-  sageVeil,
-  mutedSkyBloom,
-  apricotCloud,
-  smokyTealAura,
+  softLilacMist('soft_lilac_mist'),
+  dustyRoseHaze('dusty_rose_haze'),
+  sageVeil('sage_veil'),
+  mutedSkyBloom('muted_sky_bloom'),
+  apricotCloud('apricot_cloud'),
+  berrySand('berry_sand'),
+  smokyTealAura('smoky_teal_aura');
+
+  const AstraThemeId(this.wireValue);
+
+  final String wireValue;
+
+  static AstraThemeId fromWireValue(Object? value) {
+    return AstraThemeId.values.firstWhere(
+      (id) => id.wireValue == value,
+      orElse: () => AstraThemeId.softLilacMist,
+    );
+  }
 }
 
 /// A complete set of surface/accent tokens for one theme.
@@ -93,183 +109,344 @@ class AstraPalette {
   /// Best on-primary text colour for legibility.
   Color get onPrimary =>
       primary.computeLuminance() < 0.5 ? Colors.white : AstraText.title;
+
+  /// Keeps the palette identity and accent family while replacing neutral
+  /// surfaces with premium, palette-tinted dark equivalents.
+  AstraPalette forBrightness(Brightness brightness) {
+    if (brightness == Brightness.light) return this;
+
+    Color blend(Color base, Color tint, double amount) =>
+        Color.lerp(base, tint, amount)!;
+
+    final darkPrimary = blend(primary, Colors.white, 0.16);
+    final darkSecondary = blend(secondary, Colors.white, 0.18);
+    final darkSurface = blend(const Color(0xFF17151E), secondary, 0.08);
+    final darkElevated = blend(const Color(0xFF211E28), primary, 0.10);
+    final darkInput = blend(const Color(0xFF24212C), primary, 0.07);
+
+    return AstraPalette(
+      id: id,
+      name: name,
+      mood: mood,
+      primary: darkPrimary,
+      secondary: darkSecondary,
+      surface: darkSurface,
+      surfaceElevated: darkElevated,
+      gradientTop: blend(const Color(0xFF111018), primary, 0.10),
+      gradientBottom: blend(const Color(0xFF1C1824), secondary, 0.12),
+      cardBackground: darkElevated.withValues(alpha: 0.88),
+      inputBackground: darkInput,
+      activeAccent: blend(activeAccent, Colors.white, 0.16),
+      softBorder: darkPrimary.withValues(alpha: 0.28),
+      iconContainer: blend(darkElevated, darkPrimary, 0.22),
+      bottomNavActive: blend(bottomNavActive, Colors.white, 0.24),
+      bottomNavInactive: const Color(0xFFA8A2AF),
+      buttonPrimary: darkPrimary,
+      buttonSecondary: blend(darkElevated, darkSecondary, 0.14),
+      chipSelected: blend(darkElevated, darkPrimary, 0.34),
+      chipUnselected: blend(darkSurface, Colors.white, 0.05),
+      dividerSoft: darkPrimary.withValues(alpha: 0.20),
+      focusGlow: darkPrimary.withValues(alpha: 0.42),
+    );
+  }
+}
+
+/// Reactive palette contract exposed through [ThemeData.extensions].
+///
+/// UI code reads this from its own [BuildContext], so a palette update rebuilds
+/// every dependent surface without relying on build-order-sensitive globals.
+@immutable
+class AstraThemeTokens extends ThemeExtension<AstraThemeTokens> {
+  const AstraThemeTokens._({
+    required this.palette,
+    required this.brightness,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textMuted,
+    required this.textOnAccent,
+  });
+
+  factory AstraThemeTokens.fromPalette(
+    AstraPalette palette, {
+    Brightness brightness = Brightness.light,
+  }) {
+    final appearancePalette = palette.forBrightness(brightness);
+    final isDark = brightness == Brightness.dark;
+    return AstraThemeTokens._(
+      palette: appearancePalette,
+      brightness: brightness,
+      textPrimary: isDark ? const Color(0xFFF5F1F7) : AstraText.title,
+      textSecondary: isDark ? const Color(0xFFD4CED9) : AstraText.body,
+      textMuted: isDark ? const Color(0xFFAFA7B5) : AstraText.muted,
+      textOnAccent: appearancePalette.onPrimary,
+    );
+  }
+
+  /// Brightness-adjusted palette. Its id remains the persisted palette id.
+  final AstraPalette palette;
+  final Brightness brightness;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color textMuted;
+  final Color textOnAccent;
+
+  bool get isDark => brightness == Brightness.dark;
+
+  static AstraThemeTokens of(BuildContext context) =>
+      Theme.of(context).extension<AstraThemeTokens>() ??
+      AstraThemeTokens.fromPalette(astraSoftLilacMist);
+
+  @override
+  AstraThemeTokens copyWith({
+    AstraPalette? palette,
+    Brightness? brightness,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? textMuted,
+    Color? textOnAccent,
+  }) =>
+      AstraThemeTokens._(
+        palette: palette ?? this.palette,
+        brightness: brightness ?? this.brightness,
+        textPrimary: textPrimary ?? this.textPrimary,
+        textSecondary: textSecondary ?? this.textSecondary,
+        textMuted: textMuted ?? this.textMuted,
+        textOnAccent: textOnAccent ?? this.textOnAccent,
+      );
+
+  @override
+  AstraThemeTokens lerp(covariant AstraThemeTokens? other, double t) {
+    if (other == null) return this;
+    final source = palette;
+    final target = other.palette;
+    Color color(Color a, Color b) => Color.lerp(a, b, t)!;
+    return AstraThemeTokens._(
+      palette: AstraPalette(
+        id: t < 0.5 ? source.id : target.id,
+        name: t < 0.5 ? source.name : target.name,
+        mood: t < 0.5 ? source.mood : target.mood,
+        primary: color(source.primary, target.primary),
+        secondary: color(source.secondary, target.secondary),
+        surface: color(source.surface, target.surface),
+        surfaceElevated: color(source.surfaceElevated, target.surfaceElevated),
+        gradientTop: color(source.gradientTop, target.gradientTop),
+        gradientBottom: color(source.gradientBottom, target.gradientBottom),
+        cardBackground: color(source.cardBackground, target.cardBackground),
+        inputBackground: color(source.inputBackground, target.inputBackground),
+        activeAccent: color(source.activeAccent, target.activeAccent),
+        softBorder: color(source.softBorder, target.softBorder),
+        iconContainer: color(source.iconContainer, target.iconContainer),
+        bottomNavActive: color(source.bottomNavActive, target.bottomNavActive),
+        bottomNavInactive:
+            color(source.bottomNavInactive, target.bottomNavInactive),
+        buttonPrimary: color(source.buttonPrimary, target.buttonPrimary),
+        buttonSecondary: color(source.buttonSecondary, target.buttonSecondary),
+        chipSelected: color(source.chipSelected, target.chipSelected),
+        chipUnselected: color(source.chipUnselected, target.chipUnselected),
+        dividerSoft: color(source.dividerSoft, target.dividerSoft),
+        focusGlow: color(source.focusGlow, target.focusGlow),
+      ),
+      brightness: t < 0.5 ? brightness : other.brightness,
+      textPrimary: color(textPrimary, other.textPrimary),
+      textSecondary: color(textSecondary, other.textSecondary),
+      textMuted: color(textMuted, other.textMuted),
+      textOnAccent: color(textOnAccent, other.textOnAccent),
+    );
+  }
 }
 
 /// ─────────────────────────────────────────────────────────────────────────
 /// The 7 palettes (soft, but rich)
 /// ─────────────────────────────────────────────────────────────────────────
 
-/// The signature "Luma" healing-pink used on Home, the AI chat sheet and the
-/// journal writing screen — now available as a selectable family too, and the
-/// app's default. Its background/accent values match `LumaGlass` exactly so
-/// picking it makes every palette-driven screen line up with those three
-/// LumaGlass surfaces.
-const astraLumaPink = AstraPalette(
-  id: AstraThemeId.lumaPink,
-  name: 'Luma Pink',
-  mood: 'Yumuşak, şifalı pembe',
-  primary: Color(0xFFCE7CA6),
-  secondary: Color(0xFFB35C82),
-  surface: Color(0xFFFCE8EE),
-  surfaceElevated: Color(0xFFFFF6FA),
-  gradientTop: Color(0xFFFCE8EE),
-  gradientBottom: Color(0xFFFCE8EE),
-  cardBackground: Color(0xC2FFFFFF),
-  inputBackground: Color(0xFFFBE4EC),
-  activeAccent: Color(0xFFC77D9B),
-  softBorder: Color(0x33CE7CA6),
-  iconContainer: Color(0xFFF6D6E3),
-  bottomNavActive: Color(0xFFA85777),
-  bottomNavInactive: Color(0xFFBE9EAA),
-  buttonPrimary: Color(0xFFEAAAC8),
-  buttonSecondary: Color(0xFFF7DEE9),
-  chipSelected: Color(0xFFCE7CA6),
-  chipUnselected: Color(0xFFF5DDE7),
-  dividerSoft: Color(0x22CE7CA6),
-  focusGlow: Color(0x66CE7CA6),
-);
-
-// The five non-pink families below were re-toned (Aug 2026) to livelier, more
-// saturated pastels — soft but never washed-out/"dead" — sitting at the same
-// pastel weight as Luma Pink so the whole set reads as one harmonious family.
-// Every background is now a single flat colour (gradientTop == gradientBottom),
-// no top→bottom darkening gradient.
-
 const astraSoftLilacMist = AstraPalette(
   id: AstraThemeId.softLilacMist,
-  name: 'Lila',
-  mood: 'Canlı lavanta',
-  primary: Color(0xFFAE8AEF),
-  secondary: Color(0xFF8B63E6),
-  surface: Color(0xFFF0E9FE),
-  surfaceElevated: Color(0xFFFAF7FF),
-  gradientTop: Color(0xFFEEE7FE),
-  gradientBottom: Color(0xFFEEE7FE),
+  name: 'Soft Lilac Mist',
+  mood: 'Zengin, zarif lila',
+  primary: Color(0xFFB79CF0),
+  secondary: Color(0xFF9B7BE6),
+  surface: Color(0xFFF4EFFF),
+  surfaceElevated: Color(0xFFFBF8FF),
+  gradientTop: Color(0xFFF0E7FF),
+  gradientBottom: Color(0xFFC6AEF4),
   cardBackground: Color(0xC2FFFFFF),
-  inputBackground: Color(0xFFE7DEFC),
-  activeAccent: Color(0xFF8B63E6),
-  softBorder: Color(0x338B63E6),
-  iconContainer: Color(0xFFDECFFB),
-  bottomNavActive: Color(0xFF6E4FCF),
+  inputBackground: Color(0xFFF1EAFD),
+  activeAccent: Color(0xFF9B7BE6),
+  softBorder: Color(0x339B7BE6),
+  iconContainer: Color(0xFFE6D9FB),
+  bottomNavActive: Color(0xFF7E5FD0),
   bottomNavInactive: Color(0xFFA79FB4),
-  buttonPrimary: Color(0xFFC0A6F4),
-  buttonSecondary: Color(0xFFE9E0FB),
-  chipSelected: Color(0xFFAE8AEF),
-  chipUnselected: Color(0xFFE4DAFA),
-  dividerSoft: Color(0x228B63E6),
-  focusGlow: Color(0x66AE8AEF),
+  buttonPrimary: Color(0xFFB79CF0),
+  buttonSecondary: Color(0xFFEEE6FB),
+  chipSelected: Color(0xFFB79CF0),
+  chipUnselected: Color(0xFFEAE1FA),
+  dividerSoft: Color(0x229B7BE6),
+  focusGlow: Color(0x66B79CF0),
+);
+
+const astraDustyRoseHaze = AstraPalette(
+  id: AstraThemeId.dustyRoseHaze,
+  name: 'Dusty Rose Haze',
+  mood: 'Zengin, tozlu pembe',
+  primary: Color(0xFFD998AB),
+  secondary: Color(0xFFC67C95),
+  surface: Color(0xFFFBEDF1),
+  surfaceElevated: Color(0xFFFFF9FB),
+  gradientTop: Color(0xFFFBEAF0),
+  gradientBottom: Color(0xFFE7A9BF),
+  cardBackground: Color(0xC2FFFFFF),
+  inputBackground: Color(0xFFF8E7EE),
+  activeAccent: Color(0xFFC67C95),
+  softBorder: Color(0x33C67C95),
+  iconContainer: Color(0xFFF2D2DD),
+  bottomNavActive: Color(0xFFB0637E),
+  bottomNavInactive: Color(0xFFB29AA2),
+  buttonPrimary: Color(0xFFD998AB),
+  buttonSecondary: Color(0xFFF6E2E9),
+  chipSelected: Color(0xFFD998AB),
+  chipUnselected: Color(0xFFF3DFE7),
+  dividerSoft: Color(0x22C67C95),
+  focusGlow: Color(0x66D998AB),
 );
 
 const astraSageVeil = AstraPalette(
   id: AstraThemeId.sageVeil,
-  name: 'Yeşil',
-  mood: 'Taze pastel yeşil',
-  primary: Color(0xFF74C79C),
-  secondary: Color(0xFF43A877),
-  surface: Color(0xFFE7F6EE),
-  surfaceElevated: Color(0xFFF6FDF9),
-  gradientTop: Color(0xFFE4F5EC),
-  gradientBottom: Color(0xFFE4F5EC),
+  name: 'Sage Veil',
+  mood: 'Zengin, doğal yeşil',
+  primary: Color(0xFF9EC2A6),
+  secondary: Color(0xFF79A585),
+  surface: Color(0xFFEEF6F0),
+  surfaceElevated: Color(0xFFFBFEFB),
+  gradientTop: Color(0xFFEDF7F0),
+  gradientBottom: Color(0xFFABCDB2),
   cardBackground: Color(0xC2FFFFFF),
-  inputBackground: Color(0xFFDCF1E5),
-  activeAccent: Color(0xFF43A877),
-  softBorder: Color(0x3343A877),
-  iconContainer: Color(0xFFC9EBD8),
-  bottomNavActive: Color(0xFF2E8259),
+  inputBackground: Color(0xFFEAF4ED),
+  activeAccent: Color(0xFF79A585),
+  softBorder: Color(0x3379A585),
+  iconContainer: Color(0xFFD6E8DB),
+  bottomNavActive: Color(0xFF588268),
   bottomNavInactive: Color(0xFF9CA99E),
-  buttonPrimary: Color(0xFF8AD3AE),
-  buttonSecondary: Color(0xFFDBF1E5),
-  chipSelected: Color(0xFF74C79C),
-  chipUnselected: Color(0xFFD8EFE2),
-  dividerSoft: Color(0x2243A877),
-  focusGlow: Color(0x6674C79C),
+  buttonPrimary: Color(0xFF9EC2A6),
+  buttonSecondary: Color(0xFFE4F0E7),
+  chipSelected: Color(0xFF9EC2A6),
+  chipUnselected: Color(0xFFE1EDE4),
+  dividerSoft: Color(0x2279A585),
+  focusGlow: Color(0x669EC2A6),
 );
 
 const astraMutedSkyBloom = AstraPalette(
   id: AstraThemeId.mutedSkyBloom,
-  name: 'Mavi',
-  mood: 'Ferah gökyüzü mavisi',
-  primary: Color(0xFF6FACE4),
-  secondary: Color(0xFF4187CE),
-  surface: Color(0xFFE6F1FC),
-  surfaceElevated: Color(0xFFF5FAFE),
-  gradientTop: Color(0xFFE2EFFC),
-  gradientBottom: Color(0xFFE2EFFC),
+  name: 'Muted Sky Bloom',
+  mood: 'Zengin, tozlu mavi',
+  primary: Color(0xFF9BBEDE),
+  secondary: Color(0xFF74A2CB),
+  surface: Color(0xFFEDF5FC),
+  surfaceElevated: Color(0xFFFAFCFE),
+  gradientTop: Color(0xFFEBF4FC),
+  gradientBottom: Color(0xFFA6C7E8),
   cardBackground: Color(0xC2FFFFFF),
-  inputBackground: Color(0xFFD9EAFA),
-  activeAccent: Color(0xFF4187CE),
-  softBorder: Color(0x334187CE),
-  iconContainer: Color(0xFFC8DFF6),
-  bottomNavActive: Color(0xFF2F6EB4),
+  inputBackground: Color(0xFFE9F2FB),
+  activeAccent: Color(0xFF74A2CB),
+  softBorder: Color(0x3374A2CB),
+  iconContainer: Color(0xFFD2E4F3),
+  bottomNavActive: Color(0xFF4F83B4),
   bottomNavInactive: Color(0xFF9AA7B4),
-  buttonPrimary: Color(0xFF8CBEF0),
-  buttonSecondary: Color(0xFFDCECFA),
-  chipSelected: Color(0xFF6FACE4),
-  chipUnselected: Color(0xFFD6E9F8),
-  dividerSoft: Color(0x224187CE),
-  focusGlow: Color(0x666FACE4),
+  buttonPrimary: Color(0xFF9BBEDE),
+  buttonSecondary: Color(0xFFE2EEF8),
+  chipSelected: Color(0xFF9BBEDE),
+  chipUnselected: Color(0xFFDEEBF6),
+  dividerSoft: Color(0x2274A2CB),
+  focusGlow: Color(0x669BBEDE),
 );
 
 const astraApricotCloud = AstraPalette(
   id: AstraThemeId.apricotCloud,
-  name: 'Turuncu',
-  mood: 'Sıcak canlı şeftali-turuncu',
-  primary: Color(0xFFEF9E63),
-  secondary: Color(0xFFE17A34),
-  surface: Color(0xFFFFEEDF),
-  surfaceElevated: Color(0xFFFFF9F3),
-  gradientTop: Color(0xFFFFEAD9),
-  gradientBottom: Color(0xFFFFEAD9),
+  name: 'Apricot Cloud',
+  mood: 'Zengin, sıcak pastel turuncu',
+  primary: Color(0xFFEAA877),
+  secondary: Color(0xFFDB8A54),
+  surface: Color(0xFFFFF1E8),
+  surfaceElevated: Color(0xFFFFFBF8),
+  gradientTop: Color(0xFFFFF0E6),
+  gradientBottom: Color(0xFFF4BC92),
   cardBackground: Color(0xC2FFFFFF),
-  inputBackground: Color(0xFFFCE4D0),
-  activeAccent: Color(0xFFE17A34),
-  softBorder: Color(0x33E17A34),
-  iconContainer: Color(0xFFF9D6BB),
-  bottomNavActive: Color(0xFFC0641B),
+  inputBackground: Color(0xFFFBEADD),
+  activeAccent: Color(0xFFDB8A54),
+  softBorder: Color(0x33DB8A54),
+  iconContainer: Color(0xFFF8DBC6),
+  bottomNavActive: Color(0xFFC4712F),
   bottomNavInactive: Color(0xFFBAA091),
-  buttonPrimary: Color(0xFFF3B27E),
-  buttonSecondary: Color(0xFFFAE0CB),
-  chipSelected: Color(0xFFEF9E63),
-  chipUnselected: Color(0xFFF8DCC6),
-  dividerSoft: Color(0x22E17A34),
-  focusGlow: Color(0x66EF9E63),
+  buttonPrimary: Color(0xFFEAA877),
+  buttonSecondary: Color(0xFFFAE3D3),
+  chipSelected: Color(0xFFEAA877),
+  chipUnselected: Color(0xFFF8E0CF),
+  dividerSoft: Color(0x22DB8A54),
+  focusGlow: Color(0x66EAA877),
+);
+
+const astraBerrySand = AstraPalette(
+  id: AstraThemeId.berrySand,
+  name: 'Berry Sand',
+  mood: 'Zengin, yumuşak berry',
+  primary: Color(0xFFD0879A),
+  secondary: Color(0xFFBE6A7E),
+  surface: Color(0xFFFBEDF0),
+  surfaceElevated: Color(0xFFFFFAFB),
+  gradientTop: Color(0xFFFBEBEF),
+  gradientBottom: Color(0xFFDF9CAB),
+  cardBackground: Color(0xC2FFFFFF),
+  inputBackground: Color(0xFFF7E7EB),
+  activeAccent: Color(0xFFBE6A7E),
+  softBorder: Color(0x33BE6A7E),
+  iconContainer: Color(0xFFEFCFD8),
+  bottomNavActive: Color(0xFFA2506A),
+  bottomNavInactive: Color(0xFFB39AA0),
+  buttonPrimary: Color(0xFFD0879A),
+  buttonSecondary: Color(0xFFF4E0E6),
+  chipSelected: Color(0xFFD0879A),
+  chipUnselected: Color(0xFFF1DCE3),
+  dividerSoft: Color(0x22BE6A7E),
+  focusGlow: Color(0x66D0879A),
 );
 
 const astraSmokyTealAura = AstraPalette(
   id: AstraThemeId.smokyTealAura,
-  name: 'Turkuaz',
-  mood: 'Canlı turkuaz',
-  primary: Color(0xFF4DC6BD),
-  secondary: Color(0xFF1FA79D),
-  surface: Color(0xFFE1F6F3),
-  surfaceElevated: Color(0xFFF4FDFC),
-  gradientTop: Color(0xFFDBF5F1),
-  gradientBottom: Color(0xFFDBF5F1),
+  name: 'Smoky Teal Aura',
+  mood: 'Zengin, sofistike mavi-yeşil',
+  primary: Color(0xFF82B8B2),
+  secondary: Color(0xFF5C9A92),
+  surface: Color(0xFFEAF5F3),
+  surfaceElevated: Color(0xFFF9FDFC),
+  gradientTop: Color(0xFFE9F6F4),
+  gradientBottom: Color(0xFF99C8C1),
   cardBackground: Color(0xC2FFFFFF),
-  inputBackground: Color(0xFFD0F0EB),
-  activeAccent: Color(0xFF1FA79D),
-  softBorder: Color(0x331FA79D),
-  iconContainer: Color(0xFFBFE9E3),
-  bottomNavActive: Color(0xFF12857B),
+  inputBackground: Color(0xFFE4F3F0),
+  activeAccent: Color(0xFF5C9A92),
+  softBorder: Color(0x335C9A92),
+  iconContainer: Color(0xFFCFE8E3),
+  bottomNavActive: Color(0xFF437E76),
   bottomNavInactive: Color(0xFF90A5A2),
-  buttonPrimary: Color(0xFF6FD7CF),
-  buttonSecondary: Color(0xFFD3F0EC),
-  chipSelected: Color(0xFF4DC6BD),
-  chipUnselected: Color(0xFFCFECE7),
-  dividerSoft: Color(0x221FA79D),
-  focusGlow: Color(0x664DC6BD),
+  buttonPrimary: Color(0xFF82B8B2),
+  buttonSecondary: Color(0xFFDEEFEC),
+  chipSelected: Color(0xFF82B8B2),
+  chipUnselected: Color(0xFFDAECE9),
+  dividerSoft: Color(0x225C9A92),
+  focusGlow: Color(0x6682B8B2),
 );
 
 /// All palettes, in display order.
 const List<AstraPalette> astraPalettes = [
-  astraLumaPink,
   astraSoftLilacMist,
+  astraDustyRoseHaze,
   astraSageVeil,
   astraMutedSkyBloom,
   astraApricotCloud,
+  astraBerrySand,
   astraSmokyTealAura,
 ];
 
 /// Lookup by id, with a safe default.
-AstraPalette astraPaletteFor(AstraThemeId id) =>
-    astraPalettes.firstWhere((p) => p.id == id, orElse: () => astraLumaPink);
+AstraPalette astraPaletteFor(AstraThemeId id) => astraPalettes.firstWhere(
+      (p) => p.id == id,
+      orElse: () => astraSoftLilacMist,
+    );

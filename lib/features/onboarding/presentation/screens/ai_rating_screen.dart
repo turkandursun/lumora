@@ -55,7 +55,9 @@ class _AiRatingScreenState extends State<AiRatingScreen> {
                           : IconButton(
                               onPressed: widget.onBack,
                               icon: Icon(Icons.arrow_back_ios_new_rounded,
-                                  size: 20, color: AstraText.muted),
+                                  size: 20,
+                                  color:
+                                      AstraThemeTokens.of(context).textMuted),
                             ),
                     ),
                     const LumaAvatar(size: 100),
@@ -69,7 +71,7 @@ class _AiRatingScreenState extends State<AiRatingScreen> {
                   child: Text(
                     'AI ile ilk deneyimini nasıl buldun?',
                     textAlign: TextAlign.center,
-                    style: AstraKit.heading1(false, fontSize: 25)
+                    style: AstraKit.heading1(context, false, fontSize: 25)
                         .copyWith(height: 1.25),
                   ),
                 ),
@@ -81,7 +83,8 @@ class _AiRatingScreenState extends State<AiRatingScreen> {
                   child: Text(
                     'GÖRÜŞLERİN KENDİMİZİ GELİŞTİRMEMİZE YARDIMCI OLUYOR',
                     textAlign: TextAlign.center,
-                    style: AstraKit.mutedText(false, fontSize: 12).copyWith(
+                    style: AstraKit.mutedText(context, false, fontSize: 12)
+                        .copyWith(
                       letterSpacing: 1.1,
                       fontWeight: FontWeight.w700,
                       height: 1.4,
@@ -109,7 +112,9 @@ class _AiRatingScreenState extends State<AiRatingScreen> {
                               size: 48,
                               color: i <= _rating
                                   ? _starGold
-                                  : AstraText.muted.withValues(alpha: 0.45),
+                                  : AstraThemeTokens.of(context)
+                                      .textMuted
+                                      .withValues(alpha: 0.45),
                             ),
                           ),
                         ),
@@ -160,7 +165,8 @@ class _PageDots extends StatelessWidget {
             height: i == activeIndex ? 9 : 7,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AstraText.title
+              color: AstraThemeTokens.of(context)
+                  .textPrimary
                   .withValues(alpha: i == activeIndex ? 0.8 : 0.28),
             ),
           ),

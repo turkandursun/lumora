@@ -129,17 +129,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFFCE7CA6),
-            onPrimary: Colors.white,
-            surface: Color(0xFFFCE8EE),
-            onSurface: Color(0xFF34121F),
-          ),
-        ),
-        child: child!,
-      ),
     );
     if (picked != null && mounted) setState(() => _selectedDate = picked);
   }
@@ -424,14 +413,15 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final mode = ref.read(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xF0FCE8EE),
+          backgroundColor:
+              AstraKit.palette(context).surfaceElevated.withValues(alpha: 0.94),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(color: primary.withValues(alpha: 0.4)),
@@ -465,14 +455,14 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     // The app's theme accent, matching the home page: soft lavender on the
     // dark/moon theme, gold on the light/sun theme — flows through the labels,
     // icons, borders, waveform and mic on the glass cards.
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     final localeStr = Localizations.localeOf(context).toString();
     final dateStr =
         DateFormat('d MMMM yyyy, EEEE', localeStr).format(_selectedDate);
 
     return Scaffold(
-      body: _MountainBackground(
+      body: AstraMountainBackground(
         isDark: isDark,
         child: SafeArea(
           bottom: false,
@@ -1225,10 +1215,8 @@ class _SealButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The app's signature rose-pink pill, matching every other primary CTA
-    // (Home's quick-add, AI chat's send button) — no more theme branching.
-    const gradient = LinearGradient(
-      colors: [Color(0xFFEAAAC8), Color(0xFFCE7CA6)],
+    final gradient = LinearGradient(
+      colors: [primary, AstraKit.palette(context).secondary],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     );

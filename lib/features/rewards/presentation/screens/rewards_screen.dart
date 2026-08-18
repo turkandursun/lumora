@@ -146,7 +146,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     final journaledDays =
         ref.watch(journalEntryDaysProvider).valueOrNull?.length ?? 0;
@@ -190,7 +190,9 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(isTr ? 'Başarılarım' : 'Achievements', style: AstraKit.heading1(isDark, fontSize: 22)),
+                    Text(isTr ? 'Başarılarım' : 'Achievements',
+                        style:
+                            AstraKit.heading1(context, isDark, fontSize: 22)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -199,11 +201,18 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _StarCard(progress: progress, isTr: isTr, isDark: isDark, primary: primary),
+                        _StarCard(
+                            progress: progress,
+                            isTr: isTr,
+                            isDark: isDark,
+                            primary: primary),
                         const SizedBox(height: 18),
                         Text(
-                          isTr ? 'Rozetler · $unlocked/${badges.length}' : 'Badges · $unlocked/${badges.length}',
-                          style: AstraKit.heading2(isDark, fontSize: 17),
+                          isTr
+                              ? 'Rozetler · $unlocked/${badges.length}'
+                              : 'Badges · $unlocked/${badges.length}',
+                          style:
+                              AstraKit.heading2(context, isDark, fontSize: 17),
                         ),
                         const SizedBox(height: 12),
                         GridView.count(
@@ -213,7 +222,11 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
                           childAspectRatio: 0.86,
-                          children: [for (final b in badges) _BadgeCard(badge: b, isDark: isDark, primary: primary)],
+                          children: [
+                            for (final b in badges)
+                              _BadgeCard(
+                                  badge: b, isDark: isDark, primary: primary)
+                          ],
                         ),
                         const SizedBox(height: 8),
                       ],
@@ -322,10 +335,11 @@ class _CelebrationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     final lines = <String>[];
     if (level != null) {
-      lines.add(isTr ? 'Seviye $level\'e ulaştın!' : 'You reached level $level!');
+      lines.add(
+          isTr ? 'Seviye $level\'e ulaştın!' : 'You reached level $level!');
     }
     if (newBadgeCount > 0) {
       lines.add(isTr
@@ -347,16 +361,21 @@ class _CelebrationDialog extends StatelessWidget {
               tween: Tween(begin: 0, end: 1),
               duration: const Duration(milliseconds: 600),
               curve: Curves.elasticOut,
-              builder: (context, t, child) => Transform.scale(scale: t, child: child),
+              builder: (context, t, child) =>
+                  Transform.scale(scale: t, child: child),
               child: Icon(Icons.star_rounded, size: 76, color: primary),
             ),
             const SizedBox(height: 14),
-            Text(isTr ? 'Tebrikler!' : 'Congratulations!', style: AstraKit.heading1(isDark, fontSize: 22)),
+            Text(isTr ? 'Tebrikler!' : 'Congratulations!',
+                style: AstraKit.heading1(context, isDark, fontSize: 22)),
             const SizedBox(height: 8),
             for (final line in lines)
               Padding(
                 padding: const EdgeInsets.only(bottom: 2),
-                child: Text(line, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 14, fontWeight: FontWeight.w600)),
+                child: Text(line,
+                    textAlign: TextAlign.center,
+                    style: AstraKit.mutedText(context, isDark,
+                        fontSize: 14, fontWeight: FontWeight.w600)),
               ),
             const SizedBox(height: 18),
             AstraGoldButton(
@@ -374,7 +393,11 @@ class _CelebrationDialog extends StatelessWidget {
 }
 
 class _StarCard extends StatelessWidget {
-  const _StarCard({required this.progress, required this.isTr, required this.isDark, required this.primary});
+  const _StarCard(
+      {required this.progress,
+      required this.isTr,
+      required this.isDark,
+      required this.primary});
 
   final RewardProgress progress;
   final bool isTr;
@@ -411,13 +434,19 @@ class _StarCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          Text(isTr ? 'Seviye ${progress.level}' : 'Level ${progress.level}', style: AstraKit.heading1(isDark, fontSize: 22)),
+          Text(isTr ? 'Seviye ${progress.level}' : 'Level ${progress.level}',
+              style: AstraKit.heading1(context, isDark, fontSize: 22)),
           const SizedBox(height: 4),
           Text(
             progress.isMaxLevel
-                ? (isTr ? 'En yüksek seviye! ${progress.points} puan' : 'Max level! ${progress.points} pts')
-                : (isTr ? 'Sonraki seviyeye ${progress.pointsToNext} puan' : '${progress.pointsToNext} pts to next level'),
-            style: AstraKit.mutedText(isDark, fontSize: 13, fontWeight: FontWeight.w600),
+                ? (isTr
+                    ? 'En yüksek seviye! ${progress.points} puan'
+                    : 'Max level! ${progress.points} pts')
+                : (isTr
+                    ? 'Sonraki seviyeye ${progress.pointsToNext} puan'
+                    : '${progress.pointsToNext} pts to next level'),
+            style: AstraKit.mutedText(context, isDark,
+                fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -500,7 +529,8 @@ class _GrowingStarState extends State<_GrowingStar>
             tween: Tween(begin: 0.3, end: 1),
             duration: const Duration(milliseconds: 850),
             curve: Curves.elasticOut,
-            builder: (context, t, child) => Transform.scale(scale: t, child: child),
+            builder: (context, t, child) =>
+                Transform.scale(scale: t, child: child),
             child: Icon(Icons.star_rounded, size: size, color: primary),
           ),
           for (final s in _sparkles)
@@ -515,7 +545,8 @@ class _GrowingStarState extends State<_GrowingStar>
                     opacity: 0.25 + 0.75 * tw,
                     child: Transform.scale(
                       scale: 0.7 + 0.3 * tw,
-                      child: Icon(Icons.auto_awesome, size: s.$2, color: Colors.white),
+                      child: Icon(Icons.auto_awesome,
+                          size: s.$2, color: Colors.white),
                     ),
                   );
                 },
@@ -528,7 +559,8 @@ class _GrowingStarState extends State<_GrowingStar>
 }
 
 class _BadgeCard extends StatelessWidget {
-  const _BadgeCard({required this.badge, required this.isDark, required this.primary});
+  const _BadgeCard(
+      {required this.badge, required this.isDark, required this.primary});
 
   final _Badge badge;
   final bool isDark;
@@ -560,19 +592,26 @@ class _BadgeCard extends StatelessWidget {
                           colors: [primary.withValues(alpha: 0.7), primary],
                         )
                       : null,
-                  color: unlocked ? null : (isDark ? const Color(0x33231845) : const Color(0x55FFF8EE)),
+                  color: unlocked
+                      ? null
+                      : (isDark
+                          ? const Color(0x33231845)
+                          : const Color(0x55FFF8EE)),
                 ),
                 child: Icon(
                   badge.icon,
                   size: 24,
-                  color: unlocked ? const Color(0xFF1A0F00) : AstraKit.muted(isDark).withValues(alpha: 0.7),
+                  color: unlocked
+                      ? const Color(0xFF1A0F00)
+                      : AstraKit.muted(context, isDark).withValues(alpha: 0.7),
                 ),
               ),
               if (!unlocked)
                 Positioned(
                   right: 8,
                   bottom: 6,
-                  child: Icon(Icons.lock_rounded, size: 14, color: AstraKit.muted(isDark)),
+                  child: Icon(Icons.lock_rounded,
+                      size: 14, color: AstraKit.muted(context, isDark)),
                 ),
             ],
           ),
@@ -582,7 +621,10 @@ class _BadgeCard extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AstraKit.body(isDark, fontSize: 11, fontWeight: FontWeight.w700, color: unlocked ? null : AstraKit.muted(isDark)),
+            style: AstraKit.body(context, isDark,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: unlocked ? null : AstraKit.muted(context, isDark)),
           ),
         ],
       ),

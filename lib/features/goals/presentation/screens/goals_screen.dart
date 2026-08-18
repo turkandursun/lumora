@@ -205,7 +205,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
 
   void _showToast(String message, {required IconData icon}) {
     final isDark = ref.read(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
@@ -222,8 +222,8 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
               Icon(icon, size: 16, color: primary),
               const SizedBox(width: 8),
               Expanded(
-                child:
-                    Text(message, style: AstraKit.body(isDark, fontSize: 13)),
+                child: Text(message,
+                    style: AstraKit.body(context, isDark, fontSize: 13)),
               ),
             ],
           ),
@@ -237,7 +237,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     final goalsAsync = ref.watch(goalsStreamProvider);
     final streak = ref.watch(goalStreakProvider);
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -270,7 +270,8 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
                       Expanded(
                         child: Text(
                           l10n.goalsTitle,
-                          style: AstraKit.heading1(isDark, fontSize: 24),
+                          style:
+                              AstraKit.heading1(context, isDark, fontSize: 24),
                         ),
                       ),
                     ],
@@ -301,7 +302,8 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
                     error: (_, __) => Center(
                       child: Text(
                         l10n.goalsLoadError,
-                        style: AstraKit.mutedText(isDark, fontSize: 13),
+                        style:
+                            AstraKit.mutedText(context, isDark, fontSize: 13),
                       ),
                     ),
                   ),
@@ -357,6 +359,7 @@ class _GoalsContent extends StatelessWidget {
           Text(
             l10n.goalsPeriodSummary(done, goals.length),
             style: AstraKit.mutedText(
+              context,
               isDark,
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -431,6 +434,7 @@ class _SectionTitle extends StatelessWidget {
           Text(
             title,
             style: AstraKit.body(
+              context,
               isDark,
               fontSize: 15,
               fontWeight: FontWeight.w800,
@@ -461,6 +465,7 @@ class _EmptyGoalsCard extends StatelessWidget {
             l10n.goalsEmptyTitle,
             textAlign: TextAlign.center,
             style: AstraKit.body(
+              context,
               isDark,
               fontSize: 15,
               fontWeight: FontWeight.w800,
@@ -470,7 +475,7 @@ class _EmptyGoalsCard extends StatelessWidget {
           Text(
             l10n.goalsEmptyBody,
             textAlign: TextAlign.center,
-            style: AstraKit.mutedText(isDark, fontSize: 13),
+            style: AstraKit.mutedText(context, isDark, fontSize: 13),
           ),
         ],
       ),
@@ -517,6 +522,7 @@ class _TemplateCard extends StatelessWidget {
                 Text(
                   localizedGoalTemplateTitle(l10n, template),
                   style: AstraKit.body(
+                    context,
                     isDark,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
@@ -526,7 +532,7 @@ class _TemplateCard extends StatelessWidget {
                 Text(
                   '${template.defaultTarget} $unit · '
                   '${frequencyLabelFor(l10n, template.frequency)}',
-                  style: AstraKit.mutedText(isDark, fontSize: 11.5),
+                  style: AstraKit.mutedText(context, isDark, fontSize: 11.5),
                 ),
               ],
             ),
@@ -590,6 +596,7 @@ class _StreakBanner extends StatelessWidget {
                   ? l10n.goalsStreakBanner(streak.count)
                   : l10n.goalsStreakStartPrompt,
               style: AstraKit.body(
+                context,
                 isDark,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -655,6 +662,7 @@ class _GoalCard extends StatelessWidget {
                       Text(
                         goal.title,
                         style: AstraKit.body(
+                          context,
                           isDark,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -664,7 +672,8 @@ class _GoalCard extends StatelessWidget {
                       Text(
                         '${l10n.goalsProgressFraction(goal.progress, goal.target, unit)} · '
                         '${frequencyLabelFor(l10n, goal.frequency)}',
-                        style: AstraKit.mutedText(isDark, fontSize: 12.5),
+                        style:
+                            AstraKit.mutedText(context, isDark, fontSize: 12.5),
                       ),
                     ],
                   ),
@@ -700,6 +709,7 @@ class _GoalCard extends StatelessWidget {
                   Text(
                     l10n.goalsCompletedLabel,
                     style: AstraKit.body(
+                      context,
                       isDark,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
@@ -797,8 +807,9 @@ class _IncrementPill extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,
-                color:
-                    enabled ? const Color(0xFF1A0F00) : AstraKit.muted(isDark),
+                color: enabled
+                    ? const Color(0xFF1A0F00)
+                    : AstraKit.muted(context, isDark),
               ),
             ),
           ),

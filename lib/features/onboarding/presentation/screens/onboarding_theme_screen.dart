@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,8 @@ import '../../../../core/router/app_router.dart';
 import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/luma_avatar.dart';
+import '../../../auth/domain/auth_flow_routes.dart';
+import '../../../auth/domain/registration_flow_state.dart';
 
 /// Onboarding — theme picker, shown right after the nickname step.
 ///
@@ -16,7 +20,12 @@ import '../../../../theme/luma_avatar.dart';
 /// onboarding. The persistent mascot star stays yellow everywhere else — only
 /// this one-off transition is coloured.
 class OnboardingThemeScreen extends ConsumerStatefulWidget {
-  const OnboardingThemeScreen({super.key});
+  const OnboardingThemeScreen({
+    super.key,
+    required this.registrationIntent,
+  });
+
+  final FreshRegistrationIntent? registrationIntent;
 
   @override
   ConsumerState<OnboardingThemeScreen> createState() =>
@@ -30,11 +39,35 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
     duration: const Duration(milliseconds: 2250),
   )..addStatusListener((s) {
       if (s == AnimationStatus.completed && mounted) {
-        context.go(AppRoutes.onboarding, extra: true);
+        unawaited(_finishRegistrationStep());
       }
     });
 
   bool _bursting = false;
+  bool _navigated = false;
+
+  // The wash behind the growing star matches the chosen palette, so the burst
+  // blends straight into the themed onboarding screen that follows.
+  Color _fillColor = const Color(0xFFF8E3A6);
+
+  Future<void> _finishRegistrationStep() async {
+    if (_navigated) return;
+    _navigated = true;
+    final current = widget.registrationIntent;
+    if (current == null) {
+      if (mounted) context.go(AppRoutes.home);
+      return;
+    }
+    try {
+      final next = await registrationFlowStore.advance(
+        current,
+        RegistrationStep.storytellingOnboarding,
+      );
+      if (mounted) context.go(AuthFlowRoutes.afterThemeSelect, extra: next);
+    } on RegistrationIntentMismatchException {
+      if (mounted) context.go(AppRoutes.home);
+    }
+  }
 
   @override
   void dispose() {
@@ -44,6 +77,7 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
 
   void _onContinue() {
     if (_bursting) return;
+    _fillColor = ref.read(activePaletteProvider).gradientBottom;
     setState(() => _bursting = true);
     _burst.forward();
   }
@@ -82,7 +116,7 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
                       child: Text(
                         isTr ? 'Rengini seç' : 'Choose your colour',
                         textAlign: TextAlign.center,
-                        style: AstraKit.heading1(false, fontSize: 26),
+                        style: AstraKit.heading1(context, false, fontSize: 26),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -95,8 +129,10 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
                             ? 'BUNU İSTEDİĞİN ZAMAN AYARLARDAN DEĞİŞTİREBİLİRSİN'
                             : 'YOU CAN CHANGE THIS LATER IN SETTINGS',
                         textAlign: TextAlign.center,
-                        style: AstraKit.mutedText(false, fontSize: 12).copyWith(
-                            letterSpacing: 1.1, fontWeight: FontWeight.w700),
+                        style: AstraKit.mutedText(context, false, fontSize: 12)
+                            .copyWith(
+                                letterSpacing: 1.1,
+                                fontWeight: FontWeight.w700),
                       ),
                     ),
                     const Spacer(),
@@ -129,7 +165,8 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.15),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.15),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
@@ -172,8 +209,8 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
                     final v = _burst.value;
                     // Phase 1 (0 → 0.42): star glides smoothly from the top to
                     // the centre. Phase 2 (0.42 → 1): it grows to fill.
-                    final move = Curves.easeInOut
-                        .transform((v / 0.42).clamp(0.0, 1.0));
+                    final move =
+                        Curves.easeInOut.transform((v / 0.42).clamp(0.0, 1.0));
                     final grow = Curves.easeInCubic
                         .transform(((v - 0.42) / 0.58).clamp(0.0, 1.0));
                     // Paint-only translate (no relayout) → perfectly smooth.
@@ -187,7 +224,7 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
                         // fill in as the star grows.
                         Opacity(
                           opacity: fill,
-                          child: const ColoredBox(color: Color(0xFFF8E3A6)),
+                          child: ColoredBox(color: _fillColor),
                         ),
                         // The real yellow Luma star — unchanged colour. Isolated
                         // in its own layer so only it repaints each frame.

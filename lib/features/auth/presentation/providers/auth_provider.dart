@@ -35,6 +35,23 @@ class AuthState {
   }
 }
 
+class PasswordSignUpResult {
+  const PasswordSignUpResult({
+    required this.succeeded,
+    this.userId,
+    this.hasSession = false,
+  });
+
+  const PasswordSignUpResult.failure()
+      : succeeded = false,
+        userId = null,
+        hasSession = false;
+
+  final bool succeeded;
+  final String? userId;
+  final bool hasSession;
+}
+
 /// Owns email/password sign-in against Supabase auth. Magic-link login
 /// will be added here later — this only wires up the password flow.
 class AuthController extends StateNotifier<AuthState> {
@@ -88,7 +105,7 @@ class AuthController extends StateNotifier<AuthState> {
     return AuthFailureReason.unknown;
   }
 
-  Future<bool> signUpWithPassword({
+  Future<PasswordSignUpResult> signUpWithPassword({
     required String email,
     required String password,
     String? fullName,
@@ -107,22 +124,26 @@ class AuthController extends StateNotifier<AuthState> {
           status: AuthStatus.error,
           failureReason: AuthFailureReason.unknown,
         );
-        return false;
+        return const PasswordSignUpResult.failure();
       }
       state = state.copyWith(status: AuthStatus.idle);
-      return true;
+      return PasswordSignUpResult(
+        succeeded: true,
+        userId: response.user!.id,
+        hasSession: response.session != null,
+      );
     } on AuthException catch (e) {
       state = state.copyWith(
         status: AuthStatus.error,
         failureReason: _signUpReasonFor(e),
       );
-      return false;
+      return const PasswordSignUpResult.failure();
     } catch (_) {
       state = state.copyWith(
         status: AuthStatus.error,
         failureReason: AuthFailureReason.unknown,
       );
-      return false;
+      return const PasswordSignUpResult.failure();
     }
   }
 
@@ -170,6 +191,7 @@ class AuthController extends StateNotifier<AuthState> {
   }
 }
 
-final authControllerProvider = StateNotifierProvider<AuthController, AuthState>((ref) {
+final authControllerProvider =
+    StateNotifierProvider<AuthController, AuthState>((ref) {
   return AuthController(ref.watch(supabaseClientProvider));
 });

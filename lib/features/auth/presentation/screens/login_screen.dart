@@ -16,7 +16,9 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../../profile/data/profile_repository.dart';
 import '../../domain/auth_flow_routes.dart';
+import '../../domain/registration_flow_state.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/google_sign_in_button.dart';
 
@@ -57,12 +59,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..forward();
-    _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange
-        .listen((state) {
+    _authStateSubscription =
+        Supabase.instance.client.auth.onAuthStateChange.listen((state) {
       if (state.event == AuthChangeEvent.signedIn) {
         _routeAfterSignIn();
       }
     });
+    if (Supabase.instance.client.auth.currentSession != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_routeAfterSignIn());
+      });
+    }
   }
 
   @override
@@ -75,7 +82,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _onLoginPressed() async {
@@ -106,6 +114,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _onGoogleSignInPressed() async {
     FocusScope.of(context).unfocus();
     setState(() => _isGoogleSubmitting = true);
+    // A login-origin OAuth attempt can never create fresh-registration intent.
+    await registrationFlowStore.clearOAuthSignupAttempt();
     await ref.read(authControllerProvider.notifier).signInWithGoogle();
     if (!mounted) return;
     setState(() => _isGoogleSubmitting = false);
@@ -137,13 +147,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
+  Future<void> _initializeResumedFreshProfileAppearance(String userId) async {
+    await ref.read(astraThemeProvider.notifier).setTheme(AstraThemeMode.light);
+    try {
+      await ProfileRepository().initializeFreshProfileDefaults(userId);
+    } catch (error) {
+      debugPrint('[Profile] Fresh profile defaults could not be saved: $error');
+    }
+  }
+
   Future<void> _routeAfterSignIn() async {
     if (_didRouteAfterSignIn) return;
     _didRouteAfterSignIn = true;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      _didRouteAfterSignIn = false;
+      return;
+    }
+    final intent = await registrationFlowStore.restore(userId);
+    if (!mounted || Supabase.instance.client.auth.currentUser?.id != userId) {
+      return;
+    }
+    // Email-confirmation sign-ups resume at name entry after their first real
+    // session. Initialize defaults only at that first step; later registration
+    // resumes must preserve a palette the user may already have selected.
+    if (intent?.step == RegistrationStep.nameEntry) {
+      await _initializeResumedFreshProfileAppearance(userId);
+    }
     await ref.read(cloudBackupServiceProvider).onSignIn();
-    if (!mounted) return;
-    // Existing login → mood check-in (no signup intent).
-    context.go(AuthFlowRoutes.afterAuthentication(AuthFlowOrigin.existingLogin));
+    await bootstrapAstraPaletteForCurrentUser(ref);
+    if (!mounted || Supabase.instance.client.auth.currentUser?.id != userId) {
+      return;
+    }
+    if (intent != null) {
+      context.go(
+        AuthFlowRoutes.routeForRegistrationStep(intent.step),
+        extra: AuthFlowRoutes.routeDataForRegistration(intent),
+      );
+      return;
+    }
+    context.go(
+      AuthFlowRoutes.greeting,
+      extra: const LumaGreetingRouteData.returning(),
+    );
   }
 
   void _onSignUpTap() => context.go(AppRoutes.signup);
@@ -169,9 +215,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
 
-    // Background follows the user's chosen palette (picked during onboarding),
-    // so the auth screens match the rest of the app.
-    final palette = ref.watch(activePaletteProvider);
+    // Background follows the current reactive palette so the auth screens
+    // match the rest of the app without mutable global theme state.
+    final palette = AstraKit.palette(context);
 
     final errorMessage =
         _formError ?? _serverError(l10n, authState.failureReason);
@@ -208,8 +254,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 offset: 20,
                                 child: Text('ASTRA',
                                     textAlign: TextAlign.center,
-                                    style:
-                                        AstraKit.wordmark(false, fontSize: 40)),
+                                    style: AstraKit.wordmark(context, false,
+                                        fontSize: 40)),
                               ),
                               const SizedBox(height: 6),
                               AstraEntrance(
@@ -221,8 +267,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                       ? 'Yaz. Konuş. Rahatla.'
                                       : 'Write. Talk. Breathe.',
                                   textAlign: TextAlign.center,
-                                  style:
-                                      AstraKit.mutedText(false, fontSize: 13.5),
+                                  style: AstraKit.mutedText(context, false,
+                                      fontSize: 13.5),
                                 ),
                               ),
                               const Spacer(),
@@ -252,8 +298,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return FadeTransition(
       opacity: anim,
       child: SlideTransition(
-        position: Tween<Offset>(
-                begin: const Offset(0, 0.06), end: Offset.zero)
+        position: Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
             .animate(anim),
         child: child,
       ),
@@ -263,7 +308,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget _buildPanel(
       bool isDark, bool isTr, AuthState authState, String? errorMessage) {
     final loading = authState.isSubmitting || _isGoogleSubmitting;
-    final gold = AstraKit.gold(isDark);
+    final gold = AstraKit.gold(context, isDark);
 
     return AstraGlassCard(
       isDark: isDark,
@@ -295,8 +340,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             suffixIcon: _visibilityToggle(
               obscured: _obscurePassword,
               color: gold,
-              onTap: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
+              onTap: () => setState(() => _obscurePassword = !_obscurePassword),
             ),
           ),
           const SizedBox(height: 10),
@@ -310,8 +354,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 onTap: _onForgotPassword,
                 child: Text(
                   isTr ? 'Şifremi unuttum?' : 'Forgot password?',
-                  style: AstraKit.body(isDark, fontSize: 13, color: gold)
-                      .copyWith(
+                  style:
+                      AstraKit.body(context, isDark, fontSize: 13, color: gold)
+                          .copyWith(
                     decoration: TextDecoration.underline,
                     decorationColor: gold,
                   ),
@@ -360,11 +405,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               child: RichText(
                 text: TextSpan(
                   text: isTr ? 'Hesabınız yok mu? ' : "Don't have an account? ",
-                  style: AstraKit.mutedText(isDark, fontSize: 13.5),
+                  style: AstraKit.mutedText(context, isDark, fontSize: 13.5),
                   children: [
                     TextSpan(
                       text: isTr ? 'Kaydolun' : 'Sign up',
-                      style: AstraKit.body(isDark, fontSize: 13.5, color: gold)
+                      style: AstraKit.body(context, isDark,
+                              fontSize: 13.5, color: gold)
                           .copyWith(
                         fontWeight: FontWeight.w700,
                         decoration: TextDecoration.underline,
@@ -420,7 +466,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             child: Text(
               message,
               style: const TextStyle(
-                  color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -457,5 +505,3 @@ class _CrisisSupportLink extends StatelessWidget {
     );
   }
 }
-
-

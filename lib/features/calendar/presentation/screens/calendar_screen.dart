@@ -76,28 +76,40 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(dateLabel, style: AstraKit.heading2(isDark, fontSize: 17)),
+                    Text(dateLabel,
+                        style:
+                            AstraKit.heading2(context, isDark, fontSize: 17)),
                     const SizedBox(height: 14),
                     Row(
                       children: [
                         Icon(
-                          hasEntry ? Icons.edit_note_rounded : Icons.remove_rounded,
+                          hasEntry
+                              ? Icons.edit_note_rounded
+                              : Icons.remove_rounded,
                           size: 18,
-                          color: hasEntry ? primary : AstraKit.muted(isDark),
+                          color: hasEntry
+                              ? primary
+                              : AstraKit.muted(context, isDark),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           hasEntry
-                              ? (isTr ? 'Bu gün günlük yazdın' : 'You journaled this day')
-                              : (isTr ? 'Günlük kaydı yok' : 'No journal entry'),
-                          style: AstraKit.mutedText(isDark, fontSize: 13.5),
+                              ? (isTr
+                                  ? 'Bu gün günlük yazdın'
+                                  : 'You journaled this day')
+                              : (isTr
+                                  ? 'Günlük kaydı yok'
+                                  : 'No journal entry'),
+                          style: AstraKit.mutedText(context, isDark,
+                              fontSize: 13.5),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Text(
                       isTr ? 'Bugünkü ruh halin' : 'Mood for this day',
-                      style: AstraKit.mutedText(isDark, fontSize: 12.5, fontWeight: FontWeight.w700),
+                      style: AstraKit.mutedText(context, isDark,
+                          fontSize: 12.5, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -107,9 +119,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           GestureDetector(
                             onTap: () {
                               if (moodIdx == m) {
-                                ref.read(moodLogProvider.notifier).clearForDay(day);
+                                ref
+                                    .read(moodLogProvider.notifier)
+                                    .clearForDay(day);
                               } else {
-                                ref.read(moodLogProvider.notifier).setForDay(day, m);
+                                ref
+                                    .read(moodLogProvider.notifier)
+                                    .setForDay(day, m);
                               }
                             },
                             child: Container(
@@ -120,16 +136,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 shape: BoxShape.circle,
                                 color: moodIdx == m
                                     ? moodSymbolColors[m]
-                                    : moodSymbolColors[m].withValues(alpha: 0.16),
+                                    : moodSymbolColors[m]
+                                        .withValues(alpha: 0.16),
                                 border: Border.all(
-                                  color: moodIdx == m ? moodSymbolColors[m] : Colors.transparent,
+                                  color: moodIdx == m
+                                      ? moodSymbolColors[m]
+                                      : Colors.transparent,
                                   width: 2,
                                 ),
                               ),
                               child: Icon(
                                 moodSymbolIcons[m],
                                 size: 20,
-                                color: moodIdx == m ? Colors.white : moodSymbolColors[m],
+                                color: moodIdx == m
+                                    ? Colors.white
+                                    : moodSymbolColors[m],
                               ),
                             ),
                           ),
@@ -150,14 +171,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     final isTr = _isTr(context);
     final locale = Localizations.localeOf(context).languageCode;
-    final entryDays = ref.watch(journalEntryDaysProvider).valueOrNull ?? const {};
+    final entryDays =
+        ref.watch(journalEntryDaysProvider).valueOrNull ?? const {};
     final streak = ref.watch(visitDaysCountProvider).valueOrNull ?? 0;
     final moodLog = ref.watch(moodLogProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     final journaledThisMonth = entryDays
-        .where((d) => d.year == _visibleMonth.year && d.month == _visibleMonth.month)
+        .where((d) =>
+            d.year == _visibleMonth.year && d.month == _visibleMonth.month)
         .length;
 
     return Scaffold(
@@ -181,7 +204,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     const SizedBox(width: 10),
                     Text(
                       isTr ? 'Takvim' : 'Calendar',
-                      style: AstraKit.heading1(isDark, fontSize: 22),
+                      style: AstraKit.heading1(context, isDark, fontSize: 22),
                     ),
                   ],
                 ),
@@ -199,7 +222,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           primary: primary,
                           onPrev: () => _changeMonth(-1),
                           onNext: () => _changeMonth(1),
-                          onDayTap: (day, hasEntry) => _openDaySheet(day, hasEntry, isDark, primary),
+                          onDayTap: (day, hasEntry) =>
+                              _openDaySheet(day, hasEntry, isDark, primary),
                         ),
                         const SizedBox(height: 14),
                         _Legend(isTr: isTr, isDark: isDark, primary: primary),
@@ -214,7 +238,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           primary: primary,
                         ),
                         const SizedBox(height: 12),
-                        _MoodChartCard(moodLog: moodLog, isTr: isTr, isDark: isDark, primary: primary),
+                        _MoodChartCard(
+                            moodLog: moodLog,
+                            isTr: isTr,
+                            isDark: isDark,
+                            primary: primary),
                         const SizedBox(height: 8),
                       ],
                     ),
@@ -297,7 +325,7 @@ class _MonthCard extends StatelessWidget {
               ),
               Text(
                 DateFormat.yMMMM(locale).format(month),
-                style: AstraKit.heading2(isDark, fontSize: 17),
+                style: AstraKit.heading2(context, isDark, fontSize: 17),
               ),
               IconButton(
                 onPressed: onNext,
@@ -313,7 +341,8 @@ class _MonthCard extends StatelessWidget {
                   child: Center(
                     child: Text(
                       label,
-                      style: AstraKit.mutedText(isDark, fontSize: 11, fontWeight: FontWeight.w700),
+                      style: AstraKit.mutedText(context, isDark,
+                          fontSize: 11, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -363,9 +392,11 @@ class _DayCell extends StatelessWidget {
     // A day tagged with a mood fills its whole circle with that mood's
     // colour + weather symbol — these stay the mood system's own colors so
     // the meaning (which mood) doesn't change with the app theme.
-    final Color fill = hasMood ? moodSymbolColors[moodIndex!] : Colors.transparent;
+    final Color fill =
+        hasMood ? moodSymbolColors[moodIndex!] : Colors.transparent;
     final bool filled = hasMood;
-    final Color textColor = filled ? Colors.white : AstraKit.ink(isDark);
+    final Color textColor =
+        filled ? Colors.white : AstraKit.ink(context, isDark);
 
     return InkWell(
       customBorder: const CircleBorder(),
@@ -380,14 +411,17 @@ class _DayCell extends StatelessWidget {
               shape: BoxShape.circle,
               border: isToday && !filled
                   ? Border.all(color: primary, width: 1.4)
-                  : (isToday && filled ? Border.all(color: Colors.white, width: 1.4) : null),
+                  : (isToday && filled
+                      ? Border.all(color: Colors.white, width: 1.4)
+                      : null),
             ),
             child: Stack(
               alignment: Alignment.center,
               children: [
                 if (hasMood) ...[
                   // Whole-circle mood: big symbol centred, day number small on top.
-                  Icon(moodSymbolIcons[moodIndex!], size: 22, color: Colors.white),
+                  Icon(moodSymbolIcons[moodIndex!],
+                      size: 22, color: Colors.white),
                   Positioned(
                     top: 1,
                     child: Text(
@@ -430,7 +464,8 @@ class _DayCell extends StatelessWidget {
 }
 
 class _Legend extends StatelessWidget {
-  const _Legend({required this.isTr, required this.isDark, required this.primary});
+  const _Legend(
+      {required this.isTr, required this.isDark, required this.primary});
 
   final bool isTr;
   final bool isDark;
@@ -443,7 +478,8 @@ class _Legend extends StatelessWidget {
           children: [
             swatch,
             const SizedBox(width: 6),
-            Text(label, style: AstraKit.mutedText(isDark, fontSize: 12)),
+            Text(label,
+                style: AstraKit.mutedText(context, isDark, fontSize: 12)),
           ],
         );
 
@@ -509,7 +545,7 @@ class _MonthlySummaryCard extends StatelessWidget {
             isTr
                 ? 'Bu ay · ${DateFormat.MMMM(locale).format(month)}'
                 : 'This month · ${DateFormat.MMMM(locale).format(month)}',
-            style: AstraKit.heading2(isDark, fontSize: 16),
+            style: AstraKit.heading2(context, isDark, fontSize: 16),
           ),
           const SizedBox(height: 14),
           Row(
@@ -561,12 +597,13 @@ class _StatBlock extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: color),
         const SizedBox(height: 6),
-        Text(value, style: AstraKit.heading1(isDark, fontSize: 20)),
+        Text(value, style: AstraKit.heading1(context, isDark, fontSize: 20)),
         const SizedBox(height: 2),
         Text(
           label,
           textAlign: TextAlign.center,
-          style: AstraKit.mutedText(isDark, fontSize: 10.5, fontWeight: FontWeight.w600),
+          style: AstraKit.mutedText(context, isDark,
+              fontSize: 10.5, fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -590,7 +627,8 @@ class _MoodChartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = _dateOnly(DateTime.now());
-    final days = List.generate(14, (i) => today.subtract(Duration(days: 13 - i)));
+    final days =
+        List.generate(14, (i) => today.subtract(Duration(days: 13 - i)));
     final hasAny = days.any(moodLog.containsKey);
 
     return AstraGlassCard(
@@ -606,7 +644,7 @@ class _MoodChartCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 isTr ? 'Ruh hali · son 14 gün' : 'Mood · last 14 days',
-                style: AstraKit.heading2(isDark, fontSize: 16),
+                style: AstraKit.heading2(context, isDark, fontSize: 16),
               ),
             ],
           ),
@@ -615,7 +653,9 @@ class _MoodChartCard extends StatelessWidget {
             height: 96,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: [for (final d in days) Expanded(child: _bar(d, isDark))],
+              children: [
+                for (final d in days) Expanded(child: _bar(context, d, isDark))
+              ],
             ),
           ),
           if (!hasAny) ...[
@@ -624,7 +664,7 @@ class _MoodChartCard extends StatelessWidget {
               isTr
                   ? 'Ana sayfada ruh halini seçtikçe burada grafik oluşacak.'
                   : 'Pick your mood on Home and this chart will fill in.',
-              style: AstraKit.mutedText(isDark, fontSize: 12.5),
+              style: AstraKit.mutedText(context, isDark, fontSize: 12.5),
             ),
           ],
         ],
@@ -632,12 +672,14 @@ class _MoodChartCard extends StatelessWidget {
     );
   }
 
-  Widget _bar(DateTime day, bool isDark) {
+  Widget _bar(BuildContext context, DateTime day, bool isDark) {
     final has = moodLog.containsKey(day);
     final index = has ? moodLog[day]!.clamp(0, 4) : 0;
     final score = has ? _moodScores[index] : 0;
     final height = has ? (8 + score / 5 * 68) : 4.0;
-    final color = has ? _moodColors[index] : AstraKit.muted(isDark).withValues(alpha: 0.25);
+    final color = has
+        ? _moodColors[index]
+        : AstraKit.muted(context, isDark).withValues(alpha: 0.25);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -645,10 +687,12 @@ class _MoodChartCard extends StatelessWidget {
         Container(
           width: 9,
           height: height.toDouble(),
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+          decoration: BoxDecoration(
+              color: color, borderRadius: BorderRadius.circular(4)),
         ),
         const SizedBox(height: 4),
-        Text('${day.day}', style: AstraKit.mutedText(isDark, fontSize: 8)),
+        Text('${day.day}',
+            style: AstraKit.mutedText(context, isDark, fontSize: 8)),
       ],
     );
   }

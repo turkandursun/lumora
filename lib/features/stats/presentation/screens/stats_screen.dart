@@ -12,6 +12,7 @@ import '../../../letters/presentation/providers/letter_providers.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 import '../../domain/journal_text_stats.dart';
+import '../widgets/weekly_summary_card.dart';
 
 const List<Color> _moodColors = [
   Color(0xFFF4C95D), // happy
@@ -33,7 +34,7 @@ class StatsScreen extends ConsumerWidget {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     final entryDays =
         ref.watch(journalEntryDaysProvider).valueOrNull ?? const <DateTime>{};
@@ -41,7 +42,9 @@ class StatsScreen extends ConsumerWidget {
     final dreams = ref.watch(dreamsStreamProvider).valueOrNull?.length ?? 0;
     final moodLog = ref.watch(moodLogProvider);
     final lettersCount = ref.watch(lettersProvider).length;
-    final contents = ref.watch(allJournalEntriesProvider).valueOrNull
+    final contents = ref
+            .watch(allJournalEntriesProvider)
+            .valueOrNull
             ?.map((e) => e.content)
             .toList() ??
         const <String>[];
@@ -74,13 +77,17 @@ class StatsScreen extends ConsumerWidget {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(isTr ? 'İstatistikler' : 'Statistics', style: AstraKit.heading1(isDark, fontSize: 24)),
+                    Text(isTr ? 'İstatistikler' : 'Statistics',
+                        style:
+                            AstraKit.heading1(context, isDark, fontSize: 24)),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Expanded(
                   child: ListView(
                     children: [
+                      const WeeklySummaryCard(),
+                      const SizedBox(height: 12),
                       _OverviewCard(
                         isTr: isTr,
                         isDark: isDark,
@@ -92,11 +99,24 @@ class StatsScreen extends ConsumerWidget {
                         letters: lettersCount,
                       ),
                       const SizedBox(height: 12),
-                      _MoodDistributionCard(isTr: isTr, isDark: isDark, primary: primary, moodLog: moodLog, labels: moodLabels),
+                      _MoodDistributionCard(
+                          isTr: isTr,
+                          isDark: isDark,
+                          primary: primary,
+                          moodLog: moodLog,
+                          labels: moodLabels),
                       const SizedBox(height: 12),
-                      _WeekdayCard(isTr: isTr, isDark: isDark, primary: primary, entryDays: entryDays),
+                      _WeekdayCard(
+                          isTr: isTr,
+                          isDark: isDark,
+                          primary: primary,
+                          entryDays: entryDays),
                       const SizedBox(height: 12),
-                      _JournalAnalysisCard(isTr: isTr, isDark: isDark, primary: primary, stats: textStats),
+                      _JournalAnalysisCard(
+                          isTr: isTr,
+                          isDark: isDark,
+                          primary: primary,
+                          stats: textStats),
                       const SizedBox(height: 12),
                       _AiAnalysisCard(isDark: isDark, primary: primary),
                       const SizedBox(height: 8),
@@ -136,11 +156,36 @@ class _OverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tiles = <Widget>[
-      _StatTile(icon: Icons.edit_note_rounded, primary: primary, isDark: isDark, value: journaledDays, label: isTr ? 'günlük gün' : 'journaled'),
-      _StatTile(icon: Icons.local_fire_department_rounded, primary: primary, isDark: isDark, value: streak, label: isTr ? 'gün seri' : 'day streak'),
-      _StatTile(icon: Icons.nights_stay_rounded, primary: primary, isDark: isDark, value: dreams, label: isTr ? 'rüya' : 'dreams'),
-      _StatTile(icon: Icons.insights_rounded, primary: primary, isDark: isDark, value: moods, label: isTr ? 'ruh hali' : 'moods'),
-      _StatTile(icon: Icons.mail_rounded, primary: primary, isDark: isDark, value: letters, label: isTr ? 'mektup' : 'letters'),
+      _StatTile(
+          icon: Icons.edit_note_rounded,
+          primary: primary,
+          isDark: isDark,
+          value: journaledDays,
+          label: isTr ? 'günlük gün' : 'journaled'),
+      _StatTile(
+          icon: Icons.local_fire_department_rounded,
+          primary: primary,
+          isDark: isDark,
+          value: streak,
+          label: isTr ? 'gün seri' : 'day streak'),
+      _StatTile(
+          icon: Icons.nights_stay_rounded,
+          primary: primary,
+          isDark: isDark,
+          value: dreams,
+          label: isTr ? 'rüya' : 'dreams'),
+      _StatTile(
+          icon: Icons.insights_rounded,
+          primary: primary,
+          isDark: isDark,
+          value: moods,
+          label: isTr ? 'ruh hali' : 'moods'),
+      _StatTile(
+          icon: Icons.mail_rounded,
+          primary: primary,
+          isDark: isDark,
+          value: letters,
+          label: isTr ? 'mektup' : 'letters'),
     ];
 
     return AstraGlassCard(
@@ -150,7 +195,8 @@ class _OverviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(isTr ? 'Genel bakış' : 'Overview', style: AstraKit.heading2(isDark, fontSize: 16)),
+          Text(isTr ? 'Genel bakış' : 'Overview',
+              style: AstraKit.heading2(context, isDark, fontSize: 16)),
           const SizedBox(height: 14),
           GridView.count(
             crossAxisCount: 3,
@@ -189,9 +235,14 @@ class _StatTile extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: primary),
         const SizedBox(height: 5),
-        AstraCountUp(value: value, style: AstraKit.heading1(isDark, fontSize: 20)),
+        AstraCountUp(
+            value: value,
+            style: AstraKit.heading1(context, isDark, fontSize: 20)),
         const SizedBox(height: 1),
-        Text(label, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 10, fontWeight: FontWeight.w600)),
+        Text(label,
+            textAlign: TextAlign.center,
+            style: AstraKit.mutedText(context, isDark,
+                fontSize: 10, fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -235,7 +286,8 @@ class _MoodDistributionCard extends StatelessWidget {
             children: [
               Icon(Icons.pie_chart_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(isTr ? 'Ruh hali dağılımı' : 'Mood distribution', style: AstraKit.heading2(isDark, fontSize: 16)),
+              Text(isTr ? 'Ruh hali dağılımı' : 'Mood distribution',
+                  style: AstraKit.heading2(context, isDark, fontSize: 16)),
             ],
           ),
           const SizedBox(height: 12),
@@ -244,7 +296,7 @@ class _MoodDistributionCard extends StatelessWidget {
               isTr
                   ? 'Ana sayfada ruh halini seçtikçe dağılım burada oluşacak.'
                   : 'Pick your mood on Home to see the distribution here.',
-              style: AstraKit.mutedText(isDark, fontSize: 13),
+              style: AstraKit.mutedText(context, isDark, fontSize: 13),
             )
           else ...[
             for (var i = 0; i < 5; i++) ...[
@@ -262,11 +314,15 @@ class _MoodDistributionCard extends StatelessWidget {
             if (mostIndex >= 0)
               Row(
                 children: [
-                  Text(_moodEmojis[mostIndex], style: const TextStyle(fontSize: 16)),
+                  Text(_moodEmojis[mostIndex],
+                      style: const TextStyle(fontSize: 16)),
                   const SizedBox(width: 8),
                   Text(
-                    isTr ? 'En sık: ${labels[mostIndex]}' : 'Most common: ${labels[mostIndex]}',
-                    style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700),
+                    isTr
+                        ? 'En sık: ${labels[mostIndex]}'
+                        : 'Most common: ${labels[mostIndex]}',
+                    style: AstraKit.body(context, isDark,
+                        fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
@@ -298,11 +354,17 @@ class _MoodRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        SizedBox(width: 22, child: Text(emoji, style: const TextStyle(fontSize: 15))),
+        SizedBox(
+            width: 22,
+            child: Text(emoji, style: const TextStyle(fontSize: 15))),
         const SizedBox(width: 6),
         SizedBox(
           width: 58,
-          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w500)),
+          child: Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AstraKit.body(context, isDark,
+                  fontSize: 12, fontWeight: FontWeight.w500)),
         ),
         Expanded(
           child: ClipRRect(
@@ -310,7 +372,8 @@ class _MoodRow extends StatelessWidget {
             child: LinearProgressIndicator(
               value: fraction,
               minHeight: 8,
-              backgroundColor: AstraKit.muted(isDark).withValues(alpha: 0.2),
+              backgroundColor:
+                  AstraKit.muted(context, isDark).withValues(alpha: 0.2),
               valueColor: AlwaysStoppedAnimation(color),
             ),
           ),
@@ -318,7 +381,10 @@ class _MoodRow extends StatelessWidget {
         const SizedBox(width: 8),
         SizedBox(
           width: 34,
-          child: Text('%$percent', textAlign: TextAlign.right, style: AstraKit.mutedText(isDark, fontSize: 11.5, fontWeight: FontWeight.w700)),
+          child: Text('%$percent',
+              textAlign: TextAlign.right,
+              style: AstraKit.mutedText(context, isDark,
+                  fontSize: 11.5, fontWeight: FontWeight.w700)),
         ),
       ],
     );
@@ -326,7 +392,11 @@ class _MoodRow extends StatelessWidget {
 }
 
 class _WeekdayCard extends StatelessWidget {
-  const _WeekdayCard({required this.isTr, required this.isDark, required this.primary, required this.entryDays});
+  const _WeekdayCard(
+      {required this.isTr,
+      required this.isDark,
+      required this.primary,
+      required this.entryDays});
 
   final bool isTr;
   final bool isDark;
@@ -356,7 +426,8 @@ class _WeekdayCard extends StatelessWidget {
             children: [
               Icon(Icons.bar_chart_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(isTr ? 'Yazma alışkanlığı' : 'Writing habit', style: AstraKit.heading2(isDark, fontSize: 16)),
+              Text(isTr ? 'Yazma alışkanlığı' : 'Writing habit',
+                  style: AstraKit.heading2(context, isDark, fontSize: 16)),
             ],
           ),
           const SizedBox(height: 14),
@@ -370,15 +441,23 @@ class _WeekdayCard extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text('${counts[i]}', style: AstraKit.mutedText(isDark, fontSize: 10, fontWeight: FontWeight.w700)),
+                        Text('${counts[i]}',
+                            style: AstraKit.mutedText(context, isDark,
+                                fontSize: 10, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 3),
                         Container(
                           width: 14,
-                          height: maxCount == 0 ? 4 : 6 + (counts[i] / maxCount) * 60,
-                          decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(5)),
+                          height: maxCount == 0
+                              ? 4
+                              : 6 + (counts[i] / maxCount) * 60,
+                          decoration: BoxDecoration(
+                              color: primary,
+                              borderRadius: BorderRadius.circular(5)),
                         ),
                         const SizedBox(height: 5),
-                        Text(labels[i], style: AstraKit.mutedText(isDark, fontSize: 9.5)),
+                        Text(labels[i],
+                            style: AstraKit.mutedText(context, isDark,
+                                fontSize: 9.5)),
                       ],
                     ),
                   ),
@@ -392,7 +471,11 @@ class _WeekdayCard extends StatelessWidget {
 }
 
 class _MiniStat extends StatelessWidget {
-  const _MiniStat({required this.isDark, required this.primary, required this.value, required this.label});
+  const _MiniStat(
+      {required this.isDark,
+      required this.primary,
+      required this.value,
+      required this.label});
 
   final bool isDark;
   final Color primary;
@@ -403,9 +486,16 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        AstraCountUp(value: value, style: AstraKit.heading1(isDark, fontSize: 22, fontWeight: FontWeight.w700).copyWith(color: primary)),
+        AstraCountUp(
+            value: value,
+            style: AstraKit.heading1(context, isDark,
+                    fontSize: 22, fontWeight: FontWeight.w700)
+                .copyWith(color: primary)),
         const SizedBox(height: 2),
-        Text(label, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark, fontSize: 11, fontWeight: FontWeight.w600)),
+        Text(label,
+            textAlign: TextAlign.center,
+            style: AstraKit.mutedText(context, isDark,
+                fontSize: 11, fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -413,7 +503,11 @@ class _MiniStat extends StatelessWidget {
 
 /// On-device journal analysis: entry/word counts and the most-used words.
 class _JournalAnalysisCard extends StatelessWidget {
-  const _JournalAnalysisCard({required this.isTr, required this.isDark, required this.primary, required this.stats});
+  const _JournalAnalysisCard(
+      {required this.isTr,
+      required this.isDark,
+      required this.primary,
+      required this.stats});
 
   final bool isTr;
   final bool isDark;
@@ -433,7 +527,8 @@ class _JournalAnalysisCard extends StatelessWidget {
             children: [
               Icon(Icons.analytics_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(isTr ? 'Günlük analizi' : 'Journal analysis', style: AstraKit.heading2(isDark, fontSize: 16)),
+              Text(isTr ? 'Günlük analizi' : 'Journal analysis',
+                  style: AstraKit.heading2(context, isDark, fontSize: 16)),
             ],
           ),
           const SizedBox(height: 12),
@@ -442,21 +537,37 @@ class _JournalAnalysisCard extends StatelessWidget {
               isTr
                   ? 'Günlük yazdıkça yazı sayın, kelime sayın ve en çok kullandığın kelimeler burada görünecek.'
                   : 'As you journal, your entry count, word count and most-used words will appear here.',
-              style: AstraKit.mutedText(isDark, fontSize: 13),
+              style: AstraKit.mutedText(context, isDark, fontSize: 13),
             )
           else ...[
             Row(
               children: [
-                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: stats.entryCount, label: isTr ? 'yazı' : 'entries')),
-                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: stats.totalWords, label: isTr ? 'kelime' : 'words')),
-                Expanded(child: _MiniStat(isDark: isDark, primary: primary, value: stats.avgWords.round(), label: isTr ? 'ort. kelime' : 'avg words')),
+                Expanded(
+                    child: _MiniStat(
+                        isDark: isDark,
+                        primary: primary,
+                        value: stats.entryCount,
+                        label: isTr ? 'yazı' : 'entries')),
+                Expanded(
+                    child: _MiniStat(
+                        isDark: isDark,
+                        primary: primary,
+                        value: stats.totalWords,
+                        label: isTr ? 'kelime' : 'words')),
+                Expanded(
+                    child: _MiniStat(
+                        isDark: isDark,
+                        primary: primary,
+                        value: stats.avgWords.round(),
+                        label: isTr ? 'ort. kelime' : 'avg words')),
               ],
             ),
             if (stats.topWords.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text(
                 isTr ? 'En çok kullandığın kelimeler' : 'Your most-used words',
-                style: AstraKit.mutedText(isDark, fontSize: 12.5, fontWeight: FontWeight.w700),
+                style: AstraKit.mutedText(context, isDark,
+                    fontSize: 12.5, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -465,13 +576,17 @@ class _JournalAnalysisCard extends StatelessWidget {
                 children: [
                   for (final w in stats.topWords)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: primary.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: primary.withValues(alpha: 0.3)),
+                        border:
+                            Border.all(color: primary.withValues(alpha: 0.3)),
                       ),
-                      child: Text('${w.$1} · ${w.$2}', style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w600)),
+                      child: Text('${w.$1} · ${w.$2}',
+                          style: AstraKit.body(context, isDark,
+                              fontSize: 12, fontWeight: FontWeight.w600)),
                     ),
                 ],
               ),
@@ -563,7 +678,8 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
             children: [
               Icon(Icons.auto_awesome_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text(isTr ? 'Luma ile analiz' : 'Analysis with Luma', style: AstraKit.heading2(isDark, fontSize: 16)),
+              Text(isTr ? 'Luma ile analiz' : 'Analysis with Luma',
+                  style: AstraKit.heading2(context, isDark, fontSize: 16)),
             ],
           ),
           const SizedBox(height: 8),
@@ -571,7 +687,7 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
             isTr
                 ? 'Bu analiz için son günlüklerin Luma\'ya (yapay zeka) gönderilir.'
                 : 'Your recent entries are sent to Luma (AI) for this analysis.',
-            style: AstraKit.mutedText(isDark, fontSize: 11.5),
+            style: AstraKit.mutedText(context, isDark, fontSize: 11.5),
           ),
           const SizedBox(height: 12),
           if (_result != null)
@@ -584,7 +700,9 @@ class _AiAnalysisCardState extends ConsumerState<_AiAnalysisCard> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: primary.withValues(alpha: 0.3)),
               ),
-              child: Text(_result!, style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w500, height: 1.45)),
+              child: Text(_result!,
+                  style: AstraKit.body(context, isDark,
+                      fontSize: 14, fontWeight: FontWeight.w500, height: 1.45)),
             ),
           if (_error)
             Padding(

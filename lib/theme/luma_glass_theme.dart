@@ -5,106 +5,104 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'astra_design_tokens.dart';
-import 'astra_screen_kit.dart';
 
-/// Shared "premium healing pink" glassmorphism system — introduced on the
+/// Shared palette-aware premium glassmorphism system — introduced on the
 /// Luma AI chat hero (see `luma_chat_sheet.dart`) and reused wherever the app
-/// wants that same soft, uncluttered, Apple-like look. Intentionally NOT
-/// theme-aware (moon/sun) — this is its own consistent pink world, opted
-/// into screen-by-screen (Home first; see [LumaGlassBackground]).
-///
-/// Kept independent from `luma_chat_sheet.dart`'s private `_Pink` class
-/// (same values, deliberately duplicated) so that file's already-shipped,
-/// user-approved look can't regress from edits made here. If the two ever
-/// need to diverge (e.g. a screen wants a slightly different tint), that's
-/// fine — they're allowed to.
+/// wants the same soft, uncluttered, Apple-like look. The blur, opacity and
+/// radius language stays constant while both palette and brightness react.
 class LumaGlass {
   LumaGlass._();
 
-  /// The palette selected in Profile (set app-wide from `activePaletteProvider`
-  /// via `AstraKit.active`). Every accent/background token below now derives
-  /// from it, so picking a theme recolours everything that uses LumaGlass —
-  /// Home, the AI chat sheet, the journal screen. Falls back to the original
-  /// Luma pink on the very first frame before a palette is set.
-  static AstraPalette? get _p => AstraKit.active;
+  static AstraPalette _palette(BuildContext context) =>
+      AstraThemeTokens.of(context).palette;
+  static AstraThemeTokens _tokens(BuildContext context) =>
+      AstraThemeTokens.of(context);
 
-  // Background wash — now a single FLAT colour per palette (no top→bottom
-  // darkening gradient, per the "düz renk arka plan" request).
-  static Color get bgTop => _p?.gradientTop ?? const Color(0xFFFCE8EE);
-  static Color get bgMid => bgTop;
-  static Color get bgBottom => bgTop;
-  static List<Color> get backgroundGradient => [bgTop, bgTop];
+  static Color bgTop(BuildContext context) => _palette(context).gradientTop;
+  static Color bgMid(BuildContext context) => Color.lerp(
+        _palette(context).gradientTop,
+        _palette(context).gradientBottom,
+        0.5,
+      )!;
+  static Color bgBottom(BuildContext context) =>
+      _palette(context).gradientBottom;
+  static List<Color> backgroundGradient(BuildContext context) =>
+      [bgTop(context), bgMid(context), bgBottom(context)];
 
-  // Brand + type. Body/heading text stays a fixed dark neutral so it's always
-  // readable on any pastel; the eyebrow/subtitle follow the palette accent.
-  static Color get wordmark => _p?.bottomNavActive ?? const Color(0xFFAC8794);
-  static const heroInk = Color(0xFF2A2433); // near-black headline
-  static Color get subtitle => _p?.primary ?? const Color(0xFFCB9FB1);
+  // Brand + type.
+  static Color wordmark(BuildContext context) => _palette(context).secondary;
+  static Color heroInk(BuildContext context) => _tokens(context).textPrimary;
+  static Color subtitle(BuildContext context) => _tokens(context).textMuted;
 
   // Frosted-glass surface tokens (blurred, low-opacity — never flat white).
-  static const glassFillTop = Color(0x8CFFFFFF); // ~55% white
-  static const glassFillBottom = Color(0x47FFFFFF); // ~28% white
-  static const glassBorder = Color(0x8CFFFFFF); // ~55% white hairline
-  static Color get glassShadow =>
-      (_p?.primary ?? const Color(0xFFC77D9B)).withValues(alpha: 0.16);
+  static Color glassFillTop(BuildContext context) =>
+      _palette(context).surfaceElevated.withValues(alpha: 0.68);
+  static Color glassFillBottom(BuildContext context) =>
+      _palette(context).surfaceElevated.withValues(alpha: 0.34);
+  static Color glassBorder(BuildContext context) =>
+      _palette(context).softBorder.withValues(alpha: 0.65);
+  static Color glassShadow(BuildContext context) => _palette(context).focusGlow;
 
-  // Reading colours on top of glass (fixed dark neutrals for legibility).
-  static const ink = Color(0xFF3A3444);
-  static const cardTitle = Color(0xFF3B3543);
-  static const hint = Color(0xFFB6A8BE);
+  // Reading colours on top of glass.
+  static Color ink(BuildContext context) => _tokens(context).textSecondary;
+  static Color cardTitle(BuildContext context) => _tokens(context).textPrimary;
+  static Color hint(BuildContext context) => _tokens(context).textMuted;
 
-  static Color get sparkle => _p?.primary ?? const Color(0xFFC77D9B);
+  static Color sparkle(BuildContext context) => _palette(context).activeAccent;
 
-  static List<Color> get accentGradient => [
-        _p?.buttonPrimary ?? const Color(0xFFEAAAC8),
-        _p?.primary ?? const Color(0xFFCE7CA6),
-      ];
-  static Color get accentShadow =>
-      (_p?.primary ?? const Color(0xFFCE7CA6)).withValues(alpha: 0.30);
-  static Color get accentInk =>
-      _p?.secondary ?? const Color(0xFFA85777); // text/icon on light accent tints
+  static List<Color> accentGradient(BuildContext context) =>
+      [_palette(context).buttonPrimary, _palette(context).secondary];
+  static Color accentShadow(BuildContext context) =>
+      _palette(context).focusGlow;
+  static Color accentInk(BuildContext context) =>
+      _palette(context).bottomNavActive;
 
   static const double cardRadius = 26;
   static const double blurSigma = 20;
 
-  static TextStyle sans({
+  static TextStyle sans(
+    BuildContext context, {
     double fontSize = 14,
     FontWeight fontWeight = FontWeight.w500,
-    Color color = ink,
+    Color? color,
     double? height,
     double? letterSpacing,
   }) =>
       GoogleFonts.manrope(
         fontSize: fontSize,
         fontWeight: fontWeight,
-        color: color,
+        color: color ?? ink(context),
         height: height,
         letterSpacing: letterSpacing,
       );
 
-  static BoxDecoration glassDecoration({
+  static BoxDecoration glassDecoration(
+    BuildContext context, {
     double radius = cardRadius,
     List<BoxShadow>? shadow,
   }) =>
       BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [glassFillTop, glassFillBottom],
+          colors: [glassFillTop(context), glassFillBottom(context)],
         ),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: glassBorder, width: 1.1),
+        border: Border.all(color: glassBorder(context), width: 1.1),
         boxShadow: shadow ??
             [
-              BoxShadow(color: glassShadow, blurRadius: 26, offset: const Offset(0, 12)),
+              BoxShadow(
+                  color: glassShadow(context),
+                  blurRadius: 26,
+                  offset: const Offset(0, 12)),
             ],
       );
 }
 
-/// Full-bleed background behind any screen that opts into the [LumaGlass]
-/// look. Now a single FLAT colour taken from the selected palette (no photo,
-/// no Ken Burns, and no top→bottom darkening gradient) so the whole screen is
-/// one clean solid colour that changes with the chosen theme.
+/// Full-bleed pink gradient background — the flat, calm wash behind any
+/// screen that opts into the [LumaGlass] look, replacing the busy mountain
+/// photo used elsewhere in the app. Deliberately simple (no photo, no Ken
+/// Burns) so cards read clearly on top of it.
 class LumaGlassBackground extends StatelessWidget {
   const LumaGlassBackground({super.key, required this.child});
 
@@ -113,14 +111,25 @@ class LumaGlassBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         systemNavigationBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: AstraThemeTokens.of(context).isDark
+            ? Brightness.light
+            : Brightness.dark,
+        systemNavigationBarIconBrightness: AstraThemeTokens.of(context).isDark
+            ? Brightness.light
+            : Brightness.dark,
       ),
-      child: ColoredBox(
-        color: LumaGlass.bgTop,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: LumaGlass.backgroundGradient(context),
+            stops: const [0.0, 0.55, 1.0],
+          ),
+        ),
         child: child,
       ),
     );
@@ -153,7 +162,7 @@ class LumaGlassCard extends StatelessWidget {
         filter: ui.ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
         child: Container(
           padding: padding,
-          decoration: LumaGlass.glassDecoration(radius: radius),
+          decoration: LumaGlass.glassDecoration(context, radius: radius),
           child: child,
         ),
       ),
@@ -187,10 +196,15 @@ class LumaIconCircle extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.5),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.55)),
+        color: AstraThemeTokens.of(context)
+            .palette
+            .surfaceElevated
+            .withValues(alpha: 0.56),
+        border: Border.all(
+          color: AstraThemeTokens.of(context).palette.softBorder,
+        ),
       ),
-      child: Icon(icon, size: iconSize, color: LumaGlass.sparkle),
+      child: Icon(icon, size: iconSize, color: LumaGlass.sparkle(context)),
     );
   }
 }

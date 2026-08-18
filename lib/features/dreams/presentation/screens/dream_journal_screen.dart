@@ -15,7 +15,8 @@ import '../../../../theme/responsive_content.dart';
 import '../../data/dream_symbol_keywords.dart';
 import '../../data/dreams_repository.dart';
 import '../providers/dreams_providers.dart';
-import 'dream_reflection_screen.dart' show dreamFamiliarPersonLabels, dreamFeelingLabels;
+import 'dream_reflection_screen.dart'
+    show dreamFamiliarPersonLabels, dreamFeelingLabels;
 
 /// A symbol's localized label and its gentle, non-definitive association —
 /// resolved in the presentation layer (which has an [AppLocalizations]
@@ -29,40 +30,57 @@ class DreamSymbolCopy {
 }
 
 Map<String, DreamSymbolCopy> dreamSymbolCopy(AppLocalizations l10n) => {
-      DreamSymbolKeys.water:
-          DreamSymbolCopy(label: l10n.dreamSymbolWaterLabel, description: l10n.dreamSymbolWaterDesc),
-      DreamSymbolKeys.flying:
-          DreamSymbolCopy(label: l10n.dreamSymbolFlyingLabel, description: l10n.dreamSymbolFlyingDesc),
-      DreamSymbolKeys.falling:
-          DreamSymbolCopy(label: l10n.dreamSymbolFallingLabel, description: l10n.dreamSymbolFallingDesc),
-      DreamSymbolKeys.house:
-          DreamSymbolCopy(label: l10n.dreamSymbolHouseLabel, description: l10n.dreamSymbolHouseDesc),
-      DreamSymbolKeys.teeth:
-          DreamSymbolCopy(label: l10n.dreamSymbolTeethLabel, description: l10n.dreamSymbolTeethDesc),
-      DreamSymbolKeys.running:
-          DreamSymbolCopy(label: l10n.dreamSymbolRunningLabel, description: l10n.dreamSymbolRunningDesc),
-      DreamSymbolKeys.lost:
-          DreamSymbolCopy(label: l10n.dreamSymbolLostLabel, description: l10n.dreamSymbolLostDesc),
-      DreamSymbolKeys.snake:
-          DreamSymbolCopy(label: l10n.dreamSymbolSnakeLabel, description: l10n.dreamSymbolSnakeDesc),
-      DreamSymbolKeys.death:
-          DreamSymbolCopy(label: l10n.dreamSymbolDeathLabel, description: l10n.dreamSymbolDeathDesc),
-      DreamSymbolKeys.baby:
-          DreamSymbolCopy(label: l10n.dreamSymbolBabyLabel, description: l10n.dreamSymbolBabyDesc),
-      DreamSymbolKeys.exam:
-          DreamSymbolCopy(label: l10n.dreamSymbolExamLabel, description: l10n.dreamSymbolExamDesc),
-      DreamSymbolKeys.ocean:
-          DreamSymbolCopy(label: l10n.dreamSymbolOceanLabel, description: l10n.dreamSymbolOceanDesc),
-      DreamSymbolKeys.car:
-          DreamSymbolCopy(label: l10n.dreamSymbolCarLabel, description: l10n.dreamSymbolCarDesc),
-      DreamSymbolKeys.stairs:
-          DreamSymbolCopy(label: l10n.dreamSymbolStairsLabel, description: l10n.dreamSymbolStairsDesc),
-      DreamSymbolKeys.mirror:
-          DreamSymbolCopy(label: l10n.dreamSymbolMirrorLabel, description: l10n.dreamSymbolMirrorDesc),
-      DreamSymbolKeys.door:
-          DreamSymbolCopy(label: l10n.dreamSymbolDoorLabel, description: l10n.dreamSymbolDoorDesc),
-      DreamSymbolKeys.light:
-          DreamSymbolCopy(label: l10n.dreamSymbolLightLabel, description: l10n.dreamSymbolLightDesc),
+      DreamSymbolKeys.water: DreamSymbolCopy(
+          label: l10n.dreamSymbolWaterLabel,
+          description: l10n.dreamSymbolWaterDesc),
+      DreamSymbolKeys.flying: DreamSymbolCopy(
+          label: l10n.dreamSymbolFlyingLabel,
+          description: l10n.dreamSymbolFlyingDesc),
+      DreamSymbolKeys.falling: DreamSymbolCopy(
+          label: l10n.dreamSymbolFallingLabel,
+          description: l10n.dreamSymbolFallingDesc),
+      DreamSymbolKeys.house: DreamSymbolCopy(
+          label: l10n.dreamSymbolHouseLabel,
+          description: l10n.dreamSymbolHouseDesc),
+      DreamSymbolKeys.teeth: DreamSymbolCopy(
+          label: l10n.dreamSymbolTeethLabel,
+          description: l10n.dreamSymbolTeethDesc),
+      DreamSymbolKeys.running: DreamSymbolCopy(
+          label: l10n.dreamSymbolRunningLabel,
+          description: l10n.dreamSymbolRunningDesc),
+      DreamSymbolKeys.lost: DreamSymbolCopy(
+          label: l10n.dreamSymbolLostLabel,
+          description: l10n.dreamSymbolLostDesc),
+      DreamSymbolKeys.snake: DreamSymbolCopy(
+          label: l10n.dreamSymbolSnakeLabel,
+          description: l10n.dreamSymbolSnakeDesc),
+      DreamSymbolKeys.death: DreamSymbolCopy(
+          label: l10n.dreamSymbolDeathLabel,
+          description: l10n.dreamSymbolDeathDesc),
+      DreamSymbolKeys.baby: DreamSymbolCopy(
+          label: l10n.dreamSymbolBabyLabel,
+          description: l10n.dreamSymbolBabyDesc),
+      DreamSymbolKeys.exam: DreamSymbolCopy(
+          label: l10n.dreamSymbolExamLabel,
+          description: l10n.dreamSymbolExamDesc),
+      DreamSymbolKeys.ocean: DreamSymbolCopy(
+          label: l10n.dreamSymbolOceanLabel,
+          description: l10n.dreamSymbolOceanDesc),
+      DreamSymbolKeys.car: DreamSymbolCopy(
+          label: l10n.dreamSymbolCarLabel,
+          description: l10n.dreamSymbolCarDesc),
+      DreamSymbolKeys.stairs: DreamSymbolCopy(
+          label: l10n.dreamSymbolStairsLabel,
+          description: l10n.dreamSymbolStairsDesc),
+      DreamSymbolKeys.mirror: DreamSymbolCopy(
+          label: l10n.dreamSymbolMirrorLabel,
+          description: l10n.dreamSymbolMirrorDesc),
+      DreamSymbolKeys.door: DreamSymbolCopy(
+          label: l10n.dreamSymbolDoorLabel,
+          description: l10n.dreamSymbolDoorDesc),
+      DreamSymbolKeys.light: DreamSymbolCopy(
+          label: l10n.dreamSymbolLightLabel,
+          description: l10n.dreamSymbolLightDesc),
     };
 
 /// Minimum number of dreams a symbol must appear in before it's called out
@@ -80,11 +98,14 @@ String? _recurringSymbolInsight(AppLocalizations l10n, List<DreamRow> dreams) {
     }
   }
 
-  final qualifying = counts.entries.where((e) => e.value >= _recurringSymbolThreshold).toList()
+  final qualifying = counts.entries
+      .where((e) => e.value >= _recurringSymbolThreshold)
+      .toList()
     ..sort((a, b) => b.value.compareTo(a.value));
   if (qualifying.isEmpty) return null;
 
-  final label = dreamSymbolCopy(l10n)[qualifying.first.key]?.label ?? qualifying.first.key;
+  final label = dreamSymbolCopy(l10n)[qualifying.first.key]?.label ??
+      qualifying.first.key;
   return l10n.dreamJournalRecurringSymbolInsight(label);
 }
 
@@ -118,7 +139,7 @@ class _DreamJournalScreenState extends ConsumerState<DreamJournalScreen> {
     final l10n = AppLocalizations.of(context);
     final dreamsAsync = ref.watch(dreamsStreamProvider);
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -140,13 +161,16 @@ class _DreamJournalScreenState extends ConsumerState<DreamJournalScreen> {
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(l10n.dreamJournalTitle, style: AstraKit.heading1(isDark, fontSize: 24)),
+                      Text(l10n.dreamJournalTitle,
+                          style:
+                              AstraKit.heading1(context, isDark, fontSize: 24)),
                     ],
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 4, 24, 18),
-                  child: Text(l10n.dreamJournalSubtitle, style: AstraKit.mutedText(isDark)),
+                  child: Text(l10n.dreamJournalSubtitle,
+                      style: AstraKit.mutedText(context, isDark)),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
@@ -158,10 +182,13 @@ class _DreamJournalScreenState extends ConsumerState<DreamJournalScreen> {
                 ),
                 Expanded(
                   child: dreamsAsync.when(
-                    data: (dreams) => _DreamListSection(dreams: dreams, primary: primary, isDark: isDark),
-                    loading: () => Center(child: CircularProgressIndicator(color: primary)),
+                    data: (dreams) => _DreamListSection(
+                        dreams: dreams, primary: primary, isDark: isDark),
+                    loading: () => Center(
+                        child: CircularProgressIndicator(color: primary)),
                     error: (_, __) => Center(
-                      child: Text(l10n.dreamJournalLoadError, style: AstraKit.mutedText(isDark)),
+                      child: Text(l10n.dreamJournalLoadError,
+                          style: AstraKit.mutedText(context, isDark)),
                     ),
                   ),
                 ),
@@ -175,7 +202,8 @@ class _DreamJournalScreenState extends ConsumerState<DreamJournalScreen> {
 }
 
 class _DreamListSection extends StatelessWidget {
-  const _DreamListSection({required this.dreams, required this.primary, required this.isDark});
+  const _DreamListSection(
+      {required this.dreams, required this.primary, required this.isDark});
 
   final List<DreamRow> dreams;
   final Color primary;
@@ -195,7 +223,8 @@ class _DreamListSection extends StatelessWidget {
             children: [
               Text(
                 l10n.dreamJournalListHeader(dreams.length),
-                style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700),
+                style: AstraKit.body(context, isDark,
+                    fontSize: 15, fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: 8),
               _MoonPhaseIcon(dreamCount: dreams.length, primary: primary),
@@ -213,7 +242,8 @@ class _DreamListSection extends StatelessWidget {
                 Expanded(
                   child: Text(
                     insight,
-                    style: AstraKit.mutedText(isDark, fontSize: 12).copyWith(fontStyle: FontStyle.italic),
+                    style: AstraKit.mutedText(context, isDark, fontSize: 12)
+                        .copyWith(fontStyle: FontStyle.italic),
                   ),
                 ),
               ],
@@ -224,13 +254,16 @@ class _DreamListSection extends StatelessWidget {
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(l10n.dreamJournalEmptyState, textAlign: TextAlign.center, style: AstraKit.mutedText(isDark)),
+                    child: Text(l10n.dreamJournalEmptyState,
+                        textAlign: TextAlign.center,
+                        style: AstraKit.mutedText(context, isDark)),
                   ),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(24, 14, 24, 100),
                   itemCount: dreams.length,
-                  itemBuilder: (context, index) => _DreamCard(dream: dreams[index], primary: primary, isDark: isDark),
+                  itemBuilder: (context, index) => _DreamCard(
+                      dream: dreams[index], primary: primary, isDark: isDark),
                 ),
         ),
       ],
@@ -239,7 +272,8 @@ class _DreamListSection extends StatelessWidget {
 }
 
 class _DreamCard extends ConsumerStatefulWidget {
-  const _DreamCard({required this.dream, required this.primary, required this.isDark});
+  const _DreamCard(
+      {required this.dream, required this.primary, required this.isDark});
 
   final DreamRow dream;
   final Color primary;
@@ -263,13 +297,17 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
     if (_isInterpreting) return;
     final dream = widget.dream;
     final l10n = AppLocalizations.of(context);
-    final languageCode = Localizations.localeOf(context).languageCode == 'tr' ? 'tr' : 'en';
+    final languageCode =
+        Localizations.localeOf(context).languageCode == 'tr' ? 'tr' : 'en';
 
     // Local, offline keyword check — shown immediately, before the network
     // call even starts, so it appears whether or not the AI response ever
     // comes back. Checked over the same text sent to the AI.
-    final crisisCheckText =
-        [dream.content, dream.firstThought, dream.lifeConnection].whereType<String>().join('\n');
+    final crisisCheckText = [
+      dream.content,
+      dream.firstThought,
+      dream.lifeConnection
+    ].whereType<String>().join('\n');
     if (CrisisDetectionService.containsCrisisLanguage(crisisCheckText)) {
       CrisisSupportSheet.show(context);
     }
@@ -284,11 +322,15 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
         dreamText: dream.content,
         language: languageCode,
         symbols: symbolTagsFor(dream),
-        moodTag: dream.feelingTag != null ? dreamFeelingLabels(l10n)[dream.feelingTag] : null,
+        moodTag: dream.feelingTag != null
+            ? dreamFeelingLabels(l10n)[dream.feelingTag]
+            : null,
         firstThought: dream.firstThought,
         lifeConnection: dream.lifeConnection,
       );
-      await ref.read(dreamsRepositoryProvider).saveAiInterpretation(id: dream.id, interpretation: interpretation);
+      await ref
+          .read(dreamsRepositoryProvider)
+          .saveAiInterpretation(id: dream.id, interpretation: interpretation);
       if (!mounted) return;
       setState(() => _isInterpreting = false);
     } catch (e) {
@@ -315,28 +357,33 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF15102A) : const Color(0xFFFFF8EE),
+        backgroundColor:
+            isDark ? const Color(0xFF15102A) : const Color(0xFFFFF8EE),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: AstraKit.primary(isDark).withValues(alpha: 0.3)),
+          side: BorderSide(
+              color: AstraKit.primary(context, isDark).withValues(alpha: 0.3)),
         ),
-        title: Text(isTr ? 'Rüyayı Sil' : 'Delete Dream', style: AstraKit.heading2(isDark, fontSize: 18)),
+        title: Text(isTr ? 'Rüyayı Sil' : 'Delete Dream',
+            style: AstraKit.heading2(context, isDark, fontSize: 18)),
         content: Text(
           isTr
               ? 'Bu rüya kaydını silmek istediğine emin misin?'
               : 'Are you sure you want to delete this dream entry?',
-          style: AstraKit.mutedText(isDark, fontSize: 14),
+          style: AstraKit.mutedText(context, isDark, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(isTr ? 'Vazgeç' : 'Cancel', style: AstraKit.mutedText(isDark)),
+            child: Text(isTr ? 'Vazgeç' : 'Cancel',
+                style: AstraKit.mutedText(context, isDark)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               isTr ? 'Sil' : 'Delete',
-              style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w700, color: errorColor),
+              style: AstraKit.body(context, isDark,
+                  fontSize: 14, fontWeight: FontWeight.w700, color: errorColor),
             ),
           ),
         ],
@@ -363,8 +410,9 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
     final feelingLabels = dreamFeelingLabels(l10n);
     final familiarPersonLabels = dreamFamiliarPersonLabels(l10n);
 
-    final hasReflectionDetails =
-        dream.familiarPerson != null || dream.firstThought != null || dream.lifeConnection != null;
+    final hasReflectionDetails = dream.familiarPerson != null ||
+        dream.firstThought != null ||
+        dream.lifeConnection != null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -384,19 +432,24 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
                     color: primary.withValues(alpha: 0.18),
                     border: Border.all(color: primary.withValues(alpha: 0.4)),
                   ),
-                  child: Icon(Icons.nights_stay_rounded, color: primary, size: 19),
+                  child:
+                      Icon(Icons.nights_stay_rounded, color: primary, size: 19),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   DateFormat.yMMMd(locale).format(dream.date),
-                  style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w700),
+                  style: AstraKit.body(context, isDark,
+                      fontSize: 12.5, fontWeight: FontWeight.w700),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: Icon(Icons.delete_outline_rounded, color: AstraKit.muted(isDark), size: 20),
+                  icon: Icon(Icons.delete_outline_rounded,
+                      color: AstraKit.muted(context, isDark), size: 20),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  tooltip: Localizations.localeOf(context).languageCode == 'tr' ? 'Sil' : 'Delete',
+                  tooltip: Localizations.localeOf(context).languageCode == 'tr'
+                      ? 'Sil'
+                      : 'Delete',
                   onPressed: () => _confirmDelete(context),
                 ),
               ],
@@ -404,14 +457,19 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
             const SizedBox(height: 12),
             AnimatedCrossFade(
               duration: const Duration(milliseconds: 220),
-              crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              crossFadeState: _expanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
               firstChild: Text(
                 dream.content,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500),
+                style: AstraKit.body(context, isDark,
+                    fontSize: 13.5, fontWeight: FontWeight.w500),
               ),
-              secondChild: Text(dream.content, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500)),
+              secondChild: Text(dream.content,
+                  style: AstraKit.body(context, isDark,
+                      fontSize: 13.5, fontWeight: FontWeight.w500)),
             ),
             if (tags.isNotEmpty || dream.feelingTag != null) ...[
               const SizedBox(height: 12),
@@ -419,10 +477,19 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  if (dream.feelingTag != null && feelingLabels[dream.feelingTag] != null)
-                    _FeelingChip(label: feelingLabels[dream.feelingTag]!, primary: primary, isDark: isDark),
+                  if (dream.feelingTag != null &&
+                      feelingLabels[dream.feelingTag] != null)
+                    _FeelingChip(
+                        label: feelingLabels[dream.feelingTag]!,
+                        primary: primary,
+                        isDark: isDark),
                   for (final tag in tags)
-                    if (symbolCopy[tag] != null) _SymbolChip(symbolKey: tag, copy: symbolCopy[tag]!, primary: primary, isDark: isDark),
+                    if (symbolCopy[tag] != null)
+                      _SymbolChip(
+                          symbolKey: tag,
+                          copy: symbolCopy[tag]!,
+                          primary: primary,
+                          isDark: isDark),
                 ],
               ),
             ],
@@ -433,13 +500,20 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
               if (dream.familiarPerson != null)
                 _ReflectionDetailRow(
                   label: l10n.dreamCardFamiliarPersonLabel,
-                  value: familiarPersonLabels[dream.familiarPerson] ?? dream.familiarPerson!,
+                  value: familiarPersonLabels[dream.familiarPerson] ??
+                      dream.familiarPerson!,
                   isDark: isDark,
                 ),
               if (dream.firstThought != null)
-                _ReflectionDetailRow(label: l10n.dreamCardFirstThoughtLabel, value: dream.firstThought!, isDark: isDark),
+                _ReflectionDetailRow(
+                    label: l10n.dreamCardFirstThoughtLabel,
+                    value: dream.firstThought!,
+                    isDark: isDark),
               if (dream.lifeConnection != null)
-                _ReflectionDetailRow(label: l10n.dreamCardLifeConnectionLabel, value: dream.lifeConnection!, isDark: isDark),
+                _ReflectionDetailRow(
+                    label: l10n.dreamCardLifeConnectionLabel,
+                    value: dream.lifeConnection!,
+                    isDark: isDark),
             ],
             if (_expanded) ...[
               const SizedBox(height: 14),
@@ -459,7 +533,10 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
                   _expanded ? l10n.dreamCardShowLess : l10n.dreamCardShowMore,
-                  style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w700, color: primary),
+                  style: AstraKit.body(context, isDark,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: primary),
                 ),
               ),
             ),
@@ -473,7 +550,8 @@ class _DreamCardState extends ConsumerState<_DreamCard> {
 /// Non-interactive pill naming the reflection flow's answered feeling —
 /// visually distinct from the tappable symbol chips beside it.
 class _FeelingChip extends StatelessWidget {
-  const _FeelingChip({required this.label, required this.primary, required this.isDark});
+  const _FeelingChip(
+      {required this.label, required this.primary, required this.isDark});
 
   final String label;
   final Color primary;
@@ -488,14 +566,17 @@ class _FeelingChip extends StatelessWidget {
         color: primary.withValues(alpha: 0.22),
         border: Border.all(color: primary.withValues(alpha: 0.5)),
       ),
-      child: Text(label, style: AstraKit.body(isDark, fontSize: 11.5, fontWeight: FontWeight.w700, color: primary)),
+      child: Text(label,
+          style: AstraKit.body(context, isDark,
+              fontSize: 11.5, fontWeight: FontWeight.w700, color: primary)),
     );
   }
 }
 
 /// A labeled reflection answer shown only once a dream card is expanded.
 class _ReflectionDetailRow extends StatelessWidget {
-  const _ReflectionDetailRow({required this.label, required this.value, required this.isDark});
+  const _ReflectionDetailRow(
+      {required this.label, required this.value, required this.isDark});
 
   final String label;
   final String value;
@@ -508,9 +589,11 @@ class _ReflectionDetailRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AstraKit.label(isDark, fontSize: 11)),
+          Text(label, style: AstraKit.label(context, isDark, fontSize: 11)),
           const SizedBox(height: 2),
-          Text(value, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(value,
+              style: AstraKit.body(context, isDark,
+                  fontSize: 13, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -545,7 +628,10 @@ class _AiInterpretationSection extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     if (isLoading) {
-      return _AiLoadingRow(text: l10n.dreamCardInterpretingStatus, primary: primary, isDark: isDark);
+      return _AiLoadingRow(
+          text: l10n.dreamCardInterpretingStatus,
+          primary: primary,
+          isDark: isDark);
     }
 
     final hasInterpretation = interpretation != null;
@@ -553,14 +639,21 @@ class _AiInterpretationSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasInterpretation) _AiInsightCard(text: interpretation!, label: l10n.dreamCardAiInsightLabel, primary: primary, isDark: isDark),
+        if (hasInterpretation)
+          _AiInsightCard(
+              text: interpretation!,
+              label: l10n.dreamCardAiInsightLabel,
+              primary: primary,
+              isDark: isDark),
         if (hasError) ...[
           if (hasInterpretation) const SizedBox(height: 10),
           _WarmErrorBanner(text: l10n.dreamCardInterpretError, isDark: isDark),
         ],
         if (hasInterpretation || hasError) const SizedBox(height: 10),
         _InterpretButton(
-          label: hasInterpretation ? l10n.dreamCardReinterpretButton : l10n.dreamCardInterpretButton,
+          label: hasInterpretation
+              ? l10n.dreamCardReinterpretButton
+              : l10n.dreamCardInterpretButton,
           primary: primary,
           isDark: isDark,
           onTap: onInterpret,
@@ -571,7 +664,8 @@ class _AiInterpretationSection extends StatelessWidget {
 }
 
 class _AiLoadingRow extends StatelessWidget {
-  const _AiLoadingRow({required this.text, required this.primary, required this.isDark});
+  const _AiLoadingRow(
+      {required this.text, required this.primary, required this.isDark});
 
   final String text;
   final Color primary;
@@ -585,10 +679,12 @@ class _AiLoadingRow extends StatelessWidget {
         SizedBox(
           width: 14,
           height: 14,
-          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(primary)),
+          child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(primary)),
         ),
         const SizedBox(width: 10),
-        Text(text, style: AstraKit.mutedText(isDark, fontSize: 12.5)),
+        Text(text, style: AstraKit.mutedText(context, isDark, fontSize: 12.5)),
       ],
     );
   }
@@ -598,7 +694,11 @@ class _AiLoadingRow extends StatelessWidget {
 /// distinct from the tappable local symbol chips above it, so it's clear
 /// this line came from an optional AI call rather than the local dictionary.
 class _AiInsightCard extends StatelessWidget {
-  const _AiInsightCard({required this.text, required this.label, required this.primary, required this.isDark});
+  const _AiInsightCard(
+      {required this.text,
+      required this.label,
+      required this.primary,
+      required this.isDark});
 
   final String text;
   final String label;
@@ -624,14 +724,16 @@ class _AiInsightCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: AstraKit.label(isDark, fontSize: 10.5).copyWith(letterSpacing: 0.4),
+                style: AstraKit.label(context, isDark, fontSize: 10.5)
+                    .copyWith(letterSpacing: 0.4),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             text,
-            style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w500, height: 1.4)
+            style: AstraKit.body(context, isDark,
+                    fontSize: 13, fontWeight: FontWeight.w500, height: 1.4)
                 .copyWith(fontStyle: FontStyle.italic),
           ),
         ],
@@ -663,7 +765,9 @@ class _WarmErrorBanner extends StatelessWidget {
           const Icon(Icons.spa_outlined, size: 15, color: errorColor),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(text, style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w500)),
+            child: Text(text,
+                style: AstraKit.body(context, isDark,
+                    fontSize: 12.5, fontWeight: FontWeight.w500)),
           ),
         ],
       ),
@@ -672,7 +776,11 @@ class _WarmErrorBanner extends StatelessWidget {
 }
 
 class _InterpretButton extends StatelessWidget {
-  const _InterpretButton({required this.label, required this.primary, required this.isDark, required this.onTap});
+  const _InterpretButton(
+      {required this.label,
+      required this.primary,
+      required this.isDark,
+      required this.onTap});
 
   final String label;
   final Color primary;
@@ -698,7 +806,11 @@ class _InterpretButton extends StatelessWidget {
             children: [
               Icon(Icons.auto_awesome_rounded, size: 13, color: primary),
               const SizedBox(width: 6),
-              Text(label, style: AstraKit.body(isDark, fontSize: 12, fontWeight: FontWeight.w700, color: primary)),
+              Text(label,
+                  style: AstraKit.body(context, isDark,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: primary)),
             ],
           ),
         ),
@@ -710,7 +822,11 @@ class _InterpretButton extends StatelessWidget {
 /// A small tappable tag naming a detected symbol — tapping opens a brief
 /// popover with its gentle association.
 class _SymbolChip extends StatelessWidget {
-  const _SymbolChip({required this.symbolKey, required this.copy, required this.primary, required this.isDark});
+  const _SymbolChip(
+      {required this.symbolKey,
+      required this.copy,
+      required this.primary,
+      required this.isDark});
 
   final String symbolKey;
   final DreamSymbolCopy copy;
@@ -731,14 +847,17 @@ class _SymbolChip extends StatelessWidget {
             color: primary.withValues(alpha: 0.14),
             border: Border.all(color: primary.withValues(alpha: 0.4)),
           ),
-          child: Text(copy.label, style: AstraKit.body(isDark, fontSize: 11.5, fontWeight: FontWeight.w700, color: primary)),
+          child: Text(copy.label,
+              style: AstraKit.body(context, isDark,
+                  fontSize: 11.5, fontWeight: FontWeight.w700, color: primary)),
         ),
       ),
     );
   }
 }
 
-void _showSymbolPopover(BuildContext context, DreamSymbolCopy copy, Color primary, bool isDark) {
+void _showSymbolPopover(
+    BuildContext context, DreamSymbolCopy copy, Color primary, bool isDark) {
   showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.45),
@@ -754,9 +873,12 @@ void _showSymbolPopover(BuildContext context, DreamSymbolCopy copy, Color primar
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(copy.label, style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w700)),
+            Text(copy.label,
+                style: AstraKit.body(context, isDark,
+                    fontSize: 15, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
-            Text(copy.description, style: AstraKit.mutedText(isDark, fontSize: 13)),
+            Text(copy.description,
+                style: AstraKit.mutedText(context, isDark, fontSize: 13)),
           ],
         ),
       ),

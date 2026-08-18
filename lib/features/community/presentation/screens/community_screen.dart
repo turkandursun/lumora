@@ -25,7 +25,7 @@ class CommunityScreen extends ConsumerWidget {
     final feedAsync = ref.watch(communityFeedProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -54,7 +54,8 @@ class CommunityScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(l10n.communityTitle,
-                          style: AstraKit.heading1(isDark, fontSize: 24)),
+                          style:
+                              AstraKit.heading1(context, isDark, fontSize: 24)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -66,13 +67,13 @@ class CommunityScreen extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(l10n.communityTodayQuestionLabel,
-                        style: AstraKit.label(isDark, fontSize: 11.5)),
+                        style: AstraKit.label(context, isDark, fontSize: 11.5)),
                   ),
                   const SizedBox(height: 6),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(todayQuestionText,
-                        style: AstraKit.body(isDark,
+                        style: AstraKit.body(context, isDark,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             height: 1.35)),
@@ -84,7 +85,7 @@ class CommunityScreen extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(
                                 vertical: 20, horizontal: 8),
                             child: Text(l10n.communityEmptyState,
-                                style: AstraKit.mutedText(isDark)),
+                                style: AstraKit.mutedText(context, isDark)),
                           )
                         : Column(
                             children: [
@@ -100,13 +101,13 @@ class CommunityScreen extends ConsumerWidget {
                           ),
                     loading: () => Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
-                      child:
-                          Center(child: CircularProgressIndicator(color: primary)),
+                      child: Center(
+                          child: CircularProgressIndicator(color: primary)),
                     ),
                     error: (_, __) => Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(l10n.communityLoadError,
-                          style: AstraKit.mutedText(isDark)),
+                          style: AstraKit.mutedText(context, isDark)),
                     ),
                   ),
                 ],
@@ -120,7 +121,8 @@ class CommunityScreen extends ConsumerWidget {
 }
 
 class _FramingBanner extends StatelessWidget {
-  const _FramingBanner({required this.text, required this.isDark, required this.primary});
+  const _FramingBanner(
+      {required this.text, required this.isDark, required this.primary});
 
   final String text;
   final bool isDark;
@@ -139,7 +141,9 @@ class _FramingBanner extends StatelessWidget {
           Icon(Icons.spa_outlined, size: 16, color: primary),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(text, style: AstraKit.body(isDark, fontSize: 12.5, fontWeight: FontWeight.w500, height: 1.4)),
+            child: Text(text,
+                style: AstraKit.body(context, isDark,
+                    fontSize: 12.5, fontWeight: FontWeight.w500, height: 1.4)),
           ),
         ],
       ),
@@ -148,7 +152,11 @@ class _FramingBanner extends StatelessWidget {
 }
 
 class _ShareCard extends ConsumerWidget {
-  const _ShareCard({required this.share, required this.isDark, required this.primary, required this.onReported});
+  const _ShareCard(
+      {required this.share,
+      required this.isDark,
+      required this.primary,
+      required this.onReported});
 
   final CommunityShare share;
   final bool isDark;
@@ -160,9 +168,12 @@ class _ShareCard extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
-        title: Text(l10n.communityReportConfirmTitle, style: TextStyle(color: AstraKit.ink(isDark))),
-        content: Text(l10n.communityReportConfirmBody, style: TextStyle(color: AstraKit.muted(isDark))),
+        backgroundColor:
+            isDark ? const Color(0xFF1A1233) : const Color(0xFFFFF8EE),
+        title: Text(l10n.communityReportConfirmTitle,
+            style: TextStyle(color: AstraKit.ink(context, isDark))),
+        content: Text(l10n.communityReportConfirmBody,
+            style: TextStyle(color: AstraKit.muted(context, isDark))),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -170,7 +181,8 @@ class _ShareCard extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.communityReportConfirmButton, style: TextStyle(color: primary)),
+            child: Text(l10n.communityReportConfirmButton,
+                style: TextStyle(color: primary)),
           ),
         ],
       ),
@@ -207,9 +219,14 @@ class _ShareCard extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(share.displayName, style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700, color: primary)),
+                  child: Text(share.displayName,
+                      style: AstraKit.body(context, isDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: primary)),
                 ),
-                Text(communityRelativeTime(l10n, share.createdAt), style: AstraKit.mutedText(isDark, fontSize: 11)),
+                Text(communityRelativeTime(l10n, share.createdAt),
+                    style: AstraKit.mutedText(context, isDark, fontSize: 11)),
                 const SizedBox(width: 4),
                 InkWell(
                   onTap: () => _confirmReport(context, ref),
@@ -219,7 +236,7 @@ class _ShareCard extends ConsumerWidget {
                     child: Icon(
                       Icons.flag_outlined,
                       size: 16,
-                      color: AstraKit.muted(isDark),
+                      color: AstraKit.muted(context, isDark),
                       semanticLabel: l10n.communityReportTooltip,
                     ),
                   ),
@@ -227,7 +244,9 @@ class _ShareCard extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(share.answerText, style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500, height: 1.4)),
+            Text(share.answerText,
+                style: AstraKit.body(context, isDark,
+                    fontSize: 13.5, fontWeight: FontWeight.w500, height: 1.4)),
           ],
         ),
       ),

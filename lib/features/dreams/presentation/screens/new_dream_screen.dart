@@ -46,8 +46,10 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
   void initState() {
     super.initState();
     _initSpeechToText();
-    _barHeights = List.generate(15, (i) => 0.2 + math.Random().nextDouble() * 0.5);
-    _waveController = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    _barHeights =
+        List.generate(15, (i) => 0.2 + math.Random().nextDouble() * 0.5);
+    _waveController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 900));
   }
 
   Future<void> _initSpeechToText() async {
@@ -85,8 +87,8 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
             setState(() {
               if (_error != null) _error = null;
               _controller.text = _preSpeechText + result.recognizedWords;
-              _controller.selection =
-                  TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
+              _controller.selection = TextSelection.fromPosition(
+                  TextPosition(offset: _controller.text.length));
             });
           },
         );
@@ -156,7 +158,7 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
     final l10n = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AstraMountainBackground(
@@ -177,7 +179,9 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(l10n.dreamEntryTitle, style: AstraKit.heading1(isDark, fontSize: 20)),
+                      Text(l10n.dreamEntryTitle,
+                          style:
+                              AstraKit.heading1(context, isDark, fontSize: 20)),
                     ],
                   ),
                 ),
@@ -191,29 +195,35 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                           height: 220,
                           child: AstraGlassCard(
                             isDark: isDark,
-                            primaryColor: _error != null ? const Color(0xFFE07A7A) : primary,
+                            primaryColor: _error != null
+                                ? const Color(0xFFE07A7A)
+                                : primary,
                             child: TextField(
                               controller: _controller,
                               maxLines: null,
                               expands: true,
                               textAlignVertical: TextAlignVertical.top,
-                              style: AstraKit.body(isDark),
+                              style: AstraKit.body(context, isDark),
                               cursorColor: primary,
                               decoration: InputDecoration(
                                 border: InputBorder.none,
                                 filled: false,
                                 hintText: l10n.dreamEntryPlaceholder,
-                                hintStyle: AstraKit.mutedText(isDark),
+                                hintStyle: AstraKit.mutedText(context, isDark),
                               ),
                               onChanged: (_) {
-                                if (_error != null) setState(() => _error = null);
+                                if (_error != null) {
+                                  setState(() => _error = null);
+                                }
                               },
                             ),
                           ),
                         ),
                         if (_error != null) ...[
                           const SizedBox(height: 10),
-                          Text(_error!, style: const TextStyle(fontSize: 12.5, color: Color(0xFFE07A7A))),
+                          Text(_error!,
+                              style: const TextStyle(
+                                  fontSize: 12.5, color: Color(0xFFE07A7A))),
                         ],
                         const SizedBox(height: 12),
 
@@ -227,11 +237,14 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.auto_awesome, size: 14, color: primary),
+                                  Icon(Icons.auto_awesome,
+                                      size: 14, color: primary),
                                   const SizedBox(width: 6),
                                   Text(
                                     isTr ? 'Sesle yaz' : 'Voice type',
-                                    style: AstraKit.body(isDark, fontSize: 14, fontWeight: FontWeight.w700),
+                                    style: AstraKit.body(context, isDark,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700),
                                   ),
                                 ],
                               ),
@@ -240,7 +253,8 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                                 isTr
                                     ? 'Rüyanı sesinle anlatabilirsin.'
                                     : 'You can describe your dream with your voice.',
-                                style: AstraKit.mutedText(isDark, fontSize: 12),
+                                style: AstraKit.mutedText(context, isDark,
+                                    fontSize: 12),
                               ),
                               const SizedBox(height: 16),
                               Row(
@@ -255,21 +269,33 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                                   ),
                                   const SizedBox(width: 12),
                                   GestureDetector(
-                                    onTap: _isListening ? _stopVoiceSession : _startVoiceSession,
+                                    onTap: _isListening
+                                        ? _stopVoiceSession
+                                        : _startVoiceSession,
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 300),
+                                      duration:
+                                          const Duration(milliseconds: 300),
                                       width: 56,
                                       height: 56,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         gradient: RadialGradient(
                                           colors: _isListening
-                                              ? [Colors.redAccent.shade100, Colors.redAccent]
-                                              : [primary.withValues(alpha: 0.95), primary.withValues(alpha: 0.6)],
+                                              ? [
+                                                  Colors.redAccent.shade100,
+                                                  Colors.redAccent
+                                                ]
+                                              : [
+                                                  primary.withValues(
+                                                      alpha: 0.95),
+                                                  primary.withValues(alpha: 0.6)
+                                                ],
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: (_isListening ? Colors.redAccent : primary)
+                                            color: (_isListening
+                                                    ? Colors.redAccent
+                                                    : primary)
                                                 .withValues(alpha: 0.55),
                                             blurRadius: 18,
                                             spreadRadius: 2,
@@ -277,7 +303,9 @@ class _NewDreamScreenState extends ConsumerState<NewDreamScreen>
                                         ],
                                       ),
                                       child: Icon(
-                                        _isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                                        _isListening
+                                            ? Icons.stop_rounded
+                                            : Icons.mic_rounded,
                                         color: Colors.black,
                                         size: 26,
                                       ),
@@ -343,7 +371,9 @@ class _WaveformBars extends StatelessWidget {
           width: 3,
           height: (active ? h * 36.0 : 8.0).clamp(4.0, 36.0),
           decoration: BoxDecoration(
-            color: active ? primary.withValues(alpha: 0.7 + h * 0.3) : primary.withValues(alpha: 0.25),
+            color: active
+                ? primary.withValues(alpha: 0.7 + h * 0.3)
+                : primary.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(2),
           ),
         );

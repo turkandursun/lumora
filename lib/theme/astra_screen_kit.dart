@@ -4,10 +4,8 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../core/providers/astra_palette_provider.dart';
 import 'astra_design_tokens.dart';
 
 /// Shared building blocks for the app's premium "Astra" look — the gold
@@ -19,81 +17,96 @@ import 'astra_design_tokens.dart';
 class AstraKit {
   AstraKit._();
 
-  /// The active design-token palette (one of the 7 families). Set on every
-  /// frame by [AstraMountainBackground] from [activePaletteProvider]. When
-  /// non-null, the colour methods below source from it so the whole app is
-  /// re-skinned at once; when null they fall back to the legacy moon/sun look.
-  static AstraPalette? active;
+  static AstraPalette palette(BuildContext context) =>
+      AstraThemeTokens.of(context).palette;
+
+  static AstraThemeTokens tokens(BuildContext context) =>
+      AstraThemeTokens.of(context);
 
   /// App-wide accent. With a palette active this is the palette primary;
   /// otherwise the legacy soft violet (moon) / gold (sun) accent.
-  static Color primary(bool isDark) =>
-      active?.primary ??
-      (isDark ? const Color(0xFFC084FC) : const Color(0xFF95610F));
+  static Color primary(BuildContext context, bool isDark) =>
+      palette(context).primary;
 
   /// Always-gold accent, regardless of theme — reserved for the ASTRA
   /// login/signup screens so their branded moon-and-gold look never
   /// switches to the violet accent used everywhere else.
-  static Color gold(bool isDark) =>
+  static Color gold(BuildContext context, bool isDark) =>
       isDark ? const Color(0xFFE3C264) : const Color(0xFFD4AF37);
 
   // Reading colours. With a palette active, every family is a light pastel, so
   // text is the shared dark tokens (constant readability, never light-on-light).
   // Without a palette, the legacy warm-light-on-moon / deep-brown-on-sun tones.
-  static Color ink(bool isDark) => active != null
-      ? AstraText.body
-      : (isDark ? const Color(0xFFF6ECD2) : const Color(0xFF2A1B06));
+  static Color ink(BuildContext context, bool isDark) =>
+      tokens(context).textSecondary;
 
-  static Color heading(bool isDark) => active != null
-      ? AstraText.title
-      : (isDark ? const Color(0xFFF4EEFF) : const Color(0xFF231402));
+  static Color heading(BuildContext context, bool isDark) =>
+      tokens(context).textPrimary;
 
-  static Color muted(bool isDark) => active != null
-      ? AstraText.muted
-      : (isDark ? const Color(0xCCD8C8FF) : const Color(0xDE4A3208));
+  static Color muted(BuildContext context, bool isDark) =>
+      tokens(context).textMuted;
 
-  static Color faint(bool isDark) => active != null
-      ? const Color(0x994A4452)
-      : (isDark ? const Color(0x99C0A8FF) : const Color(0xAA5A420C));
+  static Color faint(BuildContext context, bool isDark) =>
+      tokens(context).textMuted.withValues(alpha: 0.60);
 
   /// Big brand wordmark ("ASTRA") — gold on the dark/moon scene; a deep bronze
   /// on the bright sun scene, where literal gold would wash out.
-  static TextStyle wordmark(bool isDark, {double fontSize = 44}) => GoogleFonts.playfairDisplay(
+  static TextStyle wordmark(BuildContext context, bool isDark,
+          {double fontSize = 44}) =>
+      GoogleFonts.playfairDisplay(
         fontSize: fontSize,
         fontWeight: FontWeight.w700,
         letterSpacing: 2,
-        color: isDark ? gold(isDark) : const Color(0xFF5C3E0E),
+        color: isDark ? gold(context, isDark) : palette(context).secondary,
       );
 
-  static TextStyle heading1(bool isDark, {double fontSize = 22, FontWeight fontWeight = FontWeight.w700}) =>
-      GoogleFonts.playfairDisplay(fontSize: fontSize, fontWeight: fontWeight, color: heading(isDark));
+  static TextStyle heading1(BuildContext context, bool isDark,
+          {double fontSize = 22, FontWeight fontWeight = FontWeight.w700}) =>
+      GoogleFonts.playfairDisplay(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: heading(context, isDark));
 
-  static TextStyle heading2(bool isDark, {double fontSize = 16, FontWeight fontWeight = FontWeight.w700}) =>
-      GoogleFonts.playfairDisplay(fontSize: fontSize, fontWeight: fontWeight, color: heading(isDark));
+  static TextStyle heading2(BuildContext context, bool isDark,
+          {double fontSize = 16, FontWeight fontWeight = FontWeight.w700}) =>
+      GoogleFonts.playfairDisplay(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: heading(context, isDark));
 
-  static TextStyle label(bool isDark, {double fontSize = 12, Color? color}) => GoogleFonts.outfit(
+  static TextStyle label(BuildContext context, bool isDark,
+          {double fontSize = 12, Color? color}) =>
+      GoogleFonts.outfit(
         fontSize: fontSize,
         fontWeight: FontWeight.w700,
-        color: color ??
-            (active != null
-                ? active!.secondary
-                : (isDark ? primary(isDark) : const Color(0xFF5C3E0E))),
+        color: color ?? palette(context).secondary,
         letterSpacing: 0.3,
       );
 
-  static TextStyle body(bool isDark,
-          {double fontSize = 14, FontWeight fontWeight = FontWeight.w600, double? height, Color? color}) =>
-      GoogleFonts.outfit(fontSize: fontSize, fontWeight: fontWeight, color: color ?? ink(isDark), height: height);
+  static TextStyle body(BuildContext context, bool isDark,
+          {double fontSize = 14,
+          FontWeight fontWeight = FontWeight.w600,
+          double? height,
+          Color? color}) =>
+      GoogleFonts.outfit(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: color ?? ink(context, isDark),
+          height: height);
 
-  static TextStyle mutedText(bool isDark, {double fontSize = 12, FontWeight fontWeight = FontWeight.w500}) =>
-      GoogleFonts.outfit(fontSize: fontSize, fontWeight: fontWeight, color: muted(isDark));
+  static TextStyle mutedText(BuildContext context, bool isDark,
+          {double fontSize = 12, FontWeight fontWeight = FontWeight.w500}) =>
+      GoogleFonts.outfit(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: muted(context, isDark));
 }
 
 /// Full-bleed mountain scene background — moon over the peaks in the dark
 /// theme, sun in the light theme — with a gentle top scrim so app-bar icons
 /// stay legible. Identical to the journal screens' background so switching
 /// screens never shows a background "jump".
-class AstraMountainBackground extends ConsumerWidget {
+class AstraMountainBackground extends StatelessWidget {
   const AstraMountainBackground({
     super.key,
     required this.isDark,
@@ -110,11 +123,8 @@ class AstraMountainBackground extends ConsumerWidget {
   final bool useEntryScene;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Read the chosen palette and publish it to the shared kit so every colour
-    // method below (text, accents, icon containers…) matches this screen.
-    final palette = ref.watch(activePaletteProvider);
-    AstraKit.active = palette;
+  Widget build(BuildContext context) {
+    final palette = AstraKit.palette(context);
 
     // The main app now uses a soft palette gradient instead of the photo
     // scene. The branded entry journey (login/onboarding) keeps its moon/sun
@@ -130,9 +140,7 @@ class AstraMountainBackground extends ConsumerWidget {
             : 'assets/images/app_theme_light.jpeg');
     // Light pastel palette or the sun scene → dark icons; only the dark moon
     // entry scene needs light icons.
-    final iconBrightness = (usePalette || !isDark)
-        ? Brightness.dark
-        : Brightness.light;
+    final iconBrightness = isDark ? Brightness.light : Brightness.dark;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -146,54 +154,56 @@ class AstraMountainBackground extends ConsumerWidget {
             ? palette.gradientTop
             : (isDark ? const Color(0xFF0F0B1A) : const Color(0xFFFDF6E9)),
         child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (usePalette)
-            DecoratedBox(decoration: BoxDecoration(gradient: palette.backgroundGradient))
-          else
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 450),
-            // Keep both the incoming and outgoing frames constrained to the
-            // full viewport while the theme crossfade is in progress.
-            layoutBuilder: (current, previous) => Stack(
-              fit: StackFit.expand,
-              children: [...previous, if (current != null) current],
+          fit: StackFit.expand,
+          children: [
+            if (usePalette)
+              DecoratedBox(
+                  decoration:
+                      BoxDecoration(gradient: palette.backgroundGradient))
+            else
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 450),
+                // Keep both the incoming and outgoing frames constrained to the
+                // full viewport while the theme crossfade is in progress.
+                layoutBuilder: (current, previous) => Stack(
+                  fit: StackFit.expand,
+                  children: [...previous, if (current != null) current],
+                ),
+                child: SizedBox.expand(
+                  key: ValueKey(asset),
+                  child: Image.asset(
+                    asset,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+            // A soft mist over the scene — keeps it from competing with the UI
+            // without hiding it, so the sun scene stays bright and airy.
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+              child: const SizedBox.expand(),
             ),
-            child: SizedBox.expand(
-              key: ValueKey(asset),
-              child: Image.asset(
-                asset,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            // Only a gentle top scrim so status-bar text/greeting stays legible;
+            // the sun scene otherwise keeps its brightness.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isDark
+                      ? const [Color(0x55000000), Color(0x00000000)]
+                      : const [Color(0x2E000000), Color(0x00000000)],
+                  stops: const [0.0, 0.30],
+                ),
               ),
             ),
-          ),
-          // A soft mist over the scene — keeps it from competing with the UI
-          // without hiding it, so the sun scene stays bright and airy.
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-            child: const SizedBox.expand(),
-          ),
-          // Only a gentle top scrim so status-bar text/greeting stays legible;
-          // the sun scene otherwise keeps its brightness.
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: isDark
-                    ? const [Color(0x55000000), Color(0x00000000)]
-                    : const [Color(0x2E000000), Color(0x00000000)],
-                stops: const [0.0, 0.30],
-              ),
-            ),
-          ),
-          child,
-        ],
-      ),
+            child,
+          ],
+        ),
       ),
     );
   }
@@ -223,21 +233,14 @@ class AstraGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = primaryColor ?? AstraKit.primary(isDark);
-    final active = AstraKit.active;
+    final active = AstraKit.palette(context);
     return DecoratedBox(
       decoration: BoxDecoration(
         // With a palette active every card is soft white glass (the pastel
         // gradient shows through); otherwise the legacy dark/light tint.
-        color: active != null
-            ? active.cardBackground
-            : (isDark ? const Color(0xBF181026) : const Color(0xE6FBF1DC)),
+        color: active.cardBackground,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(
-            color: active != null
-                ? active.softBorder
-                : primary.withValues(alpha: isDark ? 0.42 : 0.55),
-            width: 1.2),
+        border: Border.all(color: active.softBorder, width: 1.2),
       ),
       child: Padding(padding: padding, child: child),
     );
@@ -264,7 +267,7 @@ class AstraCircleIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = primaryColor ?? AstraKit.primary(isDark);
+    final primary = primaryColor ?? AstraKit.primary(context, isDark);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -273,9 +276,8 @@ class AstraCircleIconButton extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: AstraKit.active != null
-              ? const Color(0xE6FFFFFF)
-              : (isDark ? const Color(0x44231845) : const Color(0xF2FCF4E2)),
+          color:
+              AstraKit.palette(context).surfaceElevated.withValues(alpha: 0.9),
           border: Border.all(color: primary.withValues(alpha: 0.3)),
         ),
         child: Icon(icon, size: size * 0.47, color: primary),
@@ -323,8 +325,8 @@ class AstraGoldButton extends StatelessWidget {
     // the rest of the app's night accent instead.
     // With a palette active (and not a branded gold screen), the primary CTA
     // becomes a soft primary→secondary pill in the theme's colours.
-    final palette = AstraKit.active;
-    final usePalette = palette != null && !forceGold;
+    final palette = AstraKit.palette(context);
+    final usePalette = !forceGold;
     final useGold = !usePalette && (forceGold || !isDark);
     final gradient = usePalette
         ? LinearGradient(
@@ -335,13 +337,21 @@ class AstraGoldButton extends StatelessWidget {
         : useGold
             ? (isDark
                 ? const LinearGradient(
-                    colors: [Color(0xFFF0D68A), Color(0xFFD4A93F), Color(0xFF8A6A10)],
+                    colors: [
+                      Color(0xFFF0D68A),
+                      Color(0xFFD4A93F),
+                      Color(0xFF8A6A10)
+                    ],
                     stops: [0.0, 0.55, 1.0],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   )
                 : const LinearGradient(
-                    colors: [Color(0xFFFFEBA3), Color(0xFFEBB818), Color(0xFFAA7A0A)],
+                    colors: [
+                      Color(0xFFFFEBA3),
+                      Color(0xFFEBB818),
+                      Color(0xFFAA7A0A)
+                    ],
                     stops: [0.0, 0.55, 1.0],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -353,7 +363,9 @@ class AstraGoldButton extends StatelessWidget {
               );
     final primary = usePalette
         ? palette.primary
-        : (useGold ? AstraKit.gold(isDark) : AstraKit.primary(isDark));
+        : (useGold
+            ? AstraKit.gold(context, isDark)
+            : AstraKit.primary(context, isDark));
     final contentColor = usePalette
         ? palette.onPrimary
         : (useGold ? const Color(0xFF1A0F00) : Colors.white);
@@ -371,7 +383,8 @@ class AstraGoldButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(radius),
             gradient: gradient,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.45), width: 1),
+            border: Border.all(
+                color: Colors.white.withValues(alpha: 0.45), width: 1),
             boxShadow: enabled
                 ? [
                     // Soft ambient glow.
@@ -382,7 +395,8 @@ class AstraGoldButton extends StatelessWidget {
                     ),
                     // Tight contact shadow for physical lift off the page.
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.22),
+                      color:
+                          Colors.black.withValues(alpha: isDark ? 0.35 : 0.22),
                       blurRadius: 3,
                       offset: const Offset(0, 2),
                     ),
@@ -424,7 +438,8 @@ class AstraGoldButton extends StatelessWidget {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.2,
-                              valueColor: AlwaysStoppedAnimation<Color>(contentColor),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(contentColor),
                             ),
                           )
                         : Row(
@@ -500,12 +515,13 @@ class AstraTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = primaryColor ?? AstraKit.primary(isDark);
+    final primary = primaryColor ?? AstraKit.primary(context, isDark);
     // Translucent glass field in both themes: dark tint on the moon scene, a
     // light cream tint on the bright sun scene.
     final fill = isDark ? const Color(0x33231845) : const Color(0x73FBF1DC);
 
-    OutlineInputBorder border(Color color, [double width = 1.2]) => OutlineInputBorder(
+    OutlineInputBorder border(Color color, [double width = 1.2]) =>
+        OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: color, width: width),
         );
@@ -518,7 +534,7 @@ class AstraTextField extends StatelessWidget {
           children: [
             Icon(Icons.auto_awesome, size: 12, color: primary),
             const SizedBox(width: 5),
-            Text(label, style: AstraKit.label(isDark)),
+            Text(label, style: AstraKit.label(context, isDark)),
           ],
         ),
         const SizedBox(height: 8),
@@ -532,24 +548,27 @@ class AstraTextField extends StatelessWidget {
           onChanged: onChanged,
           onFieldSubmitted: onFieldSubmitted,
           validator: validator,
-          style: AstraKit.body(isDark, fontSize: 14.5),
+          style: AstraKit.body(context, isDark, fontSize: 14.5),
           cursorColor: primary,
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: AstraKit.mutedText(isDark, fontSize: 14),
+            hintStyle: AstraKit.mutedText(context, isDark, fontSize: 14),
             prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, color: primary.withValues(alpha: 0.85), size: 20)
+                ? Icon(prefixIcon,
+                    color: primary.withValues(alpha: 0.85), size: 20)
                 : null,
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: fill,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
             border: border(primary.withValues(alpha: 0.4)),
             enabledBorder: border(primary.withValues(alpha: 0.4)),
             focusedBorder: border(primary, 1.6),
             errorBorder: border(const Color(0xFFE07A7A)),
             focusedErrorBorder: border(const Color(0xFFE07A7A), 1.6),
-            errorStyle: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFFE07A7A)),
+            errorStyle: GoogleFonts.outfit(
+                fontSize: 12, color: const Color(0xFFE07A7A)),
           ),
         ),
       ],
@@ -560,7 +579,11 @@ class AstraTextField extends StatelessWidget {
 /// A thin gold hairline flanking a short label — used to separate sections
 /// (e.g. "VEYA" between the sign-in form and the Google button).
 class AstraLabeledDivider extends StatelessWidget {
-  const AstraLabeledDivider({super.key, required this.isDark, required this.label, this.primaryColor});
+  const AstraLabeledDivider(
+      {super.key,
+      required this.isDark,
+      required this.label,
+      this.primaryColor});
 
   final bool isDark;
   final String label;
@@ -568,7 +591,7 @@ class AstraLabeledDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = primaryColor ?? AstraKit.primary(isDark);
+    final primary = primaryColor ?? AstraKit.primary(context, isDark);
     final line = Expanded(
       child: Container(height: 1, color: primary.withValues(alpha: 0.35)),
     );
@@ -583,7 +606,7 @@ class AstraLabeledDivider extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 2,
-              color: AstraKit.muted(isDark),
+              color: AstraKit.muted(context, isDark),
             ),
           ),
         ),
@@ -599,15 +622,18 @@ class AstraLabeledDivider extends StatelessWidget {
 /// (e.g. on tab switch) so the entrance choreography plays every time, not just
 /// on first build.
 class AstraEntranceReplay extends InheritedWidget {
-  const AstraEntranceReplay({super.key, required this.notifier, required super.child});
+  const AstraEntranceReplay(
+      {super.key, required this.notifier, required super.child});
 
   final Listenable notifier;
 
-  static Listenable? maybeOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<AstraEntranceReplay>()?.notifier;
+  static Listenable? maybeOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<AstraEntranceReplay>()
+      ?.notifier;
 
   @override
-  bool updateShouldNotify(AstraEntranceReplay oldWidget) => !identical(notifier, oldWidget.notifier);
+  bool updateShouldNotify(AstraEntranceReplay oldWidget) =>
+      !identical(notifier, oldWidget.notifier);
 }
 
 /// Staggered fade + slide-in entrance with a soft spring settle. The child
@@ -655,16 +681,21 @@ class AstraEntrance extends StatefulWidget {
   State<AstraEntrance> createState() => _AstraEntranceState();
 }
 
-class _AstraEntranceState extends State<AstraEntrance> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: widget.duration);
-  late final Animation<double> _fade =
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.55, curve: Curves.easeOut));
+class _AstraEntranceState extends State<AstraEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: widget.duration);
+  late final Animation<double> _fade = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.55, curve: Curves.easeOut));
   // easeOutBack overshoots past 1.0, giving the gentle spring settle.
-  late final Animation<double> _slide = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
+  late final Animation<double> _slide =
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
 
   Listenable? _replay;
 
-  int get _delay => widget.index != null ? widget.index! * widget.intervalMs : widget.delayMs;
+  int get _delay =>
+      widget.index != null ? widget.index! * widget.intervalMs : widget.delayMs;
 
   void _play() {
     _controller.value = 0;
@@ -716,7 +747,9 @@ class _AstraEntranceState extends State<AstraEntrance> with SingleTickerProvider
           opacity: _fade.value.clamp(0.0, 1.0),
           child: Transform.translate(
             offset: Offset(0, widget.offset * (1 - t)),
-            child: widget.scaleFrom == 1.0 ? child : Transform.scale(scale: scale, child: child),
+            child: widget.scaleFrom == 1.0
+                ? child
+                : Transform.scale(scale: scale, child: child),
           ),
         );
       },
@@ -747,7 +780,8 @@ class AstraCountUp extends StatelessWidget {
       tween: IntTween(begin: 0, end: value),
       duration: duration,
       curve: Curves.easeOutCubic,
-      builder: (context, v, _) => Text('$v', style: style, textAlign: textAlign),
+      builder: (context, v, _) =>
+          Text('$v', style: style, textAlign: textAlign),
     );
   }
 }
@@ -777,20 +811,25 @@ class BouncyTap extends StatefulWidget {
   State<BouncyTap> createState() => _BouncyTapState();
 }
 
-class _BouncyTapState extends State<BouncyTap> with SingleTickerProviderStateMixin {
+class _BouncyTapState extends State<BouncyTap>
+    with SingleTickerProviderStateMixin {
   // Unbounded so the spring can overshoot below 0 (a slight grow-past-100%
   // bounce) on release.
-  late final AnimationController _controller = AnimationController.unbounded(vsync: this, value: 0);
+  late final AnimationController _controller =
+      AnimationController.unbounded(vsync: this, value: 0);
   // Playful spring (mass 1 · stiffness 250 · damping 20): a small, soft
   // overshoot on release — bouncy without feeling floppy.
-  static const _spring = SpringDescription(mass: 1, stiffness: 250, damping: 20);
+  static const _spring =
+      SpringDescription(mass: 1, stiffness: 250, damping: 20);
 
   void _press() {
-    _controller.animateTo(1, duration: const Duration(milliseconds: 80), curve: Curves.easeOut);
+    _controller.animateTo(1,
+        duration: const Duration(milliseconds: 80), curve: Curves.easeOut);
   }
 
   void _release() {
-    _controller.animateWith(SpringSimulation(_spring, _controller.value, 0, _controller.velocity));
+    _controller.animateWith(
+        SpringSimulation(_spring, _controller.value, 0, _controller.velocity));
   }
 
   @override
@@ -817,7 +856,8 @@ class _BouncyTapState extends State<BouncyTap> with SingleTickerProviderStateMix
         animation: _controller,
         child: widget.child,
         builder: (context, child) {
-          final scale = 1 - (1 - widget.pressedScale) * _controller.value.clamp(-0.6, 1.4);
+          final scale = 1 -
+              (1 - widget.pressedScale) * _controller.value.clamp(-0.6, 1.4);
           return Transform.scale(scale: scale, child: child);
         },
       ),
@@ -852,7 +892,8 @@ class AstraMorphContainer extends StatelessWidget {
       closedColor: Colors.transparent,
       openColor: Colors.transparent,
       middleColor: Colors.transparent,
-      closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+      closedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius)),
       openBuilder: (context, _) => openBuilder(context),
       closedBuilder: (context, open) => closedBuilder(context, open),
     );

@@ -111,7 +111,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final primary = AstraKit.primary(isDark);
+    final primary = AstraKit.primary(context, isDark);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -132,7 +132,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(_isTr ? 'Şifreyi Sıfırla' : 'Reset Password',
-                        style: AstraKit.heading1(isDark, fontSize: 22)),
+                        style:
+                            AstraKit.heading1(context, isDark, fontSize: 22)),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -148,29 +149,38 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         _isTr
                             ? '${widget.email} adresine gönderdiğimiz kodu gir ve yeni şifreni belirle.'
                             : 'Enter the code we sent to ${widget.email} and choose a new password.',
-                        style: AstraKit.body(isDark, fontSize: 13.5, fontWeight: FontWeight.w500),
+                        style: AstraKit.body(context, isDark,
+                            fontSize: 13.5, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 18),
                       TextField(
                         controller: _codeController,
                         keyboardType: TextInputType.number,
                         maxLength: 12,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        style: AstraKit.body(isDark, fontSize: 18, fontWeight: FontWeight.w700)
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        style: AstraKit.body(context, isDark,
+                                fontSize: 18, fontWeight: FontWeight.w700)
                             .copyWith(letterSpacing: 4),
                         cursorColor: primary,
                         decoration: InputDecoration(
                           counterText: '',
-                          labelText: _isTr ? 'Doğrulama kodu' : 'Verification code',
-                          labelStyle: AstraKit.mutedText(isDark, fontSize: 13),
-                          prefixIcon: Icon(Icons.pin_rounded, color: primary, size: 20),
+                          labelText:
+                              _isTr ? 'Doğrulama kodu' : 'Verification code',
+                          labelStyle:
+                              AstraKit.mutedText(context, isDark, fontSize: 13),
+                          prefixIcon:
+                              Icon(Icons.pin_rounded, color: primary, size: 20),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide(color: primary, width: 1.4),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(color: AstraKit.muted(isDark).withValues(alpha: 0.4)),
+                            borderSide: BorderSide(
+                                color: AstraKit.muted(context, isDark)
+                                    .withValues(alpha: 0.4)),
                           ),
                         ),
                       ),
@@ -178,19 +188,25 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       TextField(
                         controller: _passwordController,
                         obscureText: _obscure,
-                        style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w600),
+                        style: AstraKit.body(context, isDark,
+                            fontSize: 15, fontWeight: FontWeight.w600),
                         cursorColor: primary,
                         decoration: InputDecoration(
                           labelText: _isTr ? 'Yeni şifre' : 'New password',
-                          labelStyle: AstraKit.mutedText(isDark, fontSize: 13),
-                          prefixIcon: Icon(Icons.lock_outline_rounded, color: primary, size: 20),
+                          labelStyle:
+                              AstraKit.mutedText(context, isDark, fontSize: 13),
+                          prefixIcon: Icon(Icons.lock_outline_rounded,
+                              color: primary, size: 20),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                              color: AstraKit.muted(isDark),
+                              _obscure
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              color: AstraKit.muted(context, isDark),
                               size: 20,
                             ),
-                            onPressed: () => setState(() => _obscure = !_obscure),
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -198,7 +214,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(color: AstraKit.muted(isDark).withValues(alpha: 0.4)),
+                            borderSide: BorderSide(
+                                color: AstraKit.muted(context, isDark)
+                                    .withValues(alpha: 0.4)),
                           ),
                         ),
                       ),
@@ -209,17 +227,24 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           style: FilledButton.styleFrom(
                             backgroundColor: primary,
                             padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
                           ),
                           onPressed: _submitting ? null : _submit,
                           child: _submitting
                               ? const SizedBox(
-                                  height: 20, width: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white),
                                 )
                               : Text(
-                                  _isTr ? 'Şifreyi Güncelle' : 'Update Password',
-                                  style: AstraKit.body(isDark, fontSize: 15, fontWeight: FontWeight.w800)
+                                  _isTr
+                                      ? 'Şifreyi Güncelle'
+                                      : 'Update Password',
+                                  style: AstraKit.body(context, isDark,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w800)
                                       .copyWith(color: Colors.white),
                                 ),
                         ),
@@ -230,7 +255,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           onPressed: _submitting ? null : _resend,
                           child: Text(
                             _isTr ? 'Kodu tekrar gönder' : 'Resend code',
-                            style: AstraKit.body(isDark, fontSize: 13, fontWeight: FontWeight.w700)
+                            style: AstraKit.body(context, isDark,
+                                    fontSize: 13, fontWeight: FontWeight.w700)
                                 .copyWith(color: primary),
                           ),
                         ),

@@ -13,8 +13,8 @@ import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/mood_gradients.dart';
 import '../../../../theme/mood_theme_provider.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
-import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 import '../../domain/auth_flow_routes.dart';
+import '../../domain/registration_flow_state.dart';
 
 /// Mood accent colours — shared with the calendar via [moodSymbolColors], so a
 /// day's mood reads identically everywhere. NOT changed here on purpose.
@@ -26,9 +26,16 @@ const List<IconData> _moodIcons = moodSymbolIcons;
 /// colours match the calendar). Picking a mood sets the app's mood theme and
 /// logs it for the day, then hands off to the app.
 class WelcomeScreen extends ConsumerStatefulWidget {
-  const WelcomeScreen({super.key, this.isNewSignup = false});
+  const WelcomeScreen({
+    super.key,
+    required this.routeData,
+  });
 
-  final bool isNewSignup;
+  final MoodRouteData routeData;
+
+  bool get isNewSignup => routeData.flow == MoodFlow.signup;
+  FreshRegistrationIntent? get registrationIntent =>
+      routeData.registrationIntent;
 
   @override
   ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -44,8 +51,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
 
   Timer? _timer;
   bool _navigated = false;
-  bool _checkingVisit = true;
-  bool _visitChecked = false;
   AppMood? _selected;
 
   @override
@@ -55,54 +60,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1100),
     );
-    _checkVisitAndInit();
-  }
-
-  Future<void> _checkVisitAndInit() async {
-    if (_visitChecked) return;
-    _visitChecked = true;
-
-    // Wait briefly for Supabase currentUser to be ready (prevents guest race conditions)
-    User? user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
-      for (var i = 0; i < 10; i++) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        user = Supabase.instance.client.auth.currentUser;
-        if (user != null) break;
-      }
-    }
-
-    if (!mounted) return;
-
-    if (user == null) {
-      // Guest or unauthenticated user -> skip visit recording and advance
-      _advance();
-      return;
-    }
-
-    // Check if today's visit is a new calendar day for this specific user
-    final isNewDay = await ref
-        .read(visitDaysCountProvider.notifier)
-        .recordVisitIfNewDay();
-
-    if (!mounted) return;
-
-    if (!isNewDay && !widget.isNewSignup) {
-      // Already opened today → skip the mood check-in AND the reflection,
-      // go straight Home.
-      if (mounted && !_navigated) {
-        _navigated = true;
-        context.go(AuthFlowRoutes.home);
-      }
-    } else {
-      // First visit of the day (or new sign up) -> show mood check-in UI and start animation
-      _controller.forward();
-      if (mounted) {
-        setState(() {
-          _checkingVisit = false;
-        });
-      }
-    }
+    _controller.forward();
   }
 
   static const _linesTr = [
@@ -137,16 +95,45 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   Future<void> _advance() async {
     if (_navigated || !mounted) return;
     _navigated = true;
-    context.go(
-      AuthFlowRoutes.afterMood(isNewSignup: widget.isNewSignup),
-      extra: widget.isNewSignup ? true : null,
-    );
+    final current = widget.registrationIntent;
+    if (widget.routeData.flow == MoodFlow.dailyCheckIn) {
+      context.go(
+        AuthFlowRoutes.afterMood(isNewSignup: false),
+        extra: const DailyReflectionRouteData(
+          DailyReflectionFlow.dailyCheckIn,
+        ),
+      );
+      return;
+    }
+    if (current == null) {
+      context.go(AuthFlowRoutes.home);
+      return;
+    }
+    try {
+      final next = await registrationFlowStore.advance(
+        current,
+        RegistrationStep.dailyReflection,
+      );
+      if (!mounted) return;
+      context.go(
+        AuthFlowRoutes.afterMood(isNewSignup: true),
+        extra: DailyReflectionRouteData(
+          DailyReflectionFlow.signup,
+          registrationIntent: next,
+        ),
+      );
+    } on RegistrationIntentMismatchException {
+      if (mounted) context.go(AuthFlowRoutes.home);
+    }
   }
 
-  void _pickMood(AppMood mood) {
+  Future<void> _pickMood(AppMood mood) async {
     ref.read(moodThemeProvider.notifier).state = mood;
     // Log today's mood so it shows on the calendar for this day.
-    ref.read(moodLogProvider.notifier).setForDay(DateTime.now(), mood.index);
+    await ref
+        .read(moodLogProvider.notifier)
+        .setForDay(DateTime.now(), mood.index);
+    if (!mounted) return;
     setState(() => _selected = mood);
     _timer?.cancel();
     // Hold on the confirmation beat long enough to read it, then hand off.
@@ -222,7 +209,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
           style: GoogleFonts.playfairDisplay(
             fontSize: 17,
             fontWeight: FontWeight.w600,
-            color: AstraKit.heading(isDark),
+            color: AstraKit.heading(context, isDark),
           ),
         ),
         const SizedBox(height: 20),
@@ -239,7 +226,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                     label: _label(l10n, mood),
                     selected: _selected == mood,
                     isDark: isDark,
-                    onTap: () => _pickMood(mood),
+                    onTap: () => unawaited(_pickMood(mood)),
                   ),
                 ),
               ),
@@ -293,7 +280,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
             style: GoogleFonts.playfairDisplay(
               fontSize: 26,
               fontWeight: FontWeight.w700,
-              color: AstraKit.heading(isDark),
+              color: AstraKit.heading(context, isDark),
             ),
           ),
         ),
@@ -301,7 +288,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
         Text(
           _confirmLine(mood, isTr),
           textAlign: TextAlign.center,
-          style: AstraKit.mutedText(isDark, fontSize: 13.5),
+          style: AstraKit.mutedText(context, isDark, fontSize: 13.5),
         ),
       ],
     );
@@ -312,21 +299,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     final l10n = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
-    final gold = AstraKit.gold(isDark);
+    final gold = AstraKit.gold(context, isDark);
     final name = _firstName;
     final greeting = isTr
         ? (name == null ? 'Hoş geldin' : 'Hoş geldin, $name')
         : (name == null ? 'Welcome' : 'Welcome, $name');
     final line = isTr ? _linesTr[_lineIndex] : _linesEn[_lineIndex];
-
-    if (_checkingVisit) {
-      return Scaffold(
-        body: AstraMountainBackground(
-          isDark: isDark,
-          child: const SizedBox.expand(),
-        ),
-      );
-    }
 
     return Scaffold(
       body: AstraMountainBackground(
@@ -354,13 +332,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                           Text(
                             greeting,
                             textAlign: TextAlign.center,
-                            style: AstraKit.heading1(isDark, fontSize: 26),
+                            style: AstraKit.heading1(context, isDark,
+                                fontSize: 26),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             line,
                             textAlign: TextAlign.center,
-                            style: AstraKit.mutedText(isDark, fontSize: 13.5),
+                            style: AstraKit.mutedText(context, isDark,
+                                fontSize: 13.5),
                           ),
                           const SizedBox(height: 24),
                           AnimatedSize(
@@ -370,7 +350,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                               duration: const Duration(milliseconds: 420),
                               switchInCurve: Curves.easeOut,
                               switchOutCurve: Curves.easeIn,
-                              transitionBuilder: (child, anim) => FadeTransition(
+                              transitionBuilder: (child, anim) =>
+                                  FadeTransition(
                                 opacity: anim,
                                 child: ScaleTransition(
                                   scale: Tween<double>(begin: 0.94, end: 1.0)
@@ -380,7 +361,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                               ),
                               child: _selected == null
                                   ? _buildPicker(l10n, isDark, isTr)
-                                  : _buildConfirm(l10n, isDark, isTr, _selected!),
+                                  : _buildConfirm(
+                                      l10n, isDark, isTr, _selected!),
                             ),
                           ),
                         ],
@@ -529,6 +511,7 @@ class _MoodOrb extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: AstraKit.body(
+              context,
               isDark,
               fontSize: 11,
               fontWeight: FontWeight.w600,
