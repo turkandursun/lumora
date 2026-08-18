@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
-import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/luma_avatar.dart';
 import '../../../../theme/mood_gradients.dart';

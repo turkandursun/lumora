@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/providers/cloud_backup_provider.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../auth/domain/auth_flow_routes.dart';
 

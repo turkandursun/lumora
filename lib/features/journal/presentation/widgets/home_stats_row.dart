@@ -60,7 +60,7 @@ class HomeStatsRow extends ConsumerWidget {
                   width: 52,
                   height: 52,
                   alignment: Alignment.center,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: LumaGlass.accentGradient,
@@ -132,7 +132,7 @@ class HomeStatsRow extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(
+                      Icon(
                         Icons.arrow_forward_ios_rounded,
                         size: 11,
                         color: LumaGlass.accentInk,

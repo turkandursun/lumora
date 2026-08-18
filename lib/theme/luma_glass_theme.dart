@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'astra_design_tokens.dart';
+import 'astra_screen_kit.dart';
+
 /// Shared "premium healing pink" glassmorphism system — introduced on the
 /// Luma AI chat hero (see `luma_chat_sheet.dart`) and reused wherever the app
 /// wants that same soft, uncluttered, Apple-like look. Intentionally NOT
@@ -18,33 +21,48 @@ import 'package:google_fonts/google_fonts.dart';
 class LumaGlass {
   LumaGlass._();
 
-  // Background wash (top → bottom).
-  static const bgTop = Color(0xFFFCE8EE);
-  static const bgMid = Color(0xFFF8DCE6);
-  static const bgBottom = Color(0xFFF1D1DE);
-  static const backgroundGradient = [bgTop, bgMid, bgBottom];
+  /// The palette selected in Profile (set app-wide from `activePaletteProvider`
+  /// via `AstraKit.active`). Every accent/background token below now derives
+  /// from it, so picking a theme recolours everything that uses LumaGlass —
+  /// Home, the AI chat sheet, the journal screen. Falls back to the original
+  /// Luma pink on the very first frame before a palette is set.
+  static AstraPalette? get _p => AstraKit.active;
 
-  // Brand + type.
-  static const wordmark = Color(0xFFAC8794); // dusty mauve — eyebrow/labels
+  // Background wash — now a single FLAT colour per palette (no top→bottom
+  // darkening gradient, per the "düz renk arka plan" request).
+  static Color get bgTop => _p?.gradientTop ?? const Color(0xFFFCE8EE);
+  static Color get bgMid => bgTop;
+  static Color get bgBottom => bgTop;
+  static List<Color> get backgroundGradient => [bgTop, bgTop];
+
+  // Brand + type. Body/heading text stays a fixed dark neutral so it's always
+  // readable on any pastel; the eyebrow/subtitle follow the palette accent.
+  static Color get wordmark => _p?.bottomNavActive ?? const Color(0xFFAC8794);
   static const heroInk = Color(0xFF2A2433); // near-black headline
-  static const subtitle = Color(0xFFCB9FB1); // muted rose — secondary text
+  static Color get subtitle => _p?.primary ?? const Color(0xFFCB9FB1);
 
   // Frosted-glass surface tokens (blurred, low-opacity — never flat white).
   static const glassFillTop = Color(0x8CFFFFFF); // ~55% white
   static const glassFillBottom = Color(0x47FFFFFF); // ~28% white
   static const glassBorder = Color(0x8CFFFFFF); // ~55% white hairline
-  static const glassShadow = Color(0x28C77D9B);
+  static Color get glassShadow =>
+      (_p?.primary ?? const Color(0xFFC77D9B)).withValues(alpha: 0.16);
 
-  // Reading colours on top of glass.
+  // Reading colours on top of glass (fixed dark neutrals for legibility).
   static const ink = Color(0xFF3A3444);
   static const cardTitle = Color(0xFF3B3543);
   static const hint = Color(0xFFB6A8BE);
 
-  static const sparkle = Color(0xFFC77D9B);
+  static Color get sparkle => _p?.primary ?? const Color(0xFFC77D9B);
 
-  static const accentGradient = [Color(0xFFEAAAC8), Color(0xFFCE7CA6)];
-  static const accentShadow = Color(0x4DCE7CA6);
-  static const accentInk = Color(0xFFA85777); // text/icon on light accent tints
+  static List<Color> get accentGradient => [
+        _p?.buttonPrimary ?? const Color(0xFFEAAAC8),
+        _p?.primary ?? const Color(0xFFCE7CA6),
+      ];
+  static Color get accentShadow =>
+      (_p?.primary ?? const Color(0xFFCE7CA6)).withValues(alpha: 0.30);
+  static Color get accentInk =>
+      _p?.secondary ?? const Color(0xFFA85777); // text/icon on light accent tints
 
   static const double cardRadius = 26;
   static const double blurSigma = 20;
@@ -77,16 +95,16 @@ class LumaGlass {
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: glassBorder, width: 1.1),
         boxShadow: shadow ??
-            const [
-              BoxShadow(color: glassShadow, blurRadius: 26, offset: Offset(0, 12)),
+            [
+              BoxShadow(color: glassShadow, blurRadius: 26, offset: const Offset(0, 12)),
             ],
       );
 }
 
-/// Full-bleed pink gradient background — the flat, calm wash behind any
-/// screen that opts into the [LumaGlass] look, replacing the busy mountain
-/// photo used elsewhere in the app. Deliberately simple (no photo, no Ken
-/// Burns) so cards read clearly on top of it.
+/// Full-bleed background behind any screen that opts into the [LumaGlass]
+/// look. Now a single FLAT colour taken from the selected palette (no photo,
+/// no Ken Burns, and no top→bottom darkening gradient) so the whole screen is
+/// one clean solid colour that changes with the chosen theme.
 class LumaGlassBackground extends StatelessWidget {
   const LumaGlassBackground({super.key, required this.child});
 
@@ -101,15 +119,8 @@ class LumaGlassBackground extends StatelessWidget {
         statusBarIconBrightness: Brightness.dark,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: LumaGlass.backgroundGradient,
-            stops: [0.0, 0.55, 1.0],
-          ),
-        ),
+      child: ColoredBox(
+        color: LumaGlass.bgTop,
         child: child,
       ),
     );

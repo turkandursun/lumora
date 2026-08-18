@@ -891,63 +891,6 @@ class _MenuItem extends StatelessWidget {
   }
 }
 
-class _MenuSwitchItem extends StatelessWidget {
-  const _MenuSwitchItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.onChanged,
-    required this.isDark,
-    required this.primary,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final bool isDark;
-  final Color primary;
-
-  @override
-  Widget build(BuildContext context) {
-    return AstraGlassCard(
-      isDark: isDark,
-      primaryColor: primary,
-      padding: EdgeInsets.zero,
-      borderRadius: 18,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: () => onChanged(!value),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            child: Row(
-              children: [
-                Icon(icon, color: primary, size: 22),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: AstraKit.body(isDark,
-                        fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                Switch.adaptive(
-                  value: value,
-                  activeThumbColor: primary,
-                  activeTrackColor: primary.withValues(alpha: 0.4),
-                  onChanged: onChanged,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Colour-theme picker: 7 swatches. Tapping one re-skins the whole app.
 class _PaletteThemeCard extends StatelessWidget {
   const _PaletteThemeCard({

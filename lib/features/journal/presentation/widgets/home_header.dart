@@ -138,7 +138,7 @@ class _NotificationBell extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(Icons.notifications_none_rounded, color: LumaGlass.sparkle, size: 20),
+                Icon(Icons.notifications_none_rounded, color: LumaGlass.sparkle, size: 20),
                 if (hasUnread)
                   Positioned(
                     top: -1,

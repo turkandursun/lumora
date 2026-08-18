@@ -31,71 +31,7 @@ class AstraThemeNotifier extends StateNotifier<AstraThemeMode> {
 
   String get _storageKey => '${astraThemeKey}_${_userId ?? 'guest'}';
 
-  static AstraThemeMode? _modeFromString(Object? value) {
-    return switch (value) {
-      'light' => AstraThemeMode.light,
-      'dark' => AstraThemeMode.dark,
-      _ => null,
-    };
-  }
-
   static String _modeToString(AstraThemeMode mode) => mode.name;
-
-  Future<void> _loadTheme() async {
-    final loadVersion = _selectionVersion;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final localMode = _modeFromString(prefs.getString(_storageKey)) ??
-          AstraThemeMode.dark;
-
-      // Local-first: paint the saved theme immediately without waiting for
-      // the network. Do not overwrite a choice made while prefs were loading.
-      if (!_disposed && _selectionVersion == loadVersion) {
-        state = localMode;
-      }
-
-      // Guest sessions intentionally remain local-only. Auth changes recreate
-      // this notifier, so the captured user id never crosses account borders.
-      if (!_disposed && _userId != null) {
-        unawaited(_syncFromCloud(
-          prefs: prefs,
-          localMode: localMode,
-          loadVersion: loadVersion,
-        ));
-      }
-    } catch (error) {
-      debugPrint('[AstraTheme] Local theme load failed: $error');
-    }
-  }
-
-  Future<void> _syncFromCloud({
-    required SharedPreferences prefs,
-    required AstraThemeMode localMode,
-    required int loadVersion,
-  }) async {
-    final userId = _userId;
-    if (userId == null) return;
-
-    try {
-      final profile = await _client
-          .from('profiles')
-          .select('theme_preference')
-          .eq('id', userId)
-          .maybeSingle();
-      final cloudMode = _modeFromString(profile?['theme_preference']);
-      if (cloudMode == null || cloudMode == localMode) return;
-
-      // A manual selection made after this request started always wins over
-      // an older cloud response; setTheme is already syncing that new choice.
-      if (_disposed || _selectionVersion != loadVersion) return;
-
-      state = cloudMode;
-      await prefs.setString(_storageKey, _modeToString(cloudMode));
-    } catch (error) {
-      // Offline/cloud failures must never block startup or change local state.
-      debugPrint('[AstraTheme] Cloud theme sync failed: $error');
-    }
-  }
 
   Future<void> setTheme(AstraThemeMode mode) {
     _selectionVersion++;

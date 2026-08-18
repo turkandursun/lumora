@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/astra_palette_provider.dart';
 import '../../../core/providers/astra_theme_provider.dart';
 import '../../../core/providers/cloud_backup_provider.dart';
 import '../../../core/router/app_router.dart';
@@ -120,6 +121,9 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   Widget build(BuildContext context) {
+    // Watch the palette so the whole shell (and its bottom bar) recolours the
+    // instant the theme changes.
+    AstraKit.active = ref.watch(activePaletteProvider);
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
     final screens = [
       const HomeScreen(),
@@ -212,11 +216,14 @@ class _ShellBottomNav extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: DecoratedBox(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: _barFill,
-                border: Border(top: BorderSide(color: _barBorder, width: 1.1)),
+                border: const Border(top: BorderSide(color: _barBorder, width: 1.1)),
                 boxShadow: [
-                  BoxShadow(color: Color(0x28C77D9B), blurRadius: 20, offset: Offset(0, -4)),
+                  BoxShadow(
+                      color: accent.withValues(alpha: 0.16),
+                      blurRadius: 20,
+                      offset: const Offset(0, -4)),
                 ],
               ),
               child: SafeArea(
@@ -274,7 +281,7 @@ class _ShellBottomNav extends StatelessWidget {
           child: _QuickAddButton(
             label: l10n.shellTabQuickAdd,
             isDark: isDark,
-            barColor: _barRing,
+            barColor: AstraKit.active?.gradientTop ?? _barRing,
             anim: fabAnim,
             onTap: onQuickAdd,
           ),
@@ -353,8 +360,9 @@ class _QuickAddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const gradient = _fabGradient;
-    const glow = _fabGlow;
+    final p = AstraKit.active;
+    final gradient = p != null ? [p.buttonPrimary, p.primary] : _fabGradient;
+    final glow = p?.primary ?? _fabGlow;
     const iconColor = Color(0xFF3A1424);
     final spin = CurvedAnimation(parent: anim, curve: Curves.easeOutBack);
     return Semantics(
@@ -516,11 +524,14 @@ class _FabMenuItem extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
                 decoration: BoxDecoration(
-                  color: const Color(0xF2FCEEF3),
+                  color: AstraKit.active?.surfaceElevated ?? const Color(0xF2FCEEF3),
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(color: accent.withValues(alpha: 0.4)),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x28C77D9B), blurRadius: 14, offset: Offset(0, 6)),
+                  boxShadow: [
+                    BoxShadow(
+                        color: accent.withValues(alpha: 0.16),
+                        blurRadius: 14,
+                        offset: const Offset(0, 6)),
                   ],
                 ),
                 child: Row(

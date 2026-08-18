@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../theme/astra_screen_kit.dart';
 
 /// A slim top strip that celebrates the user's daily streak with a living
 /// flame + count and a Mon–Sun week row (past & current days lit, future days
@@ -45,12 +46,16 @@ class DailyStreakBanner extends StatelessWidget {
       fmt = DateFormat('E');
     }
 
-    final onColor = isDark ? Colors.white : const Color(0xFF3E2A57);
-    final inactiveDot =
-        isDark ? const Color(0xFF6E6685) : const Color(0xFFCBB9D8);
-    final bgGradient = isDark
-        ? const [Color(0xF2241640), Color(0xF23A2450)]
-        : const [Color(0xFFFFF1DD), Color(0xFFFFE1C6)];
+    // Follows the selected palette (no more moon/sun split): a light card in
+    // the theme colour with a glow in the theme accent.
+    final p = AstraKit.active;
+    final accent = p?.primary ?? const Color(0xFFCE7CA6);
+    final onColor = const Color(0xFF34121F);
+    final inactiveDot = const Color(0xFFCBB9D8);
+    final bgGradient = [
+      p?.gradientTop ?? const Color(0xFFFCE8EE),
+      p?.iconContainer ?? const Color(0xFFF6D6E3),
+    ];
 
     return Material(
       color: Colors.transparent,
@@ -64,19 +69,19 @@ class DailyStreakBanner extends StatelessWidget {
             end: Alignment.centerRight,
           ),
           border: Border.all(
-            color: const Color(0xFFFF7A2E).withValues(alpha: isDark ? 0.35 : 0.5),
+            color: accent.withValues(alpha: 0.5),
             width: 1,
           ),
           boxShadow: [
-            // Warm ember glow so the whole strip reads as "on fire".
+            // Soft glow in the theme accent.
             BoxShadow(
-              color: const Color(0xFFFF7A2E).withValues(alpha: isDark ? 0.30 : 0.28),
+              color: accent.withValues(alpha: 0.28),
               blurRadius: 22,
               spreadRadius: -2,
               offset: const Offset(0, 6),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.10),
+              color: Colors.black.withValues(alpha: 0.10),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -92,8 +97,8 @@ class DailyStreakBanner extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.local_fire_department_rounded,
-                          size: 15, color: Color(0xFFFF7A2E)),
+                      Icon(Icons.local_fire_department_rounded,
+                          size: 15, color: accent),
                       const SizedBox(width: 5),
                       Text(
                         l10n.homeStreakBannerTitle.toUpperCase(),
@@ -165,21 +170,27 @@ class _FlameBadgeState extends State<_FlameBadge>
       animation: _controller,
       builder: (context, child) {
         final t = Curves.easeInOut.transform(_controller.value);
+        final p = AstraKit.active;
+        final badgeGradient = [
+          p?.buttonPrimary ?? const Color(0xFFEAAAC8),
+          p?.primary ?? const Color(0xFFCE7CA6),
+          p?.secondary ?? const Color(0xFFB35C82),
+        ];
+        final glow = p?.primary ?? const Color(0xFFCE7CA6);
         return Container(
           width: 48,
           height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFFB43D), Color(0xFFFF6A2C), Color(0xFFF0402E)],
+            gradient: LinearGradient(
+              colors: badgeGradient,
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF6A2C)
-                    .withValues(alpha: 0.35 + 0.30 * t),
+                color: glow.withValues(alpha: 0.35 + 0.30 * t),
                 blurRadius: 14 + 10 * t,
                 spreadRadius: 1 + 2 * t,
               ),
@@ -233,7 +244,9 @@ class _DayDot extends StatelessWidget {
             shape: BoxShape.circle,
             color: active ? color : inactiveColor.withValues(alpha: 0.5),
             border: isToday
-                ? Border.all(color: const Color(0xFFFF7A2E), width: 2)
+                ? Border.all(
+                    color: AstraKit.active?.primary ?? const Color(0xFFCE7CA6),
+                    width: 2)
                 : null,
             boxShadow: active
                 ? [
