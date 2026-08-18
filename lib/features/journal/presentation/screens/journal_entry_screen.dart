@@ -462,7 +462,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
         DateFormat('d MMMM yyyy, EEEE', localeStr).format(_selectedDate);
 
     return Scaffold(
-      body: _MountainBackground(
+      body: AstraMountainBackground(
         isDark: isDark,
         child: SafeArea(
           bottom: false,

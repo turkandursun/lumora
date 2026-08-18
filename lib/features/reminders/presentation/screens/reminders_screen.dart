@@ -14,6 +14,7 @@ import '../../../../theme/responsive_content.dart';
 import '../../data/reminders_repository.dart';
 import '../providers/reminders_providers.dart';
 import '../widgets/new_reminder_sheet.dart';
+import '../widgets/smart_reminders_card.dart';
 
 /// Localized title + notification body for each of the seeded starter
 /// reminders, keyed by [DefaultReminderIconKeys]. Lives in the presentation
@@ -168,6 +169,10 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                               AstraKit.heading1(context, isDark, fontSize: 24)),
                     ],
                   ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                  child: SmartRemindersCard(isDark: isDark),
                 ),
                 TabBar(
                   controller: _tabController,

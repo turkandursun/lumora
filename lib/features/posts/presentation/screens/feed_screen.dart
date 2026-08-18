@@ -205,11 +205,21 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                               : Column(
                                   children: [
                                     for (final post in visible)
+<<<<<<< Updated upstream
                                       _PostCard(
                                           post: post,
                                           locale: locale,
                                           isDark: isDark,
                                           primary: primary),
+=======
+                                      RepaintBoundary(
+                                        child: _PostCard(
+                                            post: post,
+                                            locale: locale,
+                                            isDark: isDark,
+                                            primary: primary),
+                                      ),
+>>>>>>> Stashed changes
                                   ],
                                 );
                         },

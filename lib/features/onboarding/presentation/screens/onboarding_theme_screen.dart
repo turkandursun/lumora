@@ -44,6 +44,7 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
     });
 
   bool _bursting = false;
+<<<<<<< Updated upstream
   bool _navigated = false;
 
   Future<void> _finishRegistrationStep() async {
@@ -64,6 +65,11 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
       if (mounted) context.go(AppRoutes.home);
     }
   }
+=======
+  // The wash behind the growing star matches the chosen palette, so the burst
+  // blends straight into the themed onboarding screen that follows.
+  Color _fillColor = const Color(0xFFF8E3A6);
+>>>>>>> Stashed changes
 
   @override
   void dispose() {
@@ -73,6 +79,7 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
 
   void _onContinue() {
     if (_bursting) return;
+    _fillColor = ref.read(activePaletteProvider).gradientBottom;
     setState(() => _bursting = true);
     _burst.forward();
   }
@@ -219,7 +226,7 @@ class _OnboardingThemeScreenState extends ConsumerState<OnboardingThemeScreen>
                         // fill in as the star grows.
                         Opacity(
                           opacity: fill,
-                          child: const ColoredBox(color: Color(0xFFF8E3A6)),
+                          child: ColoredBox(color: _fillColor),
                         ),
                         // The real yellow Luma star — unchanged colour. Isolated
                         // in its own layer so only it repaints each frame.

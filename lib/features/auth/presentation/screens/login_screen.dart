@@ -198,8 +198,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final isDark = mode == AstraThemeMode.dark;
 
     // Background follows the user's chosen palette (picked during onboarding),
+<<<<<<< Updated upstream
     // so the auth screens match the rest of the app.
     final palette = AstraKit.palette(context);
+=======
+    // so the auth screens match the rest of the app. Publish it to the shared
+    // kit so the glass panel + fields render palette-light (this screen doesn't
+    // use AstraMountainBackground, which normally sets this).
+    final palette = ref.watch(activePaletteProvider);
+    AstraKit.active = palette;
+>>>>>>> Stashed changes
 
     final errorMessage =
         _formError ?? _serverError(l10n, authState.failureReason);
@@ -290,7 +298,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget _buildPanel(
       bool isDark, bool isTr, AuthState authState, String? errorMessage) {
     final loading = authState.isSubmitting || _isGoogleSubmitting;
+<<<<<<< Updated upstream
     final gold = AstraKit.gold(context, isDark);
+=======
+    // Accent for links: the palette's deeper tone when a theme is active,
+    // otherwise the legacy branded gold.
+    final gold = AstraKit.active?.secondary ?? AstraKit.gold(isDark);
+>>>>>>> Stashed changes
 
     return AstraGlassCard(
       isDark: isDark,

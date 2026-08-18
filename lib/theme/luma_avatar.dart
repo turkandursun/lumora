@@ -80,19 +80,23 @@ class _LumaAvatarState extends State<LumaAvatar>
   @override
   Widget build(BuildContext context) {
     final asset = (widget.speaking && _mouthOpen) ? _open : _closed;
-    return AnimatedBuilder(
-      animation: _idle,
-      builder: (context, child) {
-        final t = Curves.easeInOut.transform(_idle.value);
-        return Transform.translate(
-          offset: Offset(0, -2.5 * t),
-          child: Transform.scale(scale: 1 + 0.02 * t, child: child),
-        );
-      },
-      child: SizedBox(
-        width: widget.size,
-        height: widget.size,
-        child: Image.asset(asset, fit: BoxFit.contain, gaplessPlayback: true),
+    // Isolated in its own layer so the continuous breathing/mouth animation
+    // repaints only itself, never the whole screen behind it.
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _idle,
+        builder: (context, child) {
+          final t = Curves.easeInOut.transform(_idle.value);
+          return Transform.translate(
+            offset: Offset(0, -2.5 * t),
+            child: Transform.scale(scale: 1 + 0.02 * t, child: child),
+          );
+        },
+        child: SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: Image.asset(asset, fit: BoxFit.contain, gaplessPlayback: true),
+        ),
       ),
     );
   }

@@ -8,7 +8,11 @@ import 'core/providers/auth_listener.dart';
 import 'core/providers/astra_palette_provider.dart';
 import 'core/providers/astra_theme_provider.dart';
 import 'core/router/app_router.dart';
+<<<<<<< Updated upstream
 import 'features/auth/domain/registration_flow_state.dart';
+=======
+import 'core/services/smart_reminders_service.dart';
+>>>>>>> Stashed changes
 import 'l10n/generated/app_localizations.dart';
 import 'theme/app_theme.dart';
 
@@ -26,6 +30,11 @@ class _LumoraAppState extends ConsumerState<LumoraApp> {
   @override
   void initState() {
     super.initState();
+    // (Re)schedule the smart daily nudges on every launch so they stay active
+    // even if the user never opens the reminders screen.
+    final isTr =
+        WidgetsBinding.instance.platformDispatcher.locale.languageCode == 'tr';
+    unawaited(SmartRemindersService.instance.sync(isTr: isTr));
     _lastAuthenticatedUserId = Supabase.instance.client.auth.currentUser?.id;
     _authSubscription =
         Supabase.instance.client.auth.onAuthStateChange.listen((data) async {

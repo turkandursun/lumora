@@ -12,6 +12,7 @@ import '../../../letters/presentation/providers/letter_providers.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../../profile/presentation/providers/visit_tracker_providers.dart';
 import '../../domain/journal_text_stats.dart';
+import '../widgets/weekly_summary_card.dart';
 
 const List<Color> _moodColors = [
   Color(0xFFF4C95D), // happy
@@ -85,6 +86,8 @@ class StatsScreen extends ConsumerWidget {
                 Expanded(
                   child: ListView(
                     children: [
+                      const WeeklySummaryCard(),
+                      const SizedBox(height: 12),
                       _OverviewCard(
                         isTr: isTr,
                         isDark: isDark,

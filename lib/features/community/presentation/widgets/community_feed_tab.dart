@@ -120,13 +120,15 @@ class _CommunityFeedTabState extends ConsumerState<CommunityFeedTab> {
                 : Column(
                     children: [
                       for (final post in posts)
-                        _PostCard(
-                          post: post,
-                          isDark: isDark,
-                          primary: primary,
-                          onReact: _toggleReaction,
-                          onOpenReplies: () => _openReplies(post),
-                          onReport: () => _reportPost(post),
+                        RepaintBoundary(
+                          child: _PostCard(
+                            post: post,
+                            isDark: isDark,
+                            primary: primary,
+                            onReact: _toggleReaction,
+                            onOpenReplies: () => _openReplies(post),
+                            onReport: () => _reportPost(post),
+                          ),
                         ),
                     ],
                   ),
