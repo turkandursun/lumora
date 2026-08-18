@@ -15,8 +15,8 @@ import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
+import '../../../../theme/luma_wave_avatar.dart';
 import '../../../../theme/responsive_content.dart';
-import '../../../profile/data/profile_repository.dart';
 import '../../domain/auth_flow_routes.dart';
 import '../../domain/registration_flow_state.dart';
 import '../providers/auth_provider.dart';
@@ -147,35 +147,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
-  Future<void> _initializeResumedFreshProfileAppearance(String userId) async {
-    await ref.read(astraThemeProvider.notifier).setTheme(AstraThemeMode.light);
-    try {
-      await ProfileRepository().initializeFreshProfileDefaults(userId);
-    } catch (error) {
-      debugPrint('[Profile] Fresh profile defaults could not be saved: $error');
-    }
-  }
-
   Future<void> _routeAfterSignIn() async {
     if (_didRouteAfterSignIn) return;
     _didRouteAfterSignIn = true;
+    await ref.read(cloudBackupServiceProvider).onSignIn();
+    await bootstrapAstraPaletteForCurrentUser(ref);
+    if (!mounted) return;
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
       _didRouteAfterSignIn = false;
       return;
     }
     final intent = await registrationFlowStore.restore(userId);
-    if (!mounted || Supabase.instance.client.auth.currentUser?.id != userId) {
-      return;
-    }
-    // Email-confirmation sign-ups resume at name entry after their first real
-    // session. Initialize defaults only at that first step; later registration
-    // resumes must preserve a palette the user may already have selected.
-    if (intent?.step == RegistrationStep.nameEntry) {
-      await _initializeResumedFreshProfileAppearance(userId);
-    }
-    await ref.read(cloudBackupServiceProvider).onSignIn();
-    await bootstrapAstraPaletteForCurrentUser(ref);
     if (!mounted || Supabase.instance.client.auth.currentUser?.id != userId) {
       return;
     }
@@ -215,8 +198,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
 
-    // Background follows the current reactive palette so the auth screens
-    // match the rest of the app without mutable global theme state.
+    // Background follows the user's chosen palette (picked during onboarding),
+    // so the auth screens match the rest of the app.
     final palette = AstraKit.palette(context);
 
     final errorMessage =
@@ -234,6 +217,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final compact = constraints.maxHeight < 700;
+                final lumaSize = (constraints.maxWidth * 0.27).clamp(
+                  90.0,
+                  compact ? 96.0 : 110.0,
+                );
                 return SingleChildScrollView(
                   padding: EdgeInsets.only(
                       bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -247,9 +235,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const SizedBox(height: 54),
+                              SizedBox(height: compact ? 8 : 18),
                               AstraEntrance(
                                 index: 0,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Center(
+                                  child: LumaWaveAvatar(size: lumaSize),
+                                ),
+                              ),
+                              SizedBox(height: compact ? 2 : 6),
+                              AstraEntrance(
+                                index: 1,
                                 intervalMs: 130,
                                 offset: 20,
                                 child: Text('ASTRA',
@@ -259,7 +256,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               ),
                               const SizedBox(height: 6),
                               AstraEntrance(
-                                index: 1,
+                                index: 2,
                                 intervalMs: 130,
                                 offset: 20,
                                 child: Text(

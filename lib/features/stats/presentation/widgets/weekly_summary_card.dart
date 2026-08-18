@@ -5,9 +5,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../../core/providers/astra_palette_provider.dart';
+import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/mood_gradients.dart';
+import '../../domain/weekly_summary.dart';
 import '../providers/weekly_summary_provider.dart';
 
 /// "Bu hafta" — a personal weekly snapshot the user can read at a glance and
@@ -35,8 +36,8 @@ class _WeeklySummaryCardState extends ConsumerState<WeeklySummaryCard> {
       if (data == null) return;
       final png = data.buffer.asUint8List();
       // XFile.fromData works on web and mobile alike (no dart:io / temp file).
-      final file =
-          XFile.fromData(png, mimeType: 'image/png', name: 'astra_week.png');
+      final file = XFile.fromData(png,
+          mimeType: 'image/png', name: 'astra_week.png');
       await Share.shareXFiles([file],
           text: isTr ? 'ASTRA · Bu haftam 🌸' : 'ASTRA · My week 🌸');
     } catch (_) {
@@ -50,8 +51,11 @@ class _WeeklySummaryCardState extends ConsumerState<WeeklySummaryCard> {
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final s = ref.watch(weeklySummaryProvider);
-    final palette = ref.watch(activePaletteProvider);
-    final primary = AstraKit.primary(context, false);
+    // Brightness-adjusted palette so the card background is dark in dark theme
+    // (otherwise the theme's light text is invisible on a light card).
+    final palette = AstraKit.palette(context);
+    final isDark = AstraKit.tokens(context).isDark;
+    final primary = AstraKit.primary(context, isDark);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -98,8 +102,7 @@ class _WeeklySummaryCardState extends ConsumerState<WeeklySummaryCard> {
                       isTr
                           ? 'Bu hafta henüz veri yok. Bir ruh hali seç ya da birkaç satır yaz — burası dolmaya başlasın. 🌸'
                           : 'No data yet this week. Log a mood or write a few lines — this will start filling in. 🌸',
-                      style: AstraKit.body(context, false,
-                          fontSize: 14, fontWeight: FontWeight.w500),
+                      style: AstraKit.body(context, false, fontSize: 14, fontWeight: FontWeight.w500),
                     ),
                   )
                 else ...[
@@ -143,8 +146,7 @@ class _WeeklySummaryCardState extends ConsumerState<WeeklySummaryCard> {
             icon: Icon(Icons.ios_share_rounded, size: 18, color: primary),
             label: Text(
               isTr ? 'Paylaş' : 'Share',
-              style: AstraKit.body(context, false,
-                      fontSize: 13.5, fontWeight: FontWeight.w700)
+              style: AstraKit.body(context, false, fontSize: 13.5, fontWeight: FontWeight.w700)
                   .copyWith(color: primary),
             ),
           ),

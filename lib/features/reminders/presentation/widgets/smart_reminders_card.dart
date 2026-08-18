@@ -23,12 +23,10 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
   void initState() {
     super.initState();
     SmartRemindersService.instance.load().then((s) {
-      if (mounted) {
-        setState(() {
-          _s = s;
-          _loaded = true;
-        });
-      }
+      if (mounted) setState(() {
+            _s = s;
+            _loaded = true;
+          });
     });
   }
 
@@ -83,8 +81,9 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
                 value: _s.enabled,
                 activeThumbColor: primary,
                 activeTrackColor: primary.withValues(alpha: 0.4),
-                onChanged:
-                    _loaded ? (v) => _persist(_s.copyWith(enabled: v)) : null,
+                onChanged: _loaded
+                    ? (v) => _persist(_s.copyWith(enabled: v))
+                    : null,
               ),
             ],
           ),
@@ -153,14 +152,13 @@ class _TimeRow extends StatelessWidget {
                   Text(label,
                       style: AstraKit.body(context, isDark,
                           fontSize: 13.5, fontWeight: FontWeight.w600)),
-                  Text(hint,
-                      style:
-                          AstraKit.mutedText(context, isDark, fontSize: 11.5)),
+                  Text(hint, style: AstraKit.mutedText(context, isDark, fontSize: 11.5)),
                 ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),

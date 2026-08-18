@@ -9,14 +9,13 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supabase
     show AuthState;
 
 import '../../../../core/providers/astra_palette_provider.dart';
-import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../core/providers/cloud_backup_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
-import '../../../profile/data/profile_repository.dart';
 import '../../domain/auth_flow_routes.dart';
 import '../../domain/registration_flow_state.dart';
 import '../providers/auth_provider.dart';
@@ -95,20 +94,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     super.dispose();
   }
 
-  Future<void> _initializeFreshProfileAppearance(String userId) async {
-    // Invalidate any in-flight cloud result from before/during sign-up and
-    // paint the fresh-registration flow light immediately.
-    await ref.read(astraThemeProvider.notifier).setTheme(AstraThemeMode.light);
-    try {
-      await ProfileRepository().initializeFreshProfileDefaults(userId);
-    } catch (error) {
-      // Registration remains usable offline. The user-scoped local light
-      // selection is already active and the DB default migration supplies the
-      // server-side safety net for future profile inserts.
-      debugPrint('[Profile] Fresh profile defaults could not be saved: $error');
-    }
-  }
-
   Future<void> _onCreateAccountPressed() async {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final email = _emailController.text.trim();
@@ -158,8 +143,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       context.go(AppRoutes.login);
       return;
     }
-
-    await _initializeFreshProfileAppearance(userId);
 
     // Fresh account: wipe any local data left by a previous account on this
     // device so the new user starts clean and account-isolated.
@@ -214,7 +197,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     final FreshRegistrationIntent? intent;
     if (isFreshSignup) {
       intent = await registrationFlowStore.begin(user.id);
-      await _initializeFreshProfileAppearance(user.id);
     } else {
       await registrationFlowStore.clearForUser(user.id);
       intent = null;
@@ -252,15 +234,28 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
   @override
   Widget build(BuildContext context) {
+    // The registration screen always presents in the light theme, even when the
+    // rest of the app is in dark mode. We override this subtree's palette tokens
+    // to the always-light variant and render everything below it, so every
+    // context-driven AstraKit colour resolves light regardless of app theme.
+    final basePalette = ref.watch(activePaletteProvider);
+    final lightTokens =
+        AstraThemeTokens.fromPalette(basePalette, brightness: Brightness.light);
+    return Theme(
+      data: Theme.of(context).copyWith(
+        extensions: [lightTokens],
+      ),
+      child: Builder(
+        builder: (context) => _buildContent(context, basePalette),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, AstraPalette palette) {
+    const isDark = false;
     final authState = ref.watch(authControllerProvider);
     final l10n = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final mode = ref.watch(astraThemeProvider);
-    final isDark = mode == AstraThemeMode.dark;
-
-    // Background follows the current reactive palette so the auth screens
-    // match the rest of the app without mutable global theme state.
-    final palette = AstraKit.palette(context);
 
     final errorMessage =
         _formError ?? _serverError(l10n, authState.failureReason);
@@ -327,7 +322,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                               ),
                               const Spacer(),
                               _animated(_buildPanel(
-                                  isDark, isTr, authState, errorMessage)),
+                                  context, isDark, isTr, authState, errorMessage)),
                               const SizedBox(height: 12),
                             ],
                           ),
@@ -359,8 +354,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     );
   }
 
-  Widget _buildPanel(
-      bool isDark, bool isTr, AuthState authState, String? errorMessage) {
+  Widget _buildPanel(BuildContext context, bool isDark, bool isTr,
+      AuthState authState, String? errorMessage) {
     final loading = authState.isSubmitting || _isGoogleSubmitting;
     final gold = AstraKit.gold(context, isDark);
 
