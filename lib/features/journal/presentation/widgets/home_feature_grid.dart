@@ -135,6 +135,11 @@ class _FeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // "Rakı beyazı" — a soft, milky-white ghost of the feature icon, barely
+    // there, so each card carries a large emblem behind its text instead of
+    // looking empty. Kept faint enough to never fight the title/description.
+    final watermark = Colors.white.withValues(alpha: isDark ? 0.10 : 0.55);
     return AstraMorphContainer(
       borderRadius: 20,
       openBuilder: item.screenBuilder,
@@ -152,25 +157,15 @@ class _FeatureCard extends StatelessWidget {
               splashColor: LumaGlass.sparkle(context).withValues(alpha: 0.14),
               child: Stack(
                 children: [
-                  // Outlined accent icon circle in the top-right corner.
+                  // Large milky-white watermark of the feature icon, bleeding
+                  // off the bottom-right corner, sitting behind the text.
                   Positioned(
-                    right: 12,
-                    top: 12,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color:
-                            LumaGlass.sparkle(context).withValues(alpha: 0.14),
-                        border: Border.all(
-                            color: LumaGlass.sparkle(context)
-                                .withValues(alpha: 0.4),
-                            width: 1.2),
-                      ),
-                      child: Icon(item.primaryIcon,
-                          size: 20, color: LumaGlass.sparkle(context)),
+                    right: -24,
+                    bottom: -18,
+                    child: Icon(
+                      item.primaryIcon,
+                      size: 150,
+                      color: watermark,
                     ),
                   ),
                   if (item.badgeCount > 0)

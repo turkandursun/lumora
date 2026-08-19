@@ -3,12 +3,14 @@ import 'package:intl/intl.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../theme/astra_design_tokens.dart';
 
-/// A slim top strip that celebrates the user's daily streak with a living
-/// flame + count and a Mon–Sun week row (past & current days lit, future days
-/// dimmed). Theme-aware: a warm ember card on the sun theme, a deep-plum card
-/// with a fiery glow on the moon theme. Shown once per day on Home for a few
-/// seconds; see `HomeScreen` for the show-once / auto-dismiss logic.
+/// A slim top strip that celebrates the user's daily streak: a softly pulsing
+/// flame badge with the count, a warm encouraging line, and a Mon–Sun week row
+/// (completed & current days filled, future days outlined). Fully theme-aware —
+/// it borrows the app's rose/plum palette so it feels native in both light and
+/// dark mode instead of a stray orange card. Shown once per day on Home for a
+/// few seconds; see `HomeScreen` for the show-once / auto-dismiss logic.
 class DailyStreakBanner extends StatelessWidget {
   const DailyStreakBanner({
     super.key,
@@ -21,23 +23,39 @@ class DailyStreakBanner extends StatelessWidget {
   final bool isDark;
   final VoidCallback onClose;
 
-  static const List<Color> _dayColors = [
-    Color(0xFFF6971F), // Mon
-    Color(0xFFF7C948), // Tue
-    Color(0xFF2FB9A6), // Wed
-    Color(0xFF57C971), // Thu
-    Color(0xFF8B7BD8), // Fri
-    Color(0xFF5B9BD5), // Sat
-    Color(0xFFE87BA6), // Sun
-  ];
+  /// A short, warm nudge that scales with how long the streak is.
+  String _encouragement(bool isTr) {
+    if (count <= 1) {
+      return isTr ? 'Serin başladı — devam et!' : 'Your streak has begun — keep going!';
+    }
+    if (count < 7) {
+      return isTr
+          ? '$count gün üst üste, harika gidiyorsun!'
+          : '$count days in a row — you\'re doing great!';
+    }
+    if (count < 30) {
+      return isTr
+          ? '$count günlük seri! Kendinle gurur duy.'
+          : '$count-day streak! Be proud of yourself.';
+    }
+    return isTr
+        ? '$count gün! Bu inanılmaz bir alışkanlık.'
+        : '$count days! What an incredible habit.';
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
+    final isTr = locale == 'tr';
+    final tokens = AstraThemeTokens.of(context);
+    final palette = tokens.palette;
+    final accent = palette.activeAccent;
+    final deep = palette.secondary;
+
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final monday = today.subtract(Duration(days: now.weekday - 1));
+    final monday = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
     DateFormat fmt;
     try {
       fmt = DateFormat('E', locale);
@@ -45,74 +63,99 @@ class DailyStreakBanner extends StatelessWidget {
       fmt = DateFormat('E');
     }
 
-    final onColor = isDark ? Colors.white : const Color(0xFF3E2A57);
-    final inactiveDot =
-        isDark ? const Color(0xFF6E6685) : const Color(0xFFCBB9D8);
+    final onColor = tokens.textPrimary;
+    final mutedColor = tokens.textMuted;
+    final inactiveDot = mutedColor.withValues(alpha: isDark ? 0.34 : 0.30);
+
     final bgGradient = isDark
-        ? const [Color(0xF2241640), Color(0xF23A2450)]
-        : const [Color(0xFFFFF1DD), Color(0xFFFFE1C6)];
+        ? [
+            Color.lerp(palette.surfaceElevated, accent, 0.16) ??
+                palette.surfaceElevated,
+            palette.surfaceElevated,
+          ]
+        : [
+            Color.lerp(palette.cardBackground, accent, 0.12) ??
+                palette.cardBackground,
+            palette.cardBackground,
+          ];
 
     return Material(
       color: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+        padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
             colors: bgGradient,
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
           border: Border.all(
-            color: const Color(0xFFFF7A2E).withValues(alpha: isDark ? 0.35 : 0.5),
-            width: 1,
+            color: accent.withValues(alpha: isDark ? 0.42 : 0.45),
+            width: 1.2,
           ),
           boxShadow: [
-            // Warm ember glow so the whole strip reads as "on fire".
+            // A soft rose glow so the strip feels alive and celebratory.
             BoxShadow(
-              color: const Color(0xFFFF7A2E).withValues(alpha: isDark ? 0.30 : 0.28),
-              blurRadius: 22,
-              spreadRadius: -2,
-              offset: const Offset(0, 6),
+              color: accent.withValues(alpha: isDark ? 0.32 : 0.24),
+              blurRadius: 24,
+              spreadRadius: -3,
+              offset: const Offset(0, 8),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.10),
+              color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.08),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _FlameBadge(count: count),
-            const SizedBox(width: 12),
+            _FlameBadge(count: count, accent: accent, deep: deep),
+            const SizedBox(width: 13),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.local_fire_department_rounded,
-                          size: 15, color: Color(0xFFFF7A2E)),
+                      Icon(Icons.local_fire_department_rounded,
+                          size: 15, color: accent),
                       const SizedBox(width: 5),
-                      Text(
-                        l10n.homeStreakBannerTitle.toUpperCase(),
-                        style: AppTheme.bodyFont(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
-                          color: onColor,
-                        ).copyWith(letterSpacing: 0.5),
+                      Expanded(
+                        child: Text(
+                          l10n.homeStreakBannerTitle.toUpperCase(),
+                          style: AppTheme.bodyFont(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            color: onColor,
+                          ).copyWith(letterSpacing: 0.6),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 3),
+                  Text(
+                    _encouragement(isTr),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.bodyFont(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: onColor.withValues(alpha: 0.72),
+                    ).copyWith(height: 1.2),
+                  ),
+                  const SizedBox(height: 9),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       for (var i = 0; i < 7; i++)
                         _DayDot(
                           label: fmt.format(monday.add(Duration(days: i))),
-                          color: _dayColors[i],
+                          accent: accent,
+                          deep: deep,
                           inactiveColor: inactiveDot,
                           textColor: onColor,
                           active: (i + 1) <= now.weekday,
@@ -126,8 +169,10 @@ class DailyStreakBanner extends StatelessWidget {
             IconButton(
               onPressed: onClose,
               visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints(),
               icon: Icon(Icons.close_rounded,
-                  size: 18, color: onColor.withValues(alpha: 0.6)),
+                  size: 18, color: onColor.withValues(alpha: 0.55)),
             ),
           ],
         ),
@@ -136,11 +181,17 @@ class DailyStreakBanner extends StatelessWidget {
   }
 }
 
-/// A softly pulsing flame badge with the streak count in the centre.
+/// A softly pulsing rose flame badge with the streak count in the centre.
 class _FlameBadge extends StatefulWidget {
-  const _FlameBadge({required this.count});
+  const _FlameBadge({
+    required this.count,
+    required this.accent,
+    required this.deep,
+  });
 
   final int count;
+  final Color accent;
+  final Color deep;
 
   @override
   State<_FlameBadge> createState() => _FlameBadgeState();
@@ -150,7 +201,7 @@ class _FlameBadgeState extends State<_FlameBadge>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1400),
+    duration: const Duration(milliseconds: 1500),
   )..repeat(reverse: true);
 
   @override
@@ -166,20 +217,23 @@ class _FlameBadgeState extends State<_FlameBadge>
       builder: (context, child) {
         final t = Curves.easeInOut.transform(_controller.value);
         return Container(
-          width: 48,
-          height: 48,
+          width: 52,
+          height: 52,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFFB43D), Color(0xFFFF6A2C), Color(0xFFF0402E)],
+            gradient: LinearGradient(
+              colors: [
+                Color.lerp(widget.accent, Colors.white, 0.22) ?? widget.accent,
+                widget.accent,
+                widget.deep,
+              ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF6A2C)
-                    .withValues(alpha: 0.35 + 0.30 * t),
+                color: widget.accent.withValues(alpha: 0.35 + 0.30 * t),
                 blurRadius: 14 + 10 * t,
                 spreadRadius: 1 + 2 * t,
               ),
@@ -192,10 +246,10 @@ class _FlameBadgeState extends State<_FlameBadge>
         alignment: Alignment.center,
         children: [
           Icon(Icons.local_fire_department_rounded,
-              size: 42, color: Colors.white.withValues(alpha: 0.30)),
+              size: 44, color: Colors.white.withValues(alpha: 0.28)),
           Text('${widget.count}',
               style: AppTheme.bodyFont(
-                  fontSize: 18,
+                  fontSize: 19,
                   fontWeight: FontWeight.w800,
                   color: Colors.white)),
         ],
@@ -207,7 +261,8 @@ class _FlameBadgeState extends State<_FlameBadge>
 class _DayDot extends StatelessWidget {
   const _DayDot({
     required this.label,
-    required this.color,
+    required this.accent,
+    required this.deep,
     required this.inactiveColor,
     required this.textColor,
     required this.active,
@@ -215,7 +270,8 @@ class _DayDot extends StatelessWidget {
   });
 
   final String label;
-  final Color color;
+  final Color accent;
+  final Color deep;
   final Color inactiveColor;
   final Color textColor;
   final bool active;
@@ -223,29 +279,43 @@ class _DayDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double size = isToday ? 25 : 22;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 22,
-          height: 22,
+          width: size,
+          height: size,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: active ? color : inactiveColor.withValues(alpha: 0.5),
-            border: isToday
-                ? Border.all(color: const Color(0xFFFF7A2E), width: 2)
+            gradient: active
+                ? LinearGradient(
+                    colors: [accent, deep],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
                 : null,
+            color: active ? null : Colors.transparent,
+            border: Border.all(
+              color: active
+                  ? (isToday ? Colors.white : Colors.transparent)
+                  : inactiveColor,
+              width: isToday && active ? 2 : 1.5,
+            ),
             boxShadow: active
                 ? [
                     BoxShadow(
-                        color: color.withValues(alpha: 0.5),
-                        blurRadius: 6,
-                        spreadRadius: 0.5)
+                      color: accent.withValues(alpha: isToday ? 0.65 : 0.45),
+                      blurRadius: isToday ? 9 : 6,
+                      spreadRadius: 0.5,
+                    ),
                   ]
                 : null,
           ),
           child: active
-              ? const Icon(Icons.check_rounded, size: 13, color: Colors.white)
+              ? Icon(Icons.check_rounded,
+                  size: isToday ? 15 : 13, color: Colors.white)
               : null,
         ),
         const SizedBox(height: 4),
@@ -254,7 +324,7 @@ class _DayDot extends StatelessWidget {
           style: AppTheme.bodyFont(
             fontSize: 9.5,
             fontWeight: isToday ? FontWeight.w800 : FontWeight.w500,
-            color: textColor.withValues(alpha: active ? 0.95 : 0.55),
+            color: textColor.withValues(alpha: active ? 0.95 : 0.5),
           ),
         ),
       ],
