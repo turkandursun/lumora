@@ -31,7 +31,6 @@ import '../../features/journal/presentation/screens/daily_reflection_screen.dart
 import '../../features/journal/presentation/screens/journal_entry_screen.dart';
 import '../../features/journal/presentation/screens/quote_gallery_screen.dart';
 import '../../features/journal/presentation/screens/sealed_journals_screen.dart';
-import '../../features/posts/presentation/screens/feed_screen.dart';
 import '../../features/onboarding/presentation/screens/ai_rating_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_complete_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -86,7 +85,6 @@ class AppRoutes {
   static const hobbies = '/hobbies';
   static const hobbiesOnboarding = AuthFlowRoutes.hobbiesOnboarding;
   static const activities = '/activities';
-  static const feed = '/feed';
   static const calm = '/calm';
   static const focusTimer = '/focus';
   static const favorites = '/favorites';
@@ -144,7 +142,6 @@ const _protectedRoutes = {
   AppRoutes.hobbies,
   AppRoutes.hobbiesOnboarding,
   AppRoutes.activities,
-  AppRoutes.feed,
   AppRoutes.calm,
   AppRoutes.focusTimer,
   AppRoutes.favorites,
@@ -420,10 +417,6 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.activities,
       pageBuilder: (context, state) =>
           _smoothPage(state, const ActivitiesScreen()),
-    ),
-    GoRoute(
-      path: AppRoutes.feed,
-      pageBuilder: (context, state) => _smoothPage(state, const FeedScreen()),
     ),
     GoRoute(
       path: AppRoutes.calm,
