@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/wellbeing/data/focus_active_session_store.dart';
+import '../../features/wellbeing/domain/active_focus_session.dart';
 import '../database/app_database.dart';
+import 'focus_notification_ids.dart';
 import 'reminder_notification_ids.dart';
 import 'reminder_notifier.dart';
 
@@ -58,6 +63,9 @@ class LocalUserDataCleanupService {
         await (_db.delete(_db.goals)
               ..where((table) => table.userId.equals(userId)))
             .go();
+        await (_db.delete(_db.focusSessions)
+              ..where((table) => table.userId.equals(userId)))
+            .go();
       }
       await (_db.delete(_db.dreams)
             ..where((table) => table.userId.equals(userId)))
@@ -113,6 +121,11 @@ class LocalUserDataCleanupService {
       // Owner is unknowable; never migrate this global palette cache.
       'astra_palette_id_v1',
       'registration_oauth_signup_attempt_v1',
+      'focus_last_date',
+      'focus_count_today',
+      'focus_goal',
+      'focus_streak',
+      'focus_streak_date',
     };
     final scopedKeys = <String>{
       'astra_bg_theme_$userId',
@@ -129,10 +142,30 @@ class LocalUserDataCleanupService {
       'mood_log_v2_$userId',
       'reminders_gratitude_cleanup_v1_$userId',
       'reminders_default_disabled_fix_v1_$userId',
+      SharedPreferencesFocusLocalStateStore.activeSessionKey(userId),
     };
 
     if (removeDurableAccountCache) {
       scopedKeys.add('astra_palette_id_v2_$userId');
+      scopedKeys.add(
+        SharedPreferencesFocusLocalStateStore.dailyGoalKey(userId),
+      );
+    }
+
+    final activeRaw = prefs.getString(
+      SharedPreferencesFocusLocalStateStore.activeSessionKey(userId),
+    );
+    if (activeRaw != null) {
+      try {
+        final active = ActiveFocusSession.fromJson(jsonDecode(activeRaw));
+        if (active != null && active.userId == userId) {
+          await _notifications.cancel(
+            focusNotificationId('$userId:${active.sessionUuid}'),
+          );
+        }
+      } catch (_) {
+        // Corrupt timer state is removed below and has no trusted identity.
+      }
     }
 
     for (final key in {...unscopedUserDataKeys, ...scopedKeys}) {

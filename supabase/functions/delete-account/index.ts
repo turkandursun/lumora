@@ -38,6 +38,7 @@ export const accountOwnedTables = [
   "dreams",
   "journal_entries",
   "goals",
+  "focus_sessions",
   "activities",
   "activity_posts",
 ] as const;

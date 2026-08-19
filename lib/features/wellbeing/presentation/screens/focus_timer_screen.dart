@@ -7,9 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
-import '../../data/focus_store.dart';
+import '../../data/focus_repository.dart';
+import '../../domain/active_focus_session.dart';
+import '../providers/focus_providers.dart';
 
 /// Focus timer — a gentle Pomodoro for ADHD-friendly focus. Pick a focus/break
 /// length (quick presets or your own custom minutes) and the screen guides you
@@ -23,8 +26,6 @@ class FocusTimerScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<FocusTimerScreen> createState() => _FocusTimerScreenState();
 }
-
-enum _Phase { idle, focus, breakTime }
 
 class _Preset {
   const _Preset(this.focus, this.rest);
@@ -46,13 +47,8 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
   int _focusMin = 25;
   int _breakMin = 5;
 
-  _Phase _phase = _Phase.idle;
-  bool _running = false;
-  int _remaining = 0; // seconds left in the current phase
-  int _phaseTotal = 1; // seconds in the current phase (for progress)
-  int _round = 0; // auto-cycle round counter
   bool _justArrived = false; // brief bloom when a phase completes
-  Timer? _timer;
+  Timer? _uiTicker;
 
   @override
   void initState() {
@@ -60,69 +56,37 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
     _twinkle =
         AnimationController(vsync: this, duration: const Duration(seconds: 4))
           ..repeat(reverse: true);
+    _uiTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      unawaited(
+        ref.read(activeFocusSessionProvider.notifier).refreshFromClock(),
+      );
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _uiTicker?.cancel();
     _twinkle.dispose();
     _task.dispose();
     super.dispose();
   }
 
-  double get _progress =>
-      _phaseTotal <= 0 ? 0 : ((_phaseTotal - _remaining) / _phaseTotal).clamp(0.0, 1.0);
-
-  void _startFocus() {
-    setState(() {
-      _phase = _Phase.focus;
-      _phaseTotal = _focusMin * 60;
-      _remaining = _phaseTotal;
-      _running = true;
-      _round = 1;
-    });
-    _tick();
+  double _progress(ActiveFocusSession session, int remaining) {
+    final total = session.plannedDurationSeconds;
+    return total <= 0 ? 0 : ((total - remaining) / total).clamp(0.0, 1.0);
   }
 
-  void _tick() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      if (_remaining <= 1) {
-        _onPhaseComplete();
-        return;
-      }
-      setState(() => _remaining--);
-    });
-  }
-
-  void _onPhaseComplete() {
-    _timer?.cancel();
-    HapticFeedback.mediumImpact();
-    if (_phase == _Phase.focus) {
-      // Persist the finished focus session (today's count, goal, streak).
-      unawaited(ref.read(focusStatsProvider.notifier).recordSession());
-      setState(() {
-        _justArrived = true;
-        _phase = _Phase.breakTime;
-        _phaseTotal = _breakMin * 60;
-        _remaining = _phaseTotal;
-      });
-      _clearArrivalSoon();
-      _tick();
-    } else {
-      // Auto-cycle: a finished break flows straight into the next focus round,
-      // with no manual restart.
-      setState(() {
-        _justArrived = true;
-        _phase = _Phase.focus;
-        _phaseTotal = _focusMin * 60;
-        _remaining = _phaseTotal;
-        _round++;
-      });
-      _clearArrivalSoon();
-      _tick();
-    }
+  Future<void> _startFocus(AppLocalizations l10n) async {
+    FocusScope.of(context).unfocus();
+    await ref.read(activeFocusSessionProvider.notifier).start(
+          focusDurationSeconds: _focusMin * 60,
+          breakDurationSeconds: _breakMin * 60,
+          taskLabel: _task.text,
+          notificationTitle: l10n.focusNotificationTitle,
+          notificationBody: l10n.focusNotificationBody,
+        );
   }
 
   void _clearArrivalSoon() {
@@ -131,41 +95,35 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
     });
   }
 
-  void _togglePause() {
-    if (_running) {
-      _timer?.cancel();
-      setState(() => _running = false);
-    } else {
-      setState(() => _running = true);
-      _tick();
-    }
-  }
-
-  void _finish() {
-    _timer?.cancel();
-    setState(() {
-      _phase = _Phase.idle;
-      _running = false;
-      _remaining = 0;
-      _round = 0;
-    });
-  }
-
-  void _skipToBreakOrEnd() => _onPhaseComplete();
-
-  String get _time {
-    final m = (_remaining ~/ 60).toString().padLeft(2, '0');
-    final s = (_remaining % 60).toString().padLeft(2, '0');
+  String _time(int remaining) {
+    final m = (remaining ~/ 60).toString().padLeft(2, '0');
+    final s = (remaining % 60).toString().padLeft(2, '0');
     return '$m:$s';
   }
 
   @override
   Widget build(BuildContext context) {
-    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final l10n = AppLocalizations.of(context);
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
     final primary = AstraKit.primary(context, isDark);
     final stats = ref.watch(focusStatsProvider);
-    final isBreak = _phase == _Phase.breakTime;
+    final active = ref.watch(activeFocusSessionProvider);
+    ref.listen<ActiveFocusSession?>(activeFocusSessionProvider,
+        (previous, next) {
+      final identity = next == null
+          ? null
+          : '${next.sessionUuid}:${next.phase.name}:${next.round}';
+      final previousIdentity = previous == null
+          ? null
+          : '${previous.sessionUuid}:${previous.phase.name}:${previous.round}';
+      if (previousIdentity != null &&
+          identity != null &&
+          previousIdentity != identity) {
+        HapticFeedback.mediumImpact();
+        setState(() => _justArrived = true);
+        _clearArrivalSoon();
+      }
+    });
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -186,16 +144,16 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(isTr ? 'Odak' : 'Focus',
+                      Text(l10n.focusTitle,
                           style:
                               AstraKit.heading1(context, isDark, fontSize: 20)),
                     ],
                   ),
                 ),
                 Expanded(
-                  child: _phase == _Phase.idle
-                      ? _buildSetup(isTr, isDark, primary, stats)
-                      : _buildRunning(isTr, isDark, primary, isBreak),
+                  child: active == null
+                      ? _buildSetup(l10n, isDark, primary, stats)
+                      : _buildRunning(l10n, isDark, primary, active),
                 ),
               ],
             ),
@@ -207,15 +165,25 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
 
   // ── Setup ──────────────────────────────────────────────────────────────────
 
-  Widget _buildSetup(bool isTr, bool isDark, Color primary, FocusStats stats) {
+  Widget _buildSetup(
+    AppLocalizations l10n,
+    bool isDark,
+    Color primary,
+    FocusStats stats,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       child: Column(
         children: [
           // Today's progress + streak — the "don't break the chain" nudge.
-          _StatsBanner(isTr: isTr, isDark: isDark, primary: primary, stats: stats),
+          _StatsBanner(
+            l10n: l10n,
+            isDark: isDark,
+            primary: primary,
+            stats: stats,
+          ),
           const SizedBox(height: 22),
-          Text(isTr ? 'Ne kadar odaklanalım?' : 'How long to focus?',
+          Text(l10n.focusHowLong,
               style: AstraKit.mutedText(context, isDark, fontSize: 15)),
           const SizedBox(height: 16),
           Wrap(
@@ -225,9 +193,7 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
             children: [
               for (final p in _presets)
                 _PresetPill(
-                  label: isTr
-                      ? '${p.focus} · ${p.rest} dk'
-                      : '${p.focus} · ${p.rest}m',
+                  label: '${p.focus} · ${p.rest} ${l10n.focusMinutesShort}',
                   selected: p.focus == _focusMin && p.rest == _breakMin,
                   isDark: isDark,
                   primary: primary,
@@ -240,10 +206,10 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
           ),
           const SizedBox(height: 20),
           _DurationStepper(
-            label: isTr ? 'Odak' : 'Focus',
+            label: l10n.focusTitle,
             icon: Icons.center_focus_strong_rounded,
             value: _focusMin,
-            unit: isTr ? 'dk' : 'min',
+            unit: l10n.focusMinutesShort,
             min: 5,
             max: 120,
             step: 5,
@@ -253,10 +219,10 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
           ),
           const SizedBox(height: 12),
           _DurationStepper(
-            label: isTr ? 'Mola' : 'Break',
+            label: l10n.focusBreakLabel,
             icon: Icons.local_cafe_rounded,
             value: _breakMin,
-            unit: isTr ? 'dk' : 'min',
+            unit: l10n.focusMinutesShort,
             min: 1,
             max: 30,
             step: 1,
@@ -266,33 +232,32 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
           ),
           const SizedBox(height: 12),
           _DurationStepper(
-            label: isTr ? 'Günlük hedef' : 'Daily goal',
+            label: l10n.focusDailyGoalLabel,
             icon: Icons.flag_rounded,
             value: stats.goal,
-            unit: isTr ? 'seans' : 'sess.',
+            unit: l10n.focusSessionUnitShort,
             min: 1,
             max: 12,
             step: 1,
             isDark: isDark,
             primary: primary,
-            onChanged: (v) =>
-                ref.read(focusStatsProvider.notifier).setGoal(v),
+            onChanged: (v) => ref.read(focusStatsProvider.notifier).setGoal(v),
           ),
           const SizedBox(height: 20),
           // Task label.
           _FocusField(
             controller: _task,
-            hint: isTr ? 'Neye odaklanıyorsun? (isteğe bağlı)' : "What are you focusing on? (optional)",
+            hint: l10n.focusTaskHint,
             isDark: isDark,
             primary: primary,
           ),
           const SizedBox(height: 26),
           AstraGoldButton(
             isDark: isDark,
-            label: isTr ? 'Yolculuğa başla' : 'Begin the journey',
+            label: l10n.focusStartButton,
             icon: Icons.play_arrow_rounded,
             expand: false,
-            onTap: _startFocus,
+            onTap: () => _startFocus(l10n),
           ),
         ],
       ),
@@ -301,19 +266,27 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
 
   // ── Running ─────────────────────────────────────────────────────────────────
 
-  Widget _buildRunning(bool isTr, bool isDark, Color primary, bool isBreak) {
+  Widget _buildRunning(
+    AppLocalizations l10n,
+    bool isDark,
+    Color primary,
+    ActiveFocusSession active,
+  ) {
+    final isBreak = active.phase == FocusPhase.breakTime;
     final accent = isBreak ? _breakColor : primary;
-    final task = _task.text.trim();
+    final task = active.taskLabel ?? '';
+    final remaining = active.remainingSeconds(DateTime.now().toUtc());
+    final running = !active.isPaused;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          isBreak ? (isTr ? 'Mola' : 'Break') : (isTr ? 'Odaklan' : 'Focus'),
+          isBreak ? l10n.focusBreakLabel : l10n.focusPhaseFocus,
           style: AstraKit.body(context, isDark,
               fontSize: 16, fontWeight: FontWeight.w700, color: accent),
         ),
         const SizedBox(height: 4),
-        Text(isTr ? 'Tur $_round' : 'Round $_round',
+        Text(l10n.focusRoundLabel(active.round),
             style: AstraKit.mutedText(context, isDark, fontSize: 12.5)),
         const SizedBox(height: 24),
         // A glowing progress ring wrapping the time: a luminous line winds
@@ -331,7 +304,7 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
                   builder: (context, _) => CustomPaint(
                     size: const Size(268, 268),
                     painter: _RingPainter(
-                      progress: _progress,
+                      progress: _progress(active, remaining),
                       twinkle: _twinkle.value,
                       color: accent,
                       arrived: _justArrived,
@@ -359,7 +332,7 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
                     const SizedBox(height: 8),
                   ],
                   Text(
-                    _time,
+                    _time(remaining),
                     style: GoogleFonts.fredoka(
                       fontSize: 58,
                       fontWeight: FontWeight.w600,
@@ -375,7 +348,7 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    isTr ? 'KALDI' : 'LEFT',
+                    l10n.focusTimeLeft,
                     style: GoogleFonts.fredoka(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -390,13 +363,7 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
         ),
         const SizedBox(height: 34),
         Text(
-          isBreak
-              ? (isTr
-                  ? 'Gözlerini dinlendir, biraz esne.'
-                  : 'Rest your eyes, stretch a little.')
-              : (isTr
-                  ? 'Tek bir işe odaklan. Yeterince iyi, yeterlidir.'
-                  : 'Focus on one thing. Good enough is enough.'),
+          isBreak ? l10n.focusRestMessage : l10n.focusWorkMessage,
           textAlign: TextAlign.center,
           style: AstraKit.mutedText(context, isDark, fontSize: 13.5),
         ),
@@ -406,28 +373,32 @@ class _FocusTimerScreenState extends ConsumerState<FocusTimerScreen>
           children: [
             _RoundControl(
                 icon: Icons.stop_rounded,
-                label: isTr ? 'Bitir' : 'Finish',
+                label: l10n.focusFinishButton,
                 isDark: isDark,
                 primary: primary,
-                onTap: _finish),
+                onTap: () =>
+                    ref.read(activeFocusSessionProvider.notifier).finish()),
             const SizedBox(width: 16),
             _RoundControl(
-              icon: _running ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              label: _running
-                  ? (isTr ? 'Duraklat' : 'Pause')
-                  : (isTr ? 'Devam' : 'Resume'),
+              icon: running ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              label: running ? l10n.focusPauseButton : l10n.focusResumeButton,
               isDark: isDark,
               primary: primary,
               filled: true,
-              onTap: _togglePause,
+              onTap: () {
+                final controller =
+                    ref.read(activeFocusSessionProvider.notifier);
+                running ? controller.pause() : controller.resume();
+              },
             ),
             const SizedBox(width: 16),
             _RoundControl(
                 icon: Icons.skip_next_rounded,
-                label: isTr ? 'Geç' : 'Skip',
+                label: l10n.focusSkipButton,
                 isDark: isDark,
                 primary: primary,
-                onTap: _skipToBreakOrEnd),
+                onTap: () =>
+                    ref.read(activeFocusSessionProvider.notifier).skip()),
           ],
         ),
       ],
@@ -552,20 +523,20 @@ class _RingPainter extends CustomPainter {
 /// Today's progress toward the daily goal + the streak — the stickiness nudge.
 class _StatsBanner extends StatelessWidget {
   const _StatsBanner({
-    required this.isTr,
+    required this.l10n,
     required this.isDark,
     required this.primary,
     required this.stats,
   });
 
-  final bool isTr;
+  final AppLocalizations l10n;
   final bool isDark;
   final Color primary;
   final FocusStats stats;
 
   @override
   Widget build(BuildContext context) {
-    final done = stats.completedToday;
+    final done = stats.completedSessionsToday;
     final goal = stats.goal;
     final ratio = goal <= 0 ? 0.0 : (done / goal).clamp(0.0, 1.0);
     final reached = done >= goal;
@@ -581,18 +552,10 @@ class _StatsBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text.rich(
-                TextSpan(children: [
-                  TextSpan(
-                    text: '$done',
-                    style: AstraKit.heading1(context, isDark, fontSize: 24)
-                        .copyWith(color: primary),
-                  ),
-                  TextSpan(
-                    text: ' / $goal ${isTr ? 'seans' : 'sessions'}',
-                    style: AstraKit.mutedText(context, isDark, fontSize: 14),
-                  ),
-                ]),
+              Text(
+                l10n.focusSessionsProgress(done, goal),
+                style: AstraKit.heading1(context, isDark, fontSize: 20)
+                    .copyWith(color: primary),
               ),
               const Spacer(),
               if (stats.streak > 0)
@@ -605,7 +568,7 @@ class _StatsBanner extends StatelessWidget {
                     border: Border.all(color: primary.withValues(alpha: 0.3)),
                   ),
                   child: Text(
-                    '🔥 ${stats.streak} ${isTr ? 'gün' : 'd'}',
+                    '🔥 ${l10n.focusStreakDays(stats.streak)}',
                     style: AstraKit.body(context, isDark,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
@@ -627,7 +590,7 @@ class _StatsBanner extends StatelessWidget {
           if (reached) ...[
             const SizedBox(height: 8),
             Text(
-              isTr ? 'Günlük hedefine ulaştın 🎉' : 'You reached your daily goal 🎉',
+              l10n.focusDailyGoalReached,
               style: AstraKit.mutedText(context, isDark,
                   fontSize: 12.5, fontWeight: FontWeight.w600),
             ),
@@ -674,6 +637,12 @@ class _FocusField extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
+              maxLength: focusTaskLabelMaxLength,
+              buildCounter: (_,
+                      {required currentLength,
+                      required isFocused,
+                      maxLength}) =>
+                  null,
               textInputAction: TextInputAction.done,
               style: AstraKit.body(context, isDark, fontSize: 14.5),
               cursorColor: primary,

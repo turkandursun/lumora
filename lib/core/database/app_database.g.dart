@@ -550,6 +550,628 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
   }
 }
 
+class $FocusSessionsTable extends FocusSessions
+    with TableInfo<$FocusSessionsTable, FocusSessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FocusSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _sessionUuidMeta =
+      const VerificationMeta('sessionUuid');
+  @override
+  late final GeneratedColumn<String> sessionUuid = GeneratedColumn<String>(
+      'session_uuid', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _taskLabelMeta =
+      const VerificationMeta('taskLabel');
+  @override
+  late final GeneratedColumn<String> taskLabel = GeneratedColumn<String>(
+      'task_label', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _plannedDurationSecondsMeta =
+      const VerificationMeta('plannedDurationSeconds');
+  @override
+  late final GeneratedColumn<int> plannedDurationSeconds = GeneratedColumn<int>(
+      'planned_duration_seconds', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _actualDurationSecondsMeta =
+      const VerificationMeta('actualDurationSeconds');
+  @override
+  late final GeneratedColumn<int> actualDurationSeconds = GeneratedColumn<int>(
+      'actual_duration_seconds', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _startedAtMeta =
+      const VerificationMeta('startedAt');
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+      'started_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _endedAtMeta =
+      const VerificationMeta('endedAt');
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+      'ended_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _syncStateMeta =
+      const VerificationMeta('syncState');
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+      'sync_state', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('pending'));
+  static const VerificationMeta _changedAtMeta =
+      const VerificationMeta('changedAt');
+  @override
+  late final GeneratedColumn<DateTime> changedAt = GeneratedColumn<DateTime>(
+      'changed_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      clientDefault: () => DateTime.now().toUtc());
+  static const VerificationMeta _cloudUpdatedAtMeta =
+      const VerificationMeta('cloudUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> cloudUpdatedAt =
+      GeneratedColumn<DateTime>('cloud_updated_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _lastSyncedAtMeta =
+      const VerificationMeta('lastSyncedAt');
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+      'last_synced_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        sessionUuid,
+        userId,
+        taskLabel,
+        plannedDurationSeconds,
+        actualDurationSeconds,
+        startedAt,
+        endedAt,
+        syncState,
+        changedAt,
+        cloudUpdatedAt,
+        lastSyncedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'focus_sessions';
+  @override
+  VerificationContext validateIntegrity(Insertable<FocusSessionRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('session_uuid')) {
+      context.handle(
+          _sessionUuidMeta,
+          sessionUuid.isAcceptableOrUnknown(
+              data['session_uuid']!, _sessionUuidMeta));
+    } else if (isInserting) {
+      context.missing(_sessionUuidMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('task_label')) {
+      context.handle(_taskLabelMeta,
+          taskLabel.isAcceptableOrUnknown(data['task_label']!, _taskLabelMeta));
+    }
+    if (data.containsKey('planned_duration_seconds')) {
+      context.handle(
+          _plannedDurationSecondsMeta,
+          plannedDurationSeconds.isAcceptableOrUnknown(
+              data['planned_duration_seconds']!, _plannedDurationSecondsMeta));
+    } else if (isInserting) {
+      context.missing(_plannedDurationSecondsMeta);
+    }
+    if (data.containsKey('actual_duration_seconds')) {
+      context.handle(
+          _actualDurationSecondsMeta,
+          actualDurationSeconds.isAcceptableOrUnknown(
+              data['actual_duration_seconds']!, _actualDurationSecondsMeta));
+    } else if (isInserting) {
+      context.missing(_actualDurationSecondsMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(_startedAtMeta,
+          startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta));
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(_endedAtMeta,
+          endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta));
+    } else if (isInserting) {
+      context.missing(_endedAtMeta);
+    }
+    if (data.containsKey('sync_state')) {
+      context.handle(_syncStateMeta,
+          syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta));
+    }
+    if (data.containsKey('changed_at')) {
+      context.handle(_changedAtMeta,
+          changedAt.isAcceptableOrUnknown(data['changed_at']!, _changedAtMeta));
+    }
+    if (data.containsKey('cloud_updated_at')) {
+      context.handle(
+          _cloudUpdatedAtMeta,
+          cloudUpdatedAt.isAcceptableOrUnknown(
+              data['cloud_updated_at']!, _cloudUpdatedAtMeta));
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+          _lastSyncedAtMeta,
+          lastSyncedAt.isAcceptableOrUnknown(
+              data['last_synced_at']!, _lastSyncedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+        {userId, sessionUuid},
+      ];
+  @override
+  FocusSessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FocusSessionRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      sessionUuid: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_uuid'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      taskLabel: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}task_label']),
+      plannedDurationSeconds: attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}planned_duration_seconds'])!,
+      actualDurationSeconds: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}actual_duration_seconds'])!,
+      startedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}started_at'])!,
+      endedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}ended_at'])!,
+      syncState: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_state'])!,
+      changedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}changed_at'])!,
+      cloudUpdatedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}cloud_updated_at']),
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}last_synced_at']),
+    );
+  }
+
+  @override
+  $FocusSessionsTable createAlias(String alias) {
+    return $FocusSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class FocusSessionRow extends DataClass implements Insertable<FocusSessionRow> {
+  final int id;
+
+  /// Client-generated UUID; also the primary key in Supabase.
+  final String sessionUuid;
+  final String userId;
+  final String? taskLabel;
+  final int plannedDurationSeconds;
+  final int actualDurationSeconds;
+  final DateTime startedAt;
+  final DateTime endedAt;
+
+  /// Local-first synchronization state (`pending` or `synced`).
+  final String syncState;
+  final DateTime changedAt;
+  final DateTime? cloudUpdatedAt;
+  final DateTime? lastSyncedAt;
+  const FocusSessionRow(
+      {required this.id,
+      required this.sessionUuid,
+      required this.userId,
+      this.taskLabel,
+      required this.plannedDurationSeconds,
+      required this.actualDurationSeconds,
+      required this.startedAt,
+      required this.endedAt,
+      required this.syncState,
+      required this.changedAt,
+      this.cloudUpdatedAt,
+      this.lastSyncedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['session_uuid'] = Variable<String>(sessionUuid);
+    map['user_id'] = Variable<String>(userId);
+    if (!nullToAbsent || taskLabel != null) {
+      map['task_label'] = Variable<String>(taskLabel);
+    }
+    map['planned_duration_seconds'] = Variable<int>(plannedDurationSeconds);
+    map['actual_duration_seconds'] = Variable<int>(actualDurationSeconds);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['ended_at'] = Variable<DateTime>(endedAt);
+    map['sync_state'] = Variable<String>(syncState);
+    map['changed_at'] = Variable<DateTime>(changedAt);
+    if (!nullToAbsent || cloudUpdatedAt != null) {
+      map['cloud_updated_at'] = Variable<DateTime>(cloudUpdatedAt);
+    }
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    return map;
+  }
+
+  FocusSessionsCompanion toCompanion(bool nullToAbsent) {
+    return FocusSessionsCompanion(
+      id: Value(id),
+      sessionUuid: Value(sessionUuid),
+      userId: Value(userId),
+      taskLabel: taskLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taskLabel),
+      plannedDurationSeconds: Value(plannedDurationSeconds),
+      actualDurationSeconds: Value(actualDurationSeconds),
+      startedAt: Value(startedAt),
+      endedAt: Value(endedAt),
+      syncState: Value(syncState),
+      changedAt: Value(changedAt),
+      cloudUpdatedAt: cloudUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cloudUpdatedAt),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
+    );
+  }
+
+  factory FocusSessionRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FocusSessionRow(
+      id: serializer.fromJson<int>(json['id']),
+      sessionUuid: serializer.fromJson<String>(json['sessionUuid']),
+      userId: serializer.fromJson<String>(json['userId']),
+      taskLabel: serializer.fromJson<String?>(json['taskLabel']),
+      plannedDurationSeconds:
+          serializer.fromJson<int>(json['plannedDurationSeconds']),
+      actualDurationSeconds:
+          serializer.fromJson<int>(json['actualDurationSeconds']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      endedAt: serializer.fromJson<DateTime>(json['endedAt']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      changedAt: serializer.fromJson<DateTime>(json['changedAt']),
+      cloudUpdatedAt: serializer.fromJson<DateTime?>(json['cloudUpdatedAt']),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'sessionUuid': serializer.toJson<String>(sessionUuid),
+      'userId': serializer.toJson<String>(userId),
+      'taskLabel': serializer.toJson<String?>(taskLabel),
+      'plannedDurationSeconds': serializer.toJson<int>(plannedDurationSeconds),
+      'actualDurationSeconds': serializer.toJson<int>(actualDurationSeconds),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'endedAt': serializer.toJson<DateTime>(endedAt),
+      'syncState': serializer.toJson<String>(syncState),
+      'changedAt': serializer.toJson<DateTime>(changedAt),
+      'cloudUpdatedAt': serializer.toJson<DateTime?>(cloudUpdatedAt),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+    };
+  }
+
+  FocusSessionRow copyWith(
+          {int? id,
+          String? sessionUuid,
+          String? userId,
+          Value<String?> taskLabel = const Value.absent(),
+          int? plannedDurationSeconds,
+          int? actualDurationSeconds,
+          DateTime? startedAt,
+          DateTime? endedAt,
+          String? syncState,
+          DateTime? changedAt,
+          Value<DateTime?> cloudUpdatedAt = const Value.absent(),
+          Value<DateTime?> lastSyncedAt = const Value.absent()}) =>
+      FocusSessionRow(
+        id: id ?? this.id,
+        sessionUuid: sessionUuid ?? this.sessionUuid,
+        userId: userId ?? this.userId,
+        taskLabel: taskLabel.present ? taskLabel.value : this.taskLabel,
+        plannedDurationSeconds:
+            plannedDurationSeconds ?? this.plannedDurationSeconds,
+        actualDurationSeconds:
+            actualDurationSeconds ?? this.actualDurationSeconds,
+        startedAt: startedAt ?? this.startedAt,
+        endedAt: endedAt ?? this.endedAt,
+        syncState: syncState ?? this.syncState,
+        changedAt: changedAt ?? this.changedAt,
+        cloudUpdatedAt:
+            cloudUpdatedAt.present ? cloudUpdatedAt.value : this.cloudUpdatedAt,
+        lastSyncedAt:
+            lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+      );
+  FocusSessionRow copyWithCompanion(FocusSessionsCompanion data) {
+    return FocusSessionRow(
+      id: data.id.present ? data.id.value : this.id,
+      sessionUuid:
+          data.sessionUuid.present ? data.sessionUuid.value : this.sessionUuid,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      taskLabel: data.taskLabel.present ? data.taskLabel.value : this.taskLabel,
+      plannedDurationSeconds: data.plannedDurationSeconds.present
+          ? data.plannedDurationSeconds.value
+          : this.plannedDurationSeconds,
+      actualDurationSeconds: data.actualDurationSeconds.present
+          ? data.actualDurationSeconds.value
+          : this.actualDurationSeconds,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      changedAt: data.changedAt.present ? data.changedAt.value : this.changedAt,
+      cloudUpdatedAt: data.cloudUpdatedAt.present
+          ? data.cloudUpdatedAt.value
+          : this.cloudUpdatedAt,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FocusSessionRow(')
+          ..write('id: $id, ')
+          ..write('sessionUuid: $sessionUuid, ')
+          ..write('userId: $userId, ')
+          ..write('taskLabel: $taskLabel, ')
+          ..write('plannedDurationSeconds: $plannedDurationSeconds, ')
+          ..write('actualDurationSeconds: $actualDurationSeconds, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt, ')
+          ..write('cloudUpdatedAt: $cloudUpdatedAt, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      sessionUuid,
+      userId,
+      taskLabel,
+      plannedDurationSeconds,
+      actualDurationSeconds,
+      startedAt,
+      endedAt,
+      syncState,
+      changedAt,
+      cloudUpdatedAt,
+      lastSyncedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FocusSessionRow &&
+          other.id == this.id &&
+          other.sessionUuid == this.sessionUuid &&
+          other.userId == this.userId &&
+          other.taskLabel == this.taskLabel &&
+          other.plannedDurationSeconds == this.plannedDurationSeconds &&
+          other.actualDurationSeconds == this.actualDurationSeconds &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt &&
+          other.syncState == this.syncState &&
+          other.changedAt == this.changedAt &&
+          other.cloudUpdatedAt == this.cloudUpdatedAt &&
+          other.lastSyncedAt == this.lastSyncedAt);
+}
+
+class FocusSessionsCompanion extends UpdateCompanion<FocusSessionRow> {
+  final Value<int> id;
+  final Value<String> sessionUuid;
+  final Value<String> userId;
+  final Value<String?> taskLabel;
+  final Value<int> plannedDurationSeconds;
+  final Value<int> actualDurationSeconds;
+  final Value<DateTime> startedAt;
+  final Value<DateTime> endedAt;
+  final Value<String> syncState;
+  final Value<DateTime> changedAt;
+  final Value<DateTime?> cloudUpdatedAt;
+  final Value<DateTime?> lastSyncedAt;
+  const FocusSessionsCompanion({
+    this.id = const Value.absent(),
+    this.sessionUuid = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.taskLabel = const Value.absent(),
+    this.plannedDurationSeconds = const Value.absent(),
+    this.actualDurationSeconds = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
+    this.cloudUpdatedAt = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+  });
+  FocusSessionsCompanion.insert({
+    this.id = const Value.absent(),
+    required String sessionUuid,
+    required String userId,
+    this.taskLabel = const Value.absent(),
+    required int plannedDurationSeconds,
+    required int actualDurationSeconds,
+    required DateTime startedAt,
+    required DateTime endedAt,
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
+    this.cloudUpdatedAt = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+  })  : sessionUuid = Value(sessionUuid),
+        userId = Value(userId),
+        plannedDurationSeconds = Value(plannedDurationSeconds),
+        actualDurationSeconds = Value(actualDurationSeconds),
+        startedAt = Value(startedAt),
+        endedAt = Value(endedAt);
+  static Insertable<FocusSessionRow> custom({
+    Expression<int>? id,
+    Expression<String>? sessionUuid,
+    Expression<String>? userId,
+    Expression<String>? taskLabel,
+    Expression<int>? plannedDurationSeconds,
+    Expression<int>? actualDurationSeconds,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endedAt,
+    Expression<String>? syncState,
+    Expression<DateTime>? changedAt,
+    Expression<DateTime>? cloudUpdatedAt,
+    Expression<DateTime>? lastSyncedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionUuid != null) 'session_uuid': sessionUuid,
+      if (userId != null) 'user_id': userId,
+      if (taskLabel != null) 'task_label': taskLabel,
+      if (plannedDurationSeconds != null)
+        'planned_duration_seconds': plannedDurationSeconds,
+      if (actualDurationSeconds != null)
+        'actual_duration_seconds': actualDurationSeconds,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (syncState != null) 'sync_state': syncState,
+      if (changedAt != null) 'changed_at': changedAt,
+      if (cloudUpdatedAt != null) 'cloud_updated_at': cloudUpdatedAt,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+    });
+  }
+
+  FocusSessionsCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? sessionUuid,
+      Value<String>? userId,
+      Value<String?>? taskLabel,
+      Value<int>? plannedDurationSeconds,
+      Value<int>? actualDurationSeconds,
+      Value<DateTime>? startedAt,
+      Value<DateTime>? endedAt,
+      Value<String>? syncState,
+      Value<DateTime>? changedAt,
+      Value<DateTime?>? cloudUpdatedAt,
+      Value<DateTime?>? lastSyncedAt}) {
+    return FocusSessionsCompanion(
+      id: id ?? this.id,
+      sessionUuid: sessionUuid ?? this.sessionUuid,
+      userId: userId ?? this.userId,
+      taskLabel: taskLabel ?? this.taskLabel,
+      plannedDurationSeconds:
+          plannedDurationSeconds ?? this.plannedDurationSeconds,
+      actualDurationSeconds:
+          actualDurationSeconds ?? this.actualDurationSeconds,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      syncState: syncState ?? this.syncState,
+      changedAt: changedAt ?? this.changedAt,
+      cloudUpdatedAt: cloudUpdatedAt ?? this.cloudUpdatedAt,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (sessionUuid.present) {
+      map['session_uuid'] = Variable<String>(sessionUuid.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (taskLabel.present) {
+      map['task_label'] = Variable<String>(taskLabel.value);
+    }
+    if (plannedDurationSeconds.present) {
+      map['planned_duration_seconds'] =
+          Variable<int>(plannedDurationSeconds.value);
+    }
+    if (actualDurationSeconds.present) {
+      map['actual_duration_seconds'] =
+          Variable<int>(actualDurationSeconds.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (changedAt.present) {
+      map['changed_at'] = Variable<DateTime>(changedAt.value);
+    }
+    if (cloudUpdatedAt.present) {
+      map['cloud_updated_at'] = Variable<DateTime>(cloudUpdatedAt.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FocusSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionUuid: $sessionUuid, ')
+          ..write('userId: $userId, ')
+          ..write('taskLabel: $taskLabel, ')
+          ..write('plannedDurationSeconds: $plannedDurationSeconds, ')
+          ..write('actualDurationSeconds: $actualDurationSeconds, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt, ')
+          ..write('cloudUpdatedAt: $cloudUpdatedAt, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -4394,6 +5016,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $RemindersTable reminders = $RemindersTable(this);
+  late final $FocusSessionsTable focusSessions = $FocusSessionsTable(this);
   late final $GoalsTable goals = $GoalsTable(this);
   late final $DreamsTable dreams = $DreamsTable(this);
   late final $JournalEntriesTable journalEntries = $JournalEntriesTable(this);
@@ -4409,6 +5032,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
         reminders,
+        focusSessions,
         goals,
         dreams,
         journalEntries,
@@ -4670,6 +5294,285 @@ typedef $$RemindersTableProcessedTableManager = ProcessedTableManager<
     $$RemindersTableUpdateCompanionBuilder,
     (ReminderRow, BaseReferences<_$AppDatabase, $RemindersTable, ReminderRow>),
     ReminderRow,
+    PrefetchHooks Function()>;
+typedef $$FocusSessionsTableCreateCompanionBuilder = FocusSessionsCompanion
+    Function({
+  Value<int> id,
+  required String sessionUuid,
+  required String userId,
+  Value<String?> taskLabel,
+  required int plannedDurationSeconds,
+  required int actualDurationSeconds,
+  required DateTime startedAt,
+  required DateTime endedAt,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
+  Value<DateTime?> cloudUpdatedAt,
+  Value<DateTime?> lastSyncedAt,
+});
+typedef $$FocusSessionsTableUpdateCompanionBuilder = FocusSessionsCompanion
+    Function({
+  Value<int> id,
+  Value<String> sessionUuid,
+  Value<String> userId,
+  Value<String?> taskLabel,
+  Value<int> plannedDurationSeconds,
+  Value<int> actualDurationSeconds,
+  Value<DateTime> startedAt,
+  Value<DateTime> endedAt,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
+  Value<DateTime?> cloudUpdatedAt,
+  Value<DateTime?> lastSyncedAt,
+});
+
+class $$FocusSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $FocusSessionsTable> {
+  $$FocusSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sessionUuid => $composableBuilder(
+      column: $table.sessionUuid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get taskLabel => $composableBuilder(
+      column: $table.taskLabel, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get plannedDurationSeconds => $composableBuilder(
+      column: $table.plannedDurationSeconds,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get actualDurationSeconds => $composableBuilder(
+      column: $table.actualDurationSeconds,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+      column: $table.startedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+      column: $table.endedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get cloudUpdatedAt => $composableBuilder(
+      column: $table.cloudUpdatedAt,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+      column: $table.lastSyncedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$FocusSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FocusSessionsTable> {
+  $$FocusSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sessionUuid => $composableBuilder(
+      column: $table.sessionUuid, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get taskLabel => $composableBuilder(
+      column: $table.taskLabel, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get plannedDurationSeconds => $composableBuilder(
+      column: $table.plannedDurationSeconds,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get actualDurationSeconds => $composableBuilder(
+      column: $table.actualDurationSeconds,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+      column: $table.startedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+      column: $table.endedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get cloudUpdatedAt => $composableBuilder(
+      column: $table.cloudUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+      column: $table.lastSyncedAt,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$FocusSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FocusSessionsTable> {
+  $$FocusSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionUuid => $composableBuilder(
+      column: $table.sessionUuid, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get taskLabel =>
+      $composableBuilder(column: $table.taskLabel, builder: (column) => column);
+
+  GeneratedColumn<int> get plannedDurationSeconds => $composableBuilder(
+      column: $table.plannedDurationSeconds, builder: (column) => column);
+
+  GeneratedColumn<int> get actualDurationSeconds => $composableBuilder(
+      column: $table.actualDurationSeconds, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get changedAt =>
+      $composableBuilder(column: $table.changedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cloudUpdatedAt => $composableBuilder(
+      column: $table.cloudUpdatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+      column: $table.lastSyncedAt, builder: (column) => column);
+}
+
+class $$FocusSessionsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $FocusSessionsTable,
+    FocusSessionRow,
+    $$FocusSessionsTableFilterComposer,
+    $$FocusSessionsTableOrderingComposer,
+    $$FocusSessionsTableAnnotationComposer,
+    $$FocusSessionsTableCreateCompanionBuilder,
+    $$FocusSessionsTableUpdateCompanionBuilder,
+    (
+      FocusSessionRow,
+      BaseReferences<_$AppDatabase, $FocusSessionsTable, FocusSessionRow>
+    ),
+    FocusSessionRow,
+    PrefetchHooks Function()> {
+  $$FocusSessionsTableTableManager(_$AppDatabase db, $FocusSessionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FocusSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FocusSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FocusSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> sessionUuid = const Value.absent(),
+            Value<String> userId = const Value.absent(),
+            Value<String?> taskLabel = const Value.absent(),
+            Value<int> plannedDurationSeconds = const Value.absent(),
+            Value<int> actualDurationSeconds = const Value.absent(),
+            Value<DateTime> startedAt = const Value.absent(),
+            Value<DateTime> endedAt = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
+            Value<DateTime?> cloudUpdatedAt = const Value.absent(),
+            Value<DateTime?> lastSyncedAt = const Value.absent(),
+          }) =>
+              FocusSessionsCompanion(
+            id: id,
+            sessionUuid: sessionUuid,
+            userId: userId,
+            taskLabel: taskLabel,
+            plannedDurationSeconds: plannedDurationSeconds,
+            actualDurationSeconds: actualDurationSeconds,
+            startedAt: startedAt,
+            endedAt: endedAt,
+            syncState: syncState,
+            changedAt: changedAt,
+            cloudUpdatedAt: cloudUpdatedAt,
+            lastSyncedAt: lastSyncedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String sessionUuid,
+            required String userId,
+            Value<String?> taskLabel = const Value.absent(),
+            required int plannedDurationSeconds,
+            required int actualDurationSeconds,
+            required DateTime startedAt,
+            required DateTime endedAt,
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
+            Value<DateTime?> cloudUpdatedAt = const Value.absent(),
+            Value<DateTime?> lastSyncedAt = const Value.absent(),
+          }) =>
+              FocusSessionsCompanion.insert(
+            id: id,
+            sessionUuid: sessionUuid,
+            userId: userId,
+            taskLabel: taskLabel,
+            plannedDurationSeconds: plannedDurationSeconds,
+            actualDurationSeconds: actualDurationSeconds,
+            startedAt: startedAt,
+            endedAt: endedAt,
+            syncState: syncState,
+            changedAt: changedAt,
+            cloudUpdatedAt: cloudUpdatedAt,
+            lastSyncedAt: lastSyncedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$FocusSessionsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $FocusSessionsTable,
+    FocusSessionRow,
+    $$FocusSessionsTableFilterComposer,
+    $$FocusSessionsTableOrderingComposer,
+    $$FocusSessionsTableAnnotationComposer,
+    $$FocusSessionsTableCreateCompanionBuilder,
+    $$FocusSessionsTableUpdateCompanionBuilder,
+    (
+      FocusSessionRow,
+      BaseReferences<_$AppDatabase, $FocusSessionsTable, FocusSessionRow>
+    ),
+    FocusSessionRow,
     PrefetchHooks Function()>;
 typedef $$GoalsTableCreateCompanionBuilder = GoalsCompanion Function({
   Value<int> id,
@@ -6497,6 +7400,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$RemindersTableTableManager get reminders =>
       $$RemindersTableTableManager(_db, _db.reminders);
+  $$FocusSessionsTableTableManager get focusSessions =>
+      $$FocusSessionsTableTableManager(_db, _db.focusSessions);
   $$GoalsTableTableManager get goals =>
       $$GoalsTableTableManager(_db, _db.goals);
   $$DreamsTableTableManager get dreams =>

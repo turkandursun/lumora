@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,8 +7,10 @@ import 'package:mindful_journal/core/database/app_database.dart';
 import 'package:mindful_journal/core/database/tables/goals_table.dart';
 import 'package:mindful_journal/core/database/tables/reminders_table.dart';
 import 'package:mindful_journal/core/services/local_user_data_cleanup_service.dart';
+import 'package:mindful_journal/core/services/focus_notification_ids.dart';
 import 'package:mindful_journal/core/services/reminder_notification_ids.dart';
 import 'package:mindful_journal/core/services/reminder_notifier.dart';
+import 'package:mindful_journal/features/wellbeing/domain/active_focus_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -34,6 +38,16 @@ void main() {
       'cloud_last_user_id': 'user-a',
       'cloud_synced_marker_v1': 'now',
       'registration_oauth_signup_attempt_v1': 123,
+      'focus_last_date': '2026-08-12',
+      'focus_count_today': 2,
+      'focus_goal': 4,
+      'focus_streak': 3,
+      'focus_streak_date': '2026-08-12',
+      'focus_goal_v2_user-a': 6,
+      'focus_goal_v2_user-b': 3,
+      'focus_active_session_v2_user-a': jsonEncode(
+        _activeSession('user-a').toJson(),
+      ),
       'luma_ambient_sound_muted': true,
       'breathing_last_mode': 'box',
     });
@@ -85,6 +99,10 @@ void main() {
       contains(reminderNotificationId(userAReminder.supabaseId!)),
     );
     expect(notifier.cancelled, contains(userAReminder.id));
+    expect(
+      notifier.cancelled,
+      contains(focusNotificationId('user-a:active-focus-a')),
+    );
   });
 
   test('account preferences are cleared without deleting device preferences',
@@ -105,12 +123,20 @@ void main() {
     expect(prefs.get('cloud_last_user_id'), isNull);
     expect(prefs.get('cloud_synced_marker_v1'), isNull);
     expect(prefs.get('registration_oauth_signup_attempt_v1'), isNull);
+    expect(prefs.get('focus_last_date'), isNull);
+    expect(prefs.get('focus_count_today'), isNull);
+    expect(prefs.get('focus_goal'), isNull);
+    expect(prefs.get('focus_streak'), isNull);
+    expect(prefs.get('focus_streak_date'), isNull);
+    expect(prefs.get('focus_goal_v2_user-a'), isNull);
+    expect(prefs.get('focus_active_session_v2_user-a'), isNull);
 
     expect(prefs.getString('astra_bg_theme_user-b'), 'light');
     expect(prefs.getString('astra_palette_id_v2_user-b'), 'sage_veil');
     expect(prefs.getStringList('hobbies_user-b_v1'), ['walking']);
     expect(prefs.getBool('quote_favorites_migrated_v1_user-b'), true);
     expect(prefs.getInt('goals_streak_count_user-b'), 4);
+    expect(prefs.getInt('focus_goal_v2_user-b'), 3);
     expect(prefs.getBool('luma_ambient_sound_muted'), true);
     expect(prefs.getString('breathing_last_mode'), 'box');
   });
@@ -125,11 +151,20 @@ void main() {
     expect(goals, hasLength(1));
     expect(goals.single.syncState, 'pending');
     expect(
+      await (database.select(database.focusSessions)
+            ..where((table) => table.userId.equals('user-a')))
+          .get(),
+      hasLength(1),
+    );
+    expect(
       await (database.select(database.journalEntries)
             ..where((table) => table.userId.equals('user-a')))
           .get(),
       isEmpty,
     );
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.get('focus_active_session_v2_user-a'), isNull);
+    expect(prefs.getInt('focus_goal_v2_user-a'), 6);
   });
 
   test('ordinary logout retains the scoped palette fast cache', () async {
@@ -170,6 +205,16 @@ Future<void> _seedAccount(
           userId: Value(userId),
           supabaseId: Value('goal-$cloudSuffix'),
           syncState: const Value('pending'),
+        ),
+      );
+  await database.into(database.focusSessions).insert(
+        FocusSessionsCompanion.insert(
+          sessionUuid: 'focus-$cloudSuffix',
+          userId: userId,
+          plannedDurationSeconds: 1500,
+          actualDurationSeconds: 1500,
+          startedAt: now,
+          endedAt: now.add(const Duration(minutes: 25)),
         ),
       );
   await database.into(database.dreams).insert(
@@ -228,6 +273,10 @@ Future<List<int>> _countOwnedRows(AppDatabase database, String userId) async {
               ..where((table) => table.userId.equals(userId)))
             .get())
         .length,
+    (await (database.select(database.focusSessions)
+              ..where((table) => table.userId.equals(userId)))
+            .get())
+        .length,
     (await (database.select(database.dreams)
               ..where((table) => table.userId.equals(userId)))
             .get())
@@ -249,6 +298,23 @@ Future<List<int>> _countOwnedRows(AppDatabase database, String userId) async {
             .get())
         .length,
   ];
+}
+
+ActiveFocusSession _activeSession(String userId) {
+  final now = DateTime.utc(2026, 8, 12, 10);
+  return ActiveFocusSession(
+    sessionUuid: 'active-focus-a',
+    userId: userId,
+    phase: FocusPhase.focus,
+    focusDurationSeconds: 1500,
+    breakDurationSeconds: 300,
+    phaseStartedAt: now,
+    targetEndAt: now.add(const Duration(minutes: 25)),
+    accumulatedPausedSeconds: 0,
+    round: 1,
+    notificationTitle: 'title',
+    notificationBody: 'body',
+  );
 }
 
 class _FakeReminderNotifier implements ReminderNotifier {

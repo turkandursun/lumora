@@ -10,6 +10,7 @@ import 'core/providers/astra_theme_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/services/smart_reminders_service.dart';
 import 'features/auth/domain/registration_flow_state.dart';
+import 'features/wellbeing/presentation/providers/focus_providers.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'theme/app_theme.dart';
 
@@ -20,19 +21,24 @@ class LumoraApp extends ConsumerStatefulWidget {
   ConsumerState<LumoraApp> createState() => _LumoraAppState();
 }
 
-class _LumoraAppState extends ConsumerState<LumoraApp> {
+class _LumoraAppState extends ConsumerState<LumoraApp>
+    with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSubscription;
   String? _lastAuthenticatedUserId;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // (Re)schedule the smart daily nudges on every launch so they stay active
     // even if the user never opens the reminders screen.
     final isTr =
         WidgetsBinding.instance.platformDispatcher.locale.languageCode == 'tr';
     unawaited(SmartRemindersService.instance.sync(isTr: isTr));
     _lastAuthenticatedUserId = Supabase.instance.client.auth.currentUser?.id;
+    if (_lastAuthenticatedUserId != null) {
+      unawaited(_bootstrapFocus());
+    }
     _authSubscription =
         Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
       final event = data.event;
@@ -51,19 +57,46 @@ class _LumoraAppState extends ConsumerState<LumoraApp> {
         invalidateUserProviders(ref);
       } else if (event == AuthChangeEvent.signedIn ||
           event == AuthChangeEvent.tokenRefreshed) {
-        _lastAuthenticatedUserId = data.session?.user.id ??
+        final nextUserId = data.session?.user.id ??
             Supabase.instance.client.auth.currentUser?.id;
+        final previousUserId = _lastAuthenticatedUserId;
+        if (previousUserId != null &&
+            nextUserId != null &&
+            previousUserId != nextUserId) {
+          await registrationFlowStore.clearForUser(previousUserId);
+          await clearLocalUserData(ref, userId: previousUserId);
+        }
+        _lastAuthenticatedUserId = nextUserId;
         debugPrint(
             '[AuthListener] Auth state change ($event) -> invalidating user providers for fresh load');
         invalidateUserProviders(ref);
+        unawaited(_bootstrapFocus());
       }
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _authSubscription?.cancel();
     super.dispose();
+  }
+
+  Future<void> _bootstrapFocus() async {
+    try {
+      ref.read(focusRepositoryProvider).initialize();
+      await ref.read(activeFocusSessionProvider.notifier).initialize();
+      await ref.read(focusStatsProvider.notifier).refresh();
+    } catch (error) {
+      debugPrint('[Focus] bootstrap deferred error=${error.runtimeType}');
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    unawaited(ref.read(activeFocusSessionProvider.notifier).onAppResumed());
+    unawaited(ref.read(focusStatsProvider.notifier).refresh());
   }
 
   @override

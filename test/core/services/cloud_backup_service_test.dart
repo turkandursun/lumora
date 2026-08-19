@@ -7,6 +7,13 @@ void main() {
     expect(CloudBackupService.isDedicatedSyncTable('goals'), isTrue);
   });
 
+  test('focus sessions use dedicated sync and are excluded from backup', () {
+    expect(
+      CloudBackupService.isDedicatedSyncTable('focus_sessions'),
+      isTrue,
+    );
+  });
+
   test('legacy goal seed and generic streak keys are ignored on restore', () {
     expect(
       CloudBackupService.isDedicatedSyncPreference('goals_seeded'),

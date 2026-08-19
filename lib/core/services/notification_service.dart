@@ -5,6 +5,7 @@ import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../database/tables/reminders_table.dart';
+import 'focus_completion_notifier.dart';
 import 'reminder_notifier.dart';
 import 'reminder_scheduling.dart';
 
@@ -21,7 +22,7 @@ import 'reminder_scheduling.dart';
 /// [computeNextSchedule] instead, where it's directly unit-testable; callers
 /// that just need *a* [ReminderNotifier] (like [RemindersRepository]) can
 /// depend on that interface and use a trivial fake in tests instead.
-class NotificationService implements ReminderNotifier {
+class NotificationService implements ReminderNotifier, FocusCompletionNotifier {
   NotificationService._();
 
   static final NotificationService instance = NotificationService._();
@@ -30,6 +31,8 @@ class NotificationService implements ReminderNotifier {
   static const _channelName = 'Reminders';
   static const _channelDescription =
       'Gentle nudges for journaling, breathing, and reflection';
+  static const _focusChannelId = 'focus_timer';
+  static const _focusChannelName = 'ASTRA';
 
   // Fixed, arbitrary identifiers for Windows toast registration — these
   // just need to be stable across runs, not globally unique.
@@ -154,4 +157,35 @@ class NotificationService implements ReminderNotifier {
     await init();
     await _plugin.cancel(id: id);
   }
+
+  @override
+  Future<void> scheduleFocusCompletion({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledAt,
+  }) async {
+    if (!_isSupportedPlatform) return;
+    await init();
+    final date = tz.TZDateTime.from(scheduledAt, tz.local);
+    if (!date.isAfter(tz.TZDateTime.now(tz.local))) return;
+    await _plugin.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: date,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _focusChannelId,
+          _focusChannelName,
+        ),
+        iOS: DarwinNotificationDetails(),
+        windows: WindowsNotificationDetails(),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+  }
+
+  @override
+  Future<void> cancelFocusCompletion(int id) => cancel(id);
 }

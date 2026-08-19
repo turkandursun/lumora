@@ -4,6 +4,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'tables/activities_table.dart';
 import 'tables/daily_questions_table.dart';
 import 'tables/dreams_table.dart';
+import 'tables/focus_sessions_table.dart';
 import 'tables/goals_table.dart';
 import 'tables/journal_entries_table.dart';
 import 'tables/letters_table.dart';
@@ -25,6 +26,7 @@ part 'app_database.g.dart';
 /// one is active.
 @DriftDatabase(tables: [
   Reminders,
+  FocusSessions,
   Goals,
   Dreams,
   JournalEntries, // includes photoUrl column
@@ -40,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -240,6 +242,9 @@ class AppDatabase extends _$AppDatabase {
                 )
             ''');
             await _createJournalEntriesCloudIdentityIndex();
+          }
+          if (from < 24 && !await _hasTable('focus_sessions')) {
+            await m.createTable(focusSessions);
           }
         },
       );

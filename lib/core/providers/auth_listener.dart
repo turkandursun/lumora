@@ -15,6 +15,7 @@ import '../../features/letters/presentation/providers/letter_providers.dart';
 import '../../features/mood/presentation/providers/mood_providers.dart';
 import '../../features/profile/presentation/providers/visit_tracker_providers.dart';
 import '../../features/reminders/presentation/providers/reminders_providers.dart';
+import '../../features/wellbeing/presentation/providers/focus_providers.dart';
 import '../../features/auth/presentation/providers/account_deletion_provider.dart';
 import 'astra_palette_provider.dart';
 import 'astra_theme_provider.dart';
@@ -43,6 +44,9 @@ void invalidateUserProviders(WidgetRef ref) {
   ref.invalidate(activitiesProvider);
   ref.invalidate(quoteFavoritesProvider);
   ref.invalidate(favoriteQuotesProvider);
+  ref.invalidate(activeFocusSessionProvider);
+  ref.invalidate(focusStatsProvider);
+  ref.invalidate(focusRepositoryProvider);
 }
 
 /// Clears local user data stored in SQLite / Drift tables on sign out.
