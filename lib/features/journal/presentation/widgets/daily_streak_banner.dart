@@ -67,16 +67,20 @@ class DailyStreakBanner extends StatelessWidget {
     final mutedColor = tokens.textMuted;
     final inactiveDot = mutedColor.withValues(alpha: isDark ? 0.34 : 0.30);
 
+    // Fully-opaque base so the banner never blends with the page behind it
+    // (palette.cardBackground is intentionally translucent; surfaceElevated
+    // is solid). alpha:1.0 guards against any residual transparency.
+    final baseCard = palette.surfaceElevated.withValues(alpha: 1.0);
     final bgGradient = isDark
         ? [
-            Color.lerp(palette.surfaceElevated, accent, 0.16) ??
-                palette.surfaceElevated,
-            palette.surfaceElevated,
+            (Color.lerp(baseCard, accent, 0.16) ?? baseCard)
+                .withValues(alpha: 1.0),
+            baseCard,
           ]
         : [
-            Color.lerp(palette.cardBackground, accent, 0.12) ??
-                palette.cardBackground,
-            palette.cardBackground,
+            (Color.lerp(baseCard, accent, 0.12) ?? baseCard)
+                .withValues(alpha: 1.0),
+            baseCard,
           ];
 
     return Material(

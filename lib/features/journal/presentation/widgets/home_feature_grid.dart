@@ -50,15 +50,15 @@ List<HomeFeatureItem> homeFeatureItems(
       screenBuilder: (_) => const CalendarScreen(),
     ),
     HomeFeatureItem(
-      title: isTr ? 'Etkinliklerim' : 'My activities',
-      description: isTr ? 'Fotoğraflı günlük' : 'Log with photos',
+      title: isTr ? 'Anılarım' : 'My memories',
+      description: isTr ? 'Küçük anları sakla' : 'Keep little moments',
       primaryIcon: Icons.photo_camera_back_rounded,
       accentIcon: Icons.groups_rounded,
       screenBuilder: (_) => const ActivitiesScreen(),
     ),
     HomeFeatureItem(
-      title: l10n.homeFeatureAiQuestionsTitle,
-      description: l10n.homeFeatureAiQuestionsDesc,
+      title: isTr ? 'Sana Sorular' : 'Questions for You',
+      description: isTr ? 'Kendini keşfet' : 'Get to know yourself',
       primaryIcon: Icons.psychology_alt_rounded,
       accentIcon: Icons.question_mark_rounded,
       screenBuilder: (_) => const AiQuestionsScreen(),
@@ -76,22 +76,22 @@ List<HomeFeatureItem> homeFeatureItems(
       screenBuilder: (_) => const BreathingScreen(),
     ),
     HomeFeatureItem(
-      title: l10n.homeFeatureLetterTitle,
-      description: l10n.homeFeatureLetterDesc,
+      title: isTr ? 'Geleceğe Mektup' : 'Letter to the Future',
+      description: isTr ? 'Yarınki sana yaz' : 'Write to future you',
       primaryIcon: Icons.mail_rounded,
       accentIcon: Icons.favorite_rounded,
       screenBuilder: (_) => const LettersScreen(),
     ),
     HomeFeatureItem(
-      title: l10n.homeFeatureDilemmaTitle,
-      description: l10n.homeFeatureDilemmaDesc,
+      title: isTr ? 'Seç Bakalım' : 'Take a Pick',
+      description: isTr ? 'Ya bu, ya şu?' : 'This or that?',
       primaryIcon: Icons.swipe_rounded,
       accentIcon: Icons.balance_rounded,
       screenBuilder: (_) => const DilemmaSwipeScreen(),
     ),
     HomeFeatureItem(
-      title: l10n.exploreFeatureCommunity,
-      description: l10n.homeFeatureCommunityDesc,
+      title: isTr ? 'Güvenli Alan' : 'Safe Space',
+      description: isTr ? 'Yalnız değilsin' : 'You\'re not alone',
       primaryIcon: Icons.diversity_3_rounded,
       accentIcon: Icons.favorite_rounded,
       screenBuilder: (_) => const CommunityScreen(),
@@ -157,15 +157,20 @@ class _FeatureCard extends StatelessWidget {
               splashColor: LumaGlass.sparkle(context).withValues(alpha: 0.14),
               child: Stack(
                 children: [
-                  // Large milky-white watermark of the feature icon, bleeding
-                  // off the bottom-right corner, sitting behind the text.
+                  // Large milky-white watermark of the feature icon, anchored
+                  // at the top and reaching down toward the text, so the
+                  // previously-empty upper half of the card feels filled.
                   Positioned(
-                    right: -24,
-                    bottom: -18,
-                    child: Icon(
-                      item.primaryIcon,
-                      size: 150,
-                      color: watermark,
+                    top: 6,
+                    left: 0,
+                    right: 0,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Icon(
+                        item.primaryIcon,
+                        size: 138,
+                        color: watermark,
+                      ),
                     ),
                   ),
                   if (item.badgeCount > 0)

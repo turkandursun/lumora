@@ -19,7 +19,6 @@ class FamousQuote {
 }
 
 const List<FamousQuote> famousQuotes = [
-  FamousQuote(id: 'fq_rumi_1', author: 'Mevlânâ', tr: 'Ne olursan ol yine gel.', en: 'Come, come, whoever you are.'),
   FamousQuote(id: 'fq_aurelius_1', author: 'Marcus Aurelius', tr: 'Hayatımız, düşüncelerimizin ona kattığıdır.', en: 'Our life is what our thoughts make it.'),
   FamousQuote(id: 'fq_laotzu_1', author: 'Lao Tzu', tr: 'Bin millik yolculuk tek bir adımla başlar.', en: 'The journey of a thousand miles begins with a single step.'),
   FamousQuote(id: 'fq_confucius_1', author: 'Konfüçyüs', tr: 'Yavaş gitmen önemli değil, yeter ki durma.', en: 'It does not matter how slowly you go, so long as you do not stop.'),
