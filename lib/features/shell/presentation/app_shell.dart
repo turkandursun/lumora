@@ -449,7 +449,11 @@ class _FabMenuOverlay extends StatelessWidget {
         AppRoutes.newDream
       ),
       (Icons.spa_rounded, isTr ? 'Sakinleş' : 'Calm', AppRoutes.calm),
-      (Icons.dynamic_feed_rounded, isTr ? 'Akış' : 'Feed', AppRoutes.feed),
+      (
+        Icons.track_changes_rounded,
+        isTr ? 'Hedeflerim' : 'My goals',
+        AppRoutes.goals
+      ),
     ];
 
     return AnimatedBuilder(
