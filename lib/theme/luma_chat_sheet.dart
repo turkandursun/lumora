@@ -385,7 +385,9 @@ class _Hero extends StatelessWidget {
     return Column(
       children: [
         Text(
-          'Your space.\nYour thoughts.\nYour time.',
+          isTr
+              ? 'Yalnız değilsin.\nLuma hep\nyanında.'
+              : 'You\'re not alone.\nLuma is\nalways here.',
           textAlign: TextAlign.center,
           style: _Pink.sans(
             context,
@@ -398,7 +400,9 @@ class _Hero extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          isTr ? 'Yaz. Konuş. Rahatla.' : 'Write. Talk. Relax.',
+          isTr
+              ? 'Seninle konuşmak için burada.'
+              : 'Here, ready to talk with you.',
           textAlign: TextAlign.center,
           style: _Pink.sans(
             context,
@@ -516,9 +520,83 @@ class _PromptCard extends StatelessWidget {
                       fontSize: 14, color: _Pink.hint(context)),
                 ),
               ),
+              const SizedBox(height: 14),
+              Align(
+                alignment: Alignment.centerRight,
+                child: _PromptSendButton(
+                  isTr: isTr,
+                  enabled: enabled,
+                  onTap: onSubmitted,
+                ),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The in-card "Gönder" button — a soft pink pill that submits the written
+/// thought, so sending never depends on finding the keyboard's send key.
+class _PromptSendButton extends StatelessWidget {
+  const _PromptSendButton({
+    required this.isTr,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final bool isTr;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _Pink.sparkle(context);
+    final label = isTr ? 'Gönder' : 'Send';
+    final button = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accent,
+            Color.lerp(accent, Colors.black, 0.14) ?? accent,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.42),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: _Pink.sans(
+              context,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(width: 7),
+          const Icon(Icons.send_rounded, size: 16, color: Colors.white),
+        ],
+      ),
+    );
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: BouncyTap(
+        onTap: enabled ? onTap : () {},
+        child: button,
       ),
     );
   }

@@ -112,7 +112,7 @@ Future<Uint8List> buildJournalPdf({
         ),
         child: pw.Text(
           title,
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
             fontSize: 15,
             fontWeight: pw.FontWeight.bold,
             color: accent,
@@ -150,7 +150,7 @@ Future<Uint8List> buildJournalPdf({
             if (heading != null && heading.isNotEmpty) ...[
               pw.SizedBox(height: 3),
               pw.Text(heading,
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                       fontSize: 12,
                       fontWeight: pw.FontWeight.bold,
                       color: ink)),
@@ -269,14 +269,14 @@ Future<Uint8List> buildJournalPdf({
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text('ASTRA',
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                       fontSize: 30,
                       fontWeight: pw.FontWeight.bold,
                       color: accent,
                       letterSpacing: 4)),
               pw.SizedBox(height: 6),
               pw.Text(labels.documentTitle,
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                       fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
                       color: ink)),

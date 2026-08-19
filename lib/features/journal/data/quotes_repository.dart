@@ -26,17 +26,13 @@ class QuotesRepository {
     return rows.length;
   }
 
-  /// Seeds the 22 bundled famous quotes only when the local catalogue is empty.
+  /// Ensures every bundled famous quote exists locally. Uses insert-or-ignore,
+  /// so quotes added in an app update ("top-up") reach EXISTING users too —
+  /// without touching rows they already have (favorites, Supabase overrides).
+  /// Previously this only seeded an empty catalogue, so new bundled quotes
+  /// never reached anyone who had already opened the app.
   Future<void> ensureSeeded() async {
     final existingCount = await _localQuoteCount();
-    if (existingCount > 0) {
-      debugPrint(
-        '[Quotes] embedded seed count: 0 '
-        '(skipped; Drift already contains $existingCount rows)',
-      );
-      return;
-    }
-
     final now = DateTime.now().toUtc();
     final companions = <QuotesCompanion>[
       for (final entry in famousQuotes.indexed)
@@ -59,7 +55,10 @@ class QuotesRepository {
         mode: InsertMode.insertOrIgnore,
       );
     });
-    debugPrint('[Quotes] embedded seed count: ${companions.length}');
+    debugPrint(
+      '[Quotes] ensureSeeded top-up: ${companions.length} bundled quotes '
+      '(had $existingCount rows; new ones added via insertOrIgnore)',
+    );
   }
 
   /// Refreshes the local catalogue from Supabase without making network

@@ -56,7 +56,7 @@ class _CommunityFeedTabState extends ConsumerState<CommunityFeedTab> {
     try {
       await ref.read(communityRepositoryProvider).createPost(text, l10n);
       _controller.clear();
-      FocusScope.of(context).unfocus();
+      if (mounted) FocusScope.of(context).unfocus();
       ref.invalidate(communityPostsProvider);
     } catch (_) {
       if (mounted) {

@@ -312,8 +312,7 @@ class _CustomAddRow extends StatelessWidget {
 
 class _SelectedChip extends StatelessWidget {
   const _SelectedChip(
-      {super.key,
-      required this.label,
+      {required this.label,
       required this.isDark,
       required this.primary,
       required this.onRemove});

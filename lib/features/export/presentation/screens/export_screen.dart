@@ -62,7 +62,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       lastDate: DateTime(now.year, now.month, now.day),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.light(
+          colorScheme: const ColorScheme.light(
             primary: SakuraHomePalette.blossomPink,
             onPrimary: Colors.white,
             surface: SakuraHomePalette.cardWhite,

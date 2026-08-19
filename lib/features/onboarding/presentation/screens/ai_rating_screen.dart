@@ -134,7 +134,7 @@ class _AiRatingScreenState extends State<AiRatingScreen> {
                   ),
                 ),
                 const SizedBox(height: 22),
-                _PageDots(count: 4, activeIndex: 3),
+                const _PageDots(count: 4, activeIndex: 3),
                 const SizedBox(height: 10),
               ],
             ),

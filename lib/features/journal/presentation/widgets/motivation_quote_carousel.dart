@@ -252,7 +252,13 @@ class _MotivationQuoteCarouselState
       _lastLoggedQuoteSource = quoteSourceLog;
       debugPrint('[Quotes] Home source: $quoteSourceLog');
     }
-    final dayQuote =
+    // A fresh AI-generated line for today (signed "Luma") when enabled + online;
+    // otherwise the correctly-attributed famous quote of the day. The famous
+    // rotation now spans dozens of quotes, so it stays fresh for months even
+    // with AI off.
+    final aiQuote =
+        ref.watch(dailyAiQuoteProvider(isTr ? 'tr' : 'en')).valueOrNull;
+    final dayQuote = aiQuote ??
         rotationQuotes[dailyRotationIndex(now, rotationQuotes.length)];
     // This card is now a fixed pink glass surface (see [LumaGlassCard] below)
     // rather than the moon/sun-aware mountain-scene glass, so every slide

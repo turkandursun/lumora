@@ -56,7 +56,7 @@ class OnboardingCompleteScreen extends StatelessWidget {
               // Beyaz kart
               Container(
                 margin: const EdgeInsets.only(top: avatar / 2),
-                padding: EdgeInsets.fromLTRB(24, avatar / 2 + 20, 24, 24),
+                padding: const EdgeInsets.fromLTRB(24, avatar / 2 + 20, 24, 24),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(28),

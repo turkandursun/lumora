@@ -5,10 +5,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/mood_gradients.dart';
-import '../../domain/weekly_summary.dart';
 import '../providers/weekly_summary_provider.dart';
 
 /// "Bu hafta" — a personal weekly snapshot the user can read at a glance and
@@ -38,8 +36,12 @@ class _WeeklySummaryCardState extends ConsumerState<WeeklySummaryCard> {
       // XFile.fromData works on web and mobile alike (no dart:io / temp file).
       final file = XFile.fromData(png,
           mimeType: 'image/png', name: 'astra_week.png');
-      await Share.shareXFiles([file],
-          text: isTr ? 'ASTRA · Bu haftam 🌸' : 'ASTRA · My week 🌸');
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [file],
+          text: isTr ? 'ASTRA · Bu haftam 🌸' : 'ASTRA · My week 🌸',
+        ),
+      );
     } catch (_) {
       // Sharing is a nicety; never crash the screen.
     } finally {

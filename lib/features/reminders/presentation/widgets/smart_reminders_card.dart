@@ -23,10 +23,12 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
   void initState() {
     super.initState();
     SmartRemindersService.instance.load().then((s) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
             _s = s;
             _loaded = true;
           });
+      }
     });
   }
 

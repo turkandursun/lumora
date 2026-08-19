@@ -199,7 +199,8 @@ class _SpringMoodSliderState extends State<SpringMoodSlider>
                       top: (widget.trackHeight - widget.thumbSize) / 2,
                       child: Transform(
                         alignment: Alignment.center,
-                        transform: Matrix4.identity()..scale(stretch, 1 / stretch),
+                        transform: Matrix4.identity()
+                          ..scaleByDouble(stretch, 1 / stretch, 1, 1),
                         child: _Thumb(
                           size: widget.thumbSize,
                           color: color,

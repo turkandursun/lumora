@@ -129,43 +129,57 @@ class _NotificationBell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final accent = LumaGlass.sparkle(context);
+    final deep = LumaGlass.wordmark(context);
     return Semantics(
       button: true,
       label: l10n.homeNotificationBellLabel,
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              accent,
+              Color.lerp(accent, deep, 0.55) ?? accent,
+            ],
+          ),
+          border: Border.all(
+              color: Colors.white.withValues(alpha: 0.55), width: 1.4),
           boxShadow: [
             BoxShadow(
-              color: LumaGlass.sparkle(context).withValues(alpha: 0.18),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
+              color: accent.withValues(alpha: 0.45),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: Material(
-          color: Colors.white.withValues(alpha: 0.55),
-          shape: CircleBorder(
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.6))),
+          color: Colors.transparent,
+          shape: const CircleBorder(),
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.all(11),
+              padding: const EdgeInsets.all(13),
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Icon(Icons.notifications_none_rounded,
-                      color: LumaGlass.sparkle(context), size: 20),
+                  const Icon(Icons.notifications_rounded,
+                      color: Colors.white, size: 24),
                   if (hasUnread)
                     Positioned(
-                      top: -1,
-                      right: -1,
+                      top: -2,
+                      right: -2,
                       child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                            shape: BoxShape.circle, color: Color(0xFFEF4444)),
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFFEF4444),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
                       ),
                     ),
                 ],

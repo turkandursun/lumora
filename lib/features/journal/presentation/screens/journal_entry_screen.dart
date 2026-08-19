@@ -438,7 +438,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                 style: GoogleFonts.outfit(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF34121F),
+                  color: AstraKit.ink(context, isDark),
                 ),
               ),
             ],
@@ -550,7 +550,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                               style: GoogleFonts.outfit(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w700,
-                                                color: const Color(0xFF34121F),
+                                                color: AstraKit.ink(context, isDark),
                                               ),
                                             ),
                                           ),
@@ -594,7 +594,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                       style: GoogleFonts.outfit(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF34121F),
+                                        color: AstraKit.ink(context, isDark),
                                       ),
                                       cursorColor: primary,
                                       maxLines: 1,
@@ -613,7 +613,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                             : 'Summary...',
                                         hintStyle: GoogleFonts.outfit(
                                           fontSize: 13,
-                                          color: const Color(0x997A4058),
+                                          color: AstraKit.faint(context, isDark),
                                         ),
                                       ),
                                     ),
@@ -643,7 +643,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                   textAlignVertical: TextAlignVertical.top,
                                   style: GoogleFonts.outfit(
                                     fontSize: 16,
-                                    color: const Color(0xFF34121F),
+                                    color: AstraKit.ink(context, isDark),
                                     height: 1.5,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -664,7 +664,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                         : 'Write what is on your mind today...',
                                     hintStyle: GoogleFonts.outfit(
                                       fontSize: 15,
-                                      color: const Color(0x997A4058),
+                                      color: AstraKit.faint(context, isDark),
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
@@ -679,7 +679,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                     style: GoogleFonts.outfit(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: const Color(0x886B3550),
+                                      color: AstraKit.faint(context, isDark),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
@@ -727,7 +727,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                     style: GoogleFonts.outfit(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF34121F),
+                                      color: AstraKit.ink(context, isDark),
                                     ),
                                   ),
                                 ],
@@ -739,7 +739,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                                     : 'Speak to write — your words become text.',
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
-                                  color: const Color(0x996B3550),
+                                  color: AstraKit.faint(context, isDark),
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -829,14 +829,14 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
 
               // ── Bottom Action Bar + Save Button (fixed at bottom)
               Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Color(0x00000000),
-                      Color(0xCCF8DCE6),
-                      Color(0xFFF1D1DE),
+                      AstraKit.palette(context).gradientBottom.withValues(alpha: 0),
+                      AstraKit.palette(context).gradientBottom.withValues(alpha: 0.8),
+                      AstraKit.palette(context).gradientBottom,
                     ],
                   ),
                 ),
@@ -888,7 +888,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                               : 'Your journal is safe & private with you.',
                           style: GoogleFonts.outfit(
                             fontSize: 11,
-                            color: const Color(0x886B3550),
+                            color: AstraKit.faint(context, isDark),
                           ),
                         ),
                       ],
@@ -932,9 +932,10 @@ class _GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Real frosted glass, matching Home's LumaGlass cards: a backdrop blur
-    // plus a soft translucent-white gradient fill and border, rather than a
-    // flat tinted box.
+    // Frosted glass that adapts to the theme brightness: a light translucent
+    // card in light mode, a dark elevated card in dark mode (palette
+    // .cardBackground), so text stays readable on both.
+    final palette = AstraKit.palette(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -942,21 +943,18 @@ class _GlassCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0x8CFFFFFF), Color(0x47FFFFFF)],
-            ),
+            color: palette.cardBackground,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: primary.withValues(alpha: 0.40),
+              color: primary.withValues(alpha: isDark ? 0.34 : 0.40),
               width: 1.2,
             ),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x28C77D9B),
+                color: (isDark ? Colors.black : primary)
+                    .withValues(alpha: isDark ? 0.35 : 0.14),
                 blurRadius: 22,
-                offset: Offset(0, 10),
+                offset: const Offset(0, 10),
               ),
             ],
           ),
@@ -1003,7 +1001,7 @@ class _PhotoPreviewCard extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF34121F),
+                  color: AstraKit.ink(context, isDark),
                 ),
               ),
               const Spacer(),
@@ -1031,32 +1029,6 @@ class _PhotoPreviewCard extends StatelessWidget {
   }
 }
 
-/// Full-bleed background for the journal screen: the app's LumaGlass pink
-/// gradient, matching Home and every other screen. `isDark` is accepted only
-/// for call-site compatibility and no longer changes anything — the app's
-/// theme is always this soft pink now.
-class _MountainBackground extends StatelessWidget {
-  const _MountainBackground({required this.isDark, required this.child});
-
-  final bool isDark;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFCE8EE), Color(0xFFF8DCE6), Color(0xFFF1D1DE)],
-          stops: [0.0, 0.55, 1.0],
-        ),
-      ),
-      child: child,
-    );
-  }
-}
-
 // Circular icon button
 class _CircleBtn extends StatelessWidget {
   const _CircleBtn({
@@ -1073,18 +1045,29 @@ class _CircleBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Prominent in both themes: a filled tinted circle in the palette accent
+    // with a clear border and soft glow, so the top-bar actions never fade
+    // into the background (they used to be a faint translucent white).
+    final palette = AstraKit.palette(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 38,
-        height: 38,
+        width: 40,
+        height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: 0.5),
-          border: Border.all(color: primary.withValues(alpha: 0.3)),
+          color: palette.iconContainer,
+          border: Border.all(color: primary.withValues(alpha: 0.6), width: 1.4),
+          boxShadow: [
+            BoxShadow(
+              color: primary.withValues(alpha: isDark ? 0.30 : 0.20),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        child: Icon(icon, size: 18, color: primary),
+        child: Icon(icon, size: 19, color: primary),
       ),
     );
   }
@@ -1154,15 +1137,15 @@ class _PhotoChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            color: Colors.white.withValues(alpha: 0.55),
+            color: AstraKit.palette(context).cardBackground,
             border: Border.all(
               color: (hasPhoto ? Colors.greenAccent : primary)
-                  .withValues(alpha: 0.45),
-              width: 1.2,
+                  .withValues(alpha: 0.5),
+              width: 1.3,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
+                color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.10),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -1186,7 +1169,7 @@ class _PhotoChip extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF34121F),
+                  color: AstraKit.ink(context, isDark),
                 ),
               ),
             ],

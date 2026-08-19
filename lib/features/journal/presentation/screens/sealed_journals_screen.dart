@@ -69,25 +69,6 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
     return false;
   }
 
-  /// Opens the entry as a premium "sheet of paper" that drops onto the screen.
-  void _openEntry(JournalEntryRow entry, String localeStr, bool isTr,
-      bool isDark, Color primary) {
-    Navigator.of(context).push(_paperDropRoute(
-      _JournalDetailPage(
-        entry: entry,
-        localeStr: localeStr,
-        isTr: isTr,
-        isDark: isDark,
-        primary: primary,
-        onDelete: () async {
-          final deleted =
-              await _confirmDelete(context, entry, isTr, isDark, primary);
-          if (deleted && mounted) Navigator.of(context).pop();
-        },
-      ),
-    ));
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
@@ -161,16 +142,36 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
                                 index: i,
                                 intervalMs: 50,
                                 offset: 26,
-                                child: _EntryTile(
-                                  entry: dayEntries[i],
-                                  isDark: isDark,
-                                  primary: primary,
-                                  localeStr: localeStr,
-                                  isTr: isTr,
-                                  onOpen: () => _openEntry(dayEntries[i],
-                                      localeStr, isTr, isDark, primary),
-                                  onDelete: () => _confirmDelete(context,
-                                      dayEntries[i], isTr, isDark, primary),
+                                child: AstraMorphContainer(
+                                  borderRadius: 22,
+                                  openBuilder: (_) => _JournalDetailPage(
+                                    entry: dayEntries[i],
+                                    localeStr: localeStr,
+                                    isTr: isTr,
+                                    isDark: isDark,
+                                    primary: primary,
+                                    onDelete: () async {
+                                      final deleted = await _confirmDelete(
+                                          context,
+                                          dayEntries[i],
+                                          isTr,
+                                          isDark,
+                                          primary);
+                                      if (deleted && mounted) {
+                                        Navigator.of(context).pop();
+                                      }
+                                    },
+                                  ),
+                                  closedBuilder: (context, open) => _EntryTile(
+                                    entry: dayEntries[i],
+                                    isDark: isDark,
+                                    primary: primary,
+                                    localeStr: localeStr,
+                                    isTr: isTr,
+                                    onOpen: open,
+                                    onDelete: () => _confirmDelete(context,
+                                        dayEntries[i], isTr, isDark, primary),
+                                  ),
                                 ),
                               ),
                             ),
@@ -496,8 +497,10 @@ class _JournalDetailPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Center(
+      body: AstraMountainBackground(
+        isDark: isDark,
+        child: SafeArea(
+          child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 30),
             child: ConstrainedBox(
@@ -650,6 +653,7 @@ class _JournalDetailPage extends StatelessWidget {
             ),
           ),
         ),
+        ),
       ),
     );
   }
@@ -764,46 +768,6 @@ class _PaperIconBtn extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Route that eases the page in with a gentle upward settle, fade and subtle
-/// scale — a calm, premium arrival rather than a thrown sheet of paper.
-Route<T> _paperDropRoute<T>(Widget page) {
-  return PageRouteBuilder<T>(
-    opaque: false,
-    barrierColor: const Color(0x8C000000),
-    barrierDismissible: true,
-    barrierLabel: 'journal',
-    transitionDuration: const Duration(milliseconds: 420),
-    reverseTransitionDuration: const Duration(milliseconds: 260),
-    pageBuilder: (_, __, ___) => page,
-    transitionsBuilder: (context, animation, secondary, child) {
-      final settle = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic);
-      final fade = CurvedAnimation(
-          parent: animation,
-          curve: const Interval(0.0, 0.55, curve: Curves.easeOut));
-      return FadeTransition(
-        opacity: fade,
-        child: AnimatedBuilder(
-          animation: settle,
-          child: child,
-          builder: (context, c) {
-            final v = settle.value;
-            return Transform.translate(
-              offset: Offset(0, -20 * (1 - v)),
-              child: Transform.scale(
-                  scale: 0.96 + 0.04 * v,
-                  alignment: Alignment.topCenter,
-                  child: c),
-            );
-          },
-        ),
-      );
-    },
-  );
 }
 
 class _EmptyDay extends StatelessWidget {
