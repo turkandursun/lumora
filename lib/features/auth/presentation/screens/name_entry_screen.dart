@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../../theme/luma_animated_avatar.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../../profile/data/profile_repository.dart';
 import '../../domain/auth_flow_routes.dart';
@@ -84,6 +85,11 @@ class _NameEntryScreenState extends ConsumerState<NameEntryScreen> {
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final compact = constraints.maxHeight < 650;
+                final lumaSize = (constraints.maxWidth * 0.27).clamp(
+                  90.0,
+                  compact ? 96.0 : 110.0,
+                );
                 return SingleChildScrollView(
                   padding: EdgeInsets.only(
                       bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -97,54 +103,83 @@ class _NameEntryScreenState extends ConsumerState<NameEntryScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const Spacer(),
-                              AstraGlassCard(
-                                isDark: isDark,
-                                primaryColor: gold,
-                                borderRadius: 24,
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 22, 20, 20),
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    Text(
-                                      isTr
-                                          ? 'Sana nasıl hitap edelim?'
-                                          : 'What should we call you?',
-                                      textAlign: TextAlign.center,
-                                      style: AstraKit.heading1(context, isDark,
-                                          fontSize: 20),
+                              SizedBox(height: compact ? 10 : 22),
+                              AstraEntrance(
+                                index: 0,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Center(
+                                  child: LumaAnimatedAvatar(size: lumaSize),
+                                ),
+                              ),
+                              Expanded(
+                                child: Center(
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: AstraEntrance(
+                                      index: 1,
+                                      intervalMs: 130,
+                                      offset: 20,
+                                      child: AstraGlassCard(
+                                        isDark: isDark,
+                                        primaryColor: gold,
+                                        borderRadius: 24,
+                                        padding: const EdgeInsets.fromLTRB(
+                                            20, 22, 20, 20),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Text(
+                                              isTr
+                                                  ? 'Sana nasıl hitap edelim?'
+                                                  : 'What should we call you?',
+                                              textAlign: TextAlign.center,
+                                              style: AstraKit.heading1(
+                                                  context, isDark,
+                                                  fontSize: 20),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              isTr
+                                                  ? 'İstersen sonra profilinden değiştirebilirsin.'
+                                                  : 'You can change it later from your profile.',
+                                              textAlign: TextAlign.center,
+                                              style: AstraKit.mutedText(
+                                                  context, isDark,
+                                                  fontSize: 13),
+                                            ),
+                                            const SizedBox(height: 18),
+                                            AstraTextField(
+                                              isDark: isDark,
+                                              primaryColor: gold,
+                                              label:
+                                                  isTr ? 'Adınız' : 'Your Name',
+                                              controller: _nameController,
+                                              keyboardType: TextInputType.name,
+                                              textInputAction:
+                                                  TextInputAction.done,
+                                              autofillHints: const [
+                                                AutofillHints.name
+                                              ],
+                                              onFieldSubmitted: (_) =>
+                                                  _continue(),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            AstraGoldButton(
+                                              isDark: isDark,
+                                              forceGold: true,
+                                              label: isTr
+                                                  ? 'Devam et'
+                                                  : 'Continue',
+                                              isLoading: _saving,
+                                              onTap: _continue,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      isTr
-                                          ? 'İstersen sonra profilinden değiştirebilirsin.'
-                                          : 'You can change it later from your profile.',
-                                      textAlign: TextAlign.center,
-                                      style: AstraKit.mutedText(context, isDark,
-                                          fontSize: 13),
-                                    ),
-                                    const SizedBox(height: 18),
-                                    AstraTextField(
-                                      isDark: isDark,
-                                      primaryColor: gold,
-                                      label: isTr ? 'Adınız' : 'Your Name',
-                                      controller: _nameController,
-                                      keyboardType: TextInputType.name,
-                                      textInputAction: TextInputAction.done,
-                                      autofillHints: const [AutofillHints.name],
-                                      onFieldSubmitted: (_) => _continue(),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    AstraGoldButton(
-                                      isDark: isDark,
-                                      forceGold: true,
-                                      label: isTr ? 'Devam et' : 'Continue',
-                                      isLoading: _saving,
-                                      onTap: _continue,
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 12),

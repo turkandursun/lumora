@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
+import '../../../../theme/luma_animated_avatar.dart';
 import '../../../../theme/mood_gradients.dart';
 import '../../../../theme/mood_theme_provider.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
@@ -305,6 +306,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
         ? (name == null ? 'Hoş geldin' : 'Hoş geldin, $name')
         : (name == null ? 'Welcome' : 'Welcome, $name');
     final line = isTr ? _linesTr[_lineIndex] : _linesEn[_lineIndex];
+    final lumaSize = (MediaQuery.sizeOf(context).width * 0.25).clamp(
+      90.0,
+      105.0,
+    );
 
     return Scaffold(
       body: AstraMountainBackground(
@@ -319,8 +324,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _HeartEmblem(gold: gold, isDark: isDark),
-                    const SizedBox(height: 22),
+                    LumaAnimatedAvatar(size: lumaSize),
+                    const SizedBox(height: 16),
                     AstraGlassCard(
                       isDark: isDark,
                       primaryColor: gold,
@@ -403,39 +408,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Soft heart inside a gold-ringed glass disc — a warm, welcoming emblem that
-/// still belongs to the ASTRA gold-and-glass world.
-class _HeartEmblem extends StatelessWidget {
-  const _HeartEmblem({required this.gold, required this.isDark});
-
-  final Color gold;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 78,
-      height: 78,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isDark
-            ? const Color(0x59181026)
-            : Colors.white.withValues(alpha: 0.5),
-        border: Border.all(color: gold.withValues(alpha: 0.55), width: 1.4),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFEC7FA9).withValues(alpha: 0.35),
-            blurRadius: 26,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: const Icon(Icons.favorite_rounded,
-          size: 30, color: Color(0xFFEC7FA9)),
     );
   }
 }

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../theme/astra_screen_kit.dart';
-import '../../../../theme/luma_avatar.dart';
+import '../../../../theme/luma_animated_avatar.dart';
 import '../../../../theme/mood_gradients.dart';
 import '../../../../theme/mood_theme_provider.dart';
 import '../../../auth/domain/auth_flow_routes.dart';
@@ -122,7 +122,7 @@ class _DailyReflectionScreenState extends ConsumerState<DailyReflectionScreen> {
                   index: 0,
                   intervalMs: 130,
                   offset: 20,
-                  child: LumaAvatar(size: 96),
+                  child: LumaAnimatedAvatar(size: 96),
                 ),
                 const SizedBox(height: 20),
                 AstraEntrance(

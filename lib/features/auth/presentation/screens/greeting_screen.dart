@@ -10,7 +10,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_liquid_background.dart';
 import '../../../../theme/astra_screen_kit.dart';
-import '../../../../theme/luma_avatar.dart';
+import '../../../../theme/luma_animated_avatar.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../domain/auth_flow_routes.dart';
 import '../../domain/registration_flow_state.dart';
@@ -166,7 +166,10 @@ class _GreetingScreenState extends ConsumerState<GreetingScreen> {
                           ),
                         ],
                       ),
-                      child: LumaAvatar(size: 132, speaking: !_done),
+                      child: const LumaAnimatedAvatar(
+                        size: 132,
+                        mode: LumaAnimationMode.speaking,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -259,8 +262,7 @@ class _TapHintState extends State<_TapHint>
           const SizedBox(width: 6),
           Text(
             widget.label,
-            style:
-                AstraKit.mutedText(context, widget.isDark, fontSize: 13),
+            style: AstraKit.mutedText(context, widget.isDark, fontSize: 13),
           ),
         ],
       ),

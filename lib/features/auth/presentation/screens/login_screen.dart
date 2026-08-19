@@ -15,7 +15,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
-import '../../../../theme/luma_wave_avatar.dart';
+import '../../../../theme/luma_animated_avatar.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../domain/auth_flow_routes.dart';
 import '../../domain/registration_flow_state.dart';
@@ -241,7 +241,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 intervalMs: 130,
                                 offset: 20,
                                 child: Center(
-                                  child: LumaWaveAvatar(size: lumaSize),
+                                  child: LumaAnimatedAvatar(size: lumaSize),
                                 ),
                               ),
                               SizedBox(height: compact ? 2 : 6),

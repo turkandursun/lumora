@@ -15,6 +15,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_design_tokens.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
+import '../../../../theme/luma_animated_avatar.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../domain/auth_flow_routes.dart';
 import '../../domain/registration_flow_state.dart';
@@ -272,6 +273,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final compact = constraints.maxHeight < 760;
+                final lumaSize = (constraints.maxWidth * 0.27).clamp(
+                  90.0,
+                  compact ? 96.0 : 110.0,
+                );
                 return SingleChildScrollView(
                   padding: EdgeInsets.only(
                       bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -296,9 +302,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: compact ? 0 : 4),
                               AstraEntrance(
                                 index: 0,
+                                intervalMs: 130,
+                                offset: 20,
+                                child: Center(
+                                  child: LumaAnimatedAvatar(size: lumaSize),
+                                ),
+                              ),
+                              SizedBox(height: compact ? 0 : 4),
+                              AstraEntrance(
+                                index: 1,
                                 intervalMs: 130,
                                 offset: 20,
                                 child: Text('ASTRA',
@@ -308,7 +323,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                               ),
                               const SizedBox(height: 6),
                               AstraEntrance(
-                                index: 1,
+                                index: 2,
                                 intervalMs: 130,
                                 offset: 20,
                                 child: Text(
@@ -321,8 +336,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                 ),
                               ),
                               const Spacer(),
-                              _animated(_buildPanel(
-                                  context, isDark, isTr, authState, errorMessage)),
+                              _animated(_buildPanel(context, isDark, isTr,
+                                  authState, errorMessage)),
                               const SizedBox(height: 12),
                             ],
                           ),
