@@ -7,7 +7,6 @@ import '../../../../theme/astra_screen_kit.dart';
 import '../../../community/presentation/providers/community_providers.dart';
 import '../../data/dilemma_repository.dart';
 import '../../domain/dilemma_bank.dart';
-import 'dilemma_coach_screen.dart';
 
 /// Tinder-style dilemma cards: swipe left/right to pick a side, see how real
 /// app users split, and at the end get a summary you can share to the Safe
@@ -175,7 +174,10 @@ class _DilemmaSwipeScreenState extends ConsumerState<DilemmaSwipeScreen> {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(l10n.dilemmaTitle,
+                    Text(
+                        Localizations.localeOf(context).languageCode == 'tr'
+                            ? 'Seç Bakalım'
+                            : 'Take a Pick',
                         style:
                             AstraKit.heading1(context, isDark, fontSize: 24)),
                     const Spacer(),
@@ -190,8 +192,6 @@ class _DilemmaSwipeScreenState extends ConsumerState<DilemmaSwipeScreen> {
                   Text(l10n.dilemmaSubtitle,
                       style: AstraKit.mutedText(context, isDark, fontSize: 13)),
                 const SizedBox(height: 12),
-                _CoachEntryBanner(isDark: isDark, primary: primary),
-                const SizedBox(height: 6),
                 Expanded(
                   child: done
                       ? _SummaryView(
@@ -228,74 +228,6 @@ class _DilemmaSwipeScreenState extends ConsumerState<DilemmaSwipeScreen> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A premium invitation into the deep "Kendi İkilemin" (Your Own Dilemma)
-/// guided decision flow, sitting above the light social deck.
-class _CoachEntryBanner extends StatelessWidget {
-  const _CoachEntryBanner({required this.isDark, required this.primary});
-
-  final bool isDark;
-  final Color primary;
-
-  @override
-  Widget build(BuildContext context) {
-    final tr = Localizations.localeOf(context).languageCode == 'tr';
-    return BouncyTap(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const DilemmaCoachScreen()),
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              primary.withValues(alpha: isDark ? 0.22 : 0.16),
-              primary.withValues(alpha: isDark ? 0.10 : 0.07),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: primary.withValues(alpha: 0.34)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: primary.withValues(alpha: 0.18),
-                border: Border.all(color: primary.withValues(alpha: 0.3)),
-              ),
-              child: Icon(Icons.explore_rounded, size: 20, color: primary),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                      tr
-                          ? 'Gerçek bir kararın mı var?'
-                          : 'Facing a real decision?',
-                      style: AstraKit.heading2(context, isDark, fontSize: 15)),
-                  const SizedBox(height: 2),
-                  Text(
-                    tr
-                        ? 'Kendi ikilemini Luma’yla adım adım çöz'
-                        : 'Work your own dilemma through with Luma',
-                    style: AstraKit.mutedText(context, isDark, fontSize: 12.5),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_rounded, size: 18, color: primary),
-          ],
         ),
       ),
     );

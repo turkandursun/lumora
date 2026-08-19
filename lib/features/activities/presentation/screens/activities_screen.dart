@@ -184,7 +184,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(isTr ? 'Etkinliklerim' : 'My activities',
+                    Text(isTr ? 'Anılarım' : 'My memories',
                         style:
                             AstraKit.heading1(context, isDark, fontSize: 22)),
                   ],
