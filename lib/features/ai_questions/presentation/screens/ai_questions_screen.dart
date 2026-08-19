@@ -176,7 +176,7 @@ class _AiQuestionsScreenState extends ConsumerState<AiQuestionsScreen> {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(isTr ? 'AI Soruları' : 'AI Questions',
+                    Text(isTr ? 'Sana Sorular' : 'Questions for You',
                         style:
                             AstraKit.heading1(context, isDark, fontSize: 22)),
                   ],

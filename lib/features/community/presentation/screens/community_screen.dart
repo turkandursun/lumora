@@ -53,7 +53,10 @@ class CommunityScreen extends ConsumerWidget {
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(l10n.communityTitle,
+                      Text(
+                          Localizations.localeOf(context).languageCode == 'tr'
+                              ? 'Güvenli Alan'
+                              : 'Safe Space',
                           style:
                               AstraKit.heading1(context, isDark, fontSize: 24)),
                     ],

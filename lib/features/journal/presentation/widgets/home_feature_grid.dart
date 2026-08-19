@@ -51,7 +51,8 @@ List<HomeFeatureItem> homeFeatureItems(
     ),
     HomeFeatureItem(
       title: isTr ? 'Anılarım' : 'My memories',
-      description: isTr ? 'Küçük anları sakla' : 'Keep little moments',
+      description:
+          isTr ? 'Fotoğraflarla anlarını sakla' : 'Keep moments with photos',
       primaryIcon: Icons.photo_camera_back_rounded,
       accentIcon: Icons.groups_rounded,
       screenBuilder: (_) => const ActivitiesScreen(),
