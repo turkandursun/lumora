@@ -519,6 +519,11 @@ class _FabMenuItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = AstraKit.primary(context, isDark);
+    // The chip has a fixed light-pink fill in light mode, but in dark mode that
+    // would put light label text on a light chip (invisible). Use a dark,
+    // palette-tinted fill in dark mode so the label stays readable.
+    final chipColor =
+        isDark ? AstraKit.palette(context).cardBackground : const Color(0xF2FCEEF3);
     return Opacity(
       opacity: progress.clamp(0.0, 1.0),
       child: Transform.translate(
@@ -533,7 +538,7 @@ class _FabMenuItem extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
                 decoration: BoxDecoration(
-                  color: const Color(0xF2FCEEF3),
+                  color: chipColor,
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(color: accent.withValues(alpha: 0.4)),
                   boxShadow: const [
