@@ -1926,8 +1926,8 @@
   "focusDailyGoalReached": "You reached your daily goal 🎉",
   "focusNotificationTitle": "Focus complete",
   "focusNotificationBody": "Your focus session is complete. Time for a gentle break.",
-  "journalToneFeedbackTitle": "Journal Tone Feedback",
+  "journalToneFeedbackTitle": "A note from Luma 💛",
   "journalToneNotNow": "Not Now",
-  "journalToneWellnessPrompt": "How are you feeling about this entry?",
+  "journalToneWellnessPrompt": "Want a little moment that's kind to you?",
   "journalToneCalmAction": "Take a Calm Moment"
 }

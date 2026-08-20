@@ -39,16 +39,20 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
     await SmartRemindersService.instance.save(next, isTr: _isTr);
   }
 
-  Future<void> _pickTime(bool morning) async {
-    final initial = TimeOfDay(
-      hour: morning ? _s.morningHour : _s.eveningHour,
-      minute: morning ? _s.morningMinute : _s.eveningMinute,
-    );
+  // 0 = morning good-morning, 1 = evening "pişt", 2 = night good-night.
+  Future<void> _pickTime(int slot) async {
+    final initial = switch (slot) {
+      0 => TimeOfDay(hour: _s.morningHour, minute: _s.morningMinute),
+      1 => TimeOfDay(hour: _s.eveningHour, minute: _s.eveningMinute),
+      _ => TimeOfDay(hour: _s.nightHour, minute: _s.nightMinute),
+    };
     final picked = await showTimePicker(context: context, initialTime: initial);
     if (picked == null) return;
-    await _persist(morning
-        ? _s.copyWith(morningHour: picked.hour, morningMinute: picked.minute)
-        : _s.copyWith(eveningHour: picked.hour, eveningMinute: picked.minute));
+    await _persist(switch (slot) {
+      0 => _s.copyWith(morningHour: picked.hour, morningMinute: picked.minute),
+      1 => _s.copyWith(eveningHour: picked.hour, eveningMinute: picked.minute),
+      _ => _s.copyWith(nightHour: picked.hour, nightMinute: picked.minute),
+    });
   }
 
   String _fmt(int h, int m) =>
@@ -93,22 +97,34 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
             const SizedBox(height: 4),
             _TimeRow(
               icon: Icons.wb_sunny_rounded,
-              label: isTr ? 'Sabah check-in' : 'Morning check-in',
-              hint: isTr ? '“Bugün nasılsın?”' : '“How are you?”',
+              label: isTr ? 'Günaydın mesajı' : 'Good-morning message',
+              hint: isTr ? 'Sıcak bir başlangıç ☀️' : 'A warm start ☀️',
               time: _fmt(_s.morningHour, _s.morningMinute),
               isDark: isDark,
               primary: primary,
-              onTap: () => _pickTime(true),
+              onTap: () => _pickTime(0),
+            ),
+            const SizedBox(height: 8),
+            _TimeRow(
+              icon: Icons.waving_hand_rounded,
+              label: isTr ? 'Pişt, neredesin?' : 'Psst, where are you?',
+              hint: isTr
+                  ? 'Gün boyu uğramazsan 👀'
+                  : "If you don't drop by all day 👀",
+              time: _fmt(_s.eveningHour, _s.eveningMinute),
+              isDark: isDark,
+              primary: primary,
+              onTap: () => _pickTime(1),
             ),
             const SizedBox(height: 8),
             _TimeRow(
               icon: Icons.nightlight_round,
-              label: isTr ? 'Akşam yazma daveti' : 'Evening writing invite',
-              hint: isTr ? 'Seriyi korur' : 'Protects your streak',
-              time: _fmt(_s.eveningHour, _s.eveningMinute),
+              label: isTr ? 'İyi geceler mesajı' : 'Good-night message',
+              hint: isTr ? 'Tatlı rüyalar 🌙' : 'Sweet dreams 🌙',
+              time: _fmt(_s.nightHour, _s.nightMinute),
               isDark: isDark,
               primary: primary,
-              onTap: () => _pickTime(false),
+              onTap: () => _pickTime(2),
             ),
           ],
         ],

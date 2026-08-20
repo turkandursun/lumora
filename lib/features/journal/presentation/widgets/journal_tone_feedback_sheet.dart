@@ -239,18 +239,20 @@ class _ToneLoadingBody extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 18),
       child: Column(
         children: [
-          _PulsingSparkle(color: primary),
+          Center(child: _PulsingSparkle(color: primary)),
           const SizedBox(height: 20),
           Text(
-            isTr ? 'Luma günlüğünü okuyor…' : 'Luma is reading your journal…',
+            isTr
+                ? 'Luma yazdıklarını okuyor…'
+                : 'Luma is reading your words…',
             textAlign: TextAlign.center,
             style: AstraKit.heading2(context, isDark, fontSize: 17),
           ),
           const SizedBox(height: 8),
           Text(
             isTr
-                ? 'Birkaç saniye içinde küçük bir yansıma hazır olacak.'
-                : 'A small reflection will be ready in a few seconds.',
+                ? 'Birazdan sana içten bir iki söz bırakacak. 💛'
+                : "In a moment she'll leave you a few heartfelt words. 💛",
             textAlign: TextAlign.center,
             style: AstraKit.mutedText(context, isDark, fontSize: 13.5),
           ),
@@ -283,7 +285,7 @@ class _ToneFallbackBody extends StatelessWidget {
             color: primary.withValues(alpha: 0.13),
             border: Border.all(color: primary.withValues(alpha: 0.25)),
           ),
-          child: Icon(Icons.spa_rounded, size: 22, color: primary),
+          child: Image.asset(_lumaStarAsset, width: 24, height: 24),
         ),
         const SizedBox(height: 16),
         Text(
@@ -335,32 +337,45 @@ class _ToneResultBody extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
+        // Centered Luma star + title, with the close button tucked in the
+        // top-right corner.
+        Stack(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: primary.withValues(alpha: 0.13),
-                border: Border.all(color: primary.withValues(alpha: 0.25)),
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: primary.withValues(alpha: 0.13),
+                      border:
+                          Border.all(color: primary.withValues(alpha: 0.25)),
+                    ),
+                    child: Image.asset(_lumaStarAsset, width: 26, height: 26),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    l10n.journalToneFeedbackTitle,
+                    textAlign: TextAlign.center,
+                    style: AstraKit.heading2(context, isDark, fontSize: 18),
+                  ),
+                ],
               ),
-              child: Image.asset(_lumaStarAsset, width: 22, height: 22),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                l10n.journalToneFeedbackTitle,
-                style: AstraKit.heading2(context, isDark, fontSize: 18),
+            Positioned(
+              right: -6,
+              top: -6,
+              child: IconButton(
+                key: const ValueKey('journal-tone-close'),
+                tooltip: l10n.journalToneNotNow,
+                onPressed: onDismiss,
+                icon: Icon(Icons.close_rounded,
+                    color: AstraKit.muted(context, isDark)),
               ),
-            ),
-            IconButton(
-              key: const ValueKey('journal-tone-close'),
-              tooltip: l10n.journalToneNotNow,
-              onPressed: onDismiss,
-              icon: Icon(Icons.close_rounded,
-                  color: AstraKit.muted(context, isDark)),
             ),
           ],
         ),

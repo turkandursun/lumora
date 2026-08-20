@@ -135,17 +135,46 @@ class NotificationService implements ReminderNotifier, FocusCompletionNotifier {
       title: title,
       body: body,
       scheduledDate: schedule.dateTime,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channelId,
-          _channelName,
-          channelDescription: _channelDescription,
-        ),
-        iOS: DarwinNotificationDetails(),
-        windows: WindowsNotificationDetails(),
-      ),
+      notificationDetails: _reminderDetails,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: schedule.matchDateTimeComponents,
+    );
+  }
+
+  /// Reminder notification presentation. High importance so the daily nudges
+  /// actually surface as a heads-up banner and reliably reach the tray.
+  static const NotificationDetails _reminderDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDescription,
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+    iOS: DarwinNotificationDetails(),
+    windows: WindowsNotificationDetails(),
+  );
+
+  /// Schedules a single one-off notification at a specific wall-clock [at]
+  /// (used by the smart evening "where are you?" nudge, which is re-armed on
+  /// every app open). No-ops if [at] is already in the past.
+  Future<void> scheduleOnceAt({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime at,
+  }) async {
+    if (!_isSupportedPlatform) return;
+    await init();
+    final date = tz.TZDateTime.from(at, tz.local);
+    if (!date.isAfter(tz.TZDateTime.now(tz.local))) return;
+    await _plugin.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: date,
+      notificationDetails: _reminderDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
 

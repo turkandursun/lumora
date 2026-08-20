@@ -133,20 +133,30 @@ abstract final class AuthFlowRoutes {
   }
 
   /// Pure guard policy used by GoRouter and unit tests.
+  ///
+  /// [fallbackIntent] is the authoritative in-memory registration intent (from
+  /// the flow store). GoRouter re-runs `redirect` on every Supabase auth event
+  /// via its refreshListenable, and such a refresh can drop `state.extra`
+  /// (notably on mobile, where extra `tokenRefreshed`/`userUpdated` events fire
+  /// during signup). Falling back to the store's intent keeps the registration
+  /// steps (theme, onboarding, hobbies…) reachable instead of bouncing the user
+  /// home when `extra` is momentarily lost.
   static String? registrationGuardRedirect({
     required String route,
     required bool isAuthenticated,
     required String? currentUserId,
     required Object? extra,
     required bool hasMatchingActiveRegistration,
+    FreshRegistrationIntent? fallbackIntent,
   }) {
     final requiredStep = fixedRegistrationStepForRoute(route) ??
         sharedRegistrationStepForRoute(route, extra);
     if (requiredStep == null) return null;
     if (!isAuthenticated || currentUserId == null) return '/login';
+    final intent = registrationIntentFromExtra(extra) ?? fallbackIntent;
     if (!hasMatchingActiveRegistration ||
         !hasFreshSignupIntent(
-          registrationIntentFromExtra(extra),
+          intent,
           userId: currentUserId,
           step: requiredStep,
         )) {

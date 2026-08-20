@@ -154,6 +154,20 @@ const _protectedRoutes = {
 final RouteObserver<ModalRoute<void>> astraRouteObserver =
     RouteObserver<ModalRoute<void>>();
 
+/// Resolves the registration intent for a fixed-step onboarding route: the
+/// `extra` passed on navigation, or — when a router refresh has dropped `extra`
+/// (common on mobile, where extra Supabase auth events fire during signup) —
+/// the authoritative in-memory flow store for the signed-in user. This keeps
+/// the theme/onboarding/hobbies steps working on phones instead of opening with
+/// a null intent and bouncing home.
+FreshRegistrationIntent? _registrationIntentForState(GoRouterState state) {
+  final fromExtra =
+      state.extra is FreshRegistrationIntent ? state.extra as FreshRegistrationIntent : null;
+  if (fromExtra != null) return fromExtra;
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  return userId == null ? null : registrationFlowStore.intentFor(userId);
+}
+
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.splash,
   observers: [astraRouteObserver],
@@ -171,8 +185,15 @@ final GoRouter appRouter = GoRouter(
       );
       if (redirect != null) return redirect;
     }
+    // Prefer the intent carried in `state.extra`, but fall back to the
+    // authoritative in-memory flow store when a refresh (e.g. a mobile auth
+    // event) has dropped `extra` — otherwise the registration steps would
+    // bounce the user home mid-onboarding on phones.
+    final storeIntent = currentUserId == null
+        ? null
+        : registrationFlowStore.intentFor(currentUserId);
     final registrationIntent =
-        AuthFlowRoutes.registrationIntentFromExtra(state.extra);
+        AuthFlowRoutes.registrationIntentFromExtra(state.extra) ?? storeIntent;
     final registrationRedirect = AuthFlowRoutes.registrationGuardRedirect(
       route: state.matchedLocation,
       isAuthenticated: isAuthenticated,
@@ -180,6 +201,7 @@ final GoRouter appRouter = GoRouter(
       extra: state.extra,
       hasMatchingActiveRegistration: registrationIntent != null &&
           registrationFlowStore.allows(registrationIntent),
+      fallbackIntent: storeIntent,
     );
     if (registrationRedirect != null) return registrationRedirect;
     final targetIsProtected = _protectedRoutes.contains(state.matchedLocation);
@@ -203,7 +225,7 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => _smoothPage(
         state,
         OnboardingScreen(
-          registrationIntent: state.extra as FreshRegistrationIntent?,
+          registrationIntent: _registrationIntentForState(state),
         ),
       ),
     ),
@@ -228,7 +250,7 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => _smoothPage(
         state,
         NameEntryScreen(
-          registrationIntent: state.extra as FreshRegistrationIntent?,
+          registrationIntent: _registrationIntentForState(state),
         ),
       ),
     ),
@@ -237,7 +259,7 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => _smoothPage(
         state,
         OnboardingThemeScreen(
-          registrationIntent: state.extra as FreshRegistrationIntent?,
+          registrationIntent: _registrationIntentForState(state),
         ),
       ),
     ),
@@ -409,7 +431,7 @@ final GoRouter appRouter = GoRouter(
         state,
         HobbiesScreen(
           onboarding: true,
-          registrationIntent: state.extra as FreshRegistrationIntent?,
+          registrationIntent: _registrationIntentForState(state),
         ),
       ),
     ),
