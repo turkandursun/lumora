@@ -51,7 +51,7 @@ class CommunityRepository {
         'display_name': displayName,
         'question_date': _dateOnlyString(questionDate),
         'answer_text': answerText,
-      }).select().single();
+      }).select('id').single();
       return row['id'] as String;
     } catch (_) {
       throw const CommunityShareException();
@@ -61,15 +61,14 @@ class CommunityRepository {
   /// Every non-flagged share for [questionDate], most recent first.
   Future<List<CommunityShare>> fetchSharesForDate(DateTime questionDate) async {
     try {
-      final rows = await _client
-          .from(_table)
-          // Only what the feed shows — never user_id, even though RLS
-          // would allow reading it back.
-          .select('id, display_name, answer_text, created_at')
-          .eq('question_date', _dateOnlyString(questionDate))
-          .eq('is_flagged', false)
-          .order('created_at', ascending: false);
-      return (rows as List).map((row) => CommunityShare.fromJson(row as Map<String, dynamic>)).toList();
+      final rows = await _client.rpc(
+        'get_daily_question_shares_feed',
+        params: {'p_question_date': _dateOnlyString(questionDate)},
+      );
+      return (rows as List)
+          .map((row) =>
+              CommunityShare.fromJson(row as Map<String, dynamic>))
+          .toList();
     } catch (_) {
       throw const CommunityShareException();
     }

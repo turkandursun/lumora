@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/calendar/data/period_repository.dart';
+import '../../features/calendar/data/symptom_repository.dart';
 import '../../features/wellbeing/data/focus_active_session_store.dart';
 import '../../features/wellbeing/domain/active_focus_session.dart';
 import '../database/app_database.dart';
@@ -147,6 +149,8 @@ class LocalUserDataCleanupService {
 
     if (removeDurableAccountCache) {
       scopedKeys.add('astra_palette_id_v2_$userId');
+      scopedKeys.add(periodDaysStorageKey(userId));
+      scopedKeys.add(periodSymptomsStorageKey(userId));
       scopedKeys.add(
         SharedPreferencesFocusLocalStateStore.dailyGoalKey(userId),
       );

@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _symptomKey = 'period_symptoms_v1';
+String periodSymptomsStorageKey(String userId) =>
+    'period_symptoms_v2_$userId';
 
 String _fmt(DateTime d) =>
     '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -8,11 +9,24 @@ String _fmt(DateTime d) =>
 /// Stores per-day period symptoms (ids like `cramps`, `headache`) on-device,
 /// as `yyyy-MM-dd:id1,id2` strings.
 class SymptomRepository {
+  SymptomRepository({
+    required String? userId,
+    Future<SharedPreferences> Function()? preferencesLoader,
+  })  : _userId = userId,
+        _preferencesLoader =
+            preferencesLoader ?? SharedPreferences.getInstance;
+
+  final String? _userId;
+  final Future<SharedPreferences> Function() _preferencesLoader;
+
   static DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   Future<Map<DateTime, Set<String>>> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getStringList(_symptomKey) ?? const [];
+    final userId = _userId;
+    if (userId == null) return const {};
+    final prefs = await _preferencesLoader();
+    final raw =
+        prefs.getStringList(periodSymptomsStorageKey(userId)) ?? const [];
     final map = <DateTime, Set<String>>{};
     for (final entry in raw) {
       final sep = entry.indexOf(':');
@@ -30,11 +44,13 @@ class SymptomRepository {
   }
 
   Future<void> save(Map<DateTime, Set<String>> data) async {
-    final prefs = await SharedPreferences.getInstance();
+    final userId = _userId;
+    if (userId == null) return;
+    final prefs = await _preferencesLoader();
     final list = data.entries
         .where((e) => e.value.isNotEmpty)
         .map((e) => '${_fmt(e.key)}:${e.value.join(',')}')
         .toList();
-    await prefs.setStringList(_symptomKey, list);
+    await prefs.setStringList(periodSymptomsStorageKey(userId), list);
   }
 }

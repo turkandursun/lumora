@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.api.GradleException
 
 plugins {
     id("com.android.application")
@@ -7,12 +8,49 @@ plugins {
 }
 
 // Release signing credentials are read from android/key.properties, which is
-// gitignored and never committed. Teammates without it still build fine — the
-// release buildType falls back to debug signing below when the file is absent.
+// gitignored and never committed. Debug builds do not need this file; every
+// release task fails fast instead of ever producing a debug-signed artifact.
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+}
+
+val releaseSigningRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+val requiredSigningProperties = listOf(
+    "storeFile",
+    "storePassword",
+    "keyAlias",
+    "keyPassword",
+)
+
+if (releaseSigningRequested) {
+    if (!keystorePropertiesFile.isFile) {
+        throw GradleException(
+            "Release signing requires android/key.properties. " +
+                "Create it locally with storeFile, storePassword, keyAlias, and keyPassword.",
+        )
+    }
+
+    val missingProperties = requiredSigningProperties.filter {
+        keystoreProperties.getProperty(it).isNullOrBlank()
+    }
+    if (missingProperties.isNotEmpty()) {
+        throw GradleException(
+            "Release signing properties are missing or blank in android/key.properties: " +
+                missingProperties.joinToString(", "),
+        )
+    }
+
+    val configuredStoreFile = file(keystoreProperties.getProperty("storeFile"))
+    if (!configuredStoreFile.isFile) {
+        throw GradleException(
+            "Release signing keystore was not found at the storeFile path configured " +
+                "in android/key.properties.",
+        )
+    }
 }
 
 android {
@@ -40,25 +78,18 @@ android {
 
     signingConfigs {
         create("release") {
-            if (keystorePropertiesFile.exists()) {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
+            if (releaseSigningRequested) {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
             }
         }
     }
 
     buildTypes {
         release {
-            // Sign with the upload keystore when key.properties is present;
-            // otherwise fall back to debug signing so a teammate without the
-            // (gitignored) keystore can still run `flutter run --release`.
-            signingConfig = if (keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

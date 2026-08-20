@@ -35,6 +35,8 @@ void invalidateUserProviders(WidgetRef ref) {
   ref.invalidate(goalStreakProvider);
   ref.invalidate(goalsRepositoryProvider);
   ref.invalidate(dreamsStreamProvider);
+  ref.invalidate(periodRepositoryProvider);
+  ref.invalidate(symptomRepositoryProvider);
   ref.invalidate(periodDaysProvider);
   ref.invalidate(symptomsProvider);
   ref.invalidate(lettersProvider);

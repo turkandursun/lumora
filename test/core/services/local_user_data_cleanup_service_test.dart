@@ -22,6 +22,10 @@ void main() {
     SharedPreferences.setMockInitialValues({
       'mood_log_v1': <String>['private'],
       'period_days_v1': <String>['2026-08-12'],
+      'period_days_v2_user-a': <String>['2026-08-12T00:00:00.000'],
+      'period_days_v2_user-b': <String>['2026-08-13T00:00:00.000'],
+      'period_symptoms_v2_user-a': <String>['2026-08-12:cramps'],
+      'period_symptoms_v2_user-b': <String>['2026-08-13:headache'],
       'journal_streak_count': 5,
       'astra_bg_theme_user-a': 'dark',
       'astra_bg_theme_user-b': 'light',
@@ -112,6 +116,8 @@ void main() {
 
     expect(prefs.get('mood_log_v1'), isNull);
     expect(prefs.get('period_days_v1'), isNull);
+    expect(prefs.get('period_days_v2_user-a'), isNull);
+    expect(prefs.get('period_symptoms_v2_user-a'), isNull);
     expect(prefs.get('journal_streak_count'), isNull);
     expect(prefs.get('astra_bg_theme_user-a'), isNull);
     expect(prefs.get('astra_palette_id_v1'), isNull);
@@ -134,6 +140,14 @@ void main() {
     expect(prefs.getString('astra_bg_theme_user-b'), 'light');
     expect(prefs.getString('astra_palette_id_v2_user-b'), 'sage_veil');
     expect(prefs.getStringList('hobbies_user-b_v1'), ['walking']);
+    expect(
+      prefs.getStringList('period_days_v2_user-b'),
+      ['2026-08-13T00:00:00.000'],
+    );
+    expect(
+      prefs.getStringList('period_symptoms_v2_user-b'),
+      ['2026-08-13:headache'],
+    );
     expect(prefs.getBool('quote_favorites_migrated_v1_user-b'), true);
     expect(prefs.getInt('goals_streak_count_user-b'), 4);
     expect(prefs.getInt('focus_goal_v2_user-b'), 3);
@@ -165,6 +179,14 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.get('focus_active_session_v2_user-a'), isNull);
     expect(prefs.getInt('focus_goal_v2_user-a'), 6);
+    expect(
+      prefs.getStringList('period_days_v2_user-a'),
+      ['2026-08-12T00:00:00.000'],
+    );
+    expect(
+      prefs.getStringList('period_symptoms_v2_user-a'),
+      ['2026-08-12:cramps'],
+    );
   });
 
   test('ordinary logout retains the scoped palette fast cache', () async {

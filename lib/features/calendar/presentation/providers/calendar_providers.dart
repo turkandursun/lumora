@@ -1,11 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../journal/presentation/providers/journal_entries_provider.dart';
 import '../../data/period_repository.dart';
 import '../../data/symptom_repository.dart';
 
 final periodRepositoryProvider = Provider<PeriodRepository>((ref) {
-  return PeriodRepository();
+  return PeriodRepository(
+    userId: Supabase.instance.client.auth.currentUser?.id,
+  );
 });
 
 /// The set of days marked as menstruation days, loaded from local storage.
@@ -38,7 +41,9 @@ final periodDaysProvider =
 });
 
 final symptomRepositoryProvider = Provider<SymptomRepository>((ref) {
-  return SymptomRepository();
+  return SymptomRepository(
+    userId: Supabase.instance.client.auth.currentUser?.id,
+  );
 });
 
 /// Day -> set of symptom ids logged for that day.
