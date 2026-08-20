@@ -13,4 +13,6 @@ class Activities extends Table {
   TextColumn get photoUrl => text().nullable()();
   TextColumn get userId => text().nullable()();
   TextColumn get supabaseId => text().nullable()();
+  TextColumn get syncState => text().withDefault(const Constant('synced'))();
+  DateTimeColumn get changedAt => dateTime().withDefault(currentDateAndTime)();
 }

@@ -38,6 +38,7 @@ class _LumoraAppState extends ConsumerState<LumoraApp>
     _lastAuthenticatedUserId = Supabase.instance.client.auth.currentUser?.id;
     if (_lastAuthenticatedUserId != null) {
       unawaited(_bootstrapFocus());
+      unawaited(_bootstrapUserContentOutboxes());
     }
     _authSubscription =
         Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
@@ -71,6 +72,7 @@ class _LumoraAppState extends ConsumerState<LumoraApp>
             '[AuthListener] Auth state change ($event) -> invalidating user providers for fresh load');
         invalidateUserProviders(ref);
         unawaited(_bootstrapFocus());
+        unawaited(_bootstrapUserContentOutboxes());
       }
     });
   }
@@ -92,16 +94,30 @@ class _LumoraAppState extends ConsumerState<LumoraApp>
     }
   }
 
+  Future<void> _bootstrapUserContentOutboxes() async {
+    try {
+      await syncUserContentOutboxes(ref);
+    } catch (error) {
+      debugPrint(
+        '[ContentSync] bootstrap deferred error=${error.runtimeType}',
+      );
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
     unawaited(ref.read(activeFocusSessionProvider.notifier).onAppResumed());
     unawaited(ref.read(focusStatsProvider.notifier).refresh());
+<<<<<<< Updated upstream
     // Re-arm the evening "pişt, neredesin?" poke for the next day so an active
     // user is never nudged; a full day away still triggers it.
     final isTr =
         WidgetsBinding.instance.platformDispatcher.locale.languageCode == 'tr';
     unawaited(SmartRemindersService.instance.markAppOpened(isTr: isTr));
+=======
+    unawaited(_bootstrapUserContentOutboxes());
+>>>>>>> Stashed changes
   }
 
   @override

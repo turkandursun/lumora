@@ -22,4 +22,10 @@ class JournalEntries extends Table {
 
   /// Remote primary key ID in Supabase's `journal_entries` table.
   TextColumn get supabaseId => text().nullable()();
+
+  /// Persistent outbox state: synced, pending_upsert, or pending_delete.
+  TextColumn get syncState => text().withDefault(const Constant('synced'))();
+
+  /// Local mutation timestamp used to avoid acknowledging a stale push.
+  DateTimeColumn get changedAt => dateTime().withDefault(currentDateAndTime)();
 }

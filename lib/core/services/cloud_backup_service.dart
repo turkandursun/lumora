@@ -47,6 +47,10 @@ class CloudBackupService {
     'reminders',
     'goals',
     'focus_sessions',
+    'journal_entries',
+    'dreams',
+    'activities',
+    'letters',
   };
 
   static const _dedicatedSyncPrefsKeys = <String>{

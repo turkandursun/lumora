@@ -35,5 +35,7 @@ class Dreams extends Table {
 
   /// The primary key ID in Supabase's `dreams` cloud table.
   TextColumn get supabaseId => text().nullable()();
-}
 
+  TextColumn get syncState => text().withDefault(const Constant('synced'))();
+  DateTimeColumn get changedAt => dateTime().withDefault(currentDateAndTime)();
+}

@@ -2069,6 +2069,22 @@ class $DreamsTable extends Dreams with TableInfo<$DreamsTable, DreamRow> {
   late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
       'supabase_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _syncStateMeta =
+      const VerificationMeta('syncState');
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+      'sync_state', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('synced'));
+  static const VerificationMeta _changedAtMeta =
+      const VerificationMeta('changedAt');
+  @override
+  late final GeneratedColumn<DateTime> changedAt = GeneratedColumn<DateTime>(
+      'changed_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -2081,7 +2097,9 @@ class $DreamsTable extends Dreams with TableInfo<$DreamsTable, DreamRow> {
         lifeConnection,
         aiInterpretation,
         userId,
-        supabaseId
+        supabaseId,
+        syncState,
+        changedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2154,6 +2172,14 @@ class $DreamsTable extends Dreams with TableInfo<$DreamsTable, DreamRow> {
           supabaseId.isAcceptableOrUnknown(
               data['supabase_id']!, _supabaseIdMeta));
     }
+    if (data.containsKey('sync_state')) {
+      context.handle(_syncStateMeta,
+          syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta));
+    }
+    if (data.containsKey('changed_at')) {
+      context.handle(_changedAtMeta,
+          changedAt.isAcceptableOrUnknown(data['changed_at']!, _changedAtMeta));
+    }
     return context;
   }
 
@@ -2185,6 +2211,10 @@ class $DreamsTable extends Dreams with TableInfo<$DreamsTable, DreamRow> {
           .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
       supabaseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
+      syncState: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_state'])!,
+      changedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}changed_at'])!,
     );
   }
 
@@ -2225,6 +2255,8 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
 
   /// The primary key ID in Supabase's `dreams` cloud table.
   final String? supabaseId;
+  final String syncState;
+  final DateTime changedAt;
   const DreamRow(
       {required this.id,
       required this.date,
@@ -2236,7 +2268,9 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       this.lifeConnection,
       this.aiInterpretation,
       this.userId,
-      this.supabaseId});
+      this.supabaseId,
+      required this.syncState,
+      required this.changedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2265,6 +2299,8 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
     if (!nullToAbsent || supabaseId != null) {
       map['supabase_id'] = Variable<String>(supabaseId);
     }
+    map['sync_state'] = Variable<String>(syncState);
+    map['changed_at'] = Variable<DateTime>(changedAt);
     return map;
   }
 
@@ -2294,6 +2330,8 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       supabaseId: supabaseId == null && nullToAbsent
           ? const Value.absent()
           : Value(supabaseId),
+      syncState: Value(syncState),
+      changedAt: Value(changedAt),
     );
   }
 
@@ -2312,6 +2350,8 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       aiInterpretation: serializer.fromJson<String?>(json['aiInterpretation']),
       userId: serializer.fromJson<String?>(json['userId']),
       supabaseId: serializer.fromJson<String?>(json['supabaseId']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      changedAt: serializer.fromJson<DateTime>(json['changedAt']),
     );
   }
   @override
@@ -2329,6 +2369,8 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       'aiInterpretation': serializer.toJson<String?>(aiInterpretation),
       'userId': serializer.toJson<String?>(userId),
       'supabaseId': serializer.toJson<String?>(supabaseId),
+      'syncState': serializer.toJson<String>(syncState),
+      'changedAt': serializer.toJson<DateTime>(changedAt),
     };
   }
 
@@ -2343,7 +2385,9 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
           Value<String?> lifeConnection = const Value.absent(),
           Value<String?> aiInterpretation = const Value.absent(),
           Value<String?> userId = const Value.absent(),
-          Value<String?> supabaseId = const Value.absent()}) =>
+          Value<String?> supabaseId = const Value.absent(),
+          String? syncState,
+          DateTime? changedAt}) =>
       DreamRow(
         id: id ?? this.id,
         date: date ?? this.date,
@@ -2361,6 +2405,8 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
             : this.aiInterpretation,
         userId: userId.present ? userId.value : this.userId,
         supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
+        syncState: syncState ?? this.syncState,
+        changedAt: changedAt ?? this.changedAt,
       );
   DreamRow copyWithCompanion(DreamsCompanion data) {
     return DreamRow(
@@ -2386,6 +2432,8 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       userId: data.userId.present ? data.userId.value : this.userId,
       supabaseId:
           data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      changedAt: data.changedAt.present ? data.changedAt.value : this.changedAt,
     );
   }
 
@@ -2402,7 +2450,9 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
           ..write('lifeConnection: $lifeConnection, ')
           ..write('aiInterpretation: $aiInterpretation, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt')
           ..write(')'))
         .toString();
   }
@@ -2419,7 +2469,9 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
       lifeConnection,
       aiInterpretation,
       userId,
-      supabaseId);
+      supabaseId,
+      syncState,
+      changedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2434,7 +2486,9 @@ class DreamRow extends DataClass implements Insertable<DreamRow> {
           other.lifeConnection == this.lifeConnection &&
           other.aiInterpretation == this.aiInterpretation &&
           other.userId == this.userId &&
-          other.supabaseId == this.supabaseId);
+          other.supabaseId == this.supabaseId &&
+          other.syncState == this.syncState &&
+          other.changedAt == this.changedAt);
 }
 
 class DreamsCompanion extends UpdateCompanion<DreamRow> {
@@ -2449,6 +2503,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
   final Value<String?> aiInterpretation;
   final Value<String?> userId;
   final Value<String?> supabaseId;
+  final Value<String> syncState;
+  final Value<DateTime> changedAt;
   const DreamsCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
@@ -2461,6 +2517,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
     this.aiInterpretation = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
   });
   DreamsCompanion.insert({
     this.id = const Value.absent(),
@@ -2474,6 +2532,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
     this.aiInterpretation = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
   })  : date = Value(date),
         content = Value(content);
   static Insertable<DreamRow> custom({
@@ -2488,6 +2548,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
     Expression<String>? aiInterpretation,
     Expression<String>? userId,
     Expression<String>? supabaseId,
+    Expression<String>? syncState,
+    Expression<DateTime>? changedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2501,6 +2563,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
       if (aiInterpretation != null) 'ai_interpretation': aiInterpretation,
       if (userId != null) 'user_id': userId,
       if (supabaseId != null) 'supabase_id': supabaseId,
+      if (syncState != null) 'sync_state': syncState,
+      if (changedAt != null) 'changed_at': changedAt,
     });
   }
 
@@ -2515,7 +2579,9 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
       Value<String?>? lifeConnection,
       Value<String?>? aiInterpretation,
       Value<String?>? userId,
-      Value<String?>? supabaseId}) {
+      Value<String?>? supabaseId,
+      Value<String>? syncState,
+      Value<DateTime>? changedAt}) {
     return DreamsCompanion(
       id: id ?? this.id,
       date: date ?? this.date,
@@ -2528,6 +2594,8 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
       aiInterpretation: aiInterpretation ?? this.aiInterpretation,
       userId: userId ?? this.userId,
       supabaseId: supabaseId ?? this.supabaseId,
+      syncState: syncState ?? this.syncState,
+      changedAt: changedAt ?? this.changedAt,
     );
   }
 
@@ -2567,6 +2635,12 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
     if (supabaseId.present) {
       map['supabase_id'] = Variable<String>(supabaseId.value);
     }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (changedAt.present) {
+      map['changed_at'] = Variable<DateTime>(changedAt.value);
+    }
     return map;
   }
 
@@ -2583,7 +2657,9 @@ class DreamsCompanion extends UpdateCompanion<DreamRow> {
           ..write('lifeConnection: $lifeConnection, ')
           ..write('aiInterpretation: $aiInterpretation, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt')
           ..write(')'))
         .toString();
   }
@@ -2644,9 +2720,35 @@ class $JournalEntriesTable extends JournalEntries
   late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
       'supabase_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _syncStateMeta =
+      const VerificationMeta('syncState');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, createdAt, content, title, audioPath, photoUrl, userId, supabaseId];
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+      'sync_state', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('synced'));
+  static const VerificationMeta _changedAtMeta =
+      const VerificationMeta('changedAt');
+  @override
+  late final GeneratedColumn<DateTime> changedAt = GeneratedColumn<DateTime>(
+      'changed_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        createdAt,
+        content,
+        title,
+        audioPath,
+        photoUrl,
+        userId,
+        supabaseId,
+        syncState,
+        changedAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2694,6 +2796,14 @@ class $JournalEntriesTable extends JournalEntries
           supabaseId.isAcceptableOrUnknown(
               data['supabase_id']!, _supabaseIdMeta));
     }
+    if (data.containsKey('sync_state')) {
+      context.handle(_syncStateMeta,
+          syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta));
+    }
+    if (data.containsKey('changed_at')) {
+      context.handle(_changedAtMeta,
+          changedAt.isAcceptableOrUnknown(data['changed_at']!, _changedAtMeta));
+    }
     return context;
   }
 
@@ -2719,6 +2829,10 @@ class $JournalEntriesTable extends JournalEntries
           .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
       supabaseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
+      syncState: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_state'])!,
+      changedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}changed_at'])!,
     );
   }
 
@@ -2748,6 +2862,12 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
 
   /// Remote primary key ID in Supabase's `journal_entries` table.
   final String? supabaseId;
+
+  /// Persistent outbox state: synced, pending_upsert, or pending_delete.
+  final String syncState;
+
+  /// Local mutation timestamp used to avoid acknowledging a stale push.
+  final DateTime changedAt;
   const JournalEntryRow(
       {required this.id,
       required this.createdAt,
@@ -2756,7 +2876,9 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       this.audioPath,
       this.photoUrl,
       this.userId,
-      this.supabaseId});
+      this.supabaseId,
+      required this.syncState,
+      required this.changedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2778,6 +2900,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
     if (!nullToAbsent || supabaseId != null) {
       map['supabase_id'] = Variable<String>(supabaseId);
     }
+    map['sync_state'] = Variable<String>(syncState);
+    map['changed_at'] = Variable<DateTime>(changedAt);
     return map;
   }
 
@@ -2799,6 +2923,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       supabaseId: supabaseId == null && nullToAbsent
           ? const Value.absent()
           : Value(supabaseId),
+      syncState: Value(syncState),
+      changedAt: Value(changedAt),
     );
   }
 
@@ -2814,6 +2940,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       photoUrl: serializer.fromJson<String?>(json['photoUrl']),
       userId: serializer.fromJson<String?>(json['userId']),
       supabaseId: serializer.fromJson<String?>(json['supabaseId']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      changedAt: serializer.fromJson<DateTime>(json['changedAt']),
     );
   }
   @override
@@ -2828,6 +2956,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       'photoUrl': serializer.toJson<String?>(photoUrl),
       'userId': serializer.toJson<String?>(userId),
       'supabaseId': serializer.toJson<String?>(supabaseId),
+      'syncState': serializer.toJson<String>(syncState),
+      'changedAt': serializer.toJson<DateTime>(changedAt),
     };
   }
 
@@ -2839,7 +2969,9 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
           Value<String?> audioPath = const Value.absent(),
           Value<String?> photoUrl = const Value.absent(),
           Value<String?> userId = const Value.absent(),
-          Value<String?> supabaseId = const Value.absent()}) =>
+          Value<String?> supabaseId = const Value.absent(),
+          String? syncState,
+          DateTime? changedAt}) =>
       JournalEntryRow(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -2849,6 +2981,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
         photoUrl: photoUrl.present ? photoUrl.value : this.photoUrl,
         userId: userId.present ? userId.value : this.userId,
         supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
+        syncState: syncState ?? this.syncState,
+        changedAt: changedAt ?? this.changedAt,
       );
   JournalEntryRow copyWithCompanion(JournalEntriesCompanion data) {
     return JournalEntryRow(
@@ -2861,6 +2995,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       userId: data.userId.present ? data.userId.value : this.userId,
       supabaseId:
           data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      changedAt: data.changedAt.present ? data.changedAt.value : this.changedAt,
     );
   }
 
@@ -2874,14 +3010,16 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
           ..write('audioPath: $audioPath, ')
           ..write('photoUrl: $photoUrl, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, createdAt, content, title, audioPath, photoUrl, userId, supabaseId);
+  int get hashCode => Object.hash(id, createdAt, content, title, audioPath,
+      photoUrl, userId, supabaseId, syncState, changedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2893,7 +3031,9 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
           other.audioPath == this.audioPath &&
           other.photoUrl == this.photoUrl &&
           other.userId == this.userId &&
-          other.supabaseId == this.supabaseId);
+          other.supabaseId == this.supabaseId &&
+          other.syncState == this.syncState &&
+          other.changedAt == this.changedAt);
 }
 
 class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
@@ -2905,6 +3045,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
   final Value<String?> photoUrl;
   final Value<String?> userId;
   final Value<String?> supabaseId;
+  final Value<String> syncState;
+  final Value<DateTime> changedAt;
   const JournalEntriesCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -2914,6 +3056,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     this.photoUrl = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
   });
   JournalEntriesCompanion.insert({
     this.id = const Value.absent(),
@@ -2924,6 +3068,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     this.photoUrl = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
   })  : createdAt = Value(createdAt),
         content = Value(content);
   static Insertable<JournalEntryRow> custom({
@@ -2935,6 +3081,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     Expression<String>? photoUrl,
     Expression<String>? userId,
     Expression<String>? supabaseId,
+    Expression<String>? syncState,
+    Expression<DateTime>? changedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2945,6 +3093,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
       if (photoUrl != null) 'photo_url': photoUrl,
       if (userId != null) 'user_id': userId,
       if (supabaseId != null) 'supabase_id': supabaseId,
+      if (syncState != null) 'sync_state': syncState,
+      if (changedAt != null) 'changed_at': changedAt,
     });
   }
 
@@ -2956,7 +3106,9 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
       Value<String?>? audioPath,
       Value<String?>? photoUrl,
       Value<String?>? userId,
-      Value<String?>? supabaseId}) {
+      Value<String?>? supabaseId,
+      Value<String>? syncState,
+      Value<DateTime>? changedAt}) {
     return JournalEntriesCompanion(
       id: id ?? this.id,
       createdAt: createdAt ?? this.createdAt,
@@ -2966,6 +3118,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
       photoUrl: photoUrl ?? this.photoUrl,
       userId: userId ?? this.userId,
       supabaseId: supabaseId ?? this.supabaseId,
+      syncState: syncState ?? this.syncState,
+      changedAt: changedAt ?? this.changedAt,
     );
   }
 
@@ -2996,6 +3150,12 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     if (supabaseId.present) {
       map['supabase_id'] = Variable<String>(supabaseId.value);
     }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (changedAt.present) {
+      map['changed_at'] = Variable<DateTime>(changedAt.value);
+    }
     return map;
   }
 
@@ -3009,7 +3169,9 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
           ..write('audioPath: $audioPath, ')
           ..write('photoUrl: $photoUrl, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt')
           ..write(')'))
         .toString();
   }
@@ -3522,6 +3684,22 @@ class $ActivitiesTable extends Activities
   late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
       'supabase_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _syncStateMeta =
+      const VerificationMeta('syncState');
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+      'sync_state', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('synced'));
+  static const VerificationMeta _changedAtMeta =
+      const VerificationMeta('changedAt');
+  @override
+  late final GeneratedColumn<DateTime> changedAt = GeneratedColumn<DateTime>(
+      'changed_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -3531,7 +3709,9 @@ class $ActivitiesTable extends Activities
         photoPath,
         photoUrl,
         userId,
-        supabaseId
+        supabaseId,
+        syncState,
+        changedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3584,6 +3764,14 @@ class $ActivitiesTable extends Activities
           supabaseId.isAcceptableOrUnknown(
               data['supabase_id']!, _supabaseIdMeta));
     }
+    if (data.containsKey('sync_state')) {
+      context.handle(_syncStateMeta,
+          syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta));
+    }
+    if (data.containsKey('changed_at')) {
+      context.handle(_changedAtMeta,
+          changedAt.isAcceptableOrUnknown(data['changed_at']!, _changedAtMeta));
+    }
     return context;
   }
 
@@ -3609,6 +3797,10 @@ class $ActivitiesTable extends Activities
           .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
       supabaseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
+      syncState: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_state'])!,
+      changedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}changed_at'])!,
     );
   }
 
@@ -3627,6 +3819,8 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
   final String? photoUrl;
   final String? userId;
   final String? supabaseId;
+  final String syncState;
+  final DateTime changedAt;
   const ActivityRow(
       {required this.id,
       required this.createdAt,
@@ -3635,7 +3829,9 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
       this.photoPath,
       this.photoUrl,
       this.userId,
-      this.supabaseId});
+      this.supabaseId,
+      required this.syncState,
+      required this.changedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -3655,6 +3851,8 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
     if (!nullToAbsent || supabaseId != null) {
       map['supabase_id'] = Variable<String>(supabaseId);
     }
+    map['sync_state'] = Variable<String>(syncState);
+    map['changed_at'] = Variable<DateTime>(changedAt);
     return map;
   }
 
@@ -3675,6 +3873,8 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
       supabaseId: supabaseId == null && nullToAbsent
           ? const Value.absent()
           : Value(supabaseId),
+      syncState: Value(syncState),
+      changedAt: Value(changedAt),
     );
   }
 
@@ -3690,6 +3890,8 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
       photoUrl: serializer.fromJson<String?>(json['photoUrl']),
       userId: serializer.fromJson<String?>(json['userId']),
       supabaseId: serializer.fromJson<String?>(json['supabaseId']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      changedAt: serializer.fromJson<DateTime>(json['changedAt']),
     );
   }
   @override
@@ -3704,6 +3906,8 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
       'photoUrl': serializer.toJson<String?>(photoUrl),
       'userId': serializer.toJson<String?>(userId),
       'supabaseId': serializer.toJson<String?>(supabaseId),
+      'syncState': serializer.toJson<String>(syncState),
+      'changedAt': serializer.toJson<DateTime>(changedAt),
     };
   }
 
@@ -3715,7 +3919,9 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
           Value<String?> photoPath = const Value.absent(),
           Value<String?> photoUrl = const Value.absent(),
           Value<String?> userId = const Value.absent(),
-          Value<String?> supabaseId = const Value.absent()}) =>
+          Value<String?> supabaseId = const Value.absent(),
+          String? syncState,
+          DateTime? changedAt}) =>
       ActivityRow(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -3725,6 +3931,8 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
         photoUrl: photoUrl.present ? photoUrl.value : this.photoUrl,
         userId: userId.present ? userId.value : this.userId,
         supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
+        syncState: syncState ?? this.syncState,
+        changedAt: changedAt ?? this.changedAt,
       );
   ActivityRow copyWithCompanion(ActivitiesCompanion data) {
     return ActivityRow(
@@ -3741,6 +3949,8 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
       userId: data.userId.present ? data.userId.value : this.userId,
       supabaseId:
           data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      changedAt: data.changedAt.present ? data.changedAt.value : this.changedAt,
     );
   }
 
@@ -3754,14 +3964,16 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
           ..write('photoPath: $photoPath, ')
           ..write('photoUrl: $photoUrl, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, createdAt, activityIdsJson, activityText,
-      photoPath, photoUrl, userId, supabaseId);
+      photoPath, photoUrl, userId, supabaseId, syncState, changedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3773,7 +3985,9 @@ class ActivityRow extends DataClass implements Insertable<ActivityRow> {
           other.photoPath == this.photoPath &&
           other.photoUrl == this.photoUrl &&
           other.userId == this.userId &&
-          other.supabaseId == this.supabaseId);
+          other.supabaseId == this.supabaseId &&
+          other.syncState == this.syncState &&
+          other.changedAt == this.changedAt);
 }
 
 class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
@@ -3785,6 +3999,8 @@ class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
   final Value<String?> photoUrl;
   final Value<String?> userId;
   final Value<String?> supabaseId;
+  final Value<String> syncState;
+  final Value<DateTime> changedAt;
   const ActivitiesCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -3794,6 +4010,8 @@ class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
     this.photoUrl = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
   });
   ActivitiesCompanion.insert({
     this.id = const Value.absent(),
@@ -3804,6 +4022,8 @@ class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
     this.photoUrl = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
   })  : createdAt = Value(createdAt),
         activityIdsJson = Value(activityIdsJson),
         activityText = Value(activityText);
@@ -3816,6 +4036,8 @@ class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
     Expression<String>? photoUrl,
     Expression<String>? userId,
     Expression<String>? supabaseId,
+    Expression<String>? syncState,
+    Expression<DateTime>? changedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3826,6 +4048,8 @@ class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
       if (photoUrl != null) 'photo_url': photoUrl,
       if (userId != null) 'user_id': userId,
       if (supabaseId != null) 'supabase_id': supabaseId,
+      if (syncState != null) 'sync_state': syncState,
+      if (changedAt != null) 'changed_at': changedAt,
     });
   }
 
@@ -3837,7 +4061,9 @@ class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
       Value<String?>? photoPath,
       Value<String?>? photoUrl,
       Value<String?>? userId,
-      Value<String?>? supabaseId}) {
+      Value<String?>? supabaseId,
+      Value<String>? syncState,
+      Value<DateTime>? changedAt}) {
     return ActivitiesCompanion(
       id: id ?? this.id,
       createdAt: createdAt ?? this.createdAt,
@@ -3847,6 +4073,8 @@ class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
       photoUrl: photoUrl ?? this.photoUrl,
       userId: userId ?? this.userId,
       supabaseId: supabaseId ?? this.supabaseId,
+      syncState: syncState ?? this.syncState,
+      changedAt: changedAt ?? this.changedAt,
     );
   }
 
@@ -3877,6 +4105,12 @@ class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
     if (supabaseId.present) {
       map['supabase_id'] = Variable<String>(supabaseId.value);
     }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (changedAt.present) {
+      map['changed_at'] = Variable<DateTime>(changedAt.value);
+    }
     return map;
   }
 
@@ -3890,7 +4124,9 @@ class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
           ..write('photoPath: $photoPath, ')
           ..write('photoUrl: $photoUrl, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt')
           ..write(')'))
         .toString();
   }
@@ -3942,9 +4178,34 @@ class $LettersTable extends Letters with TableInfo<$LettersTable, LetterRow> {
   late final GeneratedColumn<String> supabaseId = GeneratedColumn<String>(
       'supabase_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _syncStateMeta =
+      const VerificationMeta('syncState');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, createdAt, openAt, title, body, userId, supabaseId];
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+      'sync_state', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('synced'));
+  static const VerificationMeta _changedAtMeta =
+      const VerificationMeta('changedAt');
+  @override
+  late final GeneratedColumn<DateTime> changedAt = GeneratedColumn<DateTime>(
+      'changed_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        createdAt,
+        openAt,
+        title,
+        body,
+        userId,
+        supabaseId,
+        syncState,
+        changedAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3992,6 +4253,14 @@ class $LettersTable extends Letters with TableInfo<$LettersTable, LetterRow> {
           supabaseId.isAcceptableOrUnknown(
               data['supabase_id']!, _supabaseIdMeta));
     }
+    if (data.containsKey('sync_state')) {
+      context.handle(_syncStateMeta,
+          syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta));
+    }
+    if (data.containsKey('changed_at')) {
+      context.handle(_changedAtMeta,
+          changedAt.isAcceptableOrUnknown(data['changed_at']!, _changedAtMeta));
+    }
     return context;
   }
 
@@ -4015,6 +4284,10 @@ class $LettersTable extends Letters with TableInfo<$LettersTable, LetterRow> {
           .read(DriftSqlType.string, data['${effectivePrefix}user_id']),
       supabaseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}supabase_id']),
+      syncState: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_state'])!,
+      changedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}changed_at'])!,
     );
   }
 
@@ -4032,6 +4305,8 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
   final String body;
   final String? userId;
   final String? supabaseId;
+  final String syncState;
+  final DateTime changedAt;
   const LetterRow(
       {required this.id,
       required this.createdAt,
@@ -4039,7 +4314,9 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
       required this.title,
       required this.body,
       this.userId,
-      this.supabaseId});
+      this.supabaseId,
+      required this.syncState,
+      required this.changedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -4054,6 +4331,8 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
     if (!nullToAbsent || supabaseId != null) {
       map['supabase_id'] = Variable<String>(supabaseId);
     }
+    map['sync_state'] = Variable<String>(syncState);
+    map['changed_at'] = Variable<DateTime>(changedAt);
     return map;
   }
 
@@ -4069,6 +4348,8 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
       supabaseId: supabaseId == null && nullToAbsent
           ? const Value.absent()
           : Value(supabaseId),
+      syncState: Value(syncState),
+      changedAt: Value(changedAt),
     );
   }
 
@@ -4083,6 +4364,8 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
       body: serializer.fromJson<String>(json['body']),
       userId: serializer.fromJson<String?>(json['userId']),
       supabaseId: serializer.fromJson<String?>(json['supabaseId']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      changedAt: serializer.fromJson<DateTime>(json['changedAt']),
     );
   }
   @override
@@ -4096,6 +4379,8 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
       'body': serializer.toJson<String>(body),
       'userId': serializer.toJson<String?>(userId),
       'supabaseId': serializer.toJson<String?>(supabaseId),
+      'syncState': serializer.toJson<String>(syncState),
+      'changedAt': serializer.toJson<DateTime>(changedAt),
     };
   }
 
@@ -4106,7 +4391,9 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
           String? title,
           String? body,
           Value<String?> userId = const Value.absent(),
-          Value<String?> supabaseId = const Value.absent()}) =>
+          Value<String?> supabaseId = const Value.absent(),
+          String? syncState,
+          DateTime? changedAt}) =>
       LetterRow(
         id: id ?? this.id,
         createdAt: createdAt ?? this.createdAt,
@@ -4115,6 +4402,8 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
         body: body ?? this.body,
         userId: userId.present ? userId.value : this.userId,
         supabaseId: supabaseId.present ? supabaseId.value : this.supabaseId,
+        syncState: syncState ?? this.syncState,
+        changedAt: changedAt ?? this.changedAt,
       );
   LetterRow copyWithCompanion(LettersCompanion data) {
     return LetterRow(
@@ -4126,6 +4415,8 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
       userId: data.userId.present ? data.userId.value : this.userId,
       supabaseId:
           data.supabaseId.present ? data.supabaseId.value : this.supabaseId,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      changedAt: data.changedAt.present ? data.changedAt.value : this.changedAt,
     );
   }
 
@@ -4138,14 +4429,16 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
           ..write('title: $title, ')
           ..write('body: $body, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, createdAt, openAt, title, body, userId, supabaseId);
+  int get hashCode => Object.hash(id, createdAt, openAt, title, body, userId,
+      supabaseId, syncState, changedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -4156,7 +4449,9 @@ class LetterRow extends DataClass implements Insertable<LetterRow> {
           other.title == this.title &&
           other.body == this.body &&
           other.userId == this.userId &&
-          other.supabaseId == this.supabaseId);
+          other.supabaseId == this.supabaseId &&
+          other.syncState == this.syncState &&
+          other.changedAt == this.changedAt);
 }
 
 class LettersCompanion extends UpdateCompanion<LetterRow> {
@@ -4167,6 +4462,8 @@ class LettersCompanion extends UpdateCompanion<LetterRow> {
   final Value<String> body;
   final Value<String?> userId;
   final Value<String?> supabaseId;
+  final Value<String> syncState;
+  final Value<DateTime> changedAt;
   const LettersCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -4175,6 +4472,8 @@ class LettersCompanion extends UpdateCompanion<LetterRow> {
     this.body = const Value.absent(),
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
   });
   LettersCompanion.insert({
     this.id = const Value.absent(),
@@ -4184,6 +4483,8 @@ class LettersCompanion extends UpdateCompanion<LetterRow> {
     required String body,
     this.userId = const Value.absent(),
     this.supabaseId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
   })  : createdAt = Value(createdAt),
         openAt = Value(openAt),
         title = Value(title),
@@ -4196,6 +4497,8 @@ class LettersCompanion extends UpdateCompanion<LetterRow> {
     Expression<String>? body,
     Expression<String>? userId,
     Expression<String>? supabaseId,
+    Expression<String>? syncState,
+    Expression<DateTime>? changedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4205,6 +4508,8 @@ class LettersCompanion extends UpdateCompanion<LetterRow> {
       if (body != null) 'body': body,
       if (userId != null) 'user_id': userId,
       if (supabaseId != null) 'supabase_id': supabaseId,
+      if (syncState != null) 'sync_state': syncState,
+      if (changedAt != null) 'changed_at': changedAt,
     });
   }
 
@@ -4215,7 +4520,9 @@ class LettersCompanion extends UpdateCompanion<LetterRow> {
       Value<String>? title,
       Value<String>? body,
       Value<String?>? userId,
-      Value<String?>? supabaseId}) {
+      Value<String?>? supabaseId,
+      Value<String>? syncState,
+      Value<DateTime>? changedAt}) {
     return LettersCompanion(
       id: id ?? this.id,
       createdAt: createdAt ?? this.createdAt,
@@ -4224,6 +4531,8 @@ class LettersCompanion extends UpdateCompanion<LetterRow> {
       body: body ?? this.body,
       userId: userId ?? this.userId,
       supabaseId: supabaseId ?? this.supabaseId,
+      syncState: syncState ?? this.syncState,
+      changedAt: changedAt ?? this.changedAt,
     );
   }
 
@@ -4251,6 +4560,12 @@ class LettersCompanion extends UpdateCompanion<LetterRow> {
     if (supabaseId.present) {
       map['supabase_id'] = Variable<String>(supabaseId.value);
     }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (changedAt.present) {
+      map['changed_at'] = Variable<DateTime>(changedAt.value);
+    }
     return map;
   }
 
@@ -4263,7 +4578,9 @@ class LettersCompanion extends UpdateCompanion<LetterRow> {
           ..write('title: $title, ')
           ..write('body: $body, ')
           ..write('userId: $userId, ')
-          ..write('supabaseId: $supabaseId')
+          ..write('supabaseId: $supabaseId, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt')
           ..write(')'))
         .toString();
   }
@@ -5933,6 +6250,8 @@ typedef $$DreamsTableCreateCompanionBuilder = DreamsCompanion Function({
   Value<String?> aiInterpretation,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
 });
 typedef $$DreamsTableUpdateCompanionBuilder = DreamsCompanion Function({
   Value<int> id,
@@ -5946,6 +6265,8 @@ typedef $$DreamsTableUpdateCompanionBuilder = DreamsCompanion Function({
   Value<String?> aiInterpretation,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
 });
 
 class $$DreamsTableFilterComposer
@@ -5992,6 +6313,12 @@ class $$DreamsTableFilterComposer
 
   ColumnFilters<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$DreamsTableOrderingComposer
@@ -6039,6 +6366,12 @@ class $$DreamsTableOrderingComposer
 
   ColumnOrderings<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$DreamsTableAnnotationComposer
@@ -6082,6 +6415,12 @@ class $$DreamsTableAnnotationComposer
 
   GeneratedColumn<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get changedAt =>
+      $composableBuilder(column: $table.changedAt, builder: (column) => column);
 }
 
 class $$DreamsTableTableManager extends RootTableManager<
@@ -6118,6 +6457,8 @@ class $$DreamsTableTableManager extends RootTableManager<
             Value<String?> aiInterpretation = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
           }) =>
               DreamsCompanion(
             id: id,
@@ -6131,6 +6472,8 @@ class $$DreamsTableTableManager extends RootTableManager<
             aiInterpretation: aiInterpretation,
             userId: userId,
             supabaseId: supabaseId,
+            syncState: syncState,
+            changedAt: changedAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -6144,6 +6487,8 @@ class $$DreamsTableTableManager extends RootTableManager<
             Value<String?> aiInterpretation = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
           }) =>
               DreamsCompanion.insert(
             id: id,
@@ -6157,6 +6502,8 @@ class $$DreamsTableTableManager extends RootTableManager<
             aiInterpretation: aiInterpretation,
             userId: userId,
             supabaseId: supabaseId,
+            syncState: syncState,
+            changedAt: changedAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -6187,6 +6534,8 @@ typedef $$JournalEntriesTableCreateCompanionBuilder = JournalEntriesCompanion
   Value<String?> photoUrl,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
 });
 typedef $$JournalEntriesTableUpdateCompanionBuilder = JournalEntriesCompanion
     Function({
@@ -6198,6 +6547,8 @@ typedef $$JournalEntriesTableUpdateCompanionBuilder = JournalEntriesCompanion
   Value<String?> photoUrl,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
 });
 
 class $$JournalEntriesTableFilterComposer
@@ -6232,6 +6583,12 @@ class $$JournalEntriesTableFilterComposer
 
   ColumnFilters<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$JournalEntriesTableOrderingComposer
@@ -6266,6 +6623,12 @@ class $$JournalEntriesTableOrderingComposer
 
   ColumnOrderings<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$JournalEntriesTableAnnotationComposer
@@ -6300,6 +6663,12 @@ class $$JournalEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get changedAt =>
+      $composableBuilder(column: $table.changedAt, builder: (column) => column);
 }
 
 class $$JournalEntriesTableTableManager extends RootTableManager<
@@ -6337,6 +6706,8 @@ class $$JournalEntriesTableTableManager extends RootTableManager<
             Value<String?> photoUrl = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
           }) =>
               JournalEntriesCompanion(
             id: id,
@@ -6347,6 +6718,8 @@ class $$JournalEntriesTableTableManager extends RootTableManager<
             photoUrl: photoUrl,
             userId: userId,
             supabaseId: supabaseId,
+            syncState: syncState,
+            changedAt: changedAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -6357,6 +6730,8 @@ class $$JournalEntriesTableTableManager extends RootTableManager<
             Value<String?> photoUrl = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
           }) =>
               JournalEntriesCompanion.insert(
             id: id,
@@ -6367,6 +6742,8 @@ class $$JournalEntriesTableTableManager extends RootTableManager<
             photoUrl: photoUrl,
             userId: userId,
             supabaseId: supabaseId,
+            syncState: syncState,
+            changedAt: changedAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -6622,6 +6999,8 @@ typedef $$ActivitiesTableCreateCompanionBuilder = ActivitiesCompanion Function({
   Value<String?> photoUrl,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
 });
 typedef $$ActivitiesTableUpdateCompanionBuilder = ActivitiesCompanion Function({
   Value<int> id,
@@ -6632,6 +7011,8 @@ typedef $$ActivitiesTableUpdateCompanionBuilder = ActivitiesCompanion Function({
   Value<String?> photoUrl,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
 });
 
 class $$ActivitiesTableFilterComposer
@@ -6667,6 +7048,12 @@ class $$ActivitiesTableFilterComposer
 
   ColumnFilters<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$ActivitiesTableOrderingComposer
@@ -6703,6 +7090,12 @@ class $$ActivitiesTableOrderingComposer
 
   ColumnOrderings<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$ActivitiesTableAnnotationComposer
@@ -6737,6 +7130,12 @@ class $$ActivitiesTableAnnotationComposer
 
   GeneratedColumn<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get changedAt =>
+      $composableBuilder(column: $table.changedAt, builder: (column) => column);
 }
 
 class $$ActivitiesTableTableManager extends RootTableManager<
@@ -6770,6 +7169,8 @@ class $$ActivitiesTableTableManager extends RootTableManager<
             Value<String?> photoUrl = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
           }) =>
               ActivitiesCompanion(
             id: id,
@@ -6780,6 +7181,8 @@ class $$ActivitiesTableTableManager extends RootTableManager<
             photoUrl: photoUrl,
             userId: userId,
             supabaseId: supabaseId,
+            syncState: syncState,
+            changedAt: changedAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -6790,6 +7193,8 @@ class $$ActivitiesTableTableManager extends RootTableManager<
             Value<String?> photoUrl = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
           }) =>
               ActivitiesCompanion.insert(
             id: id,
@@ -6800,6 +7205,8 @@ class $$ActivitiesTableTableManager extends RootTableManager<
             photoUrl: photoUrl,
             userId: userId,
             supabaseId: supabaseId,
+            syncState: syncState,
+            changedAt: changedAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -6828,6 +7235,8 @@ typedef $$LettersTableCreateCompanionBuilder = LettersCompanion Function({
   required String body,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
 });
 typedef $$LettersTableUpdateCompanionBuilder = LettersCompanion Function({
   Value<int> id,
@@ -6837,6 +7246,8 @@ typedef $$LettersTableUpdateCompanionBuilder = LettersCompanion Function({
   Value<String> body,
   Value<String?> userId,
   Value<String?> supabaseId,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
 });
 
 class $$LettersTableFilterComposer
@@ -6868,6 +7279,12 @@ class $$LettersTableFilterComposer
 
   ColumnFilters<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$LettersTableOrderingComposer
@@ -6899,6 +7316,12 @@ class $$LettersTableOrderingComposer
 
   ColumnOrderings<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$LettersTableAnnotationComposer
@@ -6930,6 +7353,12 @@ class $$LettersTableAnnotationComposer
 
   GeneratedColumn<String> get supabaseId => $composableBuilder(
       column: $table.supabaseId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get changedAt =>
+      $composableBuilder(column: $table.changedAt, builder: (column) => column);
 }
 
 class $$LettersTableTableManager extends RootTableManager<
@@ -6962,6 +7391,8 @@ class $$LettersTableTableManager extends RootTableManager<
             Value<String> body = const Value.absent(),
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
           }) =>
               LettersCompanion(
             id: id,
@@ -6971,6 +7402,8 @@ class $$LettersTableTableManager extends RootTableManager<
             body: body,
             userId: userId,
             supabaseId: supabaseId,
+            syncState: syncState,
+            changedAt: changedAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -6980,6 +7413,8 @@ class $$LettersTableTableManager extends RootTableManager<
             required String body,
             Value<String?> userId = const Value.absent(),
             Value<String?> supabaseId = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
           }) =>
               LettersCompanion.insert(
             id: id,
@@ -6989,6 +7424,8 @@ class $$LettersTableTableManager extends RootTableManager<
             body: body,
             userId: userId,
             supabaseId: supabaseId,
+            syncState: syncState,
+            changedAt: changedAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

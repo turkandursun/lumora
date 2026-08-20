@@ -155,7 +155,8 @@ void main() {
     expect(prefs.getString('breathing_last_mode'), 'box');
   });
 
-  test('ordinary logout keeps current user pending goals', () async {
+  test('ordinary logout keeps durable local-first content and pending goals',
+      () async {
     await _seedAccount(database, 'user-a', cloudSuffix: 'a');
     await cleaner.clearSignedOutAccount('user-a');
 
@@ -174,7 +175,25 @@ void main() {
       await (database.select(database.journalEntries)
             ..where((table) => table.userId.equals('user-a')))
           .get(),
-      isEmpty,
+      hasLength(1),
+    );
+    expect(
+      await (database.select(database.dreams)
+            ..where((table) => table.userId.equals('user-a')))
+          .get(),
+      hasLength(1),
+    );
+    expect(
+      await (database.select(database.activities)
+            ..where((table) => table.userId.equals('user-a')))
+          .get(),
+      hasLength(1),
+    );
+    expect(
+      await (database.select(database.letters)
+            ..where((table) => table.userId.equals('user-a')))
+          .get(),
+      hasLength(1),
     );
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.get('focus_active_session_v2_user-a'), isNull);
@@ -245,6 +264,7 @@ Future<void> _seedAccount(
           content: 'Dream',
           userId: Value(userId),
           supabaseId: Value('dream-$cloudSuffix'),
+          syncState: const Value('pending_upsert'),
         ),
       );
   await database.into(database.journalEntries).insert(
@@ -253,6 +273,7 @@ Future<void> _seedAccount(
           content: 'Journal',
           userId: Value(userId),
           supabaseId: Value('journal-$cloudSuffix'),
+          syncState: const Value('pending_upsert'),
         ),
       );
   await database.into(database.activities).insert(
@@ -262,6 +283,7 @@ Future<void> _seedAccount(
           activityText: 'Activity',
           userId: Value(userId),
           supabaseId: Value('activity-$cloudSuffix'),
+          syncState: const Value('pending_upsert'),
         ),
       );
   await database.into(database.letters).insert(
@@ -272,6 +294,7 @@ Future<void> _seedAccount(
           body: 'Body',
           userId: Value(userId),
           supabaseId: Value('letter-$cloudSuffix'),
+          syncState: const Value('pending_upsert'),
         ),
       );
   await database.into(database.quoteFavorites).insert(

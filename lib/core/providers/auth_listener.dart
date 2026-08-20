@@ -29,26 +29,42 @@ void invalidateUserProviders(WidgetRef ref) {
   ref.invalidate(visitDaysCountProvider);
   ref.invalidate(recentJournalEntriesProvider);
   ref.invalidate(allJournalEntriesProvider);
+  ref.invalidate(journalEntriesRepositoryProvider);
   ref.invalidate(journalEntryDaysProvider);
   ref.invalidate(moodLogProvider);
   ref.invalidate(goalsStreamProvider);
   ref.invalidate(goalStreakProvider);
   ref.invalidate(goalsRepositoryProvider);
   ref.invalidate(dreamsStreamProvider);
+  ref.invalidate(dreamsRepositoryProvider);
   ref.invalidate(periodRepositoryProvider);
   ref.invalidate(symptomRepositoryProvider);
   ref.invalidate(periodDaysProvider);
   ref.invalidate(symptomsProvider);
   ref.invalidate(lettersProvider);
+  ref.invalidate(letterRepositoryProvider);
   ref.invalidate(remindersStreamProvider);
   ref.invalidate(todayDailyQuestionAnswerProvider);
   ref.invalidate(dailyQuestionHistoryProvider);
   ref.invalidate(activitiesProvider);
+  ref.invalidate(activityRepositoryProvider);
   ref.invalidate(quoteFavoritesProvider);
   ref.invalidate(favoriteQuotesProvider);
   ref.invalidate(activeFocusSessionProvider);
   ref.invalidate(focusStatsProvider);
   ref.invalidate(focusRepositoryProvider);
+}
+
+/// Retries all persistent user-content outboxes. Each repository captures and
+/// revalidates the authenticated user, so a late response from account A can
+/// never mutate account B's visible state.
+Future<void> syncUserContentOutboxes(WidgetRef ref) async {
+  await Future.wait<void>([
+    ref.read(journalEntriesRepositoryProvider).syncForCurrentUser(),
+    ref.read(dreamsRepositoryProvider).syncForCurrentUser(),
+    ref.read(activityRepositoryProvider).syncForCurrentUser(),
+    ref.read(letterRepositoryProvider).syncForCurrentUser(),
+  ]);
 }
 
 /// Clears local user data stored in SQLite / Drift tables on sign out.

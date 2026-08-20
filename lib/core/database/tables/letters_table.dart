@@ -9,4 +9,6 @@ class Letters extends Table {
   TextColumn get body => text()();
   TextColumn get userId => text().nullable()();
   TextColumn get supabaseId => text().nullable()();
+  TextColumn get syncState => text().withDefault(const Constant('synced'))();
+  DateTimeColumn get changedAt => dateTime().withDefault(currentDateAndTime)();
 }

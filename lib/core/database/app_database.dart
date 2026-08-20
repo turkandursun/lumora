@@ -42,13 +42,13 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
-          await _createJournalEntriesCloudIdentityIndex();
+          await _createUserContentCloudIdentityIndexes();
         },
         onUpgrade: (m, from, to) async {
           // Each step below checks the actual on-disk schema before applying,
@@ -246,17 +246,88 @@ class AppDatabase extends _$AppDatabase {
           if (from < 24 && !await _hasTable('focus_sessions')) {
             await m.createTable(focusSessions);
           }
+          if (from < 25) {
+            for (final table in const <String>[
+              'journal_entries',
+              'dreams',
+              'activities',
+              'letters',
+            ]) {
+              if (!await _hasTable(table)) continue;
+              if (!await _hasColumn(table, 'sync_state')) {
+                await customStatement('''
+                  ALTER TABLE $table
+                  ADD COLUMN sync_state TEXT NOT NULL DEFAULT 'synced'
+                ''');
+              }
+              if (!await _hasColumn(table, 'changed_at')) {
+                // SQLite cannot add a NOT NULL column with a dynamic default.
+                await customStatement('''
+                  ALTER TABLE $table
+                  ADD COLUMN changed_at INTEGER NOT NULL DEFAULT 0
+                ''');
+              }
+              await customStatement('''
+                UPDATE $table
+                SET sync_state = CASE
+                      WHEN supabase_id IS NOT NULL THEN 'synced'
+                      WHEN user_id IS NOT NULL THEN 'pending_upsert'
+                      ELSE 'synced'
+                    END,
+                    changed_at = CASE
+                      WHEN changed_at = 0
+                        THEN CAST(strftime('%s', 'now') AS INTEGER)
+                      ELSE changed_at
+                    END
+              ''');
+            }
+            await _reconcileUserContentCloudIdentityDuplicates();
+            await _createUserContentCloudIdentityIndexes();
+          }
         },
       );
 
-  Future<void> _createJournalEntriesCloudIdentityIndex() {
-    return customStatement('''
+  Future<void> _createJournalEntriesCloudIdentityIndex() async {
+    if (!await _hasTable('journal_entries')) return;
+    await customStatement('''
       CREATE UNIQUE INDEX IF NOT EXISTS
         journal_entries_user_cloud_unique
       ON journal_entries(user_id, supabase_id)
       WHERE user_id IS NOT NULL
         AND supabase_id IS NOT NULL
     ''');
+  }
+
+  Future<void> _createUserContentCloudIdentityIndexes() async {
+    await _createJournalEntriesCloudIdentityIndex();
+    for (final table in const <String>['dreams', 'activities', 'letters']) {
+      if (!await _hasTable(table)) continue;
+      await customStatement('''
+        CREATE UNIQUE INDEX IF NOT EXISTS
+          ${table}_user_cloud_unique
+        ON $table(user_id, supabase_id)
+        WHERE user_id IS NOT NULL
+          AND supabase_id IS NOT NULL
+      ''');
+    }
+  }
+
+  Future<void> _reconcileUserContentCloudIdentityDuplicates() async {
+    for (final table in const <String>['dreams', 'activities', 'letters']) {
+      if (!await _hasTable(table)) continue;
+      await customStatement('''
+        DELETE FROM $table
+        WHERE user_id IS NOT NULL
+          AND supabase_id IS NOT NULL
+          AND id NOT IN (
+            SELECT MAX(id)
+            FROM $table
+            WHERE user_id IS NOT NULL
+              AND supabase_id IS NOT NULL
+            GROUP BY user_id, supabase_id
+          )
+      ''');
+    }
   }
 
   Future<bool> _hasTable(String name) async {

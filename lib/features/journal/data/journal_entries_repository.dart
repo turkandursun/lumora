@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -7,77 +8,41 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/sync/user_content_sync.dart';
 
 const _journalBucket = 'journal-photos';
+const _journalTable = 'journal_entries';
 
-abstract interface class JournalEntriesRemoteDataSource {
-  String? get currentUserId;
+typedef JournalEntriesRemoteDataSource = UserContentRemoteDataSource;
 
-  Future<Map<String, dynamic>> insertEntry(Map<String, dynamic> payload);
-
-  Future<List<Map<String, dynamic>>> fetchEntries(String userId);
-}
-
-class SupabaseJournalEntriesRemoteDataSource
-    implements JournalEntriesRemoteDataSource {
-  SupabaseJournalEntriesRemoteDataSource(this._client);
-
-  final SupabaseClient _client;
-
-  @override
-  String? get currentUserId => _client.auth.currentUser?.id;
-
-  @override
-  Future<Map<String, dynamic>> insertEntry(
-    Map<String, dynamic> payload,
-  ) async {
-    final row = await _client
-        .from('journal_entries')
-        .insert(payload)
-        .select('id')
-        .single();
-    return Map<String, dynamic>.from(row);
-  }
-
-  @override
-  Future<List<Map<String, dynamic>>> fetchEntries(String userId) async {
-    final rows = await _client
-        .from('journal_entries')
-        .select()
-        .eq('user_id', userId)
-        .order('created_at', ascending: false);
-    return rows
-        .map((row) => Map<String, dynamic>.from(row))
-        .toList(growable: false);
-  }
-}
-
-/// Owns persistence for journal entries written in Home's writing area.
-/// Keeps local Drift SQLite as the primary source of truth while backing up
-/// and syncing entries to Supabase's `journal_entries` table in the cloud.
+/// Local-first journal persistence with a durable Drift outbox.
 class JournalEntriesRepository {
   JournalEntriesRepository({
     required AppDatabase database,
     SupabaseClient? supabaseClient,
-    @visibleForTesting JournalEntriesRemoteDataSource? remoteDataSource,
+    @visibleForTesting UserContentRemoteDataSource? remoteDataSource,
+    @visibleForTesting String Function()? uuidGenerator,
   })  : _db = database,
-        _client = supabaseClient ?? Supabase.instance.client {
-    _remoteDataSource = remoteDataSource ??
-        SupabaseJournalEntriesRemoteDataSource(_client);
-    _clearLegacyPhotoPrefs();
+        _client = supabaseClient ?? Supabase.instance.client,
+        _uuidGenerator = uuidGenerator ?? newUserContentUuid {
+    _remote = remoteDataSource ?? SupabaseUserContentRemoteDataSource(_client);
+    unawaited(_clearLegacyPhotoPrefs());
   }
 
   final AppDatabase _db;
   final SupabaseClient _client;
-  late final JournalEntriesRemoteDataSource _remoteDataSource;
-  Future<void>? _syncInFlight;
+  final String Function() _uuidGenerator;
+  late final UserContentRemoteDataSource _remote;
+  final Map<String, Future<void>> _syncInFlight = {};
+  final Set<String> _syncRequestedAgain = {};
 
-  /// Clears old invalid SharedPreferences blob URL entries if any exist.
   Future<void> _clearLegacyPhotoPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('journal_entry_photos');
-    } catch (_) {}
+    } catch (_) {
+      // Legacy cleanup must never affect journal persistence.
+    }
   }
 
   Future<void> save(
@@ -87,101 +52,44 @@ class JournalEntriesRepository {
     String? photoPath,
     Uint8List? photoBytes,
   }) async {
-    final userId = _remoteDataSource.currentUserId;
+    final userId = _requireCurrentUser();
     final now = DateTime.now();
-    debugPrint(
-      '[JournalSave] about to insert contentLength=${content.runes.length}',
-    );
-
-    String? photoUrl;
-    if (userId != null && (photoBytes != null || photoPath != null)) {
-      try {
-        Uint8List? bytes = photoBytes;
-        String fileExt = 'jpg';
-
-        if (bytes == null && photoPath != null && !kIsWeb) {
-          final file = File(photoPath);
-          if (await file.exists()) {
-            bytes = await file.readAsBytes();
-            final ext = p.extension(photoPath).replaceAll('.', '');
-            if (ext.isNotEmpty) fileExt = ext;
-          }
-        }
-
-        if (bytes != null && bytes.isNotEmpty) {
-          final storagePath =
-              '$userId/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
-
-          await _client.storage.from(_journalBucket).uploadBinary(
-                storagePath,
-                bytes,
-                fileOptions: FileOptions(
-                  contentType: 'image/${fileExt == 'jpg' ? 'jpeg' : fileExt}',
-                  upsert: true,
-                ),
-              );
-
-          final signedUrlResponse = await _client.storage
-              .from(_journalBucket)
-              .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
-          photoUrl = signedUrlResponse;
-          debugPrint('[JournalSync] Uploaded journal photo to Supabase Storage.');
-        }
-      } catch (e) {
-        debugPrint('[JournalSync] Error uploading journal photo to Storage: $e');
-      }
-    }
-
-    String? cloudId;
-    if (userId != null) {
-      try {
-        final createdIso = now.toIso8601String();
-        final data = <String, dynamic>{
-          'user_id': userId,
-          'content': content,
-          'created_at': createdIso,
-          'updated_at': createdIso,
-        };
-        if (title != null && title.isNotEmpty) {
-          data['title'] = title;
-        }
-        if (audioPath != null) {
-          data['audio_path'] = audioPath;
-        }
-        if (photoUrl != null) {
-          data['photo_url'] = photoUrl;
-        }
-
-        final insertedRow = await _remoteDataSource.insertEntry(data);
-        cloudId = insertedRow['id'] as String?;
-        debugPrint('[JournalSync] Successfully inserted entry to Supabase, cloudId=$cloudId');
-      } catch (e) {
-        debugPrint('[JournalSync] Error inserting into Supabase: $e');
-      }
-    }
-
-    final id = userId != null && cloudId != null
-        ? await _upsertCloudEntryLocally(
-            userId: userId,
-            cloudId: cloudId,
+    final cloudId = _uuidGenerator();
+    final localId = await _db.into(_db.journalEntries).insert(
+          JournalEntriesCompanion.insert(
             createdAt: now,
             content: content,
-            title: title,
-            audioPath: audioPath,
-            photoUrl: photoUrl,
-          )
-        : await _db.into(_db.journalEntries).insert(
-              JournalEntriesCompanion.insert(
-                createdAt: now,
-                content: content,
-                title: Value(title),
-                audioPath: Value(audioPath),
-                photoUrl: Value(photoUrl),
-                userId: Value(userId),
-                supabaseId: Value(cloudId),
-              ),
-            );
-    debugPrint('[JournalSave] insert complete, new row id=$id');
+            title: Value(_blankToNull(title)),
+            audioPath: Value(audioPath),
+            photoUrl: Value(photoPath),
+            userId: Value(userId),
+            supabaseId: Value(cloudId),
+            syncState: const Value(contentSyncPendingUpsert),
+            changedAt: Value(now),
+          ),
+        );
+
+    if (photoBytes != null || photoPath != null) {
+      try {
+        final url = await _uploadPhoto(
+          userId: userId,
+          cloudId: cloudId,
+          bytes: photoBytes,
+          localPath: photoPath,
+        );
+        if (_remote.currentUserId == userId && url != null) {
+          await (_db.update(_db.journalEntries)
+                ..where((table) =>
+                    table.id.equals(localId) & table.userId.equals(userId)))
+              .write(JournalEntriesCompanion(photoUrl: Value(url)));
+        }
+      } catch (error) {
+        debugPrint(
+          '[JournalSync] photo upload deferred error=${error.runtimeType}',
+        );
+      }
+    }
+    unawaited(syncForCurrentUser());
   }
 
   Future<void> update(
@@ -191,257 +99,292 @@ class JournalEntriesRepository {
     String? photoUrl,
     String? supabaseId,
   }) async {
-    final userId = _remoteDataSource.currentUserId;
-    debugPrint('[JournalUpdate] updating localId=$localId, supabaseId=$supabaseId');
-
-    if (userId != null) {
-      await (_db.update(_db.journalEntries)
-            ..where((t) =>
-                t.id.equals(localId) &
-                (t.userId.equals(userId) | t.userId.isNull())))
-          .write(
-        JournalEntriesCompanion(
-          content: Value(content),
-          audioPath: Value(audioPath),
-          photoUrl: Value(photoUrl),
-        ),
-      );
-    } else {
-      await (_db.update(_db.journalEntries)..where((t) => t.id.equals(localId))).write(
-        JournalEntriesCompanion(
-          content: Value(content),
-          audioPath: Value(audioPath),
-          photoUrl: Value(photoUrl),
-        ),
-      );
-    }
-
-    try {
-      if (userId != null && supabaseId != null) {
-        final nowIso = DateTime.now().toIso8601String();
-        final data = <String, dynamic>{
-          'content': content,
-          'updated_at': nowIso,
-        };
-        if (audioPath != null) {
-          data['audio_path'] = audioPath;
-        }
-        if (photoUrl != null) {
-          data['photo_url'] = photoUrl;
-        }
-
-        await _client
-            .from('journal_entries')
-            .update(data)
-            .eq('id', supabaseId)
-            .eq('user_id', userId);
-        debugPrint('[JournalSync] Successfully updated entry in Supabase');
-      }
-    } catch (e) {
-      debugPrint('[JournalSync] Error updating Supabase: $e');
-    }
+    final userId = _requireCurrentUser();
+    final existing = await (_db.select(_db.journalEntries)
+          ..where((table) =>
+              table.id.equals(localId) & table.userId.equals(userId)))
+        .getSingleOrNull();
+    if (existing == null || isContentTombstone(existing.syncState)) return;
+    final now = nextContentChangedAt(existing.changedAt);
+    await (_db.update(_db.journalEntries)
+          ..where((table) =>
+              table.id.equals(localId) & table.userId.equals(userId)))
+        .write(
+      JournalEntriesCompanion(
+        content: Value(content),
+        audioPath: Value(audioPath),
+        photoUrl: Value(photoUrl),
+        supabaseId:
+            Value(existing.supabaseId ?? supabaseId ?? _uuidGenerator()),
+        syncState: const Value(contentSyncPendingUpsert),
+        changedAt: Value(now),
+      ),
+    );
+    unawaited(syncForCurrentUser());
   }
 
   Future<void> delete(int localId, {String? supabaseId}) async {
-    final userId = _remoteDataSource.currentUserId;
-    debugPrint('[JournalDelete] deleting localId=$localId, supabaseId=$supabaseId');
-
-    if (userId != null) {
+    final userId = _requireCurrentUser();
+    final row = await (_db.select(_db.journalEntries)
+          ..where((table) =>
+              table.id.equals(localId) & table.userId.equals(userId)))
+        .getSingleOrNull();
+    if (row == null) return;
+    final cloudId = row.supabaseId ?? supabaseId;
+    if (cloudId == null) {
       await (_db.delete(_db.journalEntries)
-            ..where((t) =>
-                t.id.equals(localId) &
-                (t.userId.equals(userId) | t.userId.isNull())))
+            ..where((table) =>
+                table.id.equals(localId) & table.userId.equals(userId)))
           .go();
-    } else {
-      await (_db.delete(_db.journalEntries)..where((t) => t.id.equals(localId))).go();
+      return;
     }
-
-    try {
-      if (userId != null && supabaseId != null) {
-        await _client
-            .from('journal_entries')
-            .delete()
-            .eq('id', supabaseId)
-            .eq('user_id', userId);
-        debugPrint('[JournalSync] Successfully deleted entry from Supabase');
-      }
-    } catch (e) {
-      debugPrint('[JournalSync] Error deleting from Supabase: $e');
-    }
+    await (_db.update(_db.journalEntries)
+          ..where((table) =>
+              table.id.equals(localId) & table.userId.equals(userId)))
+        .write(
+      JournalEntriesCompanion(
+        supabaseId: Value(cloudId),
+        syncState: const Value(contentSyncPendingDelete),
+        changedAt: Value(nextContentChangedAt(row.changedAt)),
+      ),
+    );
+    unawaited(syncForCurrentUser());
   }
 
-  /// Deletes all local journal entries from Drift SQLite (e.g. upon user logout).
-  Future<void> deleteAll() async {
-    await _db.delete(_db.journalEntries).go();
-  }
+  Future<void> deleteAll() => _db.delete(_db.journalEntries).go();
 
-  /// Fetches the user's journal entries from Supabase and syncs missing/deleted ones to local Drift DB.
-  Future<void> fetchAndSyncFromSupabase() {
-    final existing = _syncInFlight;
-    if (existing != null) return existing;
+  Future<void> fetchAndSyncFromSupabase() => syncForCurrentUser();
 
+  Future<void> syncForCurrentUser() {
+    final userId = _remote.currentUserId;
+    if (userId == null) return Future.value();
+    final existing = _syncInFlight[userId];
+    if (existing != null) {
+      _syncRequestedAgain.add(userId);
+      return existing;
+    }
     late final Future<void> tracked;
-    tracked = _fetchAndSyncFromSupabase().whenComplete(() {
-      if (identical(_syncInFlight, tracked)) _syncInFlight = null;
+    tracked = _drainSyncRequests(userId).whenComplete(() {
+      if (identical(_syncInFlight[userId], tracked)) {
+        _syncInFlight.remove(userId);
+      }
     });
-    _syncInFlight = tracked;
+    _syncInFlight[userId] = tracked;
     return tracked;
   }
 
-  Future<void> _fetchAndSyncFromSupabase() async {
+  Future<void> _drainSyncRequests(String userId) async {
+    do {
+      _syncRequestedAgain.remove(userId);
+      await _syncUser(userId);
+    } while (
+        _remote.currentUserId == userId && _syncRequestedAgain.remove(userId));
+  }
+
+  Future<void> _syncUser(String userId) async {
+    await _reconcileLocalDuplicatesForUser(userId);
+    await _pushPending(userId);
+    if (_remote.currentUserId != userId) return;
     try {
-      final userId = _remoteDataSource.currentUserId;
-      if (userId == null) return;
-
-      await _reconcileLocalDuplicatesForUser(userId);
-      final cloudRows = await _remoteDataSource.fetchEntries(userId);
-      if (_remoteDataSource.currentUserId != userId) return;
-      debugPrint('[JournalSync] cloud fetched count=${cloudRows.length}');
-
-      final cloudMap = <String, Map<String, dynamic>>{};
-      for (final row in cloudRows) {
-        final id = row['id'] as String?;
-        if (id != null) {
-          cloudMap[id] = row;
-        }
-      }
-
-      final localEntries = await (_db.select(_db.journalEntries)
-            ..where((t) => t.userId.equals(userId)))
-          .get();
-
-      // Delete local entries that were deleted in cloud
-      final localCloudIds = localEntries
-          .map((entry) => entry.supabaseId)
-          .whereType<String>()
-          .toSet();
-      for (final localSupabaseId in localCloudIds) {
-        if (!cloudMap.containsKey(localSupabaseId)) {
-          await (_db.delete(_db.journalEntries)
-                ..where((t) =>
-                    t.userId.equals(userId) &
-                    t.supabaseId.equals(localSupabaseId)))
-              .go();
-          debugPrint('[JournalSync] Deleted local entry with supabaseId=$localSupabaseId (deleted from cloud)');
-        }
-      }
-
-      // Insert cloud entries that are missing locally
-      for (final cloudId in cloudMap.keys) {
-        if (_remoteDataSource.currentUserId != userId) return;
-        final row = cloudMap[cloudId]!;
-        var photoUrl = row['photo_url'] as String?;
-
-        if (photoUrl != null && photoUrl.contains('/object/public/$_journalBucket/')) {
-          final storagePath = photoUrl.split('/object/public/$_journalBucket/').last;
-          try {
-            final signedUrl = await _client.storage
-                .from(_journalBucket)
-                .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
-            photoUrl = signedUrl;
-            row['photo_url'] = photoUrl;
-            await _client
-                .from('journal_entries')
-                .update({'photo_url': photoUrl})
-                .eq('id', cloudId)
-                .eq('user_id', userId);
-          } catch (e) {
-            debugPrint('[JournalSync] Error healing photoUrl for cloudId=$cloudId: $e');
-          }
-        }
-
-        final content = row['content'] as String?;
-        final title = row['title'] as String?;
-        final createdAtStr = row['created_at'] as String?;
-        final audioPath = row['audio_path'] as String?;
-        if (content == null || content.isEmpty) continue;
-
-        final createdAt = createdAtStr != null
-            ? DateTime.tryParse(createdAtStr) ?? DateTime.now()
-            : DateTime.now();
-
-        await _upsertCloudEntryLocally(
-          userId: userId,
-          cloudId: cloudId,
-          createdAt: createdAt,
-          content: content,
-          title: title,
-          audioPath: audioPath,
-          photoUrl: photoUrl,
-        );
-      }
-      final countExpression = _db.journalEntries.id.count();
-      final localCount = await (_db.selectOnly(_db.journalEntries)
-            ..addColumns([countExpression])
-            ..where(_db.journalEntries.userId.equals(userId)))
-          .map((row) => row.read(countExpression) ?? 0)
-          .getSingle();
-      debugPrint('[JournalSync] local row count=$localCount');
-    } catch (e) {
-      debugPrint('[JournalSync] Error fetching from Supabase: $e');
+      final cloudRows = await _remote.fetchRows(
+        _journalTable,
+        userId: userId,
+        orderBy: 'created_at',
+      );
+      if (_remote.currentUserId != userId) return;
+      await _pull(userId, cloudRows);
+    } catch (error) {
+      debugPrint('[JournalSync] pull deferred error=${error.runtimeType}');
     }
   }
 
-  Future<int> _upsertCloudEntryLocally({
-    required String userId,
-    required String cloudId,
-    required DateTime createdAt,
-    required String content,
-    required String? title,
-    required String? audioPath,
-    required String? photoUrl,
-  }) {
-    return _db.transaction(() async {
-      final existing = await (_db.select(_db.journalEntries)
-            ..where((table) =>
-                table.userId.equals(userId) &
-                table.supabaseId.equals(cloudId))
-            ..orderBy([(table) => OrderingTerm.desc(table.id)])
-            ..limit(1))
-          .getSingleOrNull();
+  Future<void> _pushPending(String userId) async {
+    final rows = await (_db.select(_db.journalEntries)
+          ..where((table) =>
+              table.userId.equals(userId) &
+              table.syncState.equals(contentSyncSynced).not()))
+        .get();
+    for (var row in rows) {
+      if (_remote.currentUserId != userId) return;
+      final pushedAt = row.changedAt;
+      try {
+        if (isContentTombstone(row.syncState)) {
+          final cloudId = row.supabaseId;
+          if (cloudId != null) {
+            await _remote.deleteRow(
+              _journalTable,
+              userId: userId,
+              rowId: cloudId,
+            );
+          }
+          if (_remote.currentUserId != userId) return;
+          await (_db.delete(_db.journalEntries)
+                ..where((table) =>
+                    table.id.equals(row.id) &
+                    table.userId.equals(userId) &
+                    table.syncState.equals(contentSyncPendingDelete) &
+                    table.changedAt.equals(pushedAt)))
+              .go();
+          continue;
+        }
 
-      if (existing != null) {
+        var cloudId = row.supabaseId;
+        if (cloudId == null) {
+          cloudId = _uuidGenerator();
+          await (_db.update(_db.journalEntries)
+                ..where((table) =>
+                    table.id.equals(row.id) & table.userId.equals(userId)))
+              .write(JournalEntriesCompanion(supabaseId: Value(cloudId)));
+          row = row.copyWith(supabaseId: Value(cloudId));
+        }
+
+        var remotePhoto = row.photoUrl;
+        if (_looksLikeLocalPath(remotePhoto)) {
+          remotePhoto = await _uploadPhoto(
+            userId: userId,
+            cloudId: cloudId,
+            localPath: remotePhoto,
+          );
+          if (remotePhoto == null) throw StateError('Photo unavailable');
+          await (_db.update(_db.journalEntries)
+                ..where((table) =>
+                    table.id.equals(row.id) & table.userId.equals(userId)))
+              .write(JournalEntriesCompanion(photoUrl: Value(remotePhoto)));
+        }
+
+        await _remote.upsertRow(_journalTable, {
+          'id': cloudId,
+          'user_id': userId,
+          'content': row.content,
+          'title': _blankToNull(row.title),
+          'audio_path': row.audioPath,
+          'photo_url': remotePhoto,
+          'created_at': row.createdAt.toUtc().toIso8601String(),
+          'updated_at': pushedAt.toUtc().toIso8601String(),
+        });
+        if (_remote.currentUserId != userId) return;
         await (_db.update(_db.journalEntries)
               ..where((table) =>
-                  table.id.equals(existing.id) &
-                  table.userId.equals(userId)))
+                  table.id.equals(row.id) &
+                  table.userId.equals(userId) &
+                  table.syncState.equals(contentSyncPendingUpsert) &
+                  table.changedAt.equals(pushedAt)))
+            .write(
+          const JournalEntriesCompanion(
+            syncState: Value(contentSyncSynced),
+          ),
+        );
+      } catch (error) {
+        debugPrint('[JournalSync] push deferred error=${error.runtimeType}');
+      }
+    }
+  }
+
+  Future<void> _pull(
+    String userId,
+    List<Map<String, dynamic>> cloudRows,
+  ) async {
+    final cloudMap = <String, Map<String, dynamic>>{
+      for (final row in cloudRows)
+        if (row['id']?.toString().isNotEmpty ?? false)
+          row['id'].toString(): row,
+    };
+    final localRows = await (_db.select(_db.journalEntries)
+          ..where((table) => table.userId.equals(userId)))
+        .get();
+    final localByCloud = <String, JournalEntryRow>{
+      for (final row in localRows)
+        if (row.supabaseId != null) row.supabaseId!: row,
+    };
+
+    for (final entry in cloudMap.entries) {
+      if (_remote.currentUserId != userId) return;
+      final local = localByCloud[entry.key];
+      if (local != null && local.syncState != contentSyncSynced) continue;
+      final row = entry.value;
+      final content = row['content']?.toString() ?? '';
+      if (content.isEmpty) continue;
+      final createdAt = _parseDate(row['created_at']) ?? DateTime.now();
+      if (local == null) {
+        await _db.into(_db.journalEntries).insert(
+              JournalEntriesCompanion.insert(
+                createdAt: createdAt,
+                content: content,
+                title: Value(row['title'] as String?),
+                audioPath: Value(row['audio_path'] as String?),
+                photoUrl: Value(row['photo_url'] as String?),
+                userId: Value(userId),
+                supabaseId: Value(entry.key),
+                syncState: const Value(contentSyncSynced),
+                changedAt: Value(
+                  _parseDate(row['updated_at']) ?? createdAt,
+                ),
+              ),
+            );
+      } else {
+        await (_db.update(_db.journalEntries)
+              ..where((table) =>
+                  table.id.equals(local.id) & table.userId.equals(userId)))
             .write(
           JournalEntriesCompanion(
             createdAt: Value(createdAt),
             content: Value(content),
-            title: Value(title),
-            audioPath: Value(audioPath),
-            photoUrl: Value(photoUrl),
-            supabaseId: Value(cloudId),
+            title: Value(row['title'] as String?),
+            audioPath: Value(row['audio_path'] as String?),
+            photoUrl: Value(row['photo_url'] as String?),
+            syncState: const Value(contentSyncSynced),
+            changedAt: Value(_parseDate(row['updated_at']) ?? createdAt),
           ),
         );
-        debugPrint(
-          '[JournalSync] local existing cloudId=$cloudId localId=${existing.id}',
-        );
-        return existing.id;
       }
+    }
 
-      final localId = await _db.into(_db.journalEntries).insert(
-            JournalEntriesCompanion.insert(
-              createdAt: createdAt,
-              content: content,
-              title: Value(title),
-              audioPath: Value(audioPath),
-              photoUrl: Value(photoUrl),
-              userId: Value(userId),
-              supabaseId: Value(cloudId),
-            ),
-          );
-      debugPrint(
-        '[JournalSync] inserted local cloudId=$cloudId localId=$localId',
-      );
-      return localId;
-    });
+    for (final local in localRows) {
+      if (local.syncState != contentSyncSynced || local.supabaseId == null) {
+        continue;
+      }
+      if (!cloudMap.containsKey(local.supabaseId)) {
+        await (_db.delete(_db.journalEntries)
+              ..where((table) =>
+                  table.id.equals(local.id) & table.userId.equals(userId)))
+            .go();
+      }
+    }
+  }
+
+  Future<String?> _uploadPhoto({
+    required String userId,
+    required String cloudId,
+    Uint8List? bytes,
+    String? localPath,
+  }) async {
+    var uploadBytes = bytes;
+    var extension = 'jpg';
+    if (uploadBytes == null && localPath != null && !kIsWeb) {
+      final file = File(localPath);
+      if (!await file.exists()) return null;
+      uploadBytes = await file.readAsBytes();
+      final rawExtension = p.extension(localPath).replaceFirst('.', '');
+      if (rawExtension.isNotEmpty) extension = rawExtension.toLowerCase();
+    }
+    if (uploadBytes == null || uploadBytes.isEmpty) return null;
+    final storagePath = '$userId/$cloudId.$extension';
+    await _client.storage.from(_journalBucket).uploadBinary(
+          storagePath,
+          uploadBytes,
+          fileOptions: FileOptions(
+            contentType: 'image/${extension == 'jpg' ? 'jpeg' : extension}',
+            upsert: true,
+          ),
+        );
+    return _client.storage
+        .from(_journalBucket)
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
   }
 
   @visibleForTesting
   Future<int> reconcileLocalDuplicatesForCurrentUser() async {
-    final userId = _remoteDataSource.currentUserId;
+    final userId = _remote.currentUserId;
     if (userId == null) return 0;
     return _reconcileLocalDuplicatesForUser(userId);
   }
@@ -455,56 +398,71 @@ class JournalEntriesRepository {
     for (final row in rows) {
       byCloudId.putIfAbsent(row.supabaseId!, () => []).add(row);
     }
-
     var removed = 0;
     await _db.transaction(() async {
-      for (final group in byCloudId.entries) {
-        if (group.value.length < 2) continue;
-        group.value.sort((left, right) => right.id.compareTo(left.id));
-        final keeper = group.value.first;
-        for (final duplicate in group.value.skip(1)) {
+      for (final group in byCloudId.values) {
+        if (group.length < 2) continue;
+        group.sort((left, right) => right.id.compareTo(left.id));
+        for (final duplicate in group.skip(1)) {
           removed += await (_db.delete(_db.journalEntries)
                 ..where((table) =>
                     table.id.equals(duplicate.id) &
-                    table.userId.equals(userId) &
-                    table.supabaseId.equals(group.key)))
+                    table.userId.equals(userId)))
               .go();
         }
-        debugPrint(
-          '[JournalSync] reconciled duplicate cloudId=${group.key} '
-          'keeperLocalId=${keeper.id} removed=${group.value.length - 1}',
-        );
       }
     });
     return removed;
   }
 
-  /// Only returns journal entries belonging to the currently logged in user.
   Stream<List<JournalEntryRow>> watchRecent({int limit = 20}) {
-    final currentUserId = _remoteDataSource.currentUserId;
-    if (currentUserId == null) return Stream.value(const []);
+    final userId = _remote.currentUserId;
+    if (userId == null) return Stream.value(const []);
     return (_db.select(_db.journalEntries)
-          ..where((t) => t.userId.equals(currentUserId))
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..where((table) =>
+              table.userId.equals(userId) &
+              table.syncState.equals(contentSyncPendingDelete).not())
+          ..orderBy([(table) => OrderingTerm.desc(table.createdAt)])
           ..limit(limit))
-        .watch()
-        .map((rows) {
-      debugPrint('[JournalUI] visible recent entries count=${rows.length}');
-      return rows;
-    });
+        .watch();
   }
 
-  /// Every saved entry for the current user, newest first — used by calendar and stats.
   Stream<List<JournalEntryRow>> watchAll() {
-    final currentUserId = _remoteDataSource.currentUserId;
-    if (currentUserId == null) return Stream.value(const []);
+    final userId = _remote.currentUserId;
+    if (userId == null) return Stream.value(const []);
     return (_db.select(_db.journalEntries)
-          ..where((t) => t.userId.equals(currentUserId))
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .watch()
-        .map((rows) {
-      debugPrint('[JournalUI] visible all entries count=${rows.length}');
-      return rows;
-    });
+          ..where((table) =>
+              table.userId.equals(userId) &
+              table.syncState.equals(contentSyncPendingDelete).not())
+          ..orderBy([(table) => OrderingTerm.desc(table.createdAt)]))
+        .watch();
   }
+
+  String _requireCurrentUser() {
+    final userId = _remote.currentUserId;
+    if (userId == null) {
+      throw StateError('An authenticated user is required.');
+    }
+    return userId;
+  }
+}
+
+String? _blankToNull(String? value) {
+  final trimmed = value?.trim();
+  return trimmed == null || trimmed.isEmpty ? null : trimmed;
+}
+
+DateTime? _parseDate(Object? value) {
+  if (value is DateTime) return value;
+  if (value is String) return DateTime.tryParse(value);
+  return null;
+}
+
+bool _looksLikeLocalPath(String? value) {
+  if (value == null || value.isEmpty) return false;
+  if (RegExp(r'^[A-Za-z]:[\\/]').hasMatch(value) || value.startsWith('/')) {
+    return true;
+  }
+  final uri = Uri.tryParse(value);
+  return uri == null || !{'http', 'https'}.contains(uri.scheme.toLowerCase());
 }

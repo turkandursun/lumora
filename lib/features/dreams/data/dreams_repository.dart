@@ -1,75 +1,67 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/sync/user_content_sync.dart';
 import 'dream_symbol_keywords.dart';
 
-/// The canonical symbol keys detected in [dream]'s text at save time.
+const _dreamsTable = 'dreams';
+
 List<String> symbolTagsFor(DreamRow dream) =>
     dream.symbolTags.isEmpty ? const [] : dream.symbolTags.split(',');
 
-/// Owns dream entry persistence via [AppDatabase] and syncing to Supabase's
-/// `dreams` table in the cloud. Symbol detection happens once, at save time,
-/// using the local keyword dictionary in `dream_symbol_keywords.dart`.
 class DreamsRepository {
   DreamsRepository({
     required AppDatabase database,
     SupabaseClient? supabaseClient,
+    @visibleForTesting UserContentRemoteDataSource? remoteDataSource,
+    @visibleForTesting String Function()? uuidGenerator,
   })  : _db = database,
-        _client = supabaseClient ?? Supabase.instance.client;
+        _remote = remoteDataSource ??
+            SupabaseUserContentRemoteDataSource(
+              supabaseClient ?? Supabase.instance.client,
+            ),
+        _uuidGenerator = uuidGenerator ?? newUserContentUuid;
 
   final AppDatabase _db;
-  final SupabaseClient _client;
+  final UserContentRemoteDataSource _remote;
+  final String Function() _uuidGenerator;
+  final Map<String, Future<void>> _syncInFlight = {};
+  final Set<String> _syncRequestedAgain = {};
 
-  /// Every saved dream for the currently logged in user, most recent first.
   Stream<List<DreamRow>> watchAll() {
-    final user = _client.auth.currentUser;
-    if (user == null) return Stream.value(const []);
+    final userId = _remote.currentUserId;
+    if (userId == null) return Stream.value(const []);
     return (_db.select(_db.dreams)
-          ..where((t) => t.userId.equals(user.id))
-          ..orderBy([(t) => OrderingTerm.desc(t.date)]))
+          ..where((table) =>
+              table.userId.equals(userId) &
+              table.syncState.equals(contentSyncPendingDelete).not())
+          ..orderBy([(table) => OrderingTerm.desc(table.date)]))
         .watch();
   }
 
-  /// Inserts a new dream entry locally and in Supabase `dreams` table if logged in.
-  /// Returns its local row id so the caller can follow up with [saveReflection].
   Future<int> addDream(String text) async {
-    final user = _client.auth.currentUser;
+    final userId = _requireCurrentUser();
     final now = DateTime.now();
     final trimmed = text.trim();
-    final tags = detectDreamSymbols(trimmed);
-    final symbolTagsStr = tags.join(',');
-
-    String? cloudId;
-    if (user != null) {
-      try {
-        final insertedRow = await _client.from('dreams').insert({
-          'user_id': user.id,
-          'content': trimmed,
-          'date': now.toIso8601String(),
-        }).select('id').single();
-        cloudId = insertedRow['id'] as String?;
-        debugPrint('[DreamsSync] Successfully inserted dream to Supabase, cloudId=$cloudId');
-      } catch (e) {
-        debugPrint('[DreamsSync] Error inserting dream into Supabase: $e');
-      }
-    }
-
     final id = await _db.into(_db.dreams).insert(
           DreamsCompanion.insert(
             date: now,
             content: trimmed,
-            symbolTags: Value(symbolTagsStr),
-            userId: Value(user?.id),
-            supabaseId: Value(cloudId),
+            symbolTags: Value(detectDreamSymbols(trimmed).join(',')),
+            userId: Value(userId),
+            supabaseId: Value(_uuidGenerator()),
+            syncState: const Value(contentSyncPendingUpsert),
+            changedAt: Value(now),
           ),
         );
+    unawaited(syncForCurrentUser());
     return id;
   }
 
-  /// Records whatever the user answered in the post-save reflection flow.
-  /// Updates local Drift DB and cloud `dreams` table (if logged in and supabaseId exists).
   Future<void> saveReflection({
     required int id,
     String? feelingTag,
@@ -77,151 +69,257 @@ class DreamsRepository {
     String? firstThought,
     String? lifeConnection,
   }) async {
-    final user = _client.auth.currentUser;
-
-    await (_db.update(_db.dreams)..where((t) => t.id.equals(id))).write(
+    final userId = _requireCurrentUser();
+    final row = await (_db.select(_db.dreams)
+          ..where((table) => table.id.equals(id) & table.userId.equals(userId)))
+        .getSingleOrNull();
+    if (row == null || isContentTombstone(row.syncState)) return;
+    await (_db.update(_db.dreams)
+          ..where((table) => table.id.equals(id) & table.userId.equals(userId)))
+        .write(
       DreamsCompanion(
         feelingTag: Value(feelingTag),
         familiarPerson: Value(familiarPerson),
         firstThought: Value(firstThought),
         lifeConnection: Value(lifeConnection),
+        supabaseId: Value(row.supabaseId ?? _uuidGenerator()),
+        syncState: const Value(contentSyncPendingUpsert),
+        changedAt: Value(nextContentChangedAt(row.changedAt)),
       ),
     );
-
-    if (user != null) {
-      try {
-        final localRow = await (_db.select(_db.dreams)..where((t) => t.id.equals(id))).getSingleOrNull();
-        final supabaseId = localRow?.supabaseId;
-        if (supabaseId != null) {
-          await _client.from('dreams').update({
-            'feeling_tag': feelingTag,
-            'familiar_person': familiarPerson,
-            'first_thought': firstThought,
-            'life_connection': lifeConnection,
-          }).eq('id', supabaseId).eq('user_id', user.id);
-          debugPrint('[DreamsSync] Successfully updated dream reflection in Supabase, cloudId=$supabaseId');
-        }
-      } catch (e) {
-        debugPrint('[DreamsSync] Error updating dream reflection in Supabase: $e');
-      }
-    }
+    unawaited(syncForCurrentUser());
   }
 
-  /// Caches an AI-generated interpretation against a dream in local Drift ONLY.
-  /// Does NOT send anything to Supabase cloud.
-  Future<void> saveAiInterpretation({required int id, required String interpretation}) async {
-    await (_db.update(_db.dreams)..where((t) => t.id.equals(id))).write(
-      DreamsCompanion(aiInterpretation: Value(interpretation)),
-    );
+  /// AI interpretation remains intentionally device-local.
+  Future<void> saveAiInterpretation({
+    required int id,
+    required String interpretation,
+  }) async {
+    final userId = _requireCurrentUser();
+    await (_db.update(_db.dreams)
+          ..where((table) => table.id.equals(id) & table.userId.equals(userId)))
+        .write(DreamsCompanion(aiInterpretation: Value(interpretation)));
   }
 
-  /// Deletes a dream entry both from local Drift SQLite and from Supabase cloud (if synced).
   Future<void> deleteDream(int localId, {String? supabaseId}) async {
-    final user = _client.auth.currentUser;
-    debugPrint('[DreamsDelete] deleting localId=$localId, supabaseId=$supabaseId');
-
-    if (user != null) {
+    final userId = _requireCurrentUser();
+    final row = await (_db.select(_db.dreams)
+          ..where((table) =>
+              table.id.equals(localId) & table.userId.equals(userId)))
+        .getSingleOrNull();
+    if (row == null) return;
+    final cloudId = row.supabaseId ?? supabaseId;
+    if (cloudId == null) {
       await (_db.delete(_db.dreams)
-            ..where((t) => t.id.equals(localId) & (t.userId.equals(user.id) | t.userId.isNull())))
+            ..where((table) =>
+                table.id.equals(localId) & table.userId.equals(userId)))
           .go();
-    } else {
-      await (_db.delete(_db.dreams)..where((t) => t.id.equals(localId))).go();
+      return;
     }
+    await (_db.update(_db.dreams)
+          ..where((table) =>
+              table.id.equals(localId) & table.userId.equals(userId)))
+        .write(
+      DreamsCompanion(
+        supabaseId: Value(cloudId),
+        syncState: const Value(contentSyncPendingDelete),
+        changedAt: Value(nextContentChangedAt(row.changedAt)),
+      ),
+    );
+    unawaited(syncForCurrentUser());
+  }
 
-    try {
-      if (user != null && supabaseId != null) {
-        await _client.from('dreams').delete().eq('id', supabaseId).eq('user_id', user.id);
-        debugPrint('[DreamsSync] Successfully deleted dream from Supabase, cloudId=$supabaseId');
+  Future<void> deleteAll() => _db.delete(_db.dreams).go();
+
+  Future<void> fetchAndSyncDreamsFromSupabase() => syncForCurrentUser();
+
+  Future<void> syncForCurrentUser() {
+    final userId = _remote.currentUserId;
+    if (userId == null) return Future.value();
+    final existing = _syncInFlight[userId];
+    if (existing != null) {
+      _syncRequestedAgain.add(userId);
+      return existing;
+    }
+    late final Future<void> tracked;
+    tracked = _drainSyncRequests(userId).whenComplete(() {
+      if (identical(_syncInFlight[userId], tracked)) {
+        _syncInFlight.remove(userId);
       }
-    } catch (e) {
-      debugPrint('[DreamsSync] Error deleting from Supabase: $e');
+    });
+    _syncInFlight[userId] = tracked;
+    return tracked;
+  }
+
+  Future<void> _drainSyncRequests(String userId) async {
+    do {
+      _syncRequestedAgain.remove(userId);
+      await _syncUser(userId);
+    } while (
+        _remote.currentUserId == userId && _syncRequestedAgain.remove(userId));
+  }
+
+  Future<void> _syncUser(String userId) async {
+    await _pushPending(userId);
+    if (_remote.currentUserId != userId) return;
+    try {
+      final cloud = await _remote.fetchRows(
+        _dreamsTable,
+        userId: userId,
+        orderBy: 'date',
+      );
+      if (_remote.currentUserId != userId) return;
+      await _pull(userId, cloud);
+    } catch (error) {
+      debugPrint('[DreamsSync] pull deferred error=${error.runtimeType}');
     }
   }
 
-  /// Deletes all local dream entries from Drift SQLite (e.g. upon user logout).
-  Future<void> deleteAll() async {
-    await _db.delete(_db.dreams).go();
-  }
-
-  /// Fetches the user's dream entries from Supabase and syncs missing/deleted ones to local Drift DB.
-  Future<void> fetchAndSyncDreamsFromSupabase() async {
-    try {
-      final user = _client.auth.currentUser;
-      if (user == null) return;
-
-      final response = await _client
-          .from('dreams')
-          .select()
-          .eq('user_id', user.id)
-          .order('date', ascending: false);
-
-      final cloudRows = response as List;
-      final cloudMap = <String, Map<String, dynamic>>{};
-      for (final row in cloudRows) {
-        final id = row['id'] as String?;
-        if (id != null) {
-          cloudMap[id] = row as Map<String, dynamic>;
-        }
-      }
-
-      final localEntries = await (_db.select(_db.dreams)
-            ..where((t) => t.userId.equals(user.id)))
-          .get();
-
-      final localSupabaseIdMap = <String, DreamRow>{};
-      for (final entry in localEntries) {
-        if (entry.supabaseId != null) {
-          localSupabaseIdMap[entry.supabaseId!] = entry;
-        }
-      }
-
-      // Delete local entries that were deleted in cloud
-      for (final localSupabaseId in localSupabaseIdMap.keys) {
-        if (!cloudMap.containsKey(localSupabaseId)) {
+  Future<void> _pushPending(String userId) async {
+    final rows = await (_db.select(_db.dreams)
+          ..where((table) =>
+              table.userId.equals(userId) &
+              table.syncState.equals(contentSyncSynced).not()))
+        .get();
+    for (var row in rows) {
+      if (_remote.currentUserId != userId) return;
+      final pushedAt = row.changedAt;
+      try {
+        if (isContentTombstone(row.syncState)) {
+          if (row.supabaseId != null) {
+            await _remote.deleteRow(
+              _dreamsTable,
+              userId: userId,
+              rowId: row.supabaseId!,
+            );
+          }
+          if (_remote.currentUserId != userId) return;
           await (_db.delete(_db.dreams)
-                ..where((t) => t.supabaseId.equals(localSupabaseId)))
+                ..where((table) =>
+                    table.id.equals(row.id) &
+                    table.userId.equals(userId) &
+                    table.syncState.equals(contentSyncPendingDelete) &
+                    table.changedAt.equals(pushedAt)))
               .go();
-          debugPrint('[DreamsSync] Deleted local dream with supabaseId=$localSupabaseId (deleted from cloud)');
+          continue;
         }
-      }
-
-      // Insert cloud entries that are missing locally
-      for (final cloudId in cloudMap.keys) {
-        if (!localSupabaseIdMap.containsKey(cloudId)) {
-          final row = cloudMap[cloudId]!;
-          final content = row['content'] as String?;
-          final dateStr = row['date'] as String?;
-          final feelingTag = row['feeling_tag'] as String?;
-          final familiarPerson = row['familiar_person'] as String?;
-          final firstThought = row['first_thought'] as String?;
-          final lifeConnection = row['life_connection'] as String?;
-
-          if (content == null || content.isEmpty) continue;
-
-          final symbolTags = detectDreamSymbols(content).join(',');
-
-          final date = dateStr != null
-              ? DateTime.tryParse(dateStr) ?? DateTime.now()
-              : DateTime.now();
-
-          await _db.into(_db.dreams).insert(
-                DreamsCompanion.insert(
-                  date: date,
-                  content: content,
-                  symbolTags: Value(symbolTags),
-                  feelingTag: Value(feelingTag),
-                  familiarPerson: Value(familiarPerson),
-                  firstThought: Value(firstThought),
-                  lifeConnection: Value(lifeConnection),
-                  userId: Value(user.id),
-                  supabaseId: Value(cloudId),
-                ),
-              );
-          debugPrint('[DreamsSync] Inserted cloud dream locally, cloudId=$cloudId');
+        if (row.supabaseId == null) {
+          final cloudId = _uuidGenerator();
+          await (_db.update(_db.dreams)
+                ..where((table) =>
+                    table.id.equals(row.id) & table.userId.equals(userId)))
+              .write(DreamsCompanion(supabaseId: Value(cloudId)));
+          row = row.copyWith(supabaseId: Value(cloudId));
         }
+        await _remote.upsertRow(_dreamsTable, _payload(row, userId));
+        if (_remote.currentUserId != userId) return;
+        await (_db.update(_db.dreams)
+              ..where((table) =>
+                  table.id.equals(row.id) &
+                  table.userId.equals(userId) &
+                  table.syncState.equals(contentSyncPendingUpsert) &
+                  table.changedAt.equals(pushedAt)))
+            .write(
+          const DreamsCompanion(syncState: Value(contentSyncSynced)),
+        );
+      } catch (error) {
+        debugPrint('[DreamsSync] push deferred error=${error.runtimeType}');
       }
-    } catch (e) {
-      debugPrint('[DreamsSync] Error fetching dreams from Supabase: $e');
     }
   }
+
+  Map<String, dynamic> _payload(DreamRow row, String userId) => {
+        'id': row.supabaseId,
+        'user_id': userId,
+        'content': row.content,
+        'date': row.date.toUtc().toIso8601String(),
+        'feeling_tag': row.feelingTag,
+        'familiar_person': row.familiarPerson,
+        'first_thought': row.firstThought,
+        'life_connection': row.lifeConnection,
+      };
+
+  Future<void> _pull(
+    String userId,
+    List<Map<String, dynamic>> cloudRows,
+  ) async {
+    final cloudMap = <String, Map<String, dynamic>>{
+      for (final row in cloudRows)
+        if (row['id']?.toString().isNotEmpty ?? false)
+          row['id'].toString(): row,
+    };
+    final locals = await (_db.select(_db.dreams)
+          ..where((table) => table.userId.equals(userId)))
+        .get();
+    final localByCloud = <String, DreamRow>{
+      for (final row in locals)
+        if (row.supabaseId != null) row.supabaseId!: row,
+    };
+    for (final entry in cloudMap.entries) {
+      if (_remote.currentUserId != userId) return;
+      final local = localByCloud[entry.key];
+      if (local != null && local.syncState != contentSyncSynced) continue;
+      final row = entry.value;
+      final content = row['content']?.toString() ?? '';
+      if (content.isEmpty) continue;
+      final date = _parseDate(row['date']) ?? DateTime.now();
+      final companion = DreamsCompanion(
+        date: Value(date),
+        content: Value(content),
+        symbolTags: Value(detectDreamSymbols(content).join(',')),
+        feelingTag: Value(row['feeling_tag'] as String?),
+        familiarPerson: Value(row['familiar_person'] as String?),
+        firstThought: Value(row['first_thought'] as String?),
+        lifeConnection: Value(row['life_connection'] as String?),
+        syncState: const Value(contentSyncSynced),
+        changedAt: Value(date),
+      );
+      if (local == null) {
+        await _db.into(_db.dreams).insert(
+              DreamsCompanion.insert(
+                date: date,
+                content: content,
+                symbolTags: Value(detectDreamSymbols(content).join(',')),
+                feelingTag: Value(row['feeling_tag'] as String?),
+                familiarPerson: Value(row['familiar_person'] as String?),
+                firstThought: Value(row['first_thought'] as String?),
+                lifeConnection: Value(row['life_connection'] as String?),
+                userId: Value(userId),
+                supabaseId: Value(entry.key),
+                syncState: const Value(contentSyncSynced),
+                changedAt: Value(date),
+              ),
+            );
+      } else {
+        // aiInterpretation is intentionally absent, preserving the local cache.
+        await (_db.update(_db.dreams)
+              ..where((table) =>
+                  table.id.equals(local.id) & table.userId.equals(userId)))
+            .write(companion);
+      }
+    }
+    for (final local in locals) {
+      if (local.syncState != contentSyncSynced || local.supabaseId == null) {
+        continue;
+      }
+      if (!cloudMap.containsKey(local.supabaseId)) {
+        await (_db.delete(_db.dreams)
+              ..where((table) =>
+                  table.id.equals(local.id) & table.userId.equals(userId)))
+            .go();
+      }
+    }
+  }
+
+  String _requireCurrentUser() {
+    final userId = _remote.currentUserId;
+    if (userId == null) throw StateError('An authenticated user is required.');
+    return userId;
+  }
+}
+
+DateTime? _parseDate(Object? value) {
+  if (value is DateTime) return value;
+  if (value is String) return DateTime.tryParse(value);
+  return null;
 }

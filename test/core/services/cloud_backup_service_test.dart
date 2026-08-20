@@ -14,6 +14,21 @@ void main() {
     );
   });
 
+  test('persistent content outboxes are excluded from generic backup', () {
+    for (final table in const [
+      'journal_entries',
+      'dreams',
+      'activities',
+      'letters',
+    ]) {
+      expect(
+        CloudBackupService.isDedicatedSyncTable(table),
+        isTrue,
+        reason: table,
+      );
+    }
+  });
+
   test('legacy goal seed and generic streak keys are ignored on restore', () {
     expect(
       CloudBackupService.isDedicatedSyncPreference('goals_seeded'),

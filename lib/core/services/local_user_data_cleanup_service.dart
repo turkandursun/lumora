@@ -37,8 +37,9 @@ class LocalUserDataCleanupService {
   }
 
   Future<void> clearSignedOutAccount(String userId) {
-    // Goal rows can contain offline pending work and are intentionally retained
-    // on ordinary logout. Permanent account deletion removes them as well.
+    // Durable local-first rows (Goals, Focus and the four content outboxes)
+    // are retained on ordinary logout. Every query is user-scoped, and the
+    // original account can resume pending work after signing in again.
     return _clear(userId, includeGoals: false);
   }
 
@@ -68,19 +69,19 @@ class LocalUserDataCleanupService {
         await (_db.delete(_db.focusSessions)
               ..where((table) => table.userId.equals(userId)))
             .go();
+        await (_db.delete(_db.dreams)
+              ..where((table) => table.userId.equals(userId)))
+            .go();
+        await (_db.delete(_db.journalEntries)
+              ..where((table) => table.userId.equals(userId)))
+            .go();
+        await (_db.delete(_db.activities)
+              ..where((table) => table.userId.equals(userId)))
+            .go();
+        await (_db.delete(_db.letters)
+              ..where((table) => table.userId.equals(userId)))
+            .go();
       }
-      await (_db.delete(_db.dreams)
-            ..where((table) => table.userId.equals(userId)))
-          .go();
-      await (_db.delete(_db.journalEntries)
-            ..where((table) => table.userId.equals(userId)))
-          .go();
-      await (_db.delete(_db.activities)
-            ..where((table) => table.userId.equals(userId)))
-          .go();
-      await (_db.delete(_db.letters)
-            ..where((table) => table.userId.equals(userId)))
-          .go();
       await (_db.delete(_db.quoteFavorites)
             ..where((table) => table.userId.equals(userId)))
           .go();
