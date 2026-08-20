@@ -98,15 +98,18 @@ class _ShareSheetState extends State<_ShareSheet>
       if (byteData == null) return;
       final bytes = byteData.buffer.asUint8List();
 
+      // Caption always names ASTRA, so anyone who receives the shared image
+      // knows which app it came from and can look it up.
+      final brand = widget.isTr
+          ? "ASTRA'dan bugünün ilhamı ✨"
+          : "Today's inspiration from ASTRA ✨";
       final shareText = widget.author != null
-          ? '"${widget.quoteText}" — ${widget.author}'
-          : (widget.isTr
-              ? "Lumora'dan bugünün ilhamı ✨"
-              : "Today's inspiration from Lumora ✨");
+          ? '"${widget.quoteText}" — ${widget.author}\n$brand'
+          : brand;
       final params = ShareParams(
         text: shareText,
         files: [
-          XFile.fromData(bytes, name: 'lumora_quote.png', mimeType: 'image/png'),
+          XFile.fromData(bytes, name: 'astra_quote.png', mimeType: 'image/png'),
         ],
       );
       await SharePlus.instance.share(params);
@@ -180,6 +183,7 @@ class _ShareSheetState extends State<_ShareSheet>
                           key: _cardKey,
                           child: _QuoteImageCard(
                               quoteText: widget.quoteText,
+                              isTr: widget.isTr,
                               author: widget.author),
                         ),
                       ),
@@ -275,18 +279,21 @@ class _StaggerIn extends StatelessWidget {
 }
 
 /// The branded, capture-ready 9:16 quote card (fixed 360×640 logical → exported
-/// at 1080×1920). A premium, palette-themed "celestial" design: a rich vertical
-/// gradient in the selected theme colour, soft corner glows, a scattered star
-/// field, an oversized quotation mark, the ASTRA wordmark, the quote in an
-/// elegant serif, the author, and a small Lumora footer.
+/// at 1080×1920). A calm, serene, palette-themed design: a soft vertical
+/// gradient in the selected theme colour, gentle corner glows, a few quiet
+/// stars, a faint quotation mark, the ASTRA wordmark, the quote in an elegant
+/// serif, the author, and an ASTRA footer with a soft tagline — so a shared
+/// image always carries the app's name. Rounded ("oval") corners on export.
 class _QuoteImageCard extends StatelessWidget {
-  const _QuoteImageCard({required this.quoteText, this.author});
+  const _QuoteImageCard(
+      {required this.quoteText, required this.isTr, this.author});
 
   final String quoteText;
+  final bool isTr;
   final String? author;
 
-  static const _cream = Color(0xFFFBF4EC); // near-white quote text
-  static const _gold = Color(0xFFE9D3A0); // champagne brand accent
+  static const _cream = Color(0xFFFBF6F0); // near-white quote text
+  static const _accent = Color(0xFFEFE2D2); // soft ivory brand accent (calm)
 
   Widget _glow(Color color, double size, double alpha) => IgnorePointer(
         child: Container(
@@ -314,89 +321,91 @@ class _QuoteImageCard extends StatelessWidget {
     final primary = palette.primary;
     final secondary = palette.secondary;
 
-    // Rich, premium, on-theme gradient: bright top → saturated mid → deep base.
-    final bgTop = Color.lerp(primary, Colors.white, 0.10)!;
-    final bgMid = secondary;
-    final bgDeep = Color.lerp(secondary, const Color(0xFF17101F), 0.44)!;
-    final glow = Color.lerp(primary, Colors.white, 0.32)!;
+    // Soft, serene on-theme gradient — gentle and calming, not dramatic.
+    final bgTop = Color.lerp(primary, Colors.white, 0.30)!;
+    final bgMid = Color.lerp(primary, secondary, 0.55)!;
+    final bgDeep = Color.lerp(secondary, const Color(0xFF2E2138), 0.30)!;
+    final glow = Color.lerp(primary, Colors.white, 0.40)!;
 
     return Container(
       width: 360,
       height: 640,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(44),
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [bgTop, bgMid, bgDeep],
-          stops: const [0.0, 0.52, 1.0],
+          stops: const [0.0, 0.55, 1.0],
         ),
       ),
       child: Stack(
         children: [
-          // Soft celestial corner glows for depth.
-          Positioned(top: -84, right: -74, child: _glow(glow, 280, 0.34)),
-          Positioned(bottom: -70, left: -86, child: _glow(secondary, 260, 0.26)),
+          // Soft corner glows for gentle depth.
+          Positioned(top: -90, right: -80, child: _glow(glow, 300, 0.30)),
+          Positioned(
+              bottom: -80, left: -90, child: _glow(secondary, 280, 0.22)),
 
-          // A scattered star field.
-          _star(40, 70, 10, 0.55),
-          _star(300, 120, 14, 0.7),
-          _star(60, 300, 8, 0.4),
-          _star(320, 360, 9, 0.5),
-          _star(46, 520, 12, 0.6),
-          _star(288, 548, 8, 0.45),
-          _star(180, 96, 7, 0.35),
+          // A few soft, sparse stars — calm, never busy.
+          _star(46, 96, 9, 0.40),
+          _star(300, 150, 12, 0.50),
+          _star(58, 470, 10, 0.42),
+          _star(292, 512, 8, 0.36),
 
-          // Inset hairline frame for a premium "framed" feel.
+          // Inset hairline frame for a quiet "framed" feel.
           Positioned.fill(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(30),
                   border: Border.all(
-                      color: _cream.withValues(alpha: 0.22), width: 1),
+                      color: _cream.withValues(alpha: 0.18), width: 1),
                 ),
               ),
             ),
           ),
 
-          // Oversized opening quotation mark behind the quote.
+          // Oversized opening quotation mark, very faint behind the quote.
           Positioned(
-            left: 34,
-            top: 168,
+            left: 40,
+            top: 150,
             child: Text(
               '“',
               style: GoogleFonts.playfairDisplay(
-                fontSize: 150,
+                fontSize: 140,
                 height: 1,
                 fontWeight: FontWeight.w700,
-                color: _gold.withValues(alpha: 0.16),
+                color: _cream.withValues(alpha: 0.10),
               ),
             ),
           ),
 
           // Content.
           Padding(
-            padding: const EdgeInsets.fromLTRB(42, 58, 42, 50),
+            padding: const EdgeInsets.fromLTRB(44, 60, 44, 52),
             child: Column(
               children: [
                 // ASTRA wordmark.
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.auto_awesome, size: 13, color: _gold),
-                    const SizedBox(width: 11),
+                    Icon(Icons.auto_awesome,
+                        size: 12, color: _accent.withValues(alpha: 0.9)),
+                    const SizedBox(width: 12),
                     Text(
                       'ASTRA',
                       style: GoogleFonts.cinzel(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 7,
-                        color: _gold,
+                        color: _accent,
                       ),
                     ),
-                    const SizedBox(width: 11),
-                    const Icon(Icons.auto_awesome, size: 13, color: _gold),
+                    const SizedBox(width: 12),
+                    Icon(Icons.auto_awesome,
+                        size: 12, color: _accent.withValues(alpha: 0.9)),
                   ],
                 ),
 
@@ -406,7 +415,7 @@ class _QuoteImageCard extends StatelessWidget {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: SizedBox(
-                        width: 268,
+                        width: 270,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -414,26 +423,30 @@ class _QuoteImageCard extends StatelessWidget {
                               quoteText,
                               textAlign: TextAlign.center,
                               style: GoogleFonts.playfairDisplay(
-                                fontSize: 27,
-                                fontWeight: FontWeight.w600,
-                                height: 1.5,
+                                fontSize: 26,
+                                fontWeight: FontWeight.w500,
+                                height: 1.55,
                                 color: _cream,
                               ),
                             ),
                             if (author != null) ...[
-                              const SizedBox(height: 26),
+                              const SizedBox(height: 24),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Container(width: 24, height: 1.4, color: _gold),
+                                  Container(
+                                      width: 22,
+                                      height: 1.2,
+                                      color:
+                                          _accent.withValues(alpha: 0.8)),
                                   const SizedBox(width: 10),
                                   Text(
                                     author!,
                                     style: GoogleFonts.outfit(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w500,
                                       letterSpacing: 0.5,
-                                      color: _gold,
+                                      color: _accent,
                                     ),
                                   ),
                                 ],
@@ -446,32 +459,43 @@ class _QuoteImageCard extends StatelessWidget {
                   ),
                 ),
 
-                // Footer: ornamental divider + Lumora handle.
+                // Footer: a quiet divider, the ASTRA brand, and a soft tagline —
+                // so whoever sees the shared image knows the app by name.
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                        width: 40,
+                        width: 34,
                         height: 1,
-                        color: _cream.withValues(alpha: 0.32)),
+                        color: _cream.withValues(alpha: 0.28)),
                     const SizedBox(width: 12),
-                    const Icon(Icons.auto_awesome,
-                        size: 11, color: _cream),
+                    Icon(Icons.auto_awesome,
+                        size: 10, color: _cream.withValues(alpha: 0.8)),
                     const SizedBox(width: 12),
                     Container(
-                        width: 40,
+                        width: 34,
                         height: 1,
-                        color: _cream.withValues(alpha: 0.32)),
+                        color: _cream.withValues(alpha: 0.28)),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 13),
                 Text(
-                  'lumora',
-                  style: GoogleFonts.outfit(
+                  'ASTRA',
+                  style: GoogleFonts.cinzel(
                     fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 3.5,
-                    color: _cream.withValues(alpha: 0.72),
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 5,
+                    color: _cream.withValues(alpha: 0.85),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  isTr ? 'kendine bir an' : 'a moment for you',
+                  style: GoogleFonts.outfit(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 2.5,
+                    color: _cream.withValues(alpha: 0.6),
                   ),
                 ),
               ],

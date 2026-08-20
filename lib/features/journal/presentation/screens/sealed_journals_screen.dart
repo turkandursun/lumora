@@ -151,6 +151,7 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
                                     isDark: isDark,
                                     primary: primary,
                                     onDelete: () async {
+                                      final navigator = Navigator.of(context);
                                       final deleted = await _confirmDelete(
                                           context,
                                           dayEntries[i],
@@ -158,7 +159,7 @@ class _SealedJournalsScreenState extends ConsumerState<SealedJournalsScreen> {
                                           isDark,
                                           primary);
                                       if (deleted && mounted) {
-                                        Navigator.of(context).pop();
+                                        navigator.pop();
                                       }
                                     },
                                   ),

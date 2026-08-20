@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Günlüklerinize ses kaydı ekleyebilmek için mikrofon erişimine ihtiyacımız var.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -34,13 +32,17 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Use Face ID to unlock Lumora.</string>
+	<string>Use Face ID to unlock Astra.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Lumora needs microphone access to record voice journal entries.</string>
+	<string>Astra needs microphone access to record voice journal entries.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Lumora needs photo access so you can add a photo to your activities.</string>
+	<string>Astra needs photo access so you can add a photo to your activities.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Lumora needs camera access so you can take a photo for your activities.</string>
+	<string>Astra needs camera access so you can take a photo for your activities.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Astra needs speech recognition to transcribe your voice journal entries into text.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
