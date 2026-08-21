@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/services/smart_reminders_service.dart';
 import '../../../../theme/astra_screen_kit.dart';
 
-/// Settings card for the two smart daily nudges (morning check-in + evening
-/// writing invite). Self-contained: loads and persists its own state and
-/// (re)schedules the notifications on every change.
+/// Settings card for ASTRA's rotating daily nudges. A single master switch
+/// turns all five slots on or off; the times are fixed by product spec and
+/// shown here read-only so the user knows what to expect.
 class SmartRemindersCard extends StatefulWidget {
   const SmartRemindersCard({super.key, required this.isDark});
 
@@ -25,9 +25,9 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
     SmartRemindersService.instance.load().then((s) {
       if (mounted) {
         setState(() {
-            _s = s;
-            _loaded = true;
-          });
+          _s = s;
+          _loaded = true;
+        });
       }
     });
   }
@@ -39,30 +39,44 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
     await SmartRemindersService.instance.save(next, isTr: _isTr);
   }
 
-  // 0 = morning good-morning, 1 = evening "pişt", 2 = night good-night.
-  Future<void> _pickTime(int slot) async {
-    final initial = switch (slot) {
-      0 => TimeOfDay(hour: _s.morningHour, minute: _s.morningMinute),
-      1 => TimeOfDay(hour: _s.eveningHour, minute: _s.eveningMinute),
-      _ => TimeOfDay(hour: _s.nightHour, minute: _s.nightMinute),
-    };
-    final picked = await showTimePicker(context: context, initialTime: initial);
-    if (picked == null) return;
-    await _persist(switch (slot) {
-      0 => _s.copyWith(morningHour: picked.hour, morningMinute: picked.minute),
-      1 => _s.copyWith(eveningHour: picked.hour, eveningMinute: picked.minute),
-      _ => _s.copyWith(nightHour: picked.hour, nightMinute: picked.minute),
-    });
-  }
-
-  String _fmt(int h, int m) =>
-      '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
-
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
     final primary = AstraKit.primary(context, isDark);
     final isTr = _isTr;
+
+    final rows = <_SlotInfo>[
+      _SlotInfo(
+        Icons.wb_sunny_rounded,
+        isTr ? 'Güne başlarken' : 'Morning boost',
+        isTr ? 'Sabah motivasyonu' : 'Morning motivation',
+        '09:00',
+      ),
+      _SlotInfo(
+        Icons.self_improvement_rounded,
+        isTr ? 'Gün içi molası' : 'Midday break',
+        isTr ? 'Nefes ve odaklanma' : 'Breathe and refocus',
+        '13:00',
+      ),
+      _SlotInfo(
+        Icons.favorite_rounded,
+        isTr ? 'Öz değer hatırlatıcısı' : 'Self-worth reminder',
+        isTr ? 'Kendine bir hatırlatma' : 'A note to yourself',
+        '18:00',
+      ),
+      _SlotInfo(
+        Icons.nightlight_round,
+        isTr ? 'Gün sonu' : 'Wind down',
+        isTr ? 'Gevşeme ve meditasyon' : 'Relax and reflect',
+        '22:00',
+      ),
+      _SlotInfo(
+        Icons.waving_hand_rounded,
+        isTr ? 'Yoklama' : 'Check-in',
+        isTr ? 'Uğramadığın günlerde' : 'On days you stay away',
+        '15:00',
+      ),
+    ];
 
     return AstraGlassCard(
       isDark: isDark,
@@ -87,45 +101,24 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
                 value: _s.enabled,
                 activeThumbColor: primary,
                 activeTrackColor: primary.withValues(alpha: 0.4),
-                onChanged: _loaded
-                    ? (v) => _persist(_s.copyWith(enabled: v))
-                    : null,
+                onChanged:
+                    _loaded ? (v) => _persist(_s.copyWith(enabled: v)) : null,
               ),
             ],
           ),
           if (_s.enabled) ...[
-            const SizedBox(height: 4),
-            _TimeRow(
-              icon: Icons.wb_sunny_rounded,
-              label: isTr ? 'Günaydın mesajı' : 'Good-morning message',
-              hint: isTr ? 'Sıcak bir başlangıç ☀️' : 'A warm start ☀️',
-              time: _fmt(_s.morningHour, _s.morningMinute),
-              isDark: isDark,
-              primary: primary,
-              onTap: () => _pickTime(0),
+            const SizedBox(height: 6),
+            Text(
+              isTr
+                  ? 'Gün boyu her seferinde farklı, sıcacık mesajlar 💛'
+                  : 'Warm, always-different messages through the day 💛',
+              style: AstraKit.mutedText(context, isDark, fontSize: 11.5),
             ),
             const SizedBox(height: 8),
-            _TimeRow(
-              icon: Icons.waving_hand_rounded,
-              label: isTr ? 'Pişt, neredesin?' : 'Psst, where are you?',
-              hint: isTr
-                  ? 'Gün boyu uğramazsan 👀'
-                  : "If you don't drop by all day 👀",
-              time: _fmt(_s.eveningHour, _s.eveningMinute),
-              isDark: isDark,
-              primary: primary,
-              onTap: () => _pickTime(1),
-            ),
-            const SizedBox(height: 8),
-            _TimeRow(
-              icon: Icons.nightlight_round,
-              label: isTr ? 'İyi geceler mesajı' : 'Good-night message',
-              hint: isTr ? 'Tatlı rüyalar 🌙' : 'Sweet dreams 🌙',
-              time: _fmt(_s.nightHour, _s.nightMinute),
-              isDark: isDark,
-              primary: primary,
-              onTap: () => _pickTime(2),
-            ),
+            for (final row in rows) ...[
+              _SlotRow(info: row, isDark: isDark, primary: primary),
+              if (row != rows.last) const SizedBox(height: 8),
+            ],
           ],
         ],
       ),
@@ -133,61 +126,59 @@ class _SmartRemindersCardState extends State<SmartRemindersCard> {
   }
 }
 
-class _TimeRow extends StatelessWidget {
-  const _TimeRow({
-    required this.icon,
-    required this.label,
-    required this.hint,
-    required this.time,
-    required this.isDark,
-    required this.primary,
-    required this.onTap,
-  });
+class _SlotInfo {
+  const _SlotInfo(this.icon, this.label, this.hint, this.time);
 
   final IconData icon;
   final String label;
   final String hint;
   final String time;
+}
+
+class _SlotRow extends StatelessWidget {
+  const _SlotRow({
+    required this.info,
+    required this.isDark,
+    required this.primary,
+  });
+
+  final _SlotInfo info;
   final bool isDark;
   final Color primary;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-        child: Row(
-          children: [
-            Icon(icon, color: primary, size: 18),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: AstraKit.body(context, isDark,
-                          fontSize: 13.5, fontWeight: FontWeight.w600)),
-                  Text(hint, style: AstraKit.mutedText(context, isDark, fontSize: 11.5)),
-                ],
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+      child: Row(
+        children: [
+          Icon(info.icon, color: primary, size: 18),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(info.label,
+                    style: AstraKit.body(context, isDark,
+                        fontSize: 13.5, fontWeight: FontWeight.w600)),
+                Text(info.hint,
+                    style:
+                        AstraKit.mutedText(context, isDark, fontSize: 11.5)),
+              ],
             ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(time,
-                  style: AstraKit.body(context, isDark,
-                          fontSize: 14, fontWeight: FontWeight.w800)
-                      .copyWith(color: primary)),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-          ],
-        ),
+            child: Text(info.time,
+                style: AstraKit.body(context, isDark,
+                        fontSize: 14, fontWeight: FontWeight.w800)
+                    .copyWith(color: primary)),
+          ),
+        ],
       ),
     );
   }

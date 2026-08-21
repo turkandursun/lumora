@@ -40,7 +40,7 @@ Map<String, ReminderCopy> defaultReminderCopy(AppLocalizations l10n) => {
 /// title the user gave their own custom reminder.
 ReminderCopy reminderCopyFor(AppLocalizations l10n, ReminderRow reminder) {
   return defaultReminderCopy(l10n)[reminder.iconKey] ??
-      ReminderCopy(title: reminder.title, body: l10n.reminderCustomBody);
+      ReminderCopy(title: 'ASTRA', body: reminder.title);
 }
 
 IconData iconForReminder(String iconKey) {
