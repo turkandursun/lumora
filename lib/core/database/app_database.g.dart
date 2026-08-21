@@ -3209,22 +3209,6 @@ class $DailyQuestionAnswersTable extends DailyQuestionAnswers
   late final GeneratedColumn<String> answerText = GeneratedColumn<String>(
       'answer_text', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _isSharedToCommunityMeta =
-      const VerificationMeta('isSharedToCommunity');
-  @override
-  late final GeneratedColumn<bool> isSharedToCommunity = GeneratedColumn<bool>(
-      'is_shared_to_community', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("is_shared_to_community" IN (0, 1))'),
-      defaultValue: const Constant(false));
-  static const VerificationMeta _communityShareIdMeta =
-      const VerificationMeta('communityShareId');
-  @override
-  late final GeneratedColumn<String> communityShareId = GeneratedColumn<String>(
-      'community_share_id', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -3238,16 +3222,8 @@ class $DailyQuestionAnswersTable extends DailyQuestionAnswers
       'updated_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns => [
-        id,
-        date,
-        questionIndex,
-        answerText,
-        isSharedToCommunity,
-        communityShareId,
-        createdAt,
-        updatedAt
-      ];
+  List<GeneratedColumn> get $columns =>
+      [id, date, questionIndex, answerText, createdAt, updatedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3284,18 +3260,6 @@ class $DailyQuestionAnswersTable extends DailyQuestionAnswers
     } else if (isInserting) {
       context.missing(_answerTextMeta);
     }
-    if (data.containsKey('is_shared_to_community')) {
-      context.handle(
-          _isSharedToCommunityMeta,
-          isSharedToCommunity.isAcceptableOrUnknown(
-              data['is_shared_to_community']!, _isSharedToCommunityMeta));
-    }
-    if (data.containsKey('community_share_id')) {
-      context.handle(
-          _communityShareIdMeta,
-          communityShareId.isAcceptableOrUnknown(
-              data['community_share_id']!, _communityShareIdMeta));
-    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -3325,10 +3289,6 @@ class $DailyQuestionAnswersTable extends DailyQuestionAnswers
           .read(DriftSqlType.int, data['${effectivePrefix}question_index'])!,
       answerText: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}answer_text'])!,
-      isSharedToCommunity: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}is_shared_to_community'])!,
-      communityShareId: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}community_share_id']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -3354,11 +3314,6 @@ class DailyQuestionAnswerRow extends DataClass
   /// it was answered.
   final int questionIndex;
   final String answerText;
-  final bool isSharedToCommunity;
-
-  /// The matching row's id in Supabase's `daily_question_shares` table, or
-  /// null when [isSharedToCommunity] is false.
-  final String? communityShareId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const DailyQuestionAnswerRow(
@@ -3366,8 +3321,6 @@ class DailyQuestionAnswerRow extends DataClass
       required this.date,
       required this.questionIndex,
       required this.answerText,
-      required this.isSharedToCommunity,
-      this.communityShareId,
       required this.createdAt,
       required this.updatedAt});
   @override
@@ -3377,10 +3330,6 @@ class DailyQuestionAnswerRow extends DataClass
     map['date'] = Variable<DateTime>(date);
     map['question_index'] = Variable<int>(questionIndex);
     map['answer_text'] = Variable<String>(answerText);
-    map['is_shared_to_community'] = Variable<bool>(isSharedToCommunity);
-    if (!nullToAbsent || communityShareId != null) {
-      map['community_share_id'] = Variable<String>(communityShareId);
-    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -3392,10 +3341,6 @@ class DailyQuestionAnswerRow extends DataClass
       date: Value(date),
       questionIndex: Value(questionIndex),
       answerText: Value(answerText),
-      isSharedToCommunity: Value(isSharedToCommunity),
-      communityShareId: communityShareId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(communityShareId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -3409,9 +3354,6 @@ class DailyQuestionAnswerRow extends DataClass
       date: serializer.fromJson<DateTime>(json['date']),
       questionIndex: serializer.fromJson<int>(json['questionIndex']),
       answerText: serializer.fromJson<String>(json['answerText']),
-      isSharedToCommunity:
-          serializer.fromJson<bool>(json['isSharedToCommunity']),
-      communityShareId: serializer.fromJson<String?>(json['communityShareId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -3424,8 +3366,6 @@ class DailyQuestionAnswerRow extends DataClass
       'date': serializer.toJson<DateTime>(date),
       'questionIndex': serializer.toJson<int>(questionIndex),
       'answerText': serializer.toJson<String>(answerText),
-      'isSharedToCommunity': serializer.toJson<bool>(isSharedToCommunity),
-      'communityShareId': serializer.toJson<String?>(communityShareId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -3436,8 +3376,6 @@ class DailyQuestionAnswerRow extends DataClass
           DateTime? date,
           int? questionIndex,
           String? answerText,
-          bool? isSharedToCommunity,
-          Value<String?> communityShareId = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       DailyQuestionAnswerRow(
@@ -3445,10 +3383,6 @@ class DailyQuestionAnswerRow extends DataClass
         date: date ?? this.date,
         questionIndex: questionIndex ?? this.questionIndex,
         answerText: answerText ?? this.answerText,
-        isSharedToCommunity: isSharedToCommunity ?? this.isSharedToCommunity,
-        communityShareId: communityShareId.present
-            ? communityShareId.value
-            : this.communityShareId,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -3461,12 +3395,6 @@ class DailyQuestionAnswerRow extends DataClass
           : this.questionIndex,
       answerText:
           data.answerText.present ? data.answerText.value : this.answerText,
-      isSharedToCommunity: data.isSharedToCommunity.present
-          ? data.isSharedToCommunity.value
-          : this.isSharedToCommunity,
-      communityShareId: data.communityShareId.present
-          ? data.communityShareId.value
-          : this.communityShareId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -3479,8 +3407,6 @@ class DailyQuestionAnswerRow extends DataClass
           ..write('date: $date, ')
           ..write('questionIndex: $questionIndex, ')
           ..write('answerText: $answerText, ')
-          ..write('isSharedToCommunity: $isSharedToCommunity, ')
-          ..write('communityShareId: $communityShareId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -3488,8 +3414,8 @@ class DailyQuestionAnswerRow extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(id, date, questionIndex, answerText,
-      isSharedToCommunity, communityShareId, createdAt, updatedAt);
+  int get hashCode =>
+      Object.hash(id, date, questionIndex, answerText, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3498,8 +3424,6 @@ class DailyQuestionAnswerRow extends DataClass
           other.date == this.date &&
           other.questionIndex == this.questionIndex &&
           other.answerText == this.answerText &&
-          other.isSharedToCommunity == this.isSharedToCommunity &&
-          other.communityShareId == this.communityShareId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -3510,8 +3434,6 @@ class DailyQuestionAnswersCompanion
   final Value<DateTime> date;
   final Value<int> questionIndex;
   final Value<String> answerText;
-  final Value<bool> isSharedToCommunity;
-  final Value<String?> communityShareId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const DailyQuestionAnswersCompanion({
@@ -3519,8 +3441,6 @@ class DailyQuestionAnswersCompanion
     this.date = const Value.absent(),
     this.questionIndex = const Value.absent(),
     this.answerText = const Value.absent(),
-    this.isSharedToCommunity = const Value.absent(),
-    this.communityShareId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -3529,8 +3449,6 @@ class DailyQuestionAnswersCompanion
     required DateTime date,
     required int questionIndex,
     required String answerText,
-    this.isSharedToCommunity = const Value.absent(),
-    this.communityShareId = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
   })  : date = Value(date),
@@ -3543,8 +3461,6 @@ class DailyQuestionAnswersCompanion
     Expression<DateTime>? date,
     Expression<int>? questionIndex,
     Expression<String>? answerText,
-    Expression<bool>? isSharedToCommunity,
-    Expression<String>? communityShareId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -3553,9 +3469,6 @@ class DailyQuestionAnswersCompanion
       if (date != null) 'date': date,
       if (questionIndex != null) 'question_index': questionIndex,
       if (answerText != null) 'answer_text': answerText,
-      if (isSharedToCommunity != null)
-        'is_shared_to_community': isSharedToCommunity,
-      if (communityShareId != null) 'community_share_id': communityShareId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -3566,8 +3479,6 @@ class DailyQuestionAnswersCompanion
       Value<DateTime>? date,
       Value<int>? questionIndex,
       Value<String>? answerText,
-      Value<bool>? isSharedToCommunity,
-      Value<String?>? communityShareId,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt}) {
     return DailyQuestionAnswersCompanion(
@@ -3575,8 +3486,6 @@ class DailyQuestionAnswersCompanion
       date: date ?? this.date,
       questionIndex: questionIndex ?? this.questionIndex,
       answerText: answerText ?? this.answerText,
-      isSharedToCommunity: isSharedToCommunity ?? this.isSharedToCommunity,
-      communityShareId: communityShareId ?? this.communityShareId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -3597,12 +3506,6 @@ class DailyQuestionAnswersCompanion
     if (answerText.present) {
       map['answer_text'] = Variable<String>(answerText.value);
     }
-    if (isSharedToCommunity.present) {
-      map['is_shared_to_community'] = Variable<bool>(isSharedToCommunity.value);
-    }
-    if (communityShareId.present) {
-      map['community_share_id'] = Variable<String>(communityShareId.value);
-    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -3619,8 +3522,6 @@ class DailyQuestionAnswersCompanion
           ..write('date: $date, ')
           ..write('questionIndex: $questionIndex, ')
           ..write('answerText: $answerText, ')
-          ..write('isSharedToCommunity: $isSharedToCommunity, ')
-          ..write('communityShareId: $communityShareId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -6773,8 +6674,6 @@ typedef $$DailyQuestionAnswersTableCreateCompanionBuilder
   required DateTime date,
   required int questionIndex,
   required String answerText,
-  Value<bool> isSharedToCommunity,
-  Value<String?> communityShareId,
   required DateTime createdAt,
   required DateTime updatedAt,
 });
@@ -6784,8 +6683,6 @@ typedef $$DailyQuestionAnswersTableUpdateCompanionBuilder
   Value<DateTime> date,
   Value<int> questionIndex,
   Value<String> answerText,
-  Value<bool> isSharedToCommunity,
-  Value<String?> communityShareId,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
 });
@@ -6810,14 +6707,6 @@ class $$DailyQuestionAnswersTableFilterComposer
 
   ColumnFilters<String> get answerText => $composableBuilder(
       column: $table.answerText, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get isSharedToCommunity => $composableBuilder(
-      column: $table.isSharedToCommunity,
-      builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get communityShareId => $composableBuilder(
-      column: $table.communityShareId,
-      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -6848,14 +6737,6 @@ class $$DailyQuestionAnswersTableOrderingComposer
   ColumnOrderings<String> get answerText => $composableBuilder(
       column: $table.answerText, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<bool> get isSharedToCommunity => $composableBuilder(
-      column: $table.isSharedToCommunity,
-      builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get communityShareId => $composableBuilder(
-      column: $table.communityShareId,
-      builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
@@ -6883,12 +6764,6 @@ class $$DailyQuestionAnswersTableAnnotationComposer
 
   GeneratedColumn<String> get answerText => $composableBuilder(
       column: $table.answerText, builder: (column) => column);
-
-  GeneratedColumn<bool> get isSharedToCommunity => $composableBuilder(
-      column: $table.isSharedToCommunity, builder: (column) => column);
-
-  GeneratedColumn<String> get communityShareId => $composableBuilder(
-      column: $table.communityShareId, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -6931,8 +6806,6 @@ class $$DailyQuestionAnswersTableTableManager extends RootTableManager<
             Value<DateTime> date = const Value.absent(),
             Value<int> questionIndex = const Value.absent(),
             Value<String> answerText = const Value.absent(),
-            Value<bool> isSharedToCommunity = const Value.absent(),
-            Value<String?> communityShareId = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
           }) =>
@@ -6941,8 +6814,6 @@ class $$DailyQuestionAnswersTableTableManager extends RootTableManager<
             date: date,
             questionIndex: questionIndex,
             answerText: answerText,
-            isSharedToCommunity: isSharedToCommunity,
-            communityShareId: communityShareId,
             createdAt: createdAt,
             updatedAt: updatedAt,
           ),
@@ -6951,8 +6822,6 @@ class $$DailyQuestionAnswersTableTableManager extends RootTableManager<
             required DateTime date,
             required int questionIndex,
             required String answerText,
-            Value<bool> isSharedToCommunity = const Value.absent(),
-            Value<String?> communityShareId = const Value.absent(),
             required DateTime createdAt,
             required DateTime updatedAt,
           }) =>
@@ -6961,8 +6830,6 @@ class $$DailyQuestionAnswersTableTableManager extends RootTableManager<
             date: date,
             questionIndex: questionIndex,
             answerText: answerText,
-            isSharedToCommunity: isSharedToCommunity,
-            communityShareId: communityShareId,
             createdAt: createdAt,
             updatedAt: updatedAt,
           ),

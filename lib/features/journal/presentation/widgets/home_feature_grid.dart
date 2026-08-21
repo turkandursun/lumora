@@ -8,8 +8,6 @@ import '../../../activities/presentation/screens/activities_screen.dart';
 import '../../../ai_questions/presentation/screens/ai_questions_screen.dart';
 import '../../../breathing/presentation/screens/breathing_screen.dart';
 import '../../../calendar/presentation/screens/calendar_screen.dart';
-import '../../../community/presentation/screens/community_screen.dart';
-import '../../../dilemma/presentation/screens/dilemma_swipe_screen.dart';
 import '../../../letters/presentation/screens/letters_screen.dart';
 import '../../../meditation/presentation/screens/meditation_screen.dart';
 
@@ -82,20 +80,6 @@ List<HomeFeatureItem> homeFeatureItems(
       primaryIcon: Icons.mail_rounded,
       accentIcon: Icons.favorite_rounded,
       screenBuilder: (_) => const LettersScreen(),
-    ),
-    HomeFeatureItem(
-      title: isTr ? 'Seç Bakalım' : 'Take a Pick',
-      description: isTr ? 'Ya bu, ya şu?' : 'This or that?',
-      primaryIcon: Icons.swipe_rounded,
-      accentIcon: Icons.balance_rounded,
-      screenBuilder: (_) => const DilemmaSwipeScreen(),
-    ),
-    HomeFeatureItem(
-      title: isTr ? 'Güvenli Alan' : 'Safe Space',
-      description: isTr ? 'Yalnız değilsin' : 'You\'re not alone',
-      primaryIcon: Icons.diversity_3_rounded,
-      accentIcon: Icons.favorite_rounded,
-      screenBuilder: (_) => const CommunityScreen(),
     ),
   ];
 }

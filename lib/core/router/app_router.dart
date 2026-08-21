@@ -20,7 +20,6 @@ import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/breathing/presentation/screens/breathing_screen.dart';
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
-import '../../features/community/presentation/screens/community_screen.dart';
 import '../../features/dreams/presentation/screens/dream_journal_screen.dart';
 import '../../features/dreams/presentation/screens/dream_reflection_screen.dart';
 import '../../features/dreams/presentation/screens/new_dream_screen.dart';
@@ -73,7 +72,6 @@ class AppRoutes {
   static const newDream = '/dreams/new';
   static const dreamReflection = '/dreams/reflection';
   static const featureComingSoon = '/feature-coming-soon';
-  static const community = '/community';
   static const journalEntry = '/journal-entry';
   static const sealedJournals = '/sealed-journals';
   static const calendar = '/calendar';
@@ -129,7 +127,6 @@ const _protectedRoutes = {
   AppRoutes.newDream,
   AppRoutes.dreamReflection,
   AppRoutes.featureComingSoon,
-  AppRoutes.community,
   AppRoutes.journalEntry,
   AppRoutes.dailyReflection,
   AppRoutes.sealedJournals,
@@ -383,11 +380,6 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.exportData,
       pageBuilder: (context, state) => _smoothPage(state, const ExportScreen()),
-    ),
-    GoRoute(
-      path: AppRoutes.community,
-      pageBuilder: (context, state) =>
-          _smoothPage(state, const CommunityScreen()),
     ),
     GoRoute(
       path: AppRoutes.journalEntry,

@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -283,6 +283,21 @@ class AppDatabase extends _$AppDatabase {
             }
             await _reconcileUserContentCloudIdentityDuplicates();
             await _createUserContentCloudIdentityIndexes();
+          }
+          if (from < 26) {
+            // The Dilemma & Community features were removed; drop the
+            // daily-question columns that only mirrored a Supabase community
+            // share so no trace of the feature remains in the schema.
+            if (await _hasColumn(
+                'daily_question_answers', 'is_shared_to_community')) {
+              await customStatement('ALTER TABLE daily_question_answers '
+                  'DROP COLUMN is_shared_to_community');
+            }
+            if (await _hasColumn(
+                'daily_question_answers', 'community_share_id')) {
+              await customStatement('ALTER TABLE daily_question_answers '
+                  'DROP COLUMN community_share_id');
+            }
           }
         },
       );

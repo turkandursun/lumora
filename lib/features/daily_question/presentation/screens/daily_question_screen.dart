@@ -10,8 +10,6 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/responsive_content.dart';
-import '../../../community/domain/content_moderation.dart';
-import '../../../community/presentation/providers/community_providers.dart';
 import '../../domain/daily_question_bank.dart';
 import '../providers/daily_question_providers.dart';
 
@@ -355,7 +353,6 @@ class _AnswerSheet extends ConsumerStatefulWidget {
 class _AnswerSheetState extends ConsumerState<_AnswerSheet> {
   late final _controller =
       TextEditingController(text: widget.existing?.answerText ?? '');
-  late bool _shareToggle = widget.existing?.isSharedToCommunity ?? false;
   bool _saving = false;
   bool _showValidationError = false;
 
@@ -372,67 +369,20 @@ class _AnswerSheetState extends ConsumerState<_AnswerSheet> {
       return;
     }
 
-    final l10n = AppLocalizations.of(context);
-
-    // If this answer will be shared publicly, run it through the same content
-    // filter as free-form community posts (no phone numbers, links, contact
-    // info or hurtful language). Private-only answers are never filtered.
-    if (_shareToggle) {
-      final issue = ContentModeration.check(text);
-      if (issue == ModerationIssue.contact ||
-          issue == ModerationIssue.harmful) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content: Text(issue == ModerationIssue.contact
-                ? l10n.communityModerationContact
-                : l10n.communityModerationHarmful),
-          ));
-        return;
-      }
-    }
-
     setState(() => _saving = true);
 
     final dailyRepo = ref.read(dailyQuestionRepositoryProvider);
-    final communityRepo = ref.read(communityRepositoryProvider);
     final today = DateTime.now();
-    final previousShareId = widget.existing?.communityShareId;
+    // Crisis language always surfaces the support sheet, regardless of anything
+    // else the user does with the answer.
     final triggeredCrisis =
-        _shareToggle && CrisisDetectionService.containsCrisisLanguage(text);
-
-    var isShared = false;
-    String? shareId;
-
-    if (_shareToggle && !triggeredCrisis) {
-      try {
-        if (previousShareId != null) {
-          await communityRepo.deleteShare(previousShareId);
-        }
-        shareId = await communityRepo.shareAnswer(
-            questionDate: today, answerText: text, l10n: l10n);
-        isShared = true;
-      } catch (_) {
-        // Community sharing is optional and best-effort — the answer still
-        // saves privately below even if the share request fails.
-        isShared = false;
-        shareId = null;
-      }
-    } else if (previousShareId != null) {
-      // Toggle turned off, or crisis language overrode sharing — remove any
-      // previously shared copy rather than leaving it orphaned.
-      await communityRepo.deleteShare(previousShareId);
-    }
+        CrisisDetectionService.containsCrisisLanguage(text);
 
     await dailyRepo.saveAnswer(
       date: today,
       questionIndex: widget.questionIndex,
       answerText: text,
-      isSharedToCommunity: isShared,
-      communityShareId: shareId,
     );
-
-    ref.invalidate(communityFeedProvider);
 
     if (!mounted) return;
     Navigator.of(context)
@@ -525,33 +475,6 @@ class _AnswerSheetState extends ConsumerState<_AnswerSheet> {
                         fontSize: 12, color: const Color(0xFFE07A7A)),
                   ),
                 ],
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(l10n.dailyQuestionShareToggleLabel,
-                              style: AstraKit.body(context, isDark,
-                                  fontSize: 13, fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 2),
-                          Text(l10n.dailyQuestionShareToggleDesc,
-                              style: AstraKit.mutedText(context, isDark,
-                                  fontSize: 11.5)),
-                        ],
-                      ),
-                    ),
-                    Switch(
-                      value: _shareToggle,
-                      activeThumbColor: primary,
-                      onChanged: _saving
-                          ? null
-                          : (value) => setState(() => _shareToggle = value),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 18),
                 AstraGoldButton(
                   isDark: isDark,

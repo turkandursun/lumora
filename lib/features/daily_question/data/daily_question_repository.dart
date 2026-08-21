@@ -4,10 +4,7 @@ import '../../../core/database/app_database.dart';
 
 /// Owns Daily Question persistence via [AppDatabase] — one row per calendar
 /// day, upserted on save so re-answering the same day edits in place rather
-/// than creating a duplicate. Community sharing itself (Supabase) is a
-/// separate concern owned by `CommunityRepository`; this repository only
-/// mirrors whether today's answer currently has a matching shared row (see
-/// [DailyQuestionAnswerRow.isSharedToCommunity]/[DailyQuestionAnswerRow.communityShareId]).
+/// than creating a duplicate.
 class DailyQuestionRepository {
   DailyQuestionRepository({required AppDatabase database}) : _db = database;
 
@@ -37,8 +34,6 @@ class DailyQuestionRepository {
     required DateTime date,
     required int questionIndex,
     required String answerText,
-    bool isSharedToCommunity = false,
-    String? communityShareId,
   }) async {
     final day = _dateOnly(date);
     final now = DateTime.now();
@@ -51,8 +46,6 @@ class DailyQuestionRepository {
               date: day,
               questionIndex: questionIndex,
               answerText: answerText,
-              isSharedToCommunity: Value(isSharedToCommunity),
-              communityShareId: Value(communityShareId),
               createdAt: now,
               updatedAt: now,
             ),
@@ -61,8 +54,6 @@ class DailyQuestionRepository {
       await (_db.update(_db.dailyQuestionAnswers)..where((t) => t.id.equals(existing.id))).write(
         DailyQuestionAnswersCompanion(
           answerText: Value(answerText),
-          isSharedToCommunity: Value(isSharedToCommunity),
-          communityShareId: Value(communityShareId),
           updatedAt: Value(now),
         ),
       );
