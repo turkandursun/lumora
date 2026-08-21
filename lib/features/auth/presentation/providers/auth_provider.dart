@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -165,13 +165,15 @@ class AuthController extends StateNotifier<AuthState> {
       );
       state = state.copyWith(status: AuthStatus.idle);
       return true;
-    } on AuthException catch (_) {
+    } on AuthException catch (error) {
+      debugPrint('[Auth] Google sign-in AuthException: ${error.message}');
       state = state.copyWith(
         status: AuthStatus.error,
         failureReason: AuthFailureReason.unknown,
       );
       return false;
-    } catch (_) {
+    } catch (error) {
+      debugPrint('[Auth] Google sign-in failed: $error');
       state = state.copyWith(
         status: AuthStatus.error,
         failureReason: AuthFailureReason.unknown,
