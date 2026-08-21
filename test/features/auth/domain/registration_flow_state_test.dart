@@ -104,6 +104,19 @@ void main() {
     expect(await store.consumeOAuthSignupAttempt(), isFalse);
   });
 
+  test('OAuth signup origin timestamp survives a full-page callback', () async {
+    final startedAt = DateTime.utc(2026, 8, 21, 12, 30);
+    final store = RegistrationFlowStore(now: () => startedAt);
+
+    await store.markOAuthSignupAttempt();
+
+    expect(
+      await store.consumeOAuthSignupAttemptStartedAt(),
+      startedAt,
+    );
+    expect(await store.consumeOAuthSignupAttemptStartedAt(), isNull);
+  });
+
   test('OAuth login origin is one-shot, separate from signup, and expires',
       () async {
     var now = DateTime.utc(2026, 8, 21, 12);

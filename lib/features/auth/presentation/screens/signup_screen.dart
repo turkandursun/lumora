@@ -17,6 +17,7 @@ import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/luma_animated_avatar.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../../profile/data/profile_repository.dart';
 import '../../domain/auth_flow_routes.dart';
 import '../../domain/registration_flow_state.dart';
 import '../providers/auth_provider.dart';
@@ -189,19 +190,30 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       _didRouteAfterGoogleSignIn = false;
       return;
     }
-    final signupOrigin =
-        await registrationFlowStore.consumeOAuthSignupAttempt();
-    final isFreshSignup = signupOrigin &&
-        AuthFlowRoutes.isFirstOAuthAuthentication(
-          createdAt: user.createdAt,
-          lastSignInAt: user.lastSignInAt,
-        );
+    final signupAttemptStartedAt =
+        await registrationFlowStore.consumeOAuthSignupAttemptStartedAt();
+    final isFreshSignup = AuthFlowRoutes.shouldBeginFreshOAuthRegistration(
+      signupAttemptStartedAt: signupAttemptStartedAt,
+      createdAt: user.createdAt,
+      lastSignInAt: user.lastSignInAt,
+      evaluatedAt: DateTime.now(),
+    );
     final FreshRegistrationIntent? intent;
     if (isFreshSignup) {
+      try {
+        await ProfileRepository().initializeFreshProfileDefaults(user.id);
+      } catch (error) {
+        debugPrint(
+          '[Auth] Fresh Google profile initialization deferred '
+          'type=${error.runtimeType}',
+        );
+      }
       intent = await registrationFlowStore.begin(user.id);
     } else {
-      await registrationFlowStore.clearForUser(user.id);
-      intent = null;
+      // An existing account must not be enrolled again, but a genuinely
+      // unfinished registration (for example after email confirmation) still
+      // resumes its own persisted, user-scoped step.
+      intent = await registrationFlowStore.restore(user.id);
     }
 
     await ref.read(cloudBackupServiceProvider).onSignIn();

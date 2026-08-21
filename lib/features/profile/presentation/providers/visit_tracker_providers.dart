@@ -7,6 +7,15 @@ final visitTrackerRepositoryProvider = Provider<VisitTrackerRepository>((ref) {
   return VisitTrackerRepository();
 });
 
+final weeklyVisitDatesProvider = StreamProvider<Set<String>>((ref) async* {
+  final repository = ref.watch(visitTrackerRepositoryProvider);
+  // Exact history remains primary. The profile summary only fills missing
+  // legacy weekdays in the returned display set and is never persisted.
+  yield await repository.fetchWeeklyVisitDatesWithLegacyFallback();
+  await repository.syncVisitHistoryForCurrentUser();
+  yield await repository.fetchWeeklyVisitDatesWithLegacyFallback();
+});
+
 class VisitTrackerNotifier extends StateNotifier<AsyncValue<int>> {
   VisitTrackerNotifier(this._repository) : super(const AsyncValue.loading()) {
     load();
@@ -30,13 +39,18 @@ class VisitTrackerNotifier extends StateNotifier<AsyncValue<int>> {
     try {
       final isNewDay = await _repository.recordVisitIfNewDay();
       if (isNewDay) {
-        unawaited(load());
+        unawaited(_syncThenReload());
       }
       return isNewDay;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       return false;
     }
+  }
+
+  Future<void> _syncThenReload() async {
+    await _repository.syncVisitHistoryForCurrentUser();
+    await load();
   }
 }
 

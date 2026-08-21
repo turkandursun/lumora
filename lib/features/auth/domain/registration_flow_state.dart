@@ -200,14 +200,22 @@ class RegistrationFlowStore {
   }
 
   Future<bool> consumeOAuthSignupAttempt() async {
-    return _consumeOAuthAttempt(oauthSignupAttemptKey);
+    return await consumeOAuthSignupAttemptStartedAt() != null;
+  }
+
+  /// Consumes the persisted signup origin and returns when that OAuth attempt
+  /// began. The timestamp survives a web full-page redirect and lets the
+  /// callback distinguish a user created by this attempt from an older Google
+  /// account that merely used the sign-up button to sign in again.
+  Future<DateTime?> consumeOAuthSignupAttemptStartedAt() {
+    return _consumeOAuthAttemptStartedAt(oauthSignupAttemptKey);
   }
 
   Future<bool> consumeOAuthLoginAttempt() async {
-    return _consumeOAuthAttempt(oauthLoginAttemptKey);
+    return await _consumeOAuthAttemptStartedAt(oauthLoginAttemptKey) != null;
   }
 
-  Future<bool> _consumeOAuthAttempt(String key) async {
+  Future<DateTime?> _consumeOAuthAttemptStartedAt(String key) async {
     final int? startedAtMs;
     try {
       final prefs = await _preferencesLoader();
@@ -215,13 +223,13 @@ class RegistrationFlowStore {
       await prefs.remove(key);
     } catch (error) {
       debugPrint('[RegistrationFlow] OAuth origin read failed: $error');
-      return false;
+      return null;
     }
-    if (startedAtMs == null) return false;
+    if (startedAtMs == null) return null;
     final startedAt =
         DateTime.fromMillisecondsSinceEpoch(startedAtMs, isUtc: true);
     final age = _now().toUtc().difference(startedAt);
-    return !age.isNegative && age <= _oauthAttemptTtl;
+    return !age.isNegative && age <= _oauthAttemptTtl ? startedAt : null;
   }
 
   Future<void> _persistStep(String userId, RegistrationStep step) async {

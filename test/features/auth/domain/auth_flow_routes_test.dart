@@ -315,5 +315,52 @@ void main() {
         isFalse,
       );
     });
+
+    test('signup-origin account created during the attempt starts registration',
+        () {
+      final attempt = DateTime.utc(2026, 8, 21, 12);
+      final created = attempt.add(const Duration(minutes: 1));
+
+      expect(
+        AuthFlowRoutes.shouldBeginFreshOAuthRegistration(
+          signupAttemptStartedAt: attempt,
+          createdAt: created.toIso8601String(),
+          // Some OAuth responses report first sign-in later than five seconds.
+          lastSignInAt:
+              created.add(const Duration(seconds: 20)).toIso8601String(),
+          evaluatedAt: attempt.add(const Duration(minutes: 2)),
+        ),
+        isTrue,
+      );
+    });
+
+    test('existing Google account from signup origin remains returning', () {
+      final attempt = DateTime.utc(2026, 8, 21, 12);
+      final created = attempt.subtract(const Duration(days: 30));
+
+      expect(
+        AuthFlowRoutes.shouldBeginFreshOAuthRegistration(
+          signupAttemptStartedAt: attempt,
+          createdAt: created.toIso8601String(),
+          lastSignInAt:
+              attempt.add(const Duration(minutes: 1)).toIso8601String(),
+          evaluatedAt: attempt.add(const Duration(minutes: 1)),
+        ),
+        isFalse,
+      );
+    });
+
+    test('signed-in event without signup origin never starts registration', () {
+      final created = DateTime.utc(2026, 8, 21, 12);
+      expect(
+        AuthFlowRoutes.shouldBeginFreshOAuthRegistration(
+          signupAttemptStartedAt: null,
+          createdAt: created.toIso8601String(),
+          lastSignInAt: created.toIso8601String(),
+          evaluatedAt: created,
+        ),
+        isFalse,
+      );
+    });
   });
 }

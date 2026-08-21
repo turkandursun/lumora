@@ -15,18 +15,22 @@ class DailyStreakBanner extends StatelessWidget {
   const DailyStreakBanner({
     super.key,
     required this.count,
+    required this.visitedDateKeys,
     required this.isDark,
     required this.onClose,
   });
 
   final int count;
+  final Set<String> visitedDateKeys;
   final bool isDark;
   final VoidCallback onClose;
 
   /// A short, warm nudge that scales with how long the streak is.
   String _encouragement(bool isTr) {
     if (count <= 1) {
-      return isTr ? 'Serin başladı — devam et!' : 'Your streak has begun — keep going!';
+      return isTr
+          ? 'Serin başladı — devam et!'
+          : 'Your streak has begun — keep going!';
     }
     if (count < 7) {
       return isTr
@@ -162,7 +166,9 @@ class DailyStreakBanner extends StatelessWidget {
                           deep: deep,
                           inactiveColor: inactiveDot,
                           textColor: onColor,
-                          active: (i + 1) <= now.weekday,
+                          active: visitedDateKeys.contains(
+                            _localDateKey(monday.add(Duration(days: i))),
+                          ),
                           isToday: (i + 1) == now.weekday,
                         ),
                     ],
@@ -183,6 +189,10 @@ class DailyStreakBanner extends StatelessWidget {
       ),
     );
   }
+
+  static String _localDateKey(DateTime value) =>
+      '${value.year}-${value.month.toString().padLeft(2, '0')}-'
+      '${value.day.toString().padLeft(2, '0')}';
 }
 
 /// A softly pulsing rose flame badge with the streak count in the centre.

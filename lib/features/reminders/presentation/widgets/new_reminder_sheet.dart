@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../../core/database/tables/reminders_table.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_design_tokens.dart';
-import '../../../../theme/lumora_palette.dart';
 import '../../../../theme/premium_button.dart';
 import '../providers/reminders_providers.dart';
 
@@ -70,11 +69,20 @@ class _NewReminderSheetState extends ConsumerState<NewReminderSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Container(
+        key: const ValueKey('new-reminder-sheet-surface'),
         decoration: BoxDecoration(
-          color: tokens.isDark
-              ? tokens.palette.surfaceElevated
-              : LumoraPalette.nightBackground,
+          color: tokens.palette.surfaceElevated,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(
+            top: BorderSide(color: tokens.palette.softBorder),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: tokens.palette.focusGlow.withValues(alpha: 0.22),
+              blurRadius: 24,
+              offset: const Offset(0, -4),
+            ),
+          ],
         ),
         child: SafeArea(
           top: false,
@@ -91,9 +99,7 @@ class _NewReminderSheetState extends ConsumerState<NewReminderSheet> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: tokens.isDark
-                            ? tokens.textMuted.withValues(alpha: 0.35)
-                            : Colors.white.withValues(alpha: 0.2),
+                        color: tokens.textMuted.withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -104,7 +110,7 @@ class _NewReminderSheetState extends ConsumerState<NewReminderSheet> {
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: tokens.isDark ? tokens.textPrimary : Colors.white,
+                      color: tokens.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -126,9 +132,7 @@ class _NewReminderSheetState extends ConsumerState<NewReminderSheet> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: tokens.isDark
-                            ? tokens.textSecondary
-                            : Colors.white.withValues(alpha: 0.75),
+                        color: tokens.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -144,9 +148,7 @@ class _NewReminderSheetState extends ConsumerState<NewReminderSheet> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: tokens.isDark
-                          ? tokens.textSecondary
-                          : Colors.white.withValues(alpha: 0.75),
+                      color: tokens.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -182,50 +184,37 @@ class _TitleField extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AstraThemeTokens.of(context);
     return TextFormField(
+      key: const ValueKey('new-reminder-title-field'),
       controller: controller,
       textInputAction: TextInputAction.done,
-      style: TextStyle(
-        color: tokens.isDark ? tokens.textSecondary : Colors.white,
-      ),
-      cursorColor: tokens.isDark
-          ? tokens.palette.activeAccent
-          : LumoraPalette.lightPurple,
+      style: TextStyle(color: tokens.textPrimary),
+      cursorColor: tokens.palette.activeAccent,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
           fontSize: 15,
-          color: tokens.isDark
-              ? tokens.textMuted
-              : Colors.white.withValues(alpha: 0.45),
+          color: tokens.textMuted,
         ),
         filled: true,
-        fillColor: tokens.isDark
-            ? tokens.palette.inputBackground
-            : Colors.white.withValues(alpha: 0.05),
+        fillColor: tokens.palette.inputBackground,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(
-            color: tokens.isDark
-                ? tokens.palette.softBorder
-                : Colors.white.withValues(alpha: 0.16),
+            color: tokens.palette.softBorder,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(
-            color: tokens.isDark
-                ? tokens.palette.softBorder
-                : Colors.white.withValues(alpha: 0.16),
+            color: tokens.palette.softBorder,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(
-            color: tokens.isDark
-                ? tokens.palette.activeAccent
-                : LumoraPalette.lightPurple,
+            color: tokens.palette.activeAccent,
             width: 1.5,
           ),
         ),
@@ -338,20 +327,12 @@ class _Pill extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
               color: isSelected
-                  ? (tokens.isDark
-                      ? tokens.palette.chipSelected
-                      : LumoraPalette.primaryPurple.withValues(alpha: 0.9))
-                  : (tokens.isDark
-                      ? tokens.palette.chipUnselected
-                      : Colors.white.withValues(alpha: 0.06)),
+                  ? tokens.palette.chipSelected
+                  : tokens.palette.chipUnselected,
               border: Border.all(
                 color: isSelected
-                    ? (tokens.isDark
-                        ? tokens.palette.activeAccent
-                        : LumoraPalette.lightPurple)
-                    : (tokens.isDark
-                        ? tokens.palette.softBorder
-                        : Colors.white.withValues(alpha: 0.16)),
+                    ? tokens.palette.activeAccent
+                    : tokens.palette.softBorder,
                 width: 1.1,
               ),
             ),
@@ -360,7 +341,7 @@ class _Pill extends StatelessWidget {
               style: TextStyle(
                 fontSize: dense ? 12.5 : 13.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: tokens.isDark ? tokens.textSecondary : Colors.white,
+                color: isSelected ? tokens.textOnAccent : tokens.textSecondary,
               ),
             ),
           ),
@@ -387,16 +368,13 @@ class _TimeField extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Container(
+          key: const ValueKey('new-reminder-time-field'),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           decoration: BoxDecoration(
-            color: tokens.isDark
-                ? tokens.palette.inputBackground
-                : Colors.white.withValues(alpha: 0.05),
+            color: tokens.palette.inputBackground,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: tokens.isDark
-                  ? tokens.palette.softBorder
-                  : Colors.white.withValues(alpha: 0.16),
+              color: tokens.palette.softBorder,
             ),
           ),
           child: Row(
@@ -404,9 +382,7 @@ class _TimeField extends StatelessWidget {
               Icon(
                 Icons.schedule_outlined,
                 size: 20,
-                color: tokens.isDark
-                    ? tokens.palette.activeAccent
-                    : LumoraPalette.lightPurple,
+                color: tokens.palette.activeAccent,
               ),
               const SizedBox(width: 12),
               Text(
@@ -414,7 +390,7 @@ class _TimeField extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: tokens.isDark ? tokens.textSecondary : Colors.white,
+                  color: tokens.textPrimary,
                 ),
               ),
             ],
@@ -435,10 +411,16 @@ class _SubmitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AstraThemeTokens.of(context);
     return PremiumButton(
+      key: const ValueKey('new-reminder-submit-button'),
       label: label,
       icon: Icons.check_rounded,
       loading: isSaving,
+      gradient: [
+        tokens.palette.buttonPrimary,
+        tokens.palette.secondary,
+      ],
       onPressed: onTap,
     );
   }

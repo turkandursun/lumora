@@ -39,6 +39,10 @@ void main() {
       'goals_streak_count_user-a': 3,
       'goals_streak_count_user-b': 4,
       'visit_last_date_v1_user-a': '2026-08-12',
+      'visit_dates_v2_user-a': <String>['2026-08-12'],
+      'visit_dates_v2_user-b': <String>['2026-08-13'],
+      'visit_profile_summary_pending_v1_user-a': <String>['2026-08-12'],
+      'visit_profile_summary_pending_v1_user-b': <String>['2026-08-13'],
       'cloud_last_user_id': 'user-a',
       'cloud_synced_marker_v1': 'now',
       'registration_oauth_signup_attempt_v1': 123,
@@ -126,6 +130,8 @@ void main() {
     expect(prefs.get('quote_favorites_migrated_v1_user-a'), isNull);
     expect(prefs.get('goals_streak_count_user-a'), isNull);
     expect(prefs.get('visit_last_date_v1_user-a'), isNull);
+    expect(prefs.get('visit_dates_v2_user-a'), isNull);
+    expect(prefs.get('visit_profile_summary_pending_v1_user-a'), isNull);
     expect(prefs.get('cloud_last_user_id'), isNull);
     expect(prefs.get('cloud_synced_marker_v1'), isNull);
     expect(prefs.get('registration_oauth_signup_attempt_v1'), isNull);
@@ -151,6 +157,11 @@ void main() {
     expect(prefs.getBool('quote_favorites_migrated_v1_user-b'), true);
     expect(prefs.getInt('goals_streak_count_user-b'), 4);
     expect(prefs.getInt('focus_goal_v2_user-b'), 3);
+    expect(prefs.getStringList('visit_dates_v2_user-b'), ['2026-08-13']);
+    expect(
+      prefs.getStringList('visit_profile_summary_pending_v1_user-b'),
+      ['2026-08-13'],
+    );
     expect(prefs.getBool('luma_ambient_sound_muted'), true);
     expect(prefs.getString('breathing_last_mode'), 'box');
   });
@@ -205,6 +216,12 @@ void main() {
     expect(
       prefs.getStringList('period_symptoms_v2_user-a'),
       ['2026-08-12:cramps'],
+    );
+    expect(prefs.getString('visit_last_date_v1_user-a'), '2026-08-12');
+    expect(prefs.getStringList('visit_dates_v2_user-a'), ['2026-08-12']);
+    expect(
+      prefs.getStringList('visit_profile_summary_pending_v1_user-a'),
+      ['2026-08-12'],
     );
   });
 

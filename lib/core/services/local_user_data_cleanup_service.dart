@@ -137,7 +137,7 @@ class LocalUserDataCleanupService {
       'quote_favorites_migrated_v1_$userId',
       'goals_streak_count_$userId',
       'goals_streak_last_active_date_$userId',
-      'visit_last_date_v1_$userId',
+      'streak_banner_shown_date_$userId',
       'reminders_seeded_$userId',
       'goals_seeded_$userId',
       'pending_onboarding_$userId',
@@ -155,6 +155,9 @@ class LocalUserDataCleanupService {
       scopedKeys.add(
         SharedPreferencesFocusLocalStateStore.dailyGoalKey(userId),
       );
+      scopedKeys.add('visit_last_date_v1_$userId');
+      scopedKeys.add('visit_dates_v2_$userId');
+      scopedKeys.add('visit_profile_summary_pending_v1_$userId');
     }
 
     final activeRaw = prefs.getString(

@@ -27,6 +27,7 @@ void invalidateUserProviders(WidgetRef ref) {
   ref.invalidate(hobbiesProvider);
   ref.invalidate(journalStreakProvider);
   ref.invalidate(visitDaysCountProvider);
+  ref.invalidate(weeklyVisitDatesProvider);
   ref.invalidate(recentJournalEntriesProvider);
   ref.invalidate(allJournalEntriesProvider);
   ref.invalidate(journalEntriesRepositoryProvider);

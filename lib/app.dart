@@ -10,6 +10,7 @@ import 'core/providers/astra_theme_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/services/smart_reminders_service.dart';
 import 'features/auth/domain/registration_flow_state.dart';
+import 'features/profile/presentation/providers/visit_tracker_providers.dart';
 import 'features/wellbeing/presentation/providers/focus_providers.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'theme/app_theme.dart';
@@ -39,6 +40,7 @@ class _LumoraAppState extends ConsumerState<LumoraApp>
     if (_lastAuthenticatedUserId != null) {
       unawaited(_bootstrapFocus());
       unawaited(_bootstrapUserContentOutboxes());
+      unawaited(_bootstrapVisitHistory());
     }
     _authSubscription =
         Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
@@ -73,6 +75,7 @@ class _LumoraAppState extends ConsumerState<LumoraApp>
         invalidateUserProviders(ref);
         unawaited(_bootstrapFocus());
         unawaited(_bootstrapUserContentOutboxes());
+        unawaited(_bootstrapVisitHistory());
       }
     });
   }
@@ -104,6 +107,21 @@ class _LumoraAppState extends ConsumerState<LumoraApp>
     }
   }
 
+  Future<void> _bootstrapVisitHistory() async {
+    try {
+      await ref
+          .read(visitTrackerRepositoryProvider)
+          .syncVisitHistoryForCurrentUser();
+      if (!mounted) return;
+      ref.invalidate(weeklyVisitDatesProvider);
+      await ref.read(visitDaysCountProvider.notifier).load();
+    } catch (error) {
+      debugPrint(
+        '[VisitTracker] bootstrap deferred error=${error.runtimeType}',
+      );
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
@@ -115,6 +133,7 @@ class _LumoraAppState extends ConsumerState<LumoraApp>
         WidgetsBinding.instance.platformDispatcher.locale.languageCode == 'tr';
     unawaited(SmartRemindersService.instance.markAppOpened(isTr: isTr));
     unawaited(_bootstrapUserContentOutboxes());
+    unawaited(_bootstrapVisitHistory());
   }
 
   @override

@@ -230,4 +230,37 @@ abstract final class AuthFlowRoutes {
     if (created == null || lastSignIn == null) return false;
     return lastSignIn.difference(created).abs() <= const Duration(seconds: 5);
   }
+
+  /// Decides whether a signup-origin Google callback created a new account.
+  ///
+  /// `auth.users` already exists by the time the callback reaches Flutter, so
+  /// row existence cannot distinguish signup from login. The durable OAuth
+  /// origin timestamp is combined with Supabase's server timestamps instead:
+  /// an older account was created before this attempt, while a fresh account
+  /// is created during it. The first-auth pair permits only a small clock-skew
+  /// tolerance; it is not used as a standalone "recent account" heuristic.
+  static bool shouldBeginFreshOAuthRegistration({
+    required DateTime? signupAttemptStartedAt,
+    required String? createdAt,
+    required String? lastSignInAt,
+    required DateTime evaluatedAt,
+  }) {
+    if (signupAttemptStartedAt == null) return false;
+    final created = DateTime.tryParse(createdAt ?? '')?.toUtc();
+    if (created == null) return false;
+
+    final attemptStarted = signupAttemptStartedAt.toUtc();
+    final evaluated = evaluatedAt.toUtc();
+    const clockSkewTolerance = Duration(seconds: 30);
+    if (created.isAfter(evaluated.add(clockSkewTolerance))) return false;
+
+    if (!created.isBefore(attemptStarted)) return true;
+
+    final serverConfirmsFirstAuth = isFirstOAuthAuthentication(
+      createdAt: createdAt,
+      lastSignInAt: lastSignInAt,
+    );
+    return serverConfirmsFirstAuth &&
+        !created.isBefore(attemptStarted.subtract(clockSkewTolerance));
+  }
 }

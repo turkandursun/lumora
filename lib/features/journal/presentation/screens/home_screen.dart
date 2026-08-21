@@ -41,7 +41,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _didInitialStreakLoad = false;
 
-  static const _streakBannerDateKey = 'streak_banner_shown_date';
   bool _showStreakBanner = false;
   Timer? _bannerTimer;
 
@@ -53,19 +52,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.read(journalStreakProvider.notifier).refresh();
     ref.read(journalEntriesRepositoryProvider).fetchAndSyncFromSupabase();
     ref.read(dreamsRepositoryProvider).fetchAndSyncDreamsFromSupabase();
-    ref.read(visitDaysCountProvider.notifier).load();
-    _maybeShowStreakBanner();
+    unawaited(_recordVisitAndShowBanner());
+  }
+
+  Future<void> _recordVisitAndShowBanner() async {
+    await ref.read(visitDaysCountProvider.notifier).recordVisitIfNewDay();
+    ref.invalidate(weeklyVisitDatesProvider);
+    await _maybeShowStreakBanner();
   }
 
   /// Shows the streak strip at most once per calendar day, auto-hiding after
   /// ~8 seconds (or when the user taps close).
   Future<void> _maybeShowStreakBanner() async {
     final prefs = await SharedPreferences.getInstance();
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
     final now = DateTime.now();
     final todayKey =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    if (prefs.getString(_streakBannerDateKey) == todayKey) return;
-    await prefs.setString(_streakBannerDateKey, todayKey);
+    final bannerKey = 'streak_banner_shown_date_$userId';
+    if (prefs.getString(bannerKey) == todayKey) return;
+    await prefs.setString(bannerKey, todayKey);
     if (!mounted) return;
     setState(() => _showStreakBanner = true);
     _bannerTimer?.cancel();
@@ -100,6 +107,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           data: (v) => v,
           orElse: () => 0,
         );
+    final visitedDateKeys =
+        ref.watch(weeklyVisitDatesProvider).valueOrNull ?? const <String>{};
     // Only [DailyStreakBanner] (an intentionally distinct fiery-orange
     // celebratory toast, left as-is) still needs the moon/sun flag — every
     // other surface on this screen is fixed pink now.
@@ -121,11 +130,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       // rest of the page then slides up in sequence after it.
                       HomeHeader(firstName: firstName),
                       const SizedBox(height: 18),
-                      const AstraEntrance(delayMs: 160, child: MotivationQuoteCarousel()),
+                      const AstraEntrance(
+                          delayMs: 160, child: MotivationQuoteCarousel()),
                       const SizedBox(height: 16),
                       const AstraEntrance(delayMs: 210, child: HomeStatsRow()),
                       const SizedBox(height: 16),
-                      const AstraEntrance(delayMs: 260, child: DreamJournalBanner()),
+                      const AstraEntrance(
+                          delayMs: 260, child: DreamJournalBanner()),
                       const SizedBox(height: 22),
                       AstraEntrance(
                         delayMs: 310,
@@ -149,9 +160,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: IgnorePointer(
                 ignoring: !_showStreakBanner,
                 child: AnimatedSlide(
-                  offset: _showStreakBanner
-                      ? Offset.zero
-                      : const Offset(0, -1.4),
+                  offset:
+                      _showStreakBanner ? Offset.zero : const Offset(0, -1.4),
                   duration: const Duration(milliseconds: 420),
                   curve: Curves.easeOutCubic,
                   child: AnimatedOpacity(
@@ -161,6 +171,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
                       child: DailyStreakBanner(
                         count: streakCount,
+                        visitedDateKeys: visitedDateKeys,
                         isDark: isDark,
                         onClose: _hideStreakBanner,
                       ),

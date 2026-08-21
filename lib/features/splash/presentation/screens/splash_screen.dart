@@ -14,6 +14,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../auth/domain/auth_flow_routes.dart';
 import '../../../auth/domain/registration_flow_state.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
+import '../../../profile/data/profile_repository.dart';
 
 /// Auth bootstrap only: logged-out users enter Login, completed authenticated
 /// sessions enter Home, and an explicitly pending registration resumes safely.
@@ -83,15 +84,25 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
 
     FreshRegistrationIntent? intent;
-    final signupOAuthOrigin =
-        await registrationFlowStore.consumeOAuthSignupAttempt();
+    final signupOAuthAttemptStartedAt =
+        await registrationFlowStore.consumeOAuthSignupAttemptStartedAt();
+    final signupOAuthOrigin = signupOAuthAttemptStartedAt != null;
     final loginOAuthOrigin =
         await registrationFlowStore.consumeOAuthLoginAttempt();
-    if (signupOAuthOrigin &&
-        AuthFlowRoutes.isFirstOAuthAuthentication(
-          createdAt: user.createdAt,
-          lastSignInAt: user.lastSignInAt,
-        )) {
+    if (AuthFlowRoutes.shouldBeginFreshOAuthRegistration(
+      signupAttemptStartedAt: signupOAuthAttemptStartedAt,
+      createdAt: user.createdAt,
+      lastSignInAt: user.lastSignInAt,
+      evaluatedAt: DateTime.now(),
+    )) {
+      try {
+        await ProfileRepository().initializeFreshProfileDefaults(user.id);
+      } catch (error) {
+        debugPrint(
+          '[Auth] Fresh Google profile initialization deferred '
+          'type=${error.runtimeType}',
+        );
+      }
       intent = await registrationFlowStore.begin(user.id);
     } else {
       intent = await registrationFlowStore.restore(user.id);
@@ -285,7 +296,8 @@ class _ContinueButton extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
+            const Icon(Icons.arrow_forward_rounded,
+                size: 18, color: Colors.white),
           ],
         ),
       ),
@@ -377,8 +389,12 @@ class _ShootingStarsPainter extends CustomPainter {
 
     // Scattered sparkle-stars (a mix of tiny 4-point stars and dots).
     const stars = <List<double>>[
-      [0.16, 0.10, 4.0], [0.50, 0.07, 5.0], [0.76, 0.13, 4.5],
-      [0.30, 0.20, 3.2], [0.86, 0.27, 3.6], [0.62, 0.24, 3.0],
+      [0.16, 0.10, 4.0],
+      [0.50, 0.07, 5.0],
+      [0.76, 0.13, 4.5],
+      [0.30, 0.20, 3.2],
+      [0.86, 0.27, 3.6],
+      [0.62, 0.24, 3.0],
     ];
     for (final s in stars) {
       canvas.drawPath(
@@ -387,9 +403,15 @@ class _ShootingStarsPainter extends CustomPainter {
       );
     }
     const dots = <List<double>>[
-      [0.22, 0.15, 1.4], [0.40, 0.12, 1.1], [0.68, 0.05, 1.2],
-      [0.12, 0.24, 1.3], [0.45, 0.27, 1.2], [0.90, 0.10, 1.1],
-      [0.55, 0.32, 1.0], [0.80, 0.20, 1.2], [0.34, 0.30, 1.0],
+      [0.22, 0.15, 1.4],
+      [0.40, 0.12, 1.1],
+      [0.68, 0.05, 1.2],
+      [0.12, 0.24, 1.3],
+      [0.45, 0.27, 1.2],
+      [0.90, 0.10, 1.1],
+      [0.55, 0.32, 1.0],
+      [0.80, 0.20, 1.2],
+      [0.34, 0.30, 1.0],
     ];
     final dotPaint = Paint()..color = const Color(0xB3FFF1C4);
     for (final d in dots) {
