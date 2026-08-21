@@ -61,6 +61,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     FreshRegistrationIntent? intent;
     final signupOAuthOrigin =
         await registrationFlowStore.consumeOAuthSignupAttempt();
+    final loginOAuthOrigin =
+        await registrationFlowStore.consumeOAuthLoginAttempt();
     if (signupOAuthOrigin &&
         AuthFlowRoutes.isFirstOAuthAuthentication(
           createdAt: user.createdAt,
@@ -78,6 +80,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       context.go(
         AuthFlowRoutes.routeForRegistrationStep(intent.step),
         extra: AuthFlowRoutes.routeDataForRegistration(intent),
+      );
+    } else if (signupOAuthOrigin || loginOAuthOrigin) {
+      // A web OAuth callback recreates the app at Splash. Preserve the manual
+      // Google login experience instead of treating it as a silent session
+      // restore when today's mood already exists.
+      context.go(
+        AuthFlowRoutes.greeting,
+        extra: const LumaGreetingRouteData.returning(),
       );
     } else {
       final hasMood =

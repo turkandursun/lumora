@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/config/env.dart';
 
+typedef GoogleOAuthLauncher = Future<bool> Function(String redirectTo);
+
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });
@@ -55,9 +57,14 @@ class PasswordSignUpResult {
 /// Owns email/password sign-in against Supabase auth. Magic-link login
 /// will be added here later — this only wires up the password flow.
 class AuthController extends StateNotifier<AuthState> {
-  AuthController(this._client) : super(const AuthState());
+  AuthController(
+    this._client, {
+    GoogleOAuthLauncher? googleOAuthLauncher,
+  })  : _googleOAuthLauncher = googleOAuthLauncher,
+        super(const AuthState());
 
   final SupabaseClient _client;
+  final GoogleOAuthLauncher? _googleOAuthLauncher;
 
   Future<bool> signInWithPassword({
     required String email,
@@ -157,14 +164,20 @@ class AuthController extends StateNotifier<AuthState> {
   Future<bool> signInWithGoogle() async {
     state = state.copyWith(status: AuthStatus.submitting);
     try {
-      await _client.auth.signInWithOAuth(
-        OAuthProvider.google,
-        // Web returns to the site URL (default); native platforms need an
-        // explicit deep link so the browser hands control back to the app.
-        redirectTo: kIsWeb ? null : Env.oauthNativeRedirect,
+      final redirectTo = Env.googleOAuthRedirect(
+        isWeb: kIsWeb,
+        currentUri: kIsWeb ? Uri.base : null,
       );
-      state = state.copyWith(status: AuthStatus.idle);
-      return true;
+      final launched = await (_googleOAuthLauncher?.call(redirectTo) ??
+          _client.auth.signInWithOAuth(
+            OAuthProvider.google,
+            redirectTo: redirectTo,
+          ));
+      state = state.copyWith(
+        status: launched ? AuthStatus.idle : AuthStatus.error,
+        failureReason: launched ? null : AuthFailureReason.unknown,
+      );
+      return launched;
     } on AuthException catch (_) {
       state = state.copyWith(
         status: AuthStatus.error,

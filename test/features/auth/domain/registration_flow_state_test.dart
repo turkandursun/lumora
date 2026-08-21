@@ -104,6 +104,21 @@ void main() {
     expect(await store.consumeOAuthSignupAttempt(), isFalse);
   });
 
+  test('OAuth login origin is one-shot, separate from signup, and expires',
+      () async {
+    var now = DateTime.utc(2026, 8, 21, 12);
+    final store = RegistrationFlowStore(now: () => now);
+
+    await store.markOAuthLoginAttempt();
+    expect(await store.consumeOAuthSignupAttempt(), isFalse);
+    expect(await store.consumeOAuthLoginAttempt(), isTrue);
+    expect(await store.consumeOAuthLoginAttempt(), isFalse);
+
+    await store.markOAuthLoginAttempt();
+    now = now.add(const Duration(minutes: 11));
+    expect(await store.consumeOAuthLoginAttempt(), isFalse);
+  });
+
   test('mismatched stale intent cannot advance another account', () async {
     final store = RegistrationFlowStore();
     final a = await store.begin('user-a');

@@ -24,4 +24,25 @@ class Env {
   ///     (Authentication → URL Configuration → Redirect URLs)
   /// On web this is unused — Supabase returns to the site URL instead.
   static const oauthNativeRedirect = 'lumora://login-callback/';
+
+  /// Returns the callback URI for Google OAuth without relying on Supabase's
+  /// dashboard Site URL fallback.
+  ///
+  /// Web OAuth must return to the exact origin currently serving Flutter Web
+  /// (including its development port). Native OAuth continues to use the
+  /// registered deep-link contract shared by Android and iOS.
+  static String googleOAuthRedirect({
+    required bool isWeb,
+    Uri? currentUri,
+  }) {
+    if (!isWeb) return oauthNativeRedirect;
+
+    final uri = currentUri ?? Uri.base;
+    final hasWebOrigin =
+        (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty;
+    if (!hasWebOrigin) {
+      throw StateError('Google OAuth requires a valid web origin.');
+    }
+    return uri.origin;
+  }
 }

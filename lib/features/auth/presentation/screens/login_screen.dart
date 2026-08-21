@@ -116,8 +116,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     setState(() => _isGoogleSubmitting = true);
     // A login-origin OAuth attempt can never create fresh-registration intent.
     await registrationFlowStore.clearOAuthSignupAttempt();
-    await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    await registrationFlowStore.markOAuthLoginAttempt();
+    final launched =
+        await ref.read(authControllerProvider.notifier).signInWithGoogle();
     if (!mounted) return;
+    if (!launched) {
+      await registrationFlowStore.clearOAuthLoginAttempt();
+    }
     setState(() => _isGoogleSubmitting = false);
   }
 
@@ -150,6 +155,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _routeAfterSignIn() async {
     if (_didRouteAfterSignIn) return;
     _didRouteAfterSignIn = true;
+    await registrationFlowStore.consumeOAuthLoginAttempt();
     await ref.read(cloudBackupServiceProvider).onSignIn();
     await bootstrapAstraPaletteForCurrentUser(ref);
     if (!mounted) return;

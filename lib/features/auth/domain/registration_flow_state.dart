@@ -51,6 +51,7 @@ class RegistrationFlowStore {
         _now = now ?? DateTime.now;
 
   static const oauthSignupAttemptKey = 'registration_oauth_signup_attempt_v1';
+  static const oauthLoginAttemptKey = 'registration_oauth_login_attempt_v1';
   static const _oauthAttemptTtl = Duration(minutes: 10);
 
   final RegistrationPreferencesLoader _preferencesLoader;
@@ -153,6 +154,7 @@ class RegistrationFlowStore {
       final prefs = await _preferencesLoader();
       if (userId != null) await prefs.remove(markerKey(userId));
       await prefs.remove(oauthSignupAttemptKey);
+      await prefs.remove(oauthLoginAttemptKey);
     } catch (error) {
       debugPrint('[RegistrationFlow] Logout marker cleanup failed: $error');
     }
@@ -161,10 +163,18 @@ class RegistrationFlowStore {
   /// Records only the short-lived origin of an OAuth redirect. It is not a
   /// fresh-registration decision and is consumed exactly once after auth.
   Future<void> markOAuthSignupAttempt() async {
+    await _markOAuthAttempt(oauthSignupAttemptKey);
+  }
+
+  Future<void> markOAuthLoginAttempt() async {
+    await _markOAuthAttempt(oauthLoginAttemptKey);
+  }
+
+  Future<void> _markOAuthAttempt(String key) async {
     try {
       final prefs = await _preferencesLoader();
       await prefs.setInt(
-        oauthSignupAttemptKey,
+        key,
         _now().toUtc().millisecondsSinceEpoch,
       );
     } catch (error) {
@@ -173,20 +183,36 @@ class RegistrationFlowStore {
   }
 
   Future<void> clearOAuthSignupAttempt() async {
+    await _clearOAuthAttempt(oauthSignupAttemptKey);
+  }
+
+  Future<void> clearOAuthLoginAttempt() async {
+    await _clearOAuthAttempt(oauthLoginAttemptKey);
+  }
+
+  Future<void> _clearOAuthAttempt(String key) async {
     try {
       final prefs = await _preferencesLoader();
-      await prefs.remove(oauthSignupAttemptKey);
+      await prefs.remove(key);
     } catch (error) {
       debugPrint('[RegistrationFlow] OAuth origin cleanup failed: $error');
     }
   }
 
   Future<bool> consumeOAuthSignupAttempt() async {
+    return _consumeOAuthAttempt(oauthSignupAttemptKey);
+  }
+
+  Future<bool> consumeOAuthLoginAttempt() async {
+    return _consumeOAuthAttempt(oauthLoginAttemptKey);
+  }
+
+  Future<bool> _consumeOAuthAttempt(String key) async {
     final int? startedAtMs;
     try {
       final prefs = await _preferencesLoader();
-      startedAtMs = prefs.getInt(oauthSignupAttemptKey);
-      await prefs.remove(oauthSignupAttemptKey);
+      startedAtMs = prefs.getInt(key);
+      await prefs.remove(key);
     } catch (error) {
       debugPrint('[RegistrationFlow] OAuth origin read failed: $error');
       return false;

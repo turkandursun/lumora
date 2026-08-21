@@ -164,6 +164,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       _isGoogleSubmitting = true;
       _isGoogleSignInFlow = true;
     });
+    await registrationFlowStore.clearOAuthLoginAttempt();
     await registrationFlowStore.markOAuthSignupAttempt();
     final launched =
         await ref.read(authControllerProvider.notifier).signInWithGoogle();
