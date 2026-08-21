@@ -8,6 +8,7 @@ import '../../../../theme/astra_screen_kit.dart';
 import '../../../mood/presentation/providers/mood_providers.dart';
 import '../../../../theme/mood_gradients.dart';
 import '../../../profile/presentation/providers/visit_tracker_providers.dart';
+import '../../../special_days/presentation/providers/special_days_providers.dart';
 import '../providers/calendar_providers.dart';
 
 /// Positivity score per AppMood index (order: happy, calm, tired, sad,
@@ -175,6 +176,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ref.watch(journalEntryDaysProvider).valueOrNull ?? const {};
     final streak = ref.watch(visitDaysCountProvider).valueOrNull ?? 0;
     final moodLog = ref.watch(moodLogProvider);
+    final specialKeys = ref.watch(specialDayKeysProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
     final primary = AstraKit.primary(context, isDark);
@@ -218,6 +220,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           locale: locale,
                           entryDays: entryDays,
                           moodLog: moodLog,
+                          specialKeys: specialKeys,
                           isDark: isDark,
                           primary: primary,
                           onPrev: () => _changeMonth(-1),
@@ -263,6 +266,7 @@ class _MonthCard extends StatelessWidget {
     required this.locale,
     required this.entryDays,
     required this.moodLog,
+    required this.specialKeys,
     required this.isDark,
     required this.primary,
     required this.onPrev,
@@ -274,6 +278,7 @@ class _MonthCard extends StatelessWidget {
   final String locale;
   final Set<DateTime> entryDays;
   final Map<DateTime, int> moodLog;
+  final Set<int> specialKeys;
   final bool isDark;
   final Color primary;
   final VoidCallback onPrev;
@@ -298,10 +303,12 @@ class _MonthCard extends StatelessWidget {
     for (var d = 1; d <= daysInMonth; d++) {
       final day = DateTime(month.year, month.month, d);
       final hasEntry = entryDays.contains(day);
+      final isSpecial = specialKeys.contains(month.month * 100 + d);
       cells.add(_DayCell(
         day: d,
         isToday: day == today,
         hasEntry: hasEntry,
+        isSpecialDay: isSpecial,
         moodIndex: moodLog[day],
         isDark: isDark,
         primary: primary,
@@ -369,6 +376,7 @@ class _DayCell extends StatelessWidget {
     required this.day,
     required this.isToday,
     required this.hasEntry,
+    required this.isSpecialDay,
     required this.moodIndex,
     required this.isDark,
     required this.primary,
@@ -378,6 +386,7 @@ class _DayCell extends StatelessWidget {
   final int day;
   final bool isToday;
   final bool hasEntry;
+  final bool isSpecialDay;
   final int? moodIndex;
   final bool isDark;
   final Color primary;
@@ -454,6 +463,18 @@ class _DayCell extends StatelessWidget {
                       ),
                     ),
                   ),
+                // A distinct star on "special days" (birthdays etc.).
+                if (isSpecialDay)
+                  Positioned(
+                    top: 0,
+                    right: 1,
+                    child: Icon(
+                      Icons.star_rounded,
+                      size: 10,
+                      color:
+                          filled ? Colors.white : AstraKit.gold(context, isDark),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -506,6 +527,11 @@ class _Legend extends StatelessWidget {
             ),
           ),
           isTr ? 'Bugün' : 'Today',
+        ),
+        item(
+          Icon(Icons.star_rounded,
+              size: 13, color: AstraKit.gold(context, isDark)),
+          isTr ? 'Özel gün' : 'Special day',
         ),
       ],
     );

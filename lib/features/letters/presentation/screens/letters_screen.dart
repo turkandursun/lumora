@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/reminder_notification_ids.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../data/letter_repository.dart';
 import '../providers/letter_providers.dart';
@@ -22,9 +24,40 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(lettersProvider.notifier).refresh();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(lettersProvider.notifier).refresh();
+      if (!mounted) return;
+      final isTr = Localizations.localeOf(context).languageCode == 'tr';
+      _syncLetterNotifications(ref.read(lettersProvider), isTr);
     });
+  }
+
+  static int _letterNotifId(int letterId) =>
+      reminderNotificationId('letter_$letterId');
+
+  /// Keeps a "10 minutes before it opens" local notification armed for every
+  /// letter whose open date is still in the future. Idempotent — rescheduling
+  /// the same id just updates it, and past moments quietly no-op.
+  void _syncLetterNotifications(List<Letter> letters, bool isTr) {
+    for (final letter in letters) {
+      final at = letter.openAt.subtract(const Duration(minutes: 10));
+      final title =
+          isTr ? '💌 Mektubun açılıyor' : '💌 Your letter opens soon';
+      final hasTitle = letter.title.trim().isNotEmpty;
+      final body = hasTitle
+          ? (isTr
+              ? '"${letter.title}" birazdan açılacak — 10 dakika kaldı.'
+              : '"${letter.title}" opens soon — 10 minutes left.')
+          : (isTr
+              ? 'Geleceğe yazdığın mektup birazdan açılıyor.'
+              : 'The letter you wrote to the future opens soon.');
+      NotificationService.instance.scheduleOnceAt(
+        id: _letterNotifId(letter.id),
+        title: title,
+        body: body,
+        at: at,
+      );
+    }
   }
 
   @override
@@ -97,6 +130,7 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
     );
 
     if (confirmed == true && mounted) {
+      NotificationService.instance.cancel(_letterNotifId(letter.id));
       await ref
           .read(lettersProvider.notifier)
           .delete(letter.id, supabaseId: letter.supabaseId);
@@ -116,6 +150,11 @@ class _LettersScreenState extends ConsumerState<LettersScreen> {
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
     final primary = AstraKit.primary(context, isDark);
+
+    // Re-arm the "10 minutes before" notification whenever letters change.
+    ref.listen<List<Letter>>(lettersProvider, (previous, next) {
+      _syncLetterNotifications(next, isTr);
+    });
 
     return Scaffold(
       backgroundColor: Colors.transparent,

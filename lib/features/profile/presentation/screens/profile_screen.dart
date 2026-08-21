@@ -419,6 +419,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 AstraEntrance(
+                  delayMs: 425,
+                  child: _MenuItem(
+                    icon: Icons.celebration_rounded,
+                    label: isTr ? 'Özel Günler' : 'Special Days',
+                    isDark: isDark,
+                    primary: primary,
+                    onTap: () => context.push(AppRoutes.specialDays),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                AstraEntrance(
                   delayMs: 450,
                   child: _MenuItem(
                     icon: Icons.track_changes_outlined,

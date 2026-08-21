@@ -36,6 +36,7 @@ import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_theme_screen.dart';
 import '../../features/reminders/presentation/screens/reminders_screen.dart';
 import '../../features/rewards/presentation/screens/rewards_screen.dart';
+import '../../features/special_days/presentation/screens/special_days_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
 import '../../features/stats/presentation/screens/stats_screen.dart';
 import '../../features/shell/presentation/widgets/feature_coming_soon_screen.dart';
@@ -88,6 +89,7 @@ class AppRoutes {
   static const favorites = '/favorites';
   static const quotes = '/quotes';
   static const exportData = '/export';
+  static const specialDays = '/special-days';
 }
 
 /// Bridges Supabase's auth-state stream to a [Listenable] so [GoRouter] can
@@ -144,6 +146,7 @@ const _protectedRoutes = {
   AppRoutes.favorites,
   AppRoutes.quotes,
   AppRoutes.exportData,
+  AppRoutes.specialDays,
 };
 
 /// Lets screens (e.g. [AppShell]) become [RouteAware] so they can replay their
@@ -459,6 +462,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.quotes,
       pageBuilder: (context, state) => _smoothPage(
           state, QuoteGalleryScreen(initialIndex: (state.extra as int?) ?? 0)),
+    ),
+    GoRoute(
+      path: AppRoutes.specialDays,
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const SpecialDaysScreen()),
     ),
   ],
 );

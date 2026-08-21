@@ -3,11 +3,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../auth/domain/auth_flow_routes.dart';
 import '../../../auth/domain/registration_flow_state.dart';
+import '../../../special_days/presentation/providers/special_days_providers.dart';
 import '../providers/hobbies_providers.dart';
 
 /// (id, Turkish label, English label, icon)
@@ -117,6 +119,11 @@ class HobbiesScreen extends ConsumerStatefulWidget {
 class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
   final _customController = TextEditingController();
 
+  // During onboarding we ask the birthday on a first step, right before the
+  // hobby picker. Once answered (or skipped) we reveal the hobbies content.
+  bool _birthdayDone = false;
+  DateTime? _birthday;
+
   @override
   void dispose() {
     _customController.dispose();
@@ -131,13 +138,125 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
     FocusScope.of(context).unfocus();
   }
 
+  Future<void> _pickBirthday() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _birthday ?? DateTime(now.year - 20, now.month, now.day),
+      firstDate: DateTime(1900),
+      lastDate: now,
+    );
+    if (picked != null) setState(() => _birthday = picked);
+  }
+
+  Future<void> _saveBirthdayAndContinue(bool isTr) async {
+    final date = _birthday;
+    if (date != null) {
+      await ref.read(specialDaysProvider.notifier).setBirthday(
+            month: date.month,
+            day: date.day,
+            year: date.year,
+            title: isTr ? 'Doğum günüm' : 'My birthday',
+            isTr: isTr,
+          );
+    }
+    if (mounted) setState(() => _birthdayDone = true);
+  }
+
+  Widget _buildBirthdayStep(
+      BuildContext context, bool isTr, bool isDark, Color primary) {
+    final localeStr = Localizations.localeOf(context).toString();
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: AstraMountainBackground(
+        isDark: isDark,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 10),
+                Icon(Icons.cake_rounded, size: 46, color: primary),
+                const SizedBox(height: 18),
+                Text(
+                  isTr ? 'Doğum günün ne zaman?' : 'When is your birthday?',
+                  style: AstraKit.heading1(context, isDark, fontSize: 26),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  isTr
+                      ? 'Senin için özel bir gün. Her yıl seni hatırlayıp küçük bir kutlama hazırlayalım 🎂'
+                      : 'A day that\'s all about you. We\'ll remember it every year with a little celebration 🎂',
+                  style: AstraKit.mutedText(context, isDark, fontSize: 14),
+                ),
+                const SizedBox(height: 28),
+                InkWell(
+                  onTap: _pickBirthday,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 18),
+                    decoration: BoxDecoration(
+                      color: primary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(16),
+                      border:
+                          Border.all(color: primary.withValues(alpha: 0.35)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.event_rounded, color: primary),
+                        const SizedBox(width: 14),
+                        Text(
+                          _birthday == null
+                              ? (isTr ? 'Tarih seç' : 'Pick a date')
+                              : DateFormat('d MMMM yyyy', localeStr)
+                                  .format(_birthday!),
+                          style: AstraKit.body(context, isDark, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                AstraGoldButton(
+                  isDark: isDark,
+                  label: isTr ? 'Devam et' : 'Continue',
+                  icon: Icons.arrow_forward_rounded,
+                  enabled: _birthday != null,
+                  onTap: () => _saveBirthdayAndContinue(isTr),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: TextButton(
+                    onPressed: () => setState(() => _birthdayDone = true),
+                    child: Text(
+                      isTr ? 'Şimdilik geç' : 'Skip for now',
+                      style:
+                          AstraKit.mutedText(context, isDark, fontSize: 13),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
-    final selected = ref.watch(hobbiesProvider);
     final mode = ref.watch(astraThemeProvider);
     final isDark = mode == AstraThemeMode.dark;
     final primary = AstraKit.primary(context, isDark);
+
+    if (widget.onboarding && !_birthdayDone) {
+      return _buildBirthdayStep(context, isTr, isDark, primary);
+    }
+
+    final selected = ref.watch(hobbiesProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
