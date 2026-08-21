@@ -51,14 +51,12 @@ class _NewReminderSheetState extends ConsumerState<NewReminderSheet> {
     if (!(_formKey.currentState?.validate() ?? false) || _isSaving) return;
     setState(() => _isSaving = true);
 
-    final l10n = AppLocalizations.of(context);
     await ref.read(remindersRepositoryProvider).addCustomReminder(
           title: _titleController.text.trim(),
           frequency: _frequency,
           weekday: _frequency == ReminderFrequency.weekly ? _weekday : null,
           hour: _time.hour,
           minute: _time.minute,
-          notificationBody: l10n.reminderCustomBody,
         );
 
     if (!mounted) return;

@@ -348,7 +348,6 @@ class RemindersRepository {
     int? weekday,
     required int hour,
     required int minute,
-    required String notificationBody,
   }) async {
     final userId = _client.auth.currentUser?.id;
     String? cloudId;
@@ -395,7 +394,9 @@ class RemindersRepository {
         .getSingle();
     await _schedule(
       row,
-      ReminderCopy(title: title, body: notificationBody),
+      // Custom reminders show the user's own text as the notification body,
+      // under the app name as a neutral title.
+      ReminderCopy(title: 'ASTRA', body: title),
     );
   }
 
@@ -622,7 +623,7 @@ class RemindersRepository {
 
         if (row.enabled) {
           final copy = defaultCopy[row.iconKey] ??
-              ReminderCopy(title: row.title, body: row.title);
+              ReminderCopy(title: 'ASTRA', body: row.title);
           await _schedule(row, copy);
         } else if (pending.contains(notificationId)) {
           await _cancelNotification(notificationId);

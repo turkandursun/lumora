@@ -213,7 +213,15 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(
       path: AppRoutes.splash,
-      pageBuilder: (context, state) => _smoothPage(state, const SplashScreen()),
+      // Splash uses a plain fade (no horizontal slide) so it can never be
+      // caught mid-slide looking like a "half" screen.
+      pageBuilder: (context, state) => CustomTransitionPage<void>(
+        key: state.pageKey,
+        transitionDuration: const Duration(milliseconds: 250),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
+        child: const SplashScreen(),
+      ),
     ),
     GoRoute(
       path: AppRoutes.astraLanding,
