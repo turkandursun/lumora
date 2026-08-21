@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
@@ -58,21 +57,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _recordVisitAndShowBanner() async {
     await ref.read(visitDaysCountProvider.notifier).recordVisitIfNewDay();
     ref.invalidate(weeklyVisitDatesProvider);
-    await _maybeShowStreakBanner();
+    // Wait only for the provider's first, local-only emission. Cloud history
+    // merges in afterward and can update the already-visible banner.
+    await ref.read(weeklyVisitDatesProvider.future);
+    _maybeShowStreakBanner();
   }
 
-  /// Shows the streak strip at most once per calendar day, auto-hiding after
-  /// ~8 seconds (or when the user taps close).
-  Future<void> _maybeShowStreakBanner() async {
-    final prefs = await SharedPreferences.getInstance();
+  /// Shows the streak strip once per authenticated user per app process,
+  /// auto-hiding after ~8 seconds (or when the user taps close).
+  void _maybeShowStreakBanner() {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
-    final now = DateTime.now();
-    final todayKey =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final bannerKey = 'streak_banner_shown_date_$userId';
-    if (prefs.getString(bannerKey) == todayKey) return;
-    await prefs.setString(bannerKey, todayKey);
+    if (!ref.read(streakBannerLaunchGateProvider).claim(userId)) return;
     if (!mounted) return;
     setState(() => _showStreakBanner = true);
     _bannerTimer?.cancel();

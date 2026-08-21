@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../data/special_day.dart';
 import '../providers/special_days_providers.dart';
@@ -39,24 +40,21 @@ class _SpecialDaysScreenState extends ConsumerState<SpecialDaysScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _AddSpecialDaySheet(isTr: isTr, isDark: isDark, primary: primary),
+      builder: (_) =>
+          _AddSpecialDaySheet(isTr: isTr, isDark: isDark, primary: primary),
     );
     if (result == null || !mounted) return;
-    final day = SpecialDay(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
-      title: result.title,
-      month: result.date.month,
-      day: result.date.day,
-      year: result.date.year,
-    );
-    await ref
-        .read(specialDaysProvider.notifier)
-        .addOrReplace(day, isTr: isTr);
+    await ref.read(specialDaysProvider.notifier).add(
+          title: result.title,
+          eventDate: result.date,
+          dayType: result.dayType,
+          repeatsAnnually: result.repeatsAnnually,
+          isTr: isTr,
+        );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content:
-                Text(isTr ? 'Özel gün eklendi ✨' : 'Special day added ✨')),
+            content: Text(isTr ? 'Özel gün eklendi ✨' : 'Special day added ✨')),
       );
     }
   }
@@ -66,9 +64,8 @@ class _SpecialDaysScreenState extends ConsumerState<SpecialDaysScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(isTr ? 'Özel günü sil' : 'Delete special day'),
-        content: Text(isTr
-            ? '"${d.title}" silinsin mi?'
-            : 'Delete "${d.title}"?'),
+        content:
+            Text(isTr ? '"${d.title}" silinsin mi?' : 'Delete "${d.title}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -118,7 +115,8 @@ class _SpecialDaysScreenState extends ConsumerState<SpecialDaysScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(isTr ? 'Özel Günler' : 'Special Days',
-                        style: AstraKit.heading1(context, isDark, fontSize: 22)),
+                        style:
+                            AstraKit.heading1(context, isDark, fontSize: 22)),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -134,7 +132,8 @@ class _SpecialDaysScreenState extends ConsumerState<SpecialDaysScreen> {
                 const SizedBox(height: 14),
                 Expanded(
                   child: sorted.isEmpty
-                      ? _EmptyState(isTr: isTr, isDark: isDark, primary: primary)
+                      ? _EmptyState(
+                          isTr: isTr, isDark: isDark, primary: primary)
                       : ListView.separated(
                           padding: const EdgeInsets.only(bottom: 90),
                           itemCount: sorted.length,
@@ -202,9 +201,7 @@ class _SpecialDayTile extends StatelessWidget {
               border: Border.all(color: primary.withValues(alpha: 0.4)),
             ),
             child: Icon(
-              day.isBirthday
-                  ? Icons.cake_rounded
-                  : Icons.celebration_rounded,
+              day.isBirthday ? Icons.cake_rounded : Icons.celebration_rounded,
               size: 22,
               color: primary,
             ),
@@ -278,9 +275,16 @@ class _EmptyState extends StatelessWidget {
 
 /// Result of the add-sheet.
 class _NewSpecialDay {
-  const _NewSpecialDay(this.title, this.date);
+  const _NewSpecialDay(
+    this.title,
+    this.date,
+    this.dayType,
+    this.repeatsAnnually,
+  );
   final String title;
   final DateTime date;
+  final String dayType;
+  final bool repeatsAnnually;
 }
 
 class _AddSpecialDaySheet extends StatefulWidget {
@@ -298,6 +302,8 @@ class _AddSpecialDaySheet extends StatefulWidget {
 class _AddSpecialDaySheetState extends State<_AddSpecialDaySheet> {
   final _titleController = TextEditingController();
   DateTime? _date;
+  String _dayType = SpecialDay.kindCustom;
+  bool _repeatsAnnually = true;
 
   @override
   void dispose() {
@@ -318,21 +324,20 @@ class _AddSpecialDaySheetState extends State<_AddSpecialDaySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isTr = widget.isTr;
     final isDark = widget.isDark;
     final primary = widget.primary;
     final localeStr = Localizations.localeOf(context).toString();
-    final canSave =
-        _titleController.text.trim().isNotEmpty && _date != null;
+    final canSave = _titleController.text.trim().isNotEmpty && _date != null;
 
     return Padding(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1B1430) : const Color(0xFFFFF7FB),
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(26)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
         child: Column(
@@ -355,27 +360,51 @@ class _AddSpecialDaySheetState extends State<_AddSpecialDaySheet> {
             const SizedBox(height: 16),
             TextField(
               controller: _titleController,
+              maxLength: 80,
               onChanged: (_) => setState(() {}),
               textCapitalization: TextCapitalization.sentences,
               style: AstraKit.body(context, isDark, fontSize: 15),
               decoration: InputDecoration(
-                hintText: isTr
-                    ? 'Örn. Annemin doğum günü'
-                    : 'e.g. Mom\'s birthday',
+                hintText:
+                    isTr ? 'Örn. Annemin doğum günü' : 'e.g. Mom\'s birthday',
                 hintStyle: AstraKit.mutedText(context, isDark, fontSize: 14),
                 filled: true,
                 fillColor: primary.withValues(alpha: 0.08),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide:
-                      BorderSide(color: primary.withValues(alpha: 0.3)),
+                  borderSide: BorderSide(color: primary.withValues(alpha: 0.3)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide:
-                      BorderSide(color: primary.withValues(alpha: 0.7)),
+                  borderSide: BorderSide(color: primary.withValues(alpha: 0.7)),
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: _dayType,
+              decoration: InputDecoration(labelText: l10n.specialDayTypeLabel),
+              items: [
+                DropdownMenuItem(
+                  value: SpecialDay.kindBirthday,
+                  child: Text(l10n.specialDayTypeBirthday),
+                ),
+                DropdownMenuItem(
+                  value: SpecialDay.kindWedding,
+                  child: Text(l10n.specialDayTypeWedding),
+                ),
+                DropdownMenuItem(
+                  value: SpecialDay.kindAnniversary,
+                  child: Text(l10n.specialDayTypeAnniversary),
+                ),
+                DropdownMenuItem(
+                  value: SpecialDay.kindCustom,
+                  child: Text(l10n.specialDayTypeCustom),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _dayType = value);
+              },
             ),
             const SizedBox(height: 12),
             InkWell(
@@ -387,8 +416,7 @@ class _AddSpecialDaySheetState extends State<_AddSpecialDaySheet> {
                 decoration: BoxDecoration(
                   color: primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
-                  border:
-                      Border.all(color: primary.withValues(alpha: 0.3)),
+                  border: Border.all(color: primary.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -404,6 +432,16 @@ class _AddSpecialDaySheetState extends State<_AddSpecialDaySheet> {
                 ),
               ),
             ),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                l10n.specialDayRepeatsAnnually,
+                style: AstraKit.body(context, isDark, fontSize: 14),
+              ),
+              value: _repeatsAnnually,
+              activeThumbColor: primary,
+              onChanged: (value) => setState(() => _repeatsAnnually = value),
+            ),
             const SizedBox(height: 20),
             AstraGoldButton(
               isDark: isDark,
@@ -412,8 +450,12 @@ class _AddSpecialDaySheetState extends State<_AddSpecialDaySheet> {
               enabled: canSave,
               onTap: () {
                 if (!canSave) return;
-                Navigator.of(context).pop(
-                    _NewSpecialDay(_titleController.text.trim(), _date!));
+                Navigator.of(context).pop(_NewSpecialDay(
+                  _titleController.text.trim(),
+                  _date!,
+                  _dayType,
+                  _repeatsAnnually,
+                ));
               },
             ),
           ],

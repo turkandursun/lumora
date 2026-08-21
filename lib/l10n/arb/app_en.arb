@@ -1929,5 +1929,12 @@
   "journalToneFeedbackTitle": "A note from Luma 💛",
   "journalToneNotNow": "Not Now",
   "journalToneWellnessPrompt": "Want a little moment that's kind to you?",
-  "journalToneCalmAction": "Take a Calm Moment"
+  "journalToneCalmAction": "Take a Calm Moment",
+  "specialDayMyBirthday": "My birthday",
+  "specialDayTypeLabel": "Type",
+  "specialDayTypeBirthday": "Birthday",
+  "specialDayTypeWedding": "Wedding day",
+  "specialDayTypeAnniversary": "Anniversary",
+  "specialDayTypeCustom": "Custom",
+  "specialDayRepeatsAnnually": "Repeat annually"
 }

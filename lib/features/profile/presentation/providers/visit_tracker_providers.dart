@@ -7,12 +7,29 @@ final visitTrackerRepositoryProvider = Provider<VisitTrackerRepository>((ref) {
   return VisitTrackerRepository();
 });
 
+/// Process-lifetime gate for the celebratory Home banner.
+///
+/// The gate is deliberately in memory: a cold launch creates a new instance,
+/// while repeated Home mounts in the same process cannot spam the same user.
+/// Keeping user ids separately also makes an in-process account switch safe.
+class StreakBannerLaunchGate {
+  final Set<String> _claimedUserIds = <String>{};
+
+  bool claim(String userId) => _claimedUserIds.add(userId);
+}
+
+final streakBannerLaunchGateProvider = Provider<StreakBannerLaunchGate>(
+  (ref) => StreakBannerLaunchGate(),
+);
+
 final weeklyVisitDatesProvider = StreamProvider<Set<String>>((ref) async* {
   final repository = ref.watch(visitTrackerRepositoryProvider);
+  // Render the durable local exact history immediately, including today's
+  // visit. Network/profile-summary latency must not block the launch banner.
+  yield await repository.fetchVisitDatesForCurrentWeek();
+  await repository.syncVisitHistoryForCurrentUser();
   // Exact history remains primary. The profile summary only fills missing
   // legacy weekdays in the returned display set and is never persisted.
-  yield await repository.fetchWeeklyVisitDatesWithLegacyFallback();
-  await repository.syncVisitHistoryForCurrentUser();
   yield await repository.fetchWeeklyVisitDatesWithLegacyFallback();
 });
 

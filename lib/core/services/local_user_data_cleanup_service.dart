@@ -58,6 +58,15 @@ class LocalUserDataCleanupService {
       if (row.id != stableId) await _notifications.cancel(row.id);
     }
 
+    final specialDayRows = await (_db.select(_db.specialDays)
+          ..where((table) => table.userId.equals(userId)))
+        .get();
+    for (final row in specialDayRows) {
+      await _notifications.cancel(
+        reminderNotificationId('specialday_${row.specialDayUuid}'),
+      );
+    }
+
     await _db.transaction(() async {
       await (_db.delete(_db.reminders)
             ..where((table) => table.userId.equals(userId)))
@@ -79,6 +88,9 @@ class LocalUserDataCleanupService {
               ..where((table) => table.userId.equals(userId)))
             .go();
         await (_db.delete(_db.letters)
+              ..where((table) => table.userId.equals(userId)))
+            .go();
+        await (_db.delete(_db.specialDays)
               ..where((table) => table.userId.equals(userId)))
             .go();
       }
@@ -129,6 +141,8 @@ class LocalUserDataCleanupService {
       'focus_goal',
       'focus_streak',
       'focus_streak_date',
+      // Ownerless legacy special days can never be assigned safely.
+      'special_days_v1',
     };
     final scopedKeys = <String>{
       'astra_bg_theme_$userId',

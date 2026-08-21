@@ -11,13 +11,14 @@ import 'tables/letters_table.dart';
 import 'tables/quote_favorites_table.dart';
 import 'tables/quotes_table.dart';
 import 'tables/reminders_table.dart';
+import 'tables/special_days_table.dart';
 
 part 'app_database.g.dart';
 
 /// The app's local offline-first database: [Reminders], [Goals], [Dreams],
 /// [JournalEntries] (Home's writing area), [DailyQuestionAnswers], [Activities],
 /// [Letters], the offline [Quotes] catalogue, and user-scoped
-/// [QuoteFavorites].
+/// [QuoteFavorites] and account-scoped [SpecialDays].
 ///
 /// The connection is platform-conditional under the hood: `drift_flutter`
 /// picks a native sqlite3 connection on Android/iOS/desktop and a
@@ -35,6 +36,7 @@ part 'app_database.g.dart';
   Letters,
   Quotes,
   QuoteFavorites,
+  SpecialDays,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -42,13 +44,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 26;
+  int get schemaVersion => 27;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
           await _createUserContentCloudIdentityIndexes();
+          await _createSpecialDaysIndexes();
         },
         onUpgrade: (m, from, to) async {
           // Each step below checks the actual on-disk schema before applying,
@@ -299,8 +302,28 @@ class AppDatabase extends _$AppDatabase {
                   'DROP COLUMN community_share_id');
             }
           }
+          if (from < 27 && !await _hasTable('special_days')) {
+            await m.createTable(specialDays);
+          }
+          if (from < 27) {
+            await _createSpecialDaysIndexes();
+          }
         },
       );
+
+  Future<void> _createSpecialDaysIndexes() async {
+    if (!await _hasTable('special_days')) return;
+    await customStatement('''
+      CREATE UNIQUE INDEX IF NOT EXISTS special_days_user_uuid_unique
+      ON special_days(user_id, special_day_uuid)
+    ''');
+    await customStatement('''
+      CREATE UNIQUE INDEX IF NOT EXISTS special_days_one_active_birthday
+      ON special_days(user_id)
+      WHERE day_type = 'birthday'
+        AND sync_state != 'pending_delete'
+    ''');
+  }
 
   Future<void> _createJournalEntriesCloudIdentityIndex() async {
     if (!await _hasTable('journal_entries')) return;

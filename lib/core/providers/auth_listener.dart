@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -15,6 +15,7 @@ import '../../features/letters/presentation/providers/letter_providers.dart';
 import '../../features/mood/presentation/providers/mood_providers.dart';
 import '../../features/profile/presentation/providers/visit_tracker_providers.dart';
 import '../../features/reminders/presentation/providers/reminders_providers.dart';
+import '../../features/special_days/presentation/providers/special_days_providers.dart';
 import '../../features/wellbeing/presentation/providers/focus_providers.dart';
 import '../../features/auth/presentation/providers/account_deletion_provider.dart';
 import 'astra_palette_provider.dart';
@@ -45,6 +46,8 @@ void invalidateUserProviders(WidgetRef ref) {
   ref.invalidate(lettersProvider);
   ref.invalidate(letterRepositoryProvider);
   ref.invalidate(remindersStreamProvider);
+  ref.invalidate(specialDaysProvider);
+  ref.invalidate(specialDaysRepositoryProvider);
   ref.invalidate(todayDailyQuestionAnswerProvider);
   ref.invalidate(dailyQuestionHistoryProvider);
   ref.invalidate(activitiesProvider);
@@ -65,7 +68,11 @@ Future<void> syncUserContentOutboxes(WidgetRef ref) async {
     ref.read(dreamsRepositoryProvider).syncForCurrentUser(),
     ref.read(activityRepositoryProvider).syncForCurrentUser(),
     ref.read(letterRepositoryProvider).syncForCurrentUser(),
+    ref.read(specialDaysRepositoryProvider).syncForCurrentUser(),
   ]);
+  final isTr =
+      WidgetsBinding.instance.platformDispatcher.locale.languageCode == 'tr';
+  await ref.read(specialDaysProvider.notifier).rearm(isTr: isTr);
 }
 
 /// Clears local user data stored in SQLite / Drift tables on sign out.

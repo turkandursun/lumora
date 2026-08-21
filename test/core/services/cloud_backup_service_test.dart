@@ -12,6 +12,10 @@ void main() {
       CloudBackupService.isDedicatedSyncTable('focus_sessions'),
       isTrue,
     );
+    expect(
+      CloudBackupService.isDedicatedSyncTable('special_days'),
+      isTrue,
+    );
   });
 
   test('persistent content outboxes are excluded from generic backup', () {
