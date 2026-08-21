@@ -109,15 +109,12 @@ class _LumoraAppState extends ConsumerState<LumoraApp>
     if (state != AppLifecycleState.resumed) return;
     unawaited(ref.read(activeFocusSessionProvider.notifier).onAppResumed());
     unawaited(ref.read(focusStatsProvider.notifier).refresh());
-<<<<<<< Updated upstream
     // Re-arm the evening "pişt, neredesin?" poke for the next day so an active
     // user is never nudged; a full day away still triggers it.
     final isTr =
         WidgetsBinding.instance.platformDispatcher.locale.languageCode == 'tr';
     unawaited(SmartRemindersService.instance.markAppOpened(isTr: isTr));
-=======
     unawaited(_bootstrapUserContentOutboxes());
->>>>>>> Stashed changes
   }
 
   @override
