@@ -183,7 +183,6 @@ class _ShareSheetState extends State<_ShareSheet>
                           key: _cardKey,
                           child: _QuoteImageCard(
                               quoteText: widget.quoteText,
-                              isTr: widget.isTr,
                               author: widget.author),
                         ),
                       ),
@@ -278,42 +277,20 @@ class _StaggerIn extends StatelessWidget {
   }
 }
 
-/// The branded, capture-ready 9:16 quote card (fixed 360×640 logical → exported
-/// at 1080×1920). A calm, serene, palette-themed design: a soft vertical
-/// gradient in the selected theme colour, gentle corner glows, a few quiet
-/// stars, a faint quotation mark, the ASTRA wordmark, the quote in an elegant
-/// serif, the author, and an ASTRA footer with a soft tagline — so a shared
-/// image always carries the app's name. Rounded ("oval") corners on export.
+/// The capture-ready 9:16 quote card (fixed 360×640 logical → exported at
+/// 1080×1920). A deliberately minimal design that mirrors the in-app vertical
+/// quotes feed: a soft two-stop gradient in the active theme colour, an opening
+/// quote glyph, the quote in an elegant serif, the author on a short rule, and
+/// a single small ASTRA wordmark so a shared image always carries the app's
+/// name. Rounded ("oval") corners on export. Wrapped in a [Material] so the
+/// captured text never picks up the debug "missing Material" underline.
 class _QuoteImageCard extends StatelessWidget {
-  const _QuoteImageCard(
-      {required this.quoteText, required this.isTr, this.author});
+  const _QuoteImageCard({required this.quoteText, this.author});
 
   final String quoteText;
-  final bool isTr;
   final String? author;
 
-  static const _cream = Color(0xFFFBF6F0); // near-white quote text
-  static const _accent = Color(0xFFEFE2D2); // soft ivory brand accent (calm)
-
-  Widget _glow(Color color, double size, double alpha) => IgnorePointer(
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [color.withValues(alpha: alpha), Colors.transparent],
-            ),
-          ),
-        ),
-      );
-
-  Widget _star(double left, double top, double size, double alpha) => Positioned(
-        left: left,
-        top: top,
-        child: Icon(Icons.auto_awesome,
-            size: size, color: _cream.withValues(alpha: alpha)),
-      );
+  static const _cream = Color(0xFFFBF6F0); // near-white text
 
   @override
   Widget build(BuildContext context) {
@@ -321,187 +298,95 @@ class _QuoteImageCard extends StatelessWidget {
     final primary = palette.primary;
     final secondary = palette.secondary;
 
-    // Soft, serene on-theme gradient — gentle and calming, not dramatic.
-    final bgTop = Color.lerp(primary, Colors.white, 0.30)!;
-    final bgMid = Color.lerp(primary, secondary, 0.55)!;
-    final bgDeep = Color.lerp(secondary, const Color(0xFF2E2138), 0.30)!;
-    final glow = Color.lerp(primary, Colors.white, 0.40)!;
+    // Soft, calm two-stop gradient in the active theme colour.
+    final bgTop = Color.lerp(primary, Colors.white, 0.20)!;
+    final bgBottom = secondary;
 
-    return Container(
-      width: 360,
-      height: 640,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(44),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [bgTop, bgMid, bgDeep],
-          stops: const [0.0, 0.55, 1.0],
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        width: 360,
+        height: 640,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(44),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [bgTop, bgBottom],
+          ),
         ),
-      ),
-      child: Stack(
-        children: [
-          // Soft corner glows for gentle depth.
-          Positioned(top: -90, right: -80, child: _glow(glow, 300, 0.30)),
-          Positioned(
-              bottom: -80, left: -90, child: _glow(secondary, 280, 0.22)),
-
-          // A few soft, sparse stars — calm, never busy.
-          _star(46, 96, 9, 0.40),
-          _star(300, 150, 12, 0.50),
-          _star(58, 470, 10, 0.42),
-          _star(292, 512, 8, 0.36),
-
-          // Inset hairline frame for a quiet "framed" feel.
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(
-                      color: _cream.withValues(alpha: 0.18), width: 1),
-                ),
-              ),
-            ),
-          ),
-
-          // Oversized opening quotation mark, very faint behind the quote.
-          Positioned(
-            left: 40,
-            top: 150,
-            child: Text(
-              '“',
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 140,
-                height: 1,
-                fontWeight: FontWeight.w700,
-                color: _cream.withValues(alpha: 0.10),
-              ),
-            ),
-          ),
-
-          // Content.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(44, 60, 44, 52),
-            child: Column(
-              children: [
-                // ASTRA wordmark.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.auto_awesome,
-                        size: 12, color: _accent.withValues(alpha: 0.9)),
-                    const SizedBox(width: 12),
-                    Text(
-                      'ASTRA',
-                      style: GoogleFonts.cinzel(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 7,
-                        color: _accent,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.auto_awesome,
-                        size: 12, color: _accent.withValues(alpha: 0.9)),
-                  ],
-                ),
-
-                // Quote + author, centred and shrunk to fit if very long.
-                Expanded(
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: SizedBox(
-                        width: 270,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              quoteText,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.playfairDisplay(
-                                fontSize: 26,
-                                fontWeight: FontWeight.w500,
-                                height: 1.55,
-                                color: _cream,
-                              ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(46, 66, 46, 48),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Quote + author — vertically centred, shrunk to fit if long.
+              Expanded(
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 268,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.format_quote_rounded,
+                              size: 50,
+                              color: _cream.withValues(alpha: 0.55)),
+                          const SizedBox(height: 20),
+                          Text(
+                            quoteText,
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 27,
+                              fontWeight: FontWeight.w600,
+                              height: 1.5,
+                              color: _cream,
                             ),
-                            if (author != null) ...[
-                              const SizedBox(height: 24),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                      width: 22,
-                                      height: 1.2,
-                                      color:
-                                          _accent.withValues(alpha: 0.8)),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    author!,
-                                    style: GoogleFonts.outfit(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: 0.5,
-                                      color: _accent,
-                                    ),
+                          ),
+                          if (author != null) ...[
+                            const SizedBox(height: 22),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                    width: 26,
+                                    height: 1.6,
+                                    color: _cream.withValues(alpha: 0.75)),
+                                const SizedBox(width: 12),
+                                Text(
+                                  author!,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 15.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.3,
+                                    color: _cream.withValues(alpha: 0.92),
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                              ],
+                            ),
                           ],
-                        ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-
-                // Footer: a quiet divider, the ASTRA brand, and a soft tagline —
-                // so whoever sees the shared image knows the app by name.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                        width: 34,
-                        height: 1,
-                        color: _cream.withValues(alpha: 0.28)),
-                    const SizedBox(width: 12),
-                    Icon(Icons.auto_awesome,
-                        size: 10, color: _cream.withValues(alpha: 0.8)),
-                    const SizedBox(width: 12),
-                    Container(
-                        width: 34,
-                        height: 1,
-                        color: _cream.withValues(alpha: 0.28)),
-                  ],
+              ),
+              // A single, minimal ASTRA wordmark.
+              Text(
+                'ASTRA',
+                style: GoogleFonts.cinzel(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 6,
+                  color: _cream.withValues(alpha: 0.8),
                 ),
-                const SizedBox(height: 13),
-                Text(
-                  'ASTRA',
-                  style: GoogleFonts.cinzel(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 5,
-                    color: _cream.withValues(alpha: 0.85),
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  isTr ? 'kendine bir an' : 'a moment for you',
-                  style: GoogleFonts.outfit(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 2.5,
-                    color: _cream.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
