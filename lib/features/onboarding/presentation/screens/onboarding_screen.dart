@@ -60,6 +60,15 @@ const List<_Beat> _beats = [
         'Luma listens and gently opens your thoughts with soft questions. Never judging, always here.',
   ),
   _Beat(
+    icon: Icons.format_quote_rounded,
+    titleTr: 'Günün sözleri bir kaydırma uzağında',
+    titleEn: 'Daily wisdom is a swipe away',
+    bodyTr:
+        'Ana ekranda sağa kaydır; ünlü düşünürlerin ilham veren sözleri tek tek karşına gelsin. Sevdiğini favorine ekle ya da paylaş.',
+    bodyEn:
+        'Swipe right on the home screen and meet inspiring words from great thinkers, one at a time. Favorite the ones you love, or share them.',
+  ),
+  _Beat(
     icon: Icons.shield_moon_rounded,
     titleTr: 'Yolculuk seninle güvende',
     titleEn: 'The journey is safe with you',

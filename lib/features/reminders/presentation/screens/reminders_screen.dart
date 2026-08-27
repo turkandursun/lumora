@@ -2,15 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/tables/reminders_table.dart';
 import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../../theme/responsive_content.dart';
+import '../../../special_days/presentation/providers/special_days_providers.dart';
 import '../../data/reminders_repository.dart';
 import '../providers/reminders_providers.dart';
 import '../widgets/new_reminder_sheet.dart';
@@ -127,6 +130,9 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
     unawaited(
       ref.read(remindersRepositoryProvider).initializeForCurrentUser(copy),
     );
+    // Keep every special day's yearly notification armed.
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    unawaited(ref.read(specialDaysProvider.notifier).rearm(isTr: isTr));
   }
 
   @override
@@ -173,6 +179,11 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                   child: SmartRemindersCard(isDark: isDark),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: _SpecialDaysReminderCard(
+                      isDark: isDark, primary: primary),
                 ),
                 TabBar(
                   controller: _tabController,
@@ -223,6 +234,80 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen>
                     ),
                   ),
                 ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A compact entry in the reminders screen that surfaces the user's special
+/// days (birthdays etc.) — they live outside the reminders table but are still
+/// notified yearly, so this makes them visible here and taps through to manage.
+class _SpecialDaysReminderCard extends ConsumerWidget {
+  const _SpecialDaysReminderCard({required this.isDark, required this.primary});
+
+  final bool isDark;
+  final Color primary;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final count = ref.watch(specialDaysProvider).length;
+    return AstraGlassCard(
+      isDark: isDark,
+      primaryColor: primary,
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push(AppRoutes.specialDays),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: primary.withValues(alpha: 0.16),
+                    border:
+                        Border.all(color: primary.withValues(alpha: 0.35)),
+                  ),
+                  child: Icon(Icons.celebration_rounded,
+                      color: primary, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(isTr ? 'Özel Günler' : 'Special Days',
+                          style: AstraKit.body(context, isDark,
+                              fontSize: 15, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 4),
+                      Text(
+                        count == 0
+                            ? (isTr
+                                ? 'Doğum günü ve önemli tarihleri ekle'
+                                : 'Add birthdays and key dates')
+                            : (isTr
+                                ? '$count özel gün · her yıl hatırlatılacak'
+                                : '$count special days · reminded yearly'),
+                        style: AstraKit.mutedText(context, isDark,
+                            fontSize: 12.5),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    color: AstraKit.muted(context, isDark)),
               ],
             ),
           ),

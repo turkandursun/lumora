@@ -14,6 +14,7 @@ import '../../../theme/astra_screen_kit.dart';
 import '../../../theme/luma_chat_sheet.dart';
 import '../../journal/presentation/screens/home_screen.dart';
 import '../../profile/presentation/screens/profile_screen.dart';
+import '../../quotes_feed/presentation/screens/quotes_feed_screen.dart';
 
 /// Main app shell shown after onboarding/login. Only Home and Profile are
 /// persistent [IndexedStack] tabs — the other three bottom-nav slots are
@@ -37,6 +38,10 @@ class _AppShellState extends ConsumerState<AppShell>
 
   final ValueNotifier<int> _homeReplay = ValueNotifier<int>(0);
   final ValueNotifier<int> _profileReplay = ValueNotifier<int>(0);
+
+  // Home sits at page 1; page 0 (to its left) is the "Günün Sözleri" feed,
+  // revealed by swiping Home to the right.
+  final PageController _homePageController = PageController(initialPage: 1);
 
   late final AnimationController _fabAnim;
 
@@ -92,11 +97,20 @@ class _AppShellState extends ConsumerState<AppShell>
     }
   }
 
+  void _goHome() {
+    _switchTab(_ActiveTab.home);
+    if (_homePageController.hasClients) {
+      _homePageController.animateToPage(1,
+          duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
+  }
+
   @override
   void dispose() {
     astraRouteObserver.unsubscribe(this);
     _homeReplay.dispose();
     _profileReplay.dispose();
+    _homePageController.dispose();
     _fabAnim.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -124,7 +138,13 @@ class _AppShellState extends ConsumerState<AppShell>
   Widget build(BuildContext context) {
     final isDark = ref.watch(astraThemeProvider) == AstraThemeMode.dark;
     final screens = [
-      const HomeScreen(),
+      PageView(
+        controller: _homePageController,
+        children: const [
+          QuotesFeedScreen(),
+          HomeScreen(),
+        ],
+      ),
       _profileVisited ? const ProfileScreen() : const SizedBox.shrink(),
     ];
     final activeIndex = _active == _ActiveTab.home ? 0 : 1;
@@ -156,7 +176,7 @@ class _AppShellState extends ConsumerState<AppShell>
         isDark: isDark,
         active: _active,
         fabAnim: _fabAnim,
-        onHome: () => _switchTab(_ActiveTab.home),
+        onHome: _goHome,
         onStats: () => context.push(AppRoutes.stats),
         onQuickAdd: _toggleFab,
         onAi: _openAiChat,

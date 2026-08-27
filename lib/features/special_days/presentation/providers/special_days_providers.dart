@@ -44,7 +44,9 @@ class SpecialDaysNotifier extends StateNotifier<List<SpecialDay>> {
 
   /// Re-schedules every special day's yearly notification (call on app/screen
   /// open so the once-fired reminders stay armed for the next occurrence).
+  /// Reloads first so it works even before the initial load has settled.
   Future<void> rearm({required bool isTr}) async {
+    await load();
     await SpecialDayNotifications.rearmAll(state, isTr: isTr);
   }
 }
