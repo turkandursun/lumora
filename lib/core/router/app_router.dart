@@ -68,6 +68,7 @@ class AppRoutes {
   static const home = AuthFlowRoutes.home;
   static const reminders = '/reminders';
   static const goals = '/goals';
+  static const createPage = '/create-page';
   static const breathing = '/breathing';
   static const dreams = '/dreams';
   static const newDream = '/dreams/new';
