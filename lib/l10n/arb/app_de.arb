@@ -580,5 +580,12 @@
   "journalToneFeedbackTitle": "Tagebuch-Ton-Feedback",
   "journalToneNotNow": "Jetzt nicht",
   "journalToneWellnessPrompt": "Wie fühlst du dich mit diesem Eintrag?",
-  "journalToneCalmAction": "Nimm einen ruhigen Moment"
+  "journalToneCalmAction": "Nimm einen ruhigen Moment",
+  "specialDayMyBirthday": "Mein Geburtstag",
+  "specialDayTypeLabel": "Typ",
+  "specialDayTypeBirthday": "Geburtstag",
+  "specialDayTypeWedding": "Hochzeitstag",
+  "specialDayTypeAnniversary": "Jahrestag",
+  "specialDayTypeCustom": "Besonderer Tag",
+  "specialDayRepeatsAnnually": "Jährlich wiederholen"
 }

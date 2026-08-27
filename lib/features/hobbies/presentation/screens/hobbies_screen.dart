@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/providers/astra_theme_provider.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../theme/astra_screen_kit.dart';
 import '../../../auth/domain/auth_flow_routes.dart';
 import '../../../auth/domain/registration_flow_state.dart';
@@ -156,7 +157,7 @@ class _HobbiesScreenState extends ConsumerState<HobbiesScreen> {
             month: date.month,
             day: date.day,
             year: date.year,
-            title: isTr ? 'Doğum günüm' : 'My birthday',
+            title: AppLocalizations.of(context).specialDayMyBirthday,
             isTr: isTr,
           );
     }

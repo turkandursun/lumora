@@ -39,6 +39,7 @@ export const accountOwnedTables = [
   "journal_entries",
   "goals",
   "focus_sessions",
+  "special_days",
   "activities",
   "activity_posts",
 ] as const;

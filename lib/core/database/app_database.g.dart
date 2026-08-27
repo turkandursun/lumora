@@ -5230,6 +5230,580 @@ class QuoteFavoritesCompanion extends UpdateCompanion<QuoteFavoriteRow> {
   }
 }
 
+class $SpecialDaysTable extends SpecialDays
+    with TableInfo<$SpecialDaysTable, SpecialDayRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SpecialDaysTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _specialDayUuidMeta =
+      const VerificationMeta('specialDayUuid');
+  @override
+  late final GeneratedColumn<String> specialDayUuid = GeneratedColumn<String>(
+      'special_day_uuid', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 80),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _dayTypeMeta =
+      const VerificationMeta('dayType');
+  @override
+  late final GeneratedColumn<String> dayType = GeneratedColumn<String>(
+      'day_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _eventDateMeta =
+      const VerificationMeta('eventDate');
+  @override
+  late final GeneratedColumn<DateTime> eventDate = GeneratedColumn<DateTime>(
+      'event_date', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _repeatsAnnuallyMeta =
+      const VerificationMeta('repeatsAnnually');
+  @override
+  late final GeneratedColumn<bool> repeatsAnnually = GeneratedColumn<bool>(
+      'repeats_annually', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("repeats_annually" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _syncStateMeta =
+      const VerificationMeta('syncState');
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+      'sync_state', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('synced'));
+  static const VerificationMeta _changedAtMeta =
+      const VerificationMeta('changedAt');
+  @override
+  late final GeneratedColumn<DateTime> changedAt = GeneratedColumn<DateTime>(
+      'changed_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _cloudUpdatedAtMeta =
+      const VerificationMeta('cloudUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> cloudUpdatedAt =
+      GeneratedColumn<DateTime>('cloud_updated_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _lastSyncedAtMeta =
+      const VerificationMeta('lastSyncedAt');
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+      'last_synced_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        specialDayUuid,
+        userId,
+        title,
+        dayType,
+        eventDate,
+        repeatsAnnually,
+        syncState,
+        changedAt,
+        cloudUpdatedAt,
+        lastSyncedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'special_days';
+  @override
+  VerificationContext validateIntegrity(Insertable<SpecialDayRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('special_day_uuid')) {
+      context.handle(
+          _specialDayUuidMeta,
+          specialDayUuid.isAcceptableOrUnknown(
+              data['special_day_uuid']!, _specialDayUuidMeta));
+    } else if (isInserting) {
+      context.missing(_specialDayUuidMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('day_type')) {
+      context.handle(_dayTypeMeta,
+          dayType.isAcceptableOrUnknown(data['day_type']!, _dayTypeMeta));
+    } else if (isInserting) {
+      context.missing(_dayTypeMeta);
+    }
+    if (data.containsKey('event_date')) {
+      context.handle(_eventDateMeta,
+          eventDate.isAcceptableOrUnknown(data['event_date']!, _eventDateMeta));
+    } else if (isInserting) {
+      context.missing(_eventDateMeta);
+    }
+    if (data.containsKey('repeats_annually')) {
+      context.handle(
+          _repeatsAnnuallyMeta,
+          repeatsAnnually.isAcceptableOrUnknown(
+              data['repeats_annually']!, _repeatsAnnuallyMeta));
+    }
+    if (data.containsKey('sync_state')) {
+      context.handle(_syncStateMeta,
+          syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta));
+    }
+    if (data.containsKey('changed_at')) {
+      context.handle(_changedAtMeta,
+          changedAt.isAcceptableOrUnknown(data['changed_at']!, _changedAtMeta));
+    }
+    if (data.containsKey('cloud_updated_at')) {
+      context.handle(
+          _cloudUpdatedAtMeta,
+          cloudUpdatedAt.isAcceptableOrUnknown(
+              data['cloud_updated_at']!, _cloudUpdatedAtMeta));
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+          _lastSyncedAtMeta,
+          lastSyncedAt.isAcceptableOrUnknown(
+              data['last_synced_at']!, _lastSyncedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+        {userId, specialDayUuid},
+      ];
+  @override
+  SpecialDayRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SpecialDayRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      specialDayUuid: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}special_day_uuid'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      dayType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}day_type'])!,
+      eventDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}event_date'])!,
+      repeatsAnnually: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}repeats_annually'])!,
+      syncState: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_state'])!,
+      changedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}changed_at'])!,
+      cloudUpdatedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}cloud_updated_at']),
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}last_synced_at']),
+    );
+  }
+
+  @override
+  $SpecialDaysTable createAlias(String alias) {
+    return $SpecialDaysTable(attachedDatabase, alias);
+  }
+}
+
+class SpecialDayRow extends DataClass implements Insertable<SpecialDayRow> {
+  final int id;
+
+  /// Client-generated UUID; also the primary key in Supabase.
+  final String specialDayUuid;
+  final String userId;
+  final String title;
+  final String dayType;
+
+  /// A local calendar date. Consumers serialize it as YYYY-MM-DD without UTC
+  /// conversion so birthdays cannot shift to an adjacent day.
+  final DateTime eventDate;
+  final bool repeatsAnnually;
+
+  /// Persistent outbox state: synced, pending_upsert, or pending_delete.
+  final String syncState;
+  final DateTime changedAt;
+  final DateTime? cloudUpdatedAt;
+  final DateTime? lastSyncedAt;
+  const SpecialDayRow(
+      {required this.id,
+      required this.specialDayUuid,
+      required this.userId,
+      required this.title,
+      required this.dayType,
+      required this.eventDate,
+      required this.repeatsAnnually,
+      required this.syncState,
+      required this.changedAt,
+      this.cloudUpdatedAt,
+      this.lastSyncedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['special_day_uuid'] = Variable<String>(specialDayUuid);
+    map['user_id'] = Variable<String>(userId);
+    map['title'] = Variable<String>(title);
+    map['day_type'] = Variable<String>(dayType);
+    map['event_date'] = Variable<DateTime>(eventDate);
+    map['repeats_annually'] = Variable<bool>(repeatsAnnually);
+    map['sync_state'] = Variable<String>(syncState);
+    map['changed_at'] = Variable<DateTime>(changedAt);
+    if (!nullToAbsent || cloudUpdatedAt != null) {
+      map['cloud_updated_at'] = Variable<DateTime>(cloudUpdatedAt);
+    }
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    return map;
+  }
+
+  SpecialDaysCompanion toCompanion(bool nullToAbsent) {
+    return SpecialDaysCompanion(
+      id: Value(id),
+      specialDayUuid: Value(specialDayUuid),
+      userId: Value(userId),
+      title: Value(title),
+      dayType: Value(dayType),
+      eventDate: Value(eventDate),
+      repeatsAnnually: Value(repeatsAnnually),
+      syncState: Value(syncState),
+      changedAt: Value(changedAt),
+      cloudUpdatedAt: cloudUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cloudUpdatedAt),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
+    );
+  }
+
+  factory SpecialDayRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SpecialDayRow(
+      id: serializer.fromJson<int>(json['id']),
+      specialDayUuid: serializer.fromJson<String>(json['specialDayUuid']),
+      userId: serializer.fromJson<String>(json['userId']),
+      title: serializer.fromJson<String>(json['title']),
+      dayType: serializer.fromJson<String>(json['dayType']),
+      eventDate: serializer.fromJson<DateTime>(json['eventDate']),
+      repeatsAnnually: serializer.fromJson<bool>(json['repeatsAnnually']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      changedAt: serializer.fromJson<DateTime>(json['changedAt']),
+      cloudUpdatedAt: serializer.fromJson<DateTime?>(json['cloudUpdatedAt']),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'specialDayUuid': serializer.toJson<String>(specialDayUuid),
+      'userId': serializer.toJson<String>(userId),
+      'title': serializer.toJson<String>(title),
+      'dayType': serializer.toJson<String>(dayType),
+      'eventDate': serializer.toJson<DateTime>(eventDate),
+      'repeatsAnnually': serializer.toJson<bool>(repeatsAnnually),
+      'syncState': serializer.toJson<String>(syncState),
+      'changedAt': serializer.toJson<DateTime>(changedAt),
+      'cloudUpdatedAt': serializer.toJson<DateTime?>(cloudUpdatedAt),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+    };
+  }
+
+  SpecialDayRow copyWith(
+          {int? id,
+          String? specialDayUuid,
+          String? userId,
+          String? title,
+          String? dayType,
+          DateTime? eventDate,
+          bool? repeatsAnnually,
+          String? syncState,
+          DateTime? changedAt,
+          Value<DateTime?> cloudUpdatedAt = const Value.absent(),
+          Value<DateTime?> lastSyncedAt = const Value.absent()}) =>
+      SpecialDayRow(
+        id: id ?? this.id,
+        specialDayUuid: specialDayUuid ?? this.specialDayUuid,
+        userId: userId ?? this.userId,
+        title: title ?? this.title,
+        dayType: dayType ?? this.dayType,
+        eventDate: eventDate ?? this.eventDate,
+        repeatsAnnually: repeatsAnnually ?? this.repeatsAnnually,
+        syncState: syncState ?? this.syncState,
+        changedAt: changedAt ?? this.changedAt,
+        cloudUpdatedAt:
+            cloudUpdatedAt.present ? cloudUpdatedAt.value : this.cloudUpdatedAt,
+        lastSyncedAt:
+            lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+      );
+  SpecialDayRow copyWithCompanion(SpecialDaysCompanion data) {
+    return SpecialDayRow(
+      id: data.id.present ? data.id.value : this.id,
+      specialDayUuid: data.specialDayUuid.present
+          ? data.specialDayUuid.value
+          : this.specialDayUuid,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      title: data.title.present ? data.title.value : this.title,
+      dayType: data.dayType.present ? data.dayType.value : this.dayType,
+      eventDate: data.eventDate.present ? data.eventDate.value : this.eventDate,
+      repeatsAnnually: data.repeatsAnnually.present
+          ? data.repeatsAnnually.value
+          : this.repeatsAnnually,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      changedAt: data.changedAt.present ? data.changedAt.value : this.changedAt,
+      cloudUpdatedAt: data.cloudUpdatedAt.present
+          ? data.cloudUpdatedAt.value
+          : this.cloudUpdatedAt,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SpecialDayRow(')
+          ..write('id: $id, ')
+          ..write('specialDayUuid: $specialDayUuid, ')
+          ..write('userId: $userId, ')
+          ..write('title: $title, ')
+          ..write('dayType: $dayType, ')
+          ..write('eventDate: $eventDate, ')
+          ..write('repeatsAnnually: $repeatsAnnually, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt, ')
+          ..write('cloudUpdatedAt: $cloudUpdatedAt, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      specialDayUuid,
+      userId,
+      title,
+      dayType,
+      eventDate,
+      repeatsAnnually,
+      syncState,
+      changedAt,
+      cloudUpdatedAt,
+      lastSyncedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SpecialDayRow &&
+          other.id == this.id &&
+          other.specialDayUuid == this.specialDayUuid &&
+          other.userId == this.userId &&
+          other.title == this.title &&
+          other.dayType == this.dayType &&
+          other.eventDate == this.eventDate &&
+          other.repeatsAnnually == this.repeatsAnnually &&
+          other.syncState == this.syncState &&
+          other.changedAt == this.changedAt &&
+          other.cloudUpdatedAt == this.cloudUpdatedAt &&
+          other.lastSyncedAt == this.lastSyncedAt);
+}
+
+class SpecialDaysCompanion extends UpdateCompanion<SpecialDayRow> {
+  final Value<int> id;
+  final Value<String> specialDayUuid;
+  final Value<String> userId;
+  final Value<String> title;
+  final Value<String> dayType;
+  final Value<DateTime> eventDate;
+  final Value<bool> repeatsAnnually;
+  final Value<String> syncState;
+  final Value<DateTime> changedAt;
+  final Value<DateTime?> cloudUpdatedAt;
+  final Value<DateTime?> lastSyncedAt;
+  const SpecialDaysCompanion({
+    this.id = const Value.absent(),
+    this.specialDayUuid = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.dayType = const Value.absent(),
+    this.eventDate = const Value.absent(),
+    this.repeatsAnnually = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
+    this.cloudUpdatedAt = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+  });
+  SpecialDaysCompanion.insert({
+    this.id = const Value.absent(),
+    required String specialDayUuid,
+    required String userId,
+    required String title,
+    required String dayType,
+    required DateTime eventDate,
+    this.repeatsAnnually = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.changedAt = const Value.absent(),
+    this.cloudUpdatedAt = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+  })  : specialDayUuid = Value(specialDayUuid),
+        userId = Value(userId),
+        title = Value(title),
+        dayType = Value(dayType),
+        eventDate = Value(eventDate);
+  static Insertable<SpecialDayRow> custom({
+    Expression<int>? id,
+    Expression<String>? specialDayUuid,
+    Expression<String>? userId,
+    Expression<String>? title,
+    Expression<String>? dayType,
+    Expression<DateTime>? eventDate,
+    Expression<bool>? repeatsAnnually,
+    Expression<String>? syncState,
+    Expression<DateTime>? changedAt,
+    Expression<DateTime>? cloudUpdatedAt,
+    Expression<DateTime>? lastSyncedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (specialDayUuid != null) 'special_day_uuid': specialDayUuid,
+      if (userId != null) 'user_id': userId,
+      if (title != null) 'title': title,
+      if (dayType != null) 'day_type': dayType,
+      if (eventDate != null) 'event_date': eventDate,
+      if (repeatsAnnually != null) 'repeats_annually': repeatsAnnually,
+      if (syncState != null) 'sync_state': syncState,
+      if (changedAt != null) 'changed_at': changedAt,
+      if (cloudUpdatedAt != null) 'cloud_updated_at': cloudUpdatedAt,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+    });
+  }
+
+  SpecialDaysCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? specialDayUuid,
+      Value<String>? userId,
+      Value<String>? title,
+      Value<String>? dayType,
+      Value<DateTime>? eventDate,
+      Value<bool>? repeatsAnnually,
+      Value<String>? syncState,
+      Value<DateTime>? changedAt,
+      Value<DateTime?>? cloudUpdatedAt,
+      Value<DateTime?>? lastSyncedAt}) {
+    return SpecialDaysCompanion(
+      id: id ?? this.id,
+      specialDayUuid: specialDayUuid ?? this.specialDayUuid,
+      userId: userId ?? this.userId,
+      title: title ?? this.title,
+      dayType: dayType ?? this.dayType,
+      eventDate: eventDate ?? this.eventDate,
+      repeatsAnnually: repeatsAnnually ?? this.repeatsAnnually,
+      syncState: syncState ?? this.syncState,
+      changedAt: changedAt ?? this.changedAt,
+      cloudUpdatedAt: cloudUpdatedAt ?? this.cloudUpdatedAt,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (specialDayUuid.present) {
+      map['special_day_uuid'] = Variable<String>(specialDayUuid.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (dayType.present) {
+      map['day_type'] = Variable<String>(dayType.value);
+    }
+    if (eventDate.present) {
+      map['event_date'] = Variable<DateTime>(eventDate.value);
+    }
+    if (repeatsAnnually.present) {
+      map['repeats_annually'] = Variable<bool>(repeatsAnnually.value);
+    }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (changedAt.present) {
+      map['changed_at'] = Variable<DateTime>(changedAt.value);
+    }
+    if (cloudUpdatedAt.present) {
+      map['cloud_updated_at'] = Variable<DateTime>(cloudUpdatedAt.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SpecialDaysCompanion(')
+          ..write('id: $id, ')
+          ..write('specialDayUuid: $specialDayUuid, ')
+          ..write('userId: $userId, ')
+          ..write('title: $title, ')
+          ..write('dayType: $dayType, ')
+          ..write('eventDate: $eventDate, ')
+          ..write('repeatsAnnually: $repeatsAnnually, ')
+          ..write('syncState: $syncState, ')
+          ..write('changedAt: $changedAt, ')
+          ..write('cloudUpdatedAt: $cloudUpdatedAt, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5244,6 +5818,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LettersTable letters = $LettersTable(this);
   late final $QuotesTable quotes = $QuotesTable(this);
   late final $QuoteFavoritesTable quoteFavorites = $QuoteFavoritesTable(this);
+  late final $SpecialDaysTable specialDays = $SpecialDaysTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5258,7 +5833,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         activities,
         letters,
         quotes,
-        quoteFavorites
+        quoteFavorites,
+        specialDays
       ];
 }
 
@@ -7698,6 +8274,270 @@ typedef $$QuoteFavoritesTableProcessedTableManager = ProcessedTableManager<
     ),
     QuoteFavoriteRow,
     PrefetchHooks Function()>;
+typedef $$SpecialDaysTableCreateCompanionBuilder = SpecialDaysCompanion
+    Function({
+  Value<int> id,
+  required String specialDayUuid,
+  required String userId,
+  required String title,
+  required String dayType,
+  required DateTime eventDate,
+  Value<bool> repeatsAnnually,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
+  Value<DateTime?> cloudUpdatedAt,
+  Value<DateTime?> lastSyncedAt,
+});
+typedef $$SpecialDaysTableUpdateCompanionBuilder = SpecialDaysCompanion
+    Function({
+  Value<int> id,
+  Value<String> specialDayUuid,
+  Value<String> userId,
+  Value<String> title,
+  Value<String> dayType,
+  Value<DateTime> eventDate,
+  Value<bool> repeatsAnnually,
+  Value<String> syncState,
+  Value<DateTime> changedAt,
+  Value<DateTime?> cloudUpdatedAt,
+  Value<DateTime?> lastSyncedAt,
+});
+
+class $$SpecialDaysTableFilterComposer
+    extends Composer<_$AppDatabase, $SpecialDaysTable> {
+  $$SpecialDaysTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get specialDayUuid => $composableBuilder(
+      column: $table.specialDayUuid,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get dayType => $composableBuilder(
+      column: $table.dayType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get eventDate => $composableBuilder(
+      column: $table.eventDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get repeatsAnnually => $composableBuilder(
+      column: $table.repeatsAnnually,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get cloudUpdatedAt => $composableBuilder(
+      column: $table.cloudUpdatedAt,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+      column: $table.lastSyncedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SpecialDaysTableOrderingComposer
+    extends Composer<_$AppDatabase, $SpecialDaysTable> {
+  $$SpecialDaysTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get specialDayUuid => $composableBuilder(
+      column: $table.specialDayUuid,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get dayType => $composableBuilder(
+      column: $table.dayType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get eventDate => $composableBuilder(
+      column: $table.eventDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get repeatsAnnually => $composableBuilder(
+      column: $table.repeatsAnnually,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+      column: $table.syncState, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get cloudUpdatedAt => $composableBuilder(
+      column: $table.cloudUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+      column: $table.lastSyncedAt,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$SpecialDaysTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SpecialDaysTable> {
+  $$SpecialDaysTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get specialDayUuid => $composableBuilder(
+      column: $table.specialDayUuid, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get dayType =>
+      $composableBuilder(column: $table.dayType, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get eventDate =>
+      $composableBuilder(column: $table.eventDate, builder: (column) => column);
+
+  GeneratedColumn<bool> get repeatsAnnually => $composableBuilder(
+      column: $table.repeatsAnnually, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get changedAt =>
+      $composableBuilder(column: $table.changedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cloudUpdatedAt => $composableBuilder(
+      column: $table.cloudUpdatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+      column: $table.lastSyncedAt, builder: (column) => column);
+}
+
+class $$SpecialDaysTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SpecialDaysTable,
+    SpecialDayRow,
+    $$SpecialDaysTableFilterComposer,
+    $$SpecialDaysTableOrderingComposer,
+    $$SpecialDaysTableAnnotationComposer,
+    $$SpecialDaysTableCreateCompanionBuilder,
+    $$SpecialDaysTableUpdateCompanionBuilder,
+    (
+      SpecialDayRow,
+      BaseReferences<_$AppDatabase, $SpecialDaysTable, SpecialDayRow>
+    ),
+    SpecialDayRow,
+    PrefetchHooks Function()> {
+  $$SpecialDaysTableTableManager(_$AppDatabase db, $SpecialDaysTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SpecialDaysTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SpecialDaysTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SpecialDaysTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> specialDayUuid = const Value.absent(),
+            Value<String> userId = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String> dayType = const Value.absent(),
+            Value<DateTime> eventDate = const Value.absent(),
+            Value<bool> repeatsAnnually = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
+            Value<DateTime?> cloudUpdatedAt = const Value.absent(),
+            Value<DateTime?> lastSyncedAt = const Value.absent(),
+          }) =>
+              SpecialDaysCompanion(
+            id: id,
+            specialDayUuid: specialDayUuid,
+            userId: userId,
+            title: title,
+            dayType: dayType,
+            eventDate: eventDate,
+            repeatsAnnually: repeatsAnnually,
+            syncState: syncState,
+            changedAt: changedAt,
+            cloudUpdatedAt: cloudUpdatedAt,
+            lastSyncedAt: lastSyncedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String specialDayUuid,
+            required String userId,
+            required String title,
+            required String dayType,
+            required DateTime eventDate,
+            Value<bool> repeatsAnnually = const Value.absent(),
+            Value<String> syncState = const Value.absent(),
+            Value<DateTime> changedAt = const Value.absent(),
+            Value<DateTime?> cloudUpdatedAt = const Value.absent(),
+            Value<DateTime?> lastSyncedAt = const Value.absent(),
+          }) =>
+              SpecialDaysCompanion.insert(
+            id: id,
+            specialDayUuid: specialDayUuid,
+            userId: userId,
+            title: title,
+            dayType: dayType,
+            eventDate: eventDate,
+            repeatsAnnually: repeatsAnnually,
+            syncState: syncState,
+            changedAt: changedAt,
+            cloudUpdatedAt: cloudUpdatedAt,
+            lastSyncedAt: lastSyncedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SpecialDaysTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SpecialDaysTable,
+    SpecialDayRow,
+    $$SpecialDaysTableFilterComposer,
+    $$SpecialDaysTableOrderingComposer,
+    $$SpecialDaysTableAnnotationComposer,
+    $$SpecialDaysTableCreateCompanionBuilder,
+    $$SpecialDaysTableUpdateCompanionBuilder,
+    (
+      SpecialDayRow,
+      BaseReferences<_$AppDatabase, $SpecialDaysTable, SpecialDayRow>
+    ),
+    SpecialDayRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7722,4 +8562,6 @@ class $AppDatabaseManager {
       $$QuotesTableTableManager(_db, _db.quotes);
   $$QuoteFavoritesTableTableManager get quoteFavorites =>
       $$QuoteFavoritesTableTableManager(_db, _db.quoteFavorites);
+  $$SpecialDaysTableTableManager get specialDays =>
+      $$SpecialDaysTableTableManager(_db, _db.specialDays);
 }

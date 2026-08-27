@@ -580,5 +580,12 @@
   "journalToneFeedbackTitle": "Luma'dan sana bir not 💛",
   "journalToneNotNow": "Şimdi Değil",
   "journalToneWellnessPrompt": "Kendine iyi gelecek küçük bir mola ister misin?",
-  "journalToneCalmAction": "Sakinleşme Egzersizi Yap"
+  "journalToneCalmAction": "Sakinleşme Egzersizi Yap",
+  "specialDayMyBirthday": "Doğum günüm",
+  "specialDayTypeLabel": "Tür",
+  "specialDayTypeBirthday": "Doğum günü",
+  "specialDayTypeWedding": "Düğün günü",
+  "specialDayTypeAnniversary": "Yıldönümü",
+  "specialDayTypeCustom": "Özel gün",
+  "specialDayRepeatsAnnually": "Her yıl tekrarla"
 }

@@ -580,5 +580,12 @@
   "journalToneFeedbackTitle": "Comentario sobre el tono",
   "journalToneNotNow": "Ahora no",
   "journalToneWellnessPrompt": "¿Cómo te sientes con esta entrada?",
-  "journalToneCalmAction": "Tómate un momento de calma"
+  "journalToneCalmAction": "Tómate un momento de calma",
+  "specialDayMyBirthday": "Mi cumpleaños",
+  "specialDayTypeLabel": "Tipo",
+  "specialDayTypeBirthday": "Cumpleaños",
+  "specialDayTypeWedding": "Día de la boda",
+  "specialDayTypeAnniversary": "Aniversario",
+  "specialDayTypeCustom": "Personalizado",
+  "specialDayRepeatsAnnually": "Repetir anualmente"
 }

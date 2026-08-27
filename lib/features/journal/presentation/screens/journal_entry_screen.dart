@@ -26,8 +26,11 @@ import '../../../../theme/responsive_content.dart';
 
 import '../../../goals/domain/goal_template.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
+import '../../../create_page/presentation/create_page_screen.dart';
 import '../controllers/journal_tone_feedback_controller.dart';
 import '../providers/journal_entries_provider.dart';
+import '../providers/journal_page_config_provider.dart';
+import '../widgets/journal_paper_surface.dart';
 import '../providers/journal_streak_provider.dart';
 import '../widgets/journal_tone_feedback_sheet.dart';
 
@@ -456,6 +459,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
     // dark/moon theme, gold on the light/sun theme — flows through the labels,
     // icons, borders, waveform and mic on the glass cards.
     final primary = AstraKit.primary(context, isDark);
+    final pageConfig = ref.watch(journalPageConfigProvider);
 
     final localeStr = Localizations.localeOf(context).toString();
     final dateStr =
@@ -633,39 +637,119 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              SizedBox(
-                                height: 200,
-                                child: TextField(
-                                  controller: _entryController,
-                                  maxLines: null,
-                                  expands: true,
-                                  maxLength: 5000,
-                                  textAlignVertical: TextAlignVertical.top,
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 16,
-                                    color: AstraKit.ink(context, isDark),
-                                    height: 1.5,
-                                    fontWeight: FontWeight.w600,
+                              // Paper designer — decorate the paper, then write
+                              // straight onto it.
+                              Row(
+                                children: [
+                                  Icon(Icons.article_outlined,
+                                      size: 15, color: primary),
+                                  const SizedBox(width: 6),
+                                  Text(isTr ? 'Kâğıt' : 'Paper',
+                                      style: _labelStyle(primary)),
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTap: () => Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => CreatePageScreen(
+                                          onPageCreated: (cfg) => ref
+                                              .read(journalPageConfigProvider
+                                                  .notifier)
+                                              .update(cfg),
+                                        ),
+                                      ),
+                                    ),
+                                    behavior: HitTestBehavior.opaque,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: primary.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                            color:
+                                                primary.withValues(alpha: 0.3)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.brush_rounded,
+                                              size: 14, color: primary),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            isTr
+                                                ? 'Kağıdını Tasarla'
+                                                : 'Design paper',
+                                            style: GoogleFonts.outfit(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                  cursorColor: primary,
-                                  decoration: InputDecoration(
-                                    // Kill the global lavender fill so the
-                                    // glass card shows through (no white box).
-                                    filled: false,
-                                    fillColor: Colors.transparent,
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    isCollapsed: true,
-                                    contentPadding: EdgeInsets.zero,
-                                    counterText: '',
-                                    hintText: isTr
-                                        ? 'Bugün aklından geçenleri yaz...'
-                                        : 'Write what is on your mind today...',
-                                    hintStyle: GoogleFonts.outfit(
-                                      fontSize: 15,
-                                      color: AstraKit.faint(context, isDark),
-                                      fontWeight: FontWeight.w400,
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              // The chosen paper IS the writing surface — a real
+                              // sheet with a soft drop shadow, not a UI box.
+                              Container(
+                                clipBehavior: Clip.antiAlias,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                        color: Color(0x22000000),
+                                        blurRadius: 16,
+                                        offset: Offset(0, 6)),
+                                  ],
+                                ),
+                                child: SizedBox(
+                                  height: 360,
+                                  child: JournalPaperSurface(
+                                    config: pageConfig,
+                                    // Fixed paper colours (NOT theme-adapted): the
+                                    // designed page always keeps the look chosen
+                                    // in the paper builder.
+                                    lineColor: const Color(0x559AA6C4),
+                                    defaultColor: const Color(0xFFFFFDF7),
+                                    lineGap: 32,
+                                    child: TextField(
+                                      controller: _entryController,
+                                      maxLines: null,
+                                      expands: true,
+                                      maxLength: 5000,
+                                      textAlignVertical: TextAlignVertical.top,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 16,
+                                        // Always dark ink so it stays readable on
+                                        // the light paper regardless of app theme.
+                                        color: const Color(0xFF2C2731),
+                                        // Line height == ruling gap (32) so each
+                                        // written line lands on a paper line.
+                                        height: 2.0,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      cursorColor: const Color(0xFF8E7CE6),
+                                      decoration: InputDecoration(
+                                        filled: false,
+                                        fillColor: Colors.transparent,
+                                        border: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
+                                        isCollapsed: true,
+                                        contentPadding: EdgeInsets.zero,
+                                        counterText: '',
+                                        hintText: isTr
+                                            ? 'Bugün aklından geçenleri yaz...'
+                                            : 'Write what is on your mind today...',
+                                        hintStyle: GoogleFonts.outfit(
+                                          fontSize: 15,
+                                          color: const Color(0xFF9B95A0),
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1281,3 +1365,4 @@ class _SealButton extends StatelessWidget {
     );
   }
 }
+

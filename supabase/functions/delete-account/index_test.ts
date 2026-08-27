@@ -169,6 +169,7 @@ Deno.test("forged body userId is ignored and only JWT user is deleted", async ()
   }
   assertEquals(backend.authDeleted, true);
   assertEquals(accountOwnedTables.includes("focus_sessions"), true);
+  assertEquals(accountOwnedTables.includes("special_days"), true);
 });
 
 Deno.test("database failure prevents Auth deletion and retry is idempotent", async () => {

@@ -51,6 +51,7 @@ void main() {
       'focus_goal': 4,
       'focus_streak': 3,
       'focus_streak_date': '2026-08-12',
+      'special_days_v1': <String>['ownerless'],
       'focus_goal_v2_user-a': 6,
       'focus_goal_v2_user-b': 3,
       'focus_active_session_v2_user-a': jsonEncode(
@@ -111,6 +112,10 @@ void main() {
       notifier.cancelled,
       contains(focusNotificationId('user-a:active-focus-a')),
     );
+    expect(
+      notifier.cancelled,
+      contains(reminderNotificationId('specialday_special-a')),
+    );
   });
 
   test('account preferences are cleared without deleting device preferences',
@@ -140,6 +145,7 @@ void main() {
     expect(prefs.get('focus_goal'), isNull);
     expect(prefs.get('focus_streak'), isNull);
     expect(prefs.get('focus_streak_date'), isNull);
+    expect(prefs.get('special_days_v1'), isNull);
     expect(prefs.get('focus_goal_v2_user-a'), isNull);
     expect(prefs.get('focus_active_session_v2_user-a'), isNull);
 
@@ -202,6 +208,12 @@ void main() {
     );
     expect(
       await (database.select(database.letters)
+            ..where((table) => table.userId.equals('user-a')))
+          .get(),
+      hasLength(1),
+    );
+    expect(
+      await (database.select(database.specialDays)
             ..where((table) => table.userId.equals('user-a')))
           .get(),
       hasLength(1),
@@ -314,6 +326,16 @@ Future<void> _seedAccount(
           syncState: const Value('pending_upsert'),
         ),
       );
+  await database.into(database.specialDays).insert(
+        SpecialDaysCompanion.insert(
+          specialDayUuid: 'special-$cloudSuffix',
+          userId: userId,
+          title: 'Special day',
+          dayType: 'custom',
+          eventDate: now,
+          syncState: const Value('pending_upsert'),
+        ),
+      );
   await database.into(database.quoteFavorites).insert(
         QuoteFavoritesCompanion.insert(
           userId: userId,
@@ -352,6 +374,10 @@ Future<List<int>> _countOwnedRows(AppDatabase database, String userId) async {
             .get())
         .length,
     (await (database.select(database.letters)
+              ..where((table) => table.userId.equals(userId)))
+            .get())
+        .length,
+    (await (database.select(database.specialDays)
               ..where((table) => table.userId.equals(userId)))
             .get())
         .length,
