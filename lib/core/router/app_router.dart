@@ -6,6 +6,9 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../features/legal/privacy_consent_screen.dart';
+import '../../features/legal/privacy_policy_screen.dart';
+import '../../features/legal/terms_screen.dart';
 import '../../features/letters/presentation/screens/letters_screen.dart';
 import '../../features/meditation/presentation/screens/meditation_screen.dart';
 
@@ -69,6 +72,9 @@ class AppRoutes {
   static const reminders = '/reminders';
   static const goals = '/goals';
   static const createPage = '/create-page';
+  static const privacyConsent = '/privacy-consent';
+  static const privacyPolicy = '/privacy-policy';
+  static const terms = '/terms';
   static const breathing = '/breathing';
   static const dreams = '/dreams';
   static const newDream = '/dreams/new';
@@ -116,6 +122,7 @@ class _AuthRefreshNotifier extends ChangeNotifier {
 /// Routes that require an authenticated Supabase session. Everything else
 /// (splash/onboarding/login/signup) is reachable while logged out.
 const _protectedRoutes = {
+  AppRoutes.privacyConsent,
   AppRoutes.nameEntry,
   AppRoutes.themeSelect,
   AppRoutes.onboarding,
@@ -355,6 +362,24 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.goals,
       pageBuilder: (context, state) => _smoothPage(state, const GoalsScreen()),
+    ),
+    GoRoute(
+      path: AppRoutes.privacyConsent,
+      pageBuilder: (context, state) => _smoothPage(
+        state,
+        PrivacyConsentScreen(
+          registrationIntent: _registrationIntentForState(state),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.privacyPolicy,
+      pageBuilder: (context, state) =>
+          _smoothPage(state, const PrivacyPolicyScreen()),
+    ),
+    GoRoute(
+      path: AppRoutes.terms,
+      pageBuilder: (context, state) => _smoothPage(state, const TermsScreen()),
     ),
     GoRoute(
       path: AppRoutes.breathing,

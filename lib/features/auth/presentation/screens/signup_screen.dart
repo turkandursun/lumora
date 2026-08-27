@@ -151,12 +151,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     await ref.read(cloudBackupServiceProvider).onSignIn();
     await bootstrapAstraPaletteForCurrentUser(ref);
     if (!mounted) return;
-    context.go(
-      AuthFlowRoutes.afterAuthentication(
-        AuthFlowOrigin.freshPasswordSignup,
-      ),
-      extra: intent,
-    );
+    // Privacy Policy + Terms acceptance gate, then the normal onboarding flow.
+    context.go(AppRoutes.privacyConsent, extra: intent);
   }
 
   Future<void> _onGoogleSignInPressed() async {
@@ -220,10 +216,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     await bootstrapAstraPaletteForCurrentUser(ref);
     if (!mounted) return;
     if (isFreshSignup && intent != null) {
-      context.go(
-        AuthFlowRoutes.afterAuthentication(AuthFlowOrigin.freshOAuthSignup),
-        extra: intent,
-      );
+      // Privacy Policy + Terms acceptance gate before onboarding.
+      context.go(AppRoutes.privacyConsent, extra: intent);
     } else {
       context.go(
         AuthFlowRoutes.greeting,
