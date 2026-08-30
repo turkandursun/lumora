@@ -15,6 +15,7 @@ import '../../features/meditation/presentation/screens/meditation_screen.dart';
 import '../../features/activities/presentation/screens/activities_screen.dart';
 import '../../features/ai_questions/presentation/screens/ai_questions_screen.dart';
 import '../../features/auth/domain/auth_flow_routes.dart';
+import '../../features/auth/domain/password_recovery.dart';
 import '../../features/auth/domain/registration_flow_state.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
@@ -169,8 +170,9 @@ final RouteObserver<ModalRoute<void>> astraRouteObserver =
 /// the theme/onboarding/hobbies steps working on phones instead of opening with
 /// a null intent and bouncing home.
 FreshRegistrationIntent? _registrationIntentForState(GoRouterState state) {
-  final fromExtra =
-      state.extra is FreshRegistrationIntent ? state.extra as FreshRegistrationIntent : null;
+  final fromExtra = state.extra is FreshRegistrationIntent
+      ? state.extra as FreshRegistrationIntent
+      : null;
   if (fromExtra != null) return fromExtra;
   final userId = Supabase.instance.client.auth.currentUser?.id;
   return userId == null ? null : registrationFlowStore.intentFor(userId);
@@ -184,6 +186,13 @@ final GoRouter appRouter = GoRouter(
     final client = Supabase.instance.client;
     final isAuthenticated = client.auth.currentSession != null;
     final currentUserId = client.auth.currentUser?.id;
+    final recoveryRedirect = passwordRecoveryFlowStore.redirectFor(
+      currentLocation: state.matchedLocation,
+      recoveryLocation: AppRoutes.resetPassword,
+      loginLocation: AppRoutes.login,
+      isAuthenticated: isAuthenticated,
+    );
+    if (recoveryRedirect != null) return recoveryRedirect;
     if (state.matchedLocation == AppRoutes.greeting) {
       final redirect = AuthFlowRoutes.greetingGuardRedirect(
         extra: state.extra,
@@ -258,7 +267,10 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => _smoothPage(
         state,
         ResetPasswordScreen(
-            email: state.extra is String ? state.extra as String : ''),
+          email: state.extra is String
+              ? state.extra as String
+              : passwordRecoveryFlowStore.email ?? '',
+        ),
       ),
     ),
     GoRoute(

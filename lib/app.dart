@@ -10,6 +10,7 @@ import 'core/providers/astra_theme_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/services/smart_reminders_service.dart';
 import 'features/auth/domain/registration_flow_state.dart';
+import 'features/auth/domain/password_recovery.dart';
 import 'features/profile/presentation/providers/visit_tracker_providers.dart';
 import 'features/wellbeing/presentation/providers/focus_providers.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -60,6 +61,10 @@ class _LumoraAppState extends ConsumerState<LumoraApp>
         invalidateUserProviders(ref);
       } else if (event == AuthChangeEvent.signedIn ||
           event == AuthChangeEvent.tokenRefreshed) {
+        // verifyOTP emits a temporary authenticated session. Recovery owns
+        // that session until password update + mandatory sign-out complete;
+        // do not bootstrap normal user content or returning-user state here.
+        if (passwordRecoveryFlowStore.blocksNormalAuthRouting) return;
         final nextUserId = data.session?.user.id ??
             Supabase.instance.client.auth.currentUser?.id;
         final previousUserId = _lastAuthenticatedUserId;

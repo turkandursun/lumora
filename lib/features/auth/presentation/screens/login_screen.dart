@@ -18,11 +18,11 @@ import '../../../../theme/crisis_support_sheet.dart';
 import '../../../../theme/luma_animated_avatar.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../domain/auth_flow_routes.dart';
+import '../../domain/auth_validation.dart';
+import '../../domain/password_recovery.dart';
 import '../../domain/registration_flow_state.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/google_sign_in_button.dart';
-
-final _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
 // Soft gold used by the small in-panel crisis-support link.
 const _goldSoft = Color(0xFFE5C890);
@@ -45,6 +45,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isGoogleSubmitting = false;
+  bool _isRecoveryRequestSubmitting = false;
   bool _obscurePassword = true;
   String? _formError;
   bool _didRouteAfterSignIn = false;
@@ -92,7 +93,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final password = _passwordController.text;
 
     String? error;
-    if (email.isEmpty || !_emailRegex.hasMatch(email)) {
+    if (email.isEmpty || !isValidAuthEmail(email)) {
       error = isTr ? 'Geçerli bir mail adresi gir.' : 'Enter a valid email.';
     } else if (password.isEmpty) {
       error = isTr ? 'Şifreni gir.' : 'Enter your password.';
@@ -103,6 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
     setState(() => _formError = null);
     FocusScope.of(context).unfocus();
+    passwordRecoveryFlowStore.prepareForNormalAuthentication();
 
     final success = await ref
         .read(authControllerProvider.notifier)
@@ -113,6 +115,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Future<void> _onGoogleSignInPressed() async {
     FocusScope.of(context).unfocus();
+    passwordRecoveryFlowStore.prepareForNormalAuthentication();
     setState(() => _isGoogleSubmitting = true);
     // A login-origin OAuth attempt can never create fresh-registration intent.
     await registrationFlowStore.clearOAuthSignupAttempt();
@@ -127,32 +130,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _onForgotPassword() async {
-    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    if (_isRecoveryRequestSubmitting) return;
+    final l10n = AppLocalizations.of(context);
     final email = _emailController.text.trim();
-    if (email.isEmpty || !_emailRegex.hasMatch(email)) {
-      _showSnack(isTr
-          ? 'Önce mail adresini yaz, sıfırlama bağlantısını oraya gönderelim.'
-          : 'Enter your email first so we can send a reset link.');
+    if (email.isEmpty) {
+      _showSnack(l10n.forgotPasswordEmailRequired);
       return;
     }
+    if (!isValidAuthEmail(email)) {
+      _showSnack(l10n.forgotPasswordEmailInvalid);
+      return;
+    }
+    setState(() => _isRecoveryRequestSubmitting = true);
     try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(email);
+      await ref.read(passwordRecoveryGatewayProvider).requestCode(email);
       if (!mounted) return;
-      _showSnack(isTr
-          ? 'Mailine 6 haneli bir kod gönderildi.'
-          : 'A 6-digit code has been sent to your email.');
+      setState(() => _isRecoveryRequestSubmitting = false);
+      passwordRecoveryFlowStore.begin(email);
+      _showSnack(l10n.forgotPasswordRequestSuccess);
       // Take the user to the code + new-password screen so the reset actually
       // completes inside the app (no deep link needed).
       context.push(AppRoutes.resetPassword, extra: email);
     } catch (_) {
       if (!mounted) return;
-      _showSnack(isTr
-          ? 'Bağlantı gönderilemedi, tekrar dene.'
-          : 'Could not send the link, please try again.');
+      setState(() => _isRecoveryRequestSubmitting = false);
+      _showSnack(l10n.forgotPasswordRequestError);
     }
   }
 
   Future<void> _routeAfterSignIn() async {
+    // verifyOTP creates a temporary signed-in recovery session. It must never
+    // consume OAuth markers or enter the returning-user LUMA/Home flow.
+    if (passwordRecoveryFlowStore.blocksNormalAuthRouting) return;
     if (_didRouteAfterSignIn) return;
     _didRouteAfterSignIn = true;
     await registrationFlowStore.consumeOAuthLoginAttempt();
@@ -181,7 +190,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  void _onSignUpTap() => context.go(AppRoutes.signup);
+  void _onSignUpTap() {
+    passwordRecoveryFlowStore.prepareForNormalAuthentication();
+    context.go(AppRoutes.signup);
+  }
 
   String? _serverError(AppLocalizations l10n, AuthFailureReason? reason) {
     if (reason == null) return null;
@@ -310,7 +322,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Widget _buildPanel(
       bool isDark, bool isTr, AuthState authState, String? errorMessage) {
-    final loading = authState.isSubmitting || _isGoogleSubmitting;
+    final l10n = AppLocalizations.of(context);
+    final loading = authState.isSubmitting ||
+        _isGoogleSubmitting ||
+        _isRecoveryRequestSubmitting;
     final gold = AstraKit.gold(context, isDark);
 
     return AstraGlassCard(
@@ -354,16 +369,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               GestureDetector(
-                onTap: _onForgotPassword,
-                child: Text(
-                  isTr ? 'Şifremi unuttum?' : 'Forgot password?',
-                  style:
-                      AstraKit.body(context, isDark, fontSize: 13, color: gold)
-                          .copyWith(
-                    decoration: TextDecoration.underline,
-                    decorationColor: gold,
-                  ),
-                ),
+                onTap: _isRecoveryRequestSubmitting ? null : _onForgotPassword,
+                child: _isRecoveryRequestSubmitting
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: gold,
+                        ),
+                      )
+                    : Text(
+                        l10n.forgotPasswordAction,
+                        style: AstraKit.body(
+                          context,
+                          isDark,
+                          fontSize: 13,
+                          color: gold,
+                        ).copyWith(
+                          decoration: TextDecoration.underline,
+                          decorationColor: gold,
+                        ),
+                      ),
               ),
             ],
           ),

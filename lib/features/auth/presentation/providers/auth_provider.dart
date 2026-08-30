@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/config/env.dart';
+import '../../domain/password_recovery.dart';
 
 typedef GoogleOAuthLauncher = Future<bool> Function(String redirectTo);
 
@@ -210,7 +211,43 @@ class AuthController extends StateNotifier<AuthState> {
   }
 }
 
+class SupabasePasswordRecoveryGateway implements PasswordRecoveryGateway {
+  SupabasePasswordRecoveryGateway(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<void> requestCode(String email) =>
+      _client.auth.resetPasswordForEmail(email.trim());
+
+  @override
+  Future<void> verifyRecoveryOtp({
+    required String email,
+    required String otp,
+  }) async {
+    final response = await _client.auth.verifyOTP(
+      email: email.trim(),
+      token: otp.trim(),
+      type: OtpType.recovery,
+    );
+    if (response.session == null) {
+      throw const AuthException('Recovery session was not created.');
+    }
+  }
+
+  @override
+  Future<void> updatePassword(String password) =>
+      _client.auth.updateUser(UserAttributes(password: password));
+
+  @override
+  Future<void> signOut() => _client.auth.signOut();
+}
+
 final authControllerProvider =
     StateNotifierProvider<AuthController, AuthState>((ref) {
   return AuthController(ref.watch(supabaseClientProvider));
 });
+
+final passwordRecoveryGatewayProvider = Provider<PasswordRecoveryGateway>(
+  (ref) => SupabasePasswordRecoveryGateway(ref.watch(supabaseClientProvider)),
+);

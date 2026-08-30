@@ -19,11 +19,12 @@ import '../../../../theme/luma_animated_avatar.dart';
 import '../../../../theme/responsive_content.dart';
 import '../../../profile/data/profile_repository.dart';
 import '../../domain/auth_flow_routes.dart';
+import '../../domain/auth_validation.dart';
+import '../../domain/password_recovery.dart';
 import '../../domain/registration_flow_state.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/google_sign_in_button.dart';
 
-const _minPasswordLength = 8;
 final _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
 // Soft gold used by the small in-panel crisis-support link.
@@ -105,10 +106,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     String? error;
     if (email.isEmpty || !_emailRegex.hasMatch(email)) {
       error = isTr ? 'Geçerli bir mail adresi gir.' : 'Enter a valid email.';
-    } else if (password.length < _minPasswordLength) {
+    } else if (password.length < authMinimumPasswordLength) {
       error = isTr
-          ? 'Şifre en az $_minPasswordLength karakter olmalı.'
-          : 'Password must be at least $_minPasswordLength characters.';
+          ? 'Şifre en az $authMinimumPasswordLength karakter olmalı.'
+          : 'Password must be at least $authMinimumPasswordLength characters.';
     } else if (confirm != password) {
       error = isTr ? 'Şifreler eşleşmiyor.' : 'Passwords do not match.';
     }
@@ -118,6 +119,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     }
     setState(() => _formError = null);
     FocusScope.of(context).unfocus();
+    passwordRecoveryFlowStore.prepareForNormalAuthentication();
 
     // The name is collected on the next screen so this panel stays short enough
     // to show the ASTRA wordmark + tagline.
@@ -157,6 +159,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
   Future<void> _onGoogleSignInPressed() async {
     FocusScope.of(context).unfocus();
+    passwordRecoveryFlowStore.prepareForNormalAuthentication();
     setState(() {
       _isGoogleSubmitting = true;
       _isGoogleSignInFlow = true;

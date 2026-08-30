@@ -1936,5 +1936,37 @@
   "specialDayTypeWedding": "Wedding day",
   "specialDayTypeAnniversary": "Anniversary",
   "specialDayTypeCustom": "Custom",
-  "specialDayRepeatsAnnually": "Repeat annually"
+  "specialDayRepeatsAnnually": "Repeat annually",
+  "forgotPasswordAction": "Forgot password?",
+  "forgotPasswordEmailRequired": "Enter your email address to reset your password.",
+  "forgotPasswordEmailInvalid": "Enter a valid email address.",
+  "forgotPasswordRequestSuccess": "If this email is registered, a password reset code has been sent.",
+  "forgotPasswordRequestError": "We couldn't request a reset code. Check your connection and try again.",
+  "resetPasswordTitle": "Reset password",
+  "resetPasswordIntro": "Enter your email, the 8-digit code from the message, and your new password.",
+  "resetPasswordEmailLabel": "Email",
+  "resetPasswordOtpLabel": "8-digit code",
+  "resetPasswordNewPasswordLabel": "New password",
+  "resetPasswordConfirmPasswordLabel": "Confirm new password",
+  "resetPasswordUpdateAction": "Update password",
+  "resetPasswordResendAction": "Resend code",
+  "resetPasswordResendCountdown": "Resend code in {seconds}s",
+  "@resetPasswordResendCountdown": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "resetPasswordOtpInvalid": "Enter the complete 8-digit code.",
+  "resetPasswordPasswordRequired": "Enter a new password.",
+  "resetPasswordPasswordTooShort": "Your new password must contain at least {minLength} characters.",
+  "@resetPasswordPasswordTooShort": {
+    "placeholders": {
+      "minLength": { "type": "int" }
+    }
+  },
+  "resetPasswordConfirmationRequired": "Confirm your new password.",
+  "resetPasswordMismatch": "The passwords do not match.",
+  "resetPasswordInvalidOrExpired": "The code is invalid or expired. Check it or request a new one.",
+  "resetPasswordUpdateError": "We couldn't update your password. Check your connection and try again.",
+  "resetPasswordSuccess": "Your password was updated successfully. You can now sign in with your new password."
 }
